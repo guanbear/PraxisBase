@@ -1,5 +1,7 @@
 # PraxisBase / 知行基座 — Durable Memory for Disposable Agents
 
+**Languages:** English | [简体中文](README.zh-CN.md)
+
 > Agent knowledge substrate · Git-backed memory · Reusable skills · Static repair bundles · AI-reviewed evolution
 
 PraxisBase / 知行基座 is an agent-native knowledge substrate for teams running many temporary and persistent agents. It keeps the agents disposable while making their knowledge, repair experience, reusable skills, and decisions durable.
