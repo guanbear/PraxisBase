@@ -6,7 +6,7 @@
 
 **Architecture:** Implement a TypeScript pnpm monorepo with `@praxisbase/core` for schemas and domain logic, `@praxisbase/cli` for agent and CI entrypoints, and templates/seed data for the file protocol. The MVP is file-first and CLI-first; MCP, external search services, Hermes runner, and K8s runtime integration stay outside this implementation plan.
 
-**Tech Stack:** Node.js 20+, TypeScript 5.x, pnpm workspaces, Vitest, Zod, Commander, gray-matter, MiniSearch or a lightweight in-repo search index, GitLab CI templates.
+**Tech Stack:** Node.js 20+, TypeScript 5.x, pnpm workspaces, Vitest, Zod, Commander, gray-matter, lightweight generated JSON indexes, GitLab CI templates.
 
 ---
 
@@ -55,8 +55,6 @@ packages/cli/package.json
 packages/cli/tsconfig.json
 packages/cli/src/index.ts
 packages/cli/src/commands/init.ts
-packages/cli/src/commands/search.ts
-packages/cli/src/commands/read.ts
 packages/cli/src/commands/repair-context.ts
 packages/cli/src/commands/bundle-fetch.ts
 packages/cli/src/commands/episode.ts
@@ -84,6 +82,7 @@ tests/core/promote.test.ts
 tests/core/build.test.ts
 tests/cli/init.test.ts
 tests/cli/repair-context.test.ts
+tests/cli/bundle-fetch.test.ts
 tests/cli/review-promote.test.ts
 ```
 
@@ -119,6 +118,8 @@ Responsibilities:
 ### Milestone 5: Static Build And Distribution
 
 **Acceptance:** `praxisbase build` generates `dist/repair-bundles/manifest.json`, scenario bundles, `kb-index.json`, `search-index.json`, `llms.txt`, and an HTML inspection page.
+
+**Acceptance:** `praxisbase bundle fetch openclaw --signature <signature>` returns the latest generated bundle when available and falls back to last-known-good cache with a warning when the latest bundle is unavailable.
 
 ### Milestone 6: GitLab Scheduled Automation
 
@@ -234,7 +235,6 @@ Write `packages/core/package.json`:
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
-    "minisearch": "^7.1.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {}
@@ -862,6 +862,10 @@ export async function readText(root: string, relativePath: string): Promise<stri
 
 export async function writeJson(root: string, relativePath: string, value: unknown): Promise<void> {
   await writeText(root, relativePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+export async function readJson<T = unknown>(root: string, relativePath: string): Promise<T> {
+  return JSON.parse(await readText(root, relativePath)) as T;
 }
 ```
 
@@ -1640,9 +1644,12 @@ git commit -m "Review and promote knowledge proposals"
 - Create: `packages/core/src/search/search-index.ts`
 - Create: `packages/core/src/build/build.ts`
 - Create: `packages/core/src/build/html.ts`
+- Create: `packages/core/src/bundles/fetch.ts`
 - Create: `tests/core/build.test.ts`
+- Create: `tests/cli/bundle-fetch.test.ts`
 - Create: `packages/cli/src/commands/build.ts`
 - Create: `packages/cli/src/commands/check.ts`
+- Create: `packages/cli/src/commands/bundle-fetch.ts`
 - Modify: `packages/cli/src/index.ts`
 
 - [ ] **Step 1: Write build test**
@@ -1778,7 +1785,42 @@ pnpm test tests/core/build.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Add CLI build/check commands**
+- [ ] **Step 5: Add bundle fetch with last-known-good cache**
+
+Write `packages/core/src/bundles/fetch.ts`:
+
+```ts
+import { readJson, writeJson } from "../store/file-store.js";
+
+export type BundleFetchResult = {
+  bundle: unknown;
+  warning?: "latest_unavailable_using_cache";
+};
+
+export async function fetchRepairBundle(root: string, scenario: string): Promise<BundleFetchResult> {
+  const bundlePath = `dist/repair-bundles/${scenario}-sandbox.json`;
+  const cachePath = `.praxisbase/cache/last-known-good/${scenario}-sandbox.json`;
+
+  try {
+    const bundle = await readJson(root, bundlePath);
+    await writeJson(root, cachePath, bundle);
+    return { bundle };
+  } catch (latestError) {
+    try {
+      return {
+        bundle: await readJson(root, cachePath),
+        warning: "latest_unavailable_using_cache"
+      };
+    } catch {
+      throw latestError;
+    }
+  }
+}
+```
+
+Write `tests/cli/bundle-fetch.test.ts` to cover both latest bundle reads and cache fallback after deleting or making `dist/repair-bundles/openclaw-sandbox.json` unavailable.
+
+- [ ] **Step 6: Add CLI build/check/bundle commands**
 
 Write `packages/cli/src/commands/build.ts`:
 
@@ -1805,7 +1847,9 @@ export async function checkCommand(root: string): Promise<void> {
 
 Register `build` and `check` in `packages/cli/src/index.ts`.
 
-- [ ] **Step 6: Run full checks**
+Register `bundle fetch` in `packages/cli/src/index.ts` and print JSON with `bundle` plus optional `warning`.
+
+- [ ] **Step 7: Run full checks**
 
 Run:
 
@@ -1815,7 +1859,7 @@ pnpm check
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit static build**
+- [ ] **Step 8: Commit static build**
 
 ```bash
 git add packages/core/src/build packages/cli/src tests/core/build.test.ts
@@ -1920,6 +1964,7 @@ pnpm --filter @praxisbase/cli build
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" init)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" repair-context openclaw --logs "$repo/tests/fixtures/openclaw/logs/claude-auth-expired.log" --json)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" build)
+(cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" bundle fetch openclaw --signature openclaw:claude-auth-expired)
 test -f "$tmpdir/dist/repair-bundles/manifest.json"
 ```
 
@@ -1941,6 +1986,7 @@ git commit -m "Stabilize OpenClaw repair MVP verification"
 - K8s incident runtime integration
 - External search service
 - Vector database
+- Phase 2 interactive `search`, `read`, `curate`, or `run ingest` commands
 - Blockchain or distributed consensus
 - Multi-tenant role system beyond Git permissions and protocol modes
 - Direct production-system repair automation
@@ -1953,3 +1999,4 @@ git commit -m "Stabilize OpenClaw repair MVP verification"
 - Use `docs/bdd/openclaw-repair-mvp.feature` as the behavior acceptance suite.
 - Do not rename the project back to a wiki-only tool.
 - Do not add vector search, MCP, Hermes runner, or K8s runtime code while executing this plan.
+- Treat Phase 1 command scope as: `init`, `repair-context`, `bundle fetch`, `episode submit`, `propose`, `review --auto`, `promote --auto`, `build`, and `check`.

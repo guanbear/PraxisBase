@@ -16,7 +16,7 @@ PraxisBase 当前方向必须从 “self-updating wiki” 收束为 “agent kno
 
 - 新增 `.praxisbase/` file protocol。
 - 新增 episode、proposal、review、known fix、repair bundle 等对象 schema。
-- 新增 CLI：`init`、`repair-context`、`episode submit`、`propose`、`review --auto`、`promote --auto`、`build`、`check`。
+- 新增 CLI：`init`、`repair-context`、`bundle fetch`、`episode submit`、`propose`、`review --auto`、`promote --auto`、`build`、`check`。
 - 新增 OpenClaw repair context 生成能力。
 - 新增 D-lite risk review 和 AI-reviewed auto-merge 机制。
 - 新增静态 `dist/repair-bundles/*`、`kb-index.json`、`search-index.json`、`llms.txt`。
@@ -28,6 +28,7 @@ PraxisBase 当前方向必须从 “self-updating wiki” 收束为 “agent kno
 - 不实现 MCP server。
 - 不实现 Hermes runner。
 - 不实现 K8s 故障定位 runtime。
+- 不实现 `search`、`read`、`curate`、`run ingest` 等 Phase 2+ 命令。
 - 不接外部搜索服务、向量库、队列或 daemon。
 - 不做区块链或分布式共识。
 - 不实现复杂多租户权限系统。
@@ -42,6 +43,7 @@ PraxisBase 当前方向必须从 “self-updating wiki” 收束为 “agent kno
 - `praxisbase review --auto` 对中低风险 proposal 生成可自动合入 review，对高风险 proposal 标记人工异常。
 - `praxisbase promote --auto` 只晋升 AI reviewer 批准且符合自动合入条件的 proposal。
 - `praxisbase build` 生成静态 bundle、manifest、索引、HTML 和 `llms.txt`。
+- `praxisbase bundle fetch openclaw --signature <signature>` 在最新 bundle 不可用时返回 last-known-good cache 并输出 warning。
 - GitLab template 包含 scheduled review/promote/build jobs，并对写任务使用 `resource_group: praxisbase-write`。
 
 ## Guardrails For Implementing Agents

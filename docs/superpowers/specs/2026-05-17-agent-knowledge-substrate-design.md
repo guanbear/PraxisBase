@@ -310,19 +310,27 @@ K8s 故障系统复用同一协议：
 
 CLI 是第一实现入口：
 
+Phase 1 必做命令：
+
 ```bash
 praxisbase init
-praxisbase search "claude auth expired" --scope openclaw --json
-praxisbase read known_fix openclaw-auth-expired
 praxisbase repair-context openclaw --logs /path/to/logs --json
 praxisbase bundle fetch openclaw --signature openclaw:claude-auth-expired
 praxisbase episode submit episode.json
 praxisbase propose proposal.json
 praxisbase review --auto
 praxisbase promote --auto
-praxisbase curate --profile openclaw
 praxisbase build
 praxisbase check
+```
+
+Phase 2+ 命令：
+
+```bash
+praxisbase search "claude auth expired" --scope openclaw --json
+praxisbase read known_fix openclaw-auth-expired
+praxisbase run ingest --profile openclaw
+praxisbase curate --profile openclaw
 ```
 
 ### MCP
@@ -486,7 +494,7 @@ praxisbase run curate --profile openclaw
 praxisbase build
 ```
 
-团队 MVP 默认用 GitLab Scheduled Pipelines。个人部署可用 GitHub Actions 或 local cron。后续可增加 Hermes runner 或 `praxisbase-daemon` 做持久调度。
+团队 MVP 默认用 GitLab Scheduled Pipelines。Phase 1 只要求 GitLab template 覆盖 `review`、`promote` 和 `build`；`ingest`、`curate` 和 `praxisbase run ...` 是 Phase 2+ 调度形态。个人部署可用 GitHub Actions 或 local cron。后续可增加 Hermes runner 或 `praxisbase-daemon` 做持久调度。
 
 为避免写冲突，写任务应使用单写锁，例如 GitLab `resource_group: praxisbase-write`。Episodes 和 proposals 是独立文件，所以多个 agent 可以并发提交，不需要编辑同一个稳定对象。
 
@@ -694,7 +702,7 @@ MVP 必须包含：
 
 - `.praxisbase/`、`kb/`、`skills/` file protocol
 - episode、proposal、review、known fix、procedure、skill、policy 核心 schema
-- CLI：search、read、repair-context、episode submit、propose、review、promote、build、check
+- CLI：init、repair-context、bundle fetch、episode submit、propose、review、promote、build、check
 - OpenClaw repair bundle generation
 - D-lite AI review 和 automatic promotion
 - static indexes 和 bundles
@@ -710,6 +718,7 @@ MVP 不做：
 - complex multi-tenant permissions
 - full MCP server implementation
 - full Hermes runner implementation
+- search/read/curate/ingest command implementation
 - 把所有 raw logs 存进 Git
 - 在 repair agent 自身沙箱权限之外，自动执行生产变更
 

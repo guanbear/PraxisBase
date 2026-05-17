@@ -10,6 +10,7 @@
 - [ ] Implement deterministic MVP reviewer and risk classifier.
 - [ ] Implement promotion for approved proposals.
 - [ ] Implement static build for bundles, indexes, HTML, and `llms.txt`.
+- [ ] Implement `praxisbase bundle fetch` with last-known-good cache fallback.
 - [ ] Add GitLab scheduled pipeline template.
 - [ ] Run full verification with `pnpm check` and local smoke flow.
 
@@ -30,6 +31,7 @@ pnpm --filter @praxisbase/cli build
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" init)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" repair-context openclaw --logs "$repo/tests/fixtures/openclaw/logs/claude-auth-expired.log" --json)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" build)
+(cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" bundle fetch openclaw --signature openclaw:claude-auth-expired)
 test -f "$tmpdir/dist/repair-bundles/manifest.json"
 ```
 

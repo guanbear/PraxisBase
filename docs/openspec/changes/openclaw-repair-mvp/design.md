@@ -106,6 +106,10 @@ Build generates:
 
 The manifest includes protocol version, bundle path, checksum, generated time, commit SHA when available, and compatible CLI version.
 
+### Bundle Fetch
+
+`praxisbase bundle fetch openclaw --signature <signature>` reads generated bundles from `dist/repair-bundles` and writes a last-known-good cache for the requesting agent. If the latest bundle cannot be read but a cache entry exists, the command returns the cached bundle and emits a machine-readable cache warning.
+
 ## Failure Handling
 
 - If bundle fetch fails, agents use last-known-good cache.

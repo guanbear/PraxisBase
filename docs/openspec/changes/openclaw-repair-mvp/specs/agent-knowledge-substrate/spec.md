@@ -112,6 +112,18 @@ The system shall build static artifacts for repair agents.
 - **AND** writes `dist/repair-bundles/openclaw-sandbox.json`
 - **AND** writes `dist/kb-index.json`, `dist/search-index.json`, `dist/llms.txt`, and `dist/index.html`
 
+### Requirement: Bundle Fetch Cache Fallback
+
+The system shall let repair agents continue with cached context when the latest generated bundle is unavailable.
+
+#### Scenario: Return last-known-good bundle
+
+- **GIVEN** a last-known-good OpenClaw repair bundle cache exists
+- **AND** the latest generated bundle cannot be read
+- **WHEN** the agent runs `praxisbase bundle fetch openclaw --signature openclaw:claude-auth-expired`
+- **THEN** the command returns the cached bundle
+- **AND** emits a machine-readable cache warning
+
 ### Requirement: GitLab Scheduled Automation
 
 The system shall provide a GitLab CI template for scheduled review, promotion, and build.
