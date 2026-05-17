@@ -1,10 +1,10 @@
-# PraxisBase / 知行基座 — Durable Memory for Disposable Agents
+# PraxisBase — Durable Memory for Disposable Agents
 
 **Languages:** English | [简体中文](README.zh-CN.md)
 
 > Agent knowledge substrate · Git-backed memory · Reusable skills · Static repair bundles · AI-reviewed evolution
 
-PraxisBase / 知行基座 is an agent-native knowledge substrate for teams running many temporary and persistent agents. It keeps the agents disposable while making their knowledge, repair experience, reusable skills, and decisions durable.
+PraxisBase is an agent-native knowledge substrate for teams running many temporary and persistent agents. It keeps the agents disposable while making their knowledge, repair experience, reusable skills, and decisions durable.
 
 The project started from the LLM Wiki idea, but its current direction is broader: **agents are cattle, knowledge is the herd memory**. Temporary repair agents, persistent OpenClaw bots, Feishu bots, Hermes-like curators, and future MCP clients should all be replaceable peers that read and write the same durable knowledge layer.
 
@@ -113,7 +113,9 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 
 ## Name
 
-**PraxisBase / 知行基座** means the durable base where agents turn knowledge into action and action back into reusable knowledge. The English name keeps the infrastructure feel of a shared substrate; the Chinese name preserves "知行", which fits the loop this project cares about most: learn, repair, verify, promote, and reuse.
+**PraxisBase** is the English project name. **知行基座** is the Chinese name.
+
+PraxisBase means the durable base where agents turn knowledge into action and action back into reusable knowledge. The English name keeps the infrastructure feel of a shared substrate; the Chinese name preserves "知行", which fits the loop this project cares about most: learn, repair, verify, promote, and reuse.
 
 ## References
 
