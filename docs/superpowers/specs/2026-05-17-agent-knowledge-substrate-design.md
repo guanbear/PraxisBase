@@ -1,37 +1,39 @@
-# LLMHTML Agent Knowledge Substrate Design
+# LLMHTML Agent Knowledge Substrate 设计
 
-Date: 2026-05-17
+日期：2026-05-17
 
-## Purpose
+## 目标
 
-LLMHTML should become an agent-native shared knowledge substrate, not only a self-updating wiki. Its first production scenario is OpenClaw sandbox repair: many temporary or persistent agents must retrieve the latest repair knowledge, apply it inside a sandbox, and feed new experience back into the shared substrate. The same protocol should also support a future K8s incident analysis system, Feishu bots, Hermes-like persistent agents, and other temporary agents.
+LLMHTML 不应该只是一个自更新 wiki，而应该成为一个 **agent-native shared knowledge substrate**：面向多 agent、临时 agent、持久 agent、机器人和自动化系统的共享知识与技能底座。
 
-The core product promise is:
+第一生产场景是 **OpenClaw 沙箱自动修复**：大量临时或持久 agent 需要在修复前获取最新修复知识和 skill，在沙箱内完成修复，并把新的经验回流到共享知识层。未来同一套协议还要支持 K8s 故障定位系统、飞书机器人、Hermes-like 持久 agent，以及其他临时 agent。
 
-> Any agent can enter a workspace, retrieve the right knowledge and skills, do useful work, and leave behind structured experience that can be reviewed, promoted, and redistributed to the next agent.
+核心产品承诺：
 
-## Design Principles
+> 任意 agent 进入一个工作区后，都能获取合适的知识和技能，完成任务，并留下结构化经验；这些经验会被审核、晋升、重新分发给下一个 agent。
 
-- Agents are peers. Temporary repair agents, persistent OpenClaw bots, Feishu bots, Hermes runners, and K8s analysis systems all use the same read/write protocol.
-- Human review is by exception. AI reviewer agents handle routine review and automatic promotion; people see only risky, uncertain, or failed items.
-- Git is the authority layer, not the whole runtime. It stores stable knowledge, audit history, reviews, and release artifacts, while raw logs and high-volume sources can remain in external systems.
-- The MVP uses static generated indexes and bundles. External search services, vector databases, queues, and daemons are later scaling options.
-- Large raw logs do not belong in Git. Store summaries, source URIs, hashes, and provenance in Git; keep raw logs in the existing log platform or object storage.
-- OpenClaw repair is the first proof. K8s incident analysis reuses the same object model and interface.
+## 设计原则
 
-## Architecture
+- **Agent 是平级节点。** 临时修复 agent、持久 OpenClaw 机器人、飞书机器人、Hermes runner、K8s 分析系统都使用同一套读写协议。
+- **人工只处理异常。** 常规审核和知识晋升由 AI reviewer agent 完成；人只看高风险、不确定或验证失败的项。
+- **Git 是权威层，不是完整运行时。** Git 存稳定知识、审计历史、review 记录和发布产物；原始日志和高容量数据可以继续留在外部系统。
+- **MVP 使用静态索引和 bundle。** 外部搜索服务、向量库、队列、daemon 都是后续扩展，不是第一版前置条件。
+- **大日志不进 Git。** Git 里只保存摘要、source URI、hash、provenance；完整日志继续放现有日志平台或对象存储。
+- **OpenClaw 修复是第一证明场景。** K8s 故障定位复用同一对象模型和接口。
 
-LLMHTML uses a federated Git-backed architecture:
+## 总体架构
+
+LLMHTML 采用 **federated Git-backed architecture**：
 
 ```text
 Sources and Events
-  OpenClaw sandbox logs, repair triggers, Feishu messages, tickets,
-  K8s events, docs, postmortems
+  OpenClaw 沙箱日志、修复触发、飞书消息、工单、
+  K8s events、文档、postmortem
         |
         v
 Agent Peers
-  temporary repair agents, persistent OpenClaw bots, Feishu bots,
-  Hermes curator, K8s incident system
+  临时修复 agent、持久 OpenClaw bot、飞书 bot、
+  Hermes curator、K8s 故障系统
         |
         v
 LLMHTML Protocol
@@ -39,34 +41,34 @@ LLMHTML Protocol
         |
         v
 Git-backed Authority Layer
-  stable notes, procedures, known fixes, skills, policies, reviews
+  notes、procedures、known fixes、skills、policies、reviews
         |
         v
 Generated Retrieval Layer
-  kb-index.json, search-index.json, repair bundles, HTML, llms.txt
+  kb-index.json、search-index.json、repair bundles、HTML、llms.txt
 ```
 
-This is not a blockchain design. Git already provides the important properties needed here: version history, signed commits if desired, review trail, diffability, and rollback. A blockchain would add operational complexity without solving the main trust problem, because these agents run inside one organization or a trusted personal environment.
+这不是区块链设计。Git 已经提供这里真正需要的能力：版本历史、可选 signed commit、review trail、diff、rollback。因为这些 agent 主要运行在同一个组织或可信个人环境里，区块链会引入复杂度，却不能解决核心信任问题。
 
-The topology is also not a single central agent brain. It is a shared substrate: the Git repository is authoritative, but agents remain peer clients. A persistent OpenClaw bot may run more often than a temporary agent, but it does not own the knowledge graph.
+这也不是“中央大脑指挥小 agent”。Git repository 是权威知识与审计层，但所有 agent 仍然是 peer client。持久 OpenClaw bot 可能跑得更频繁，但它不拥有知识图谱，也不是临时 agent 的上级。
 
-## Knowledge Carrier
+## 知识载体
 
-Use different storage surfaces for different data lifecycles:
+不同生命周期的数据使用不同载体：
 
-| Layer | Carrier | Contents |
+| 层 | 载体 | 内容 |
 | --- | --- | --- |
-| Authority | GitLab for teams, GitHub for personal repos | Stable notes, procedures, known fixes, skills, decisions, policies, reviewed memories, AI reviews |
-| Raw experience | Existing log platform, object storage, or ticket systems | Full OpenClaw logs, K8s logs, large traces, Feishu message exports |
-| Protocol state | Files under `.llmhtml/` | Inbox episodes, proposals, reviews, policies, schedules, generated indexes |
-| Retrieval artifacts | Generated JSON and HTML | Repair bundles, search indexes, HTML site, `llms.txt` |
-| Edge cache | Local checkout or downloaded bundle | Compact context for temporary repair agents |
+| 权威层 | 团队用 GitLab，个人用 GitHub | 稳定 notes、procedures、known fixes、skills、decisions、policies、reviewed memories、AI reviews |
+| 原始经验层 | 现有日志平台、对象存储、工单系统 | 完整 OpenClaw 日志、K8s 日志、大 trace、飞书消息导出 |
+| 协议状态层 | `.llmhtml/` 下的文件 | inbox episodes、proposals、reviews、policies、schedules、生成索引 |
+| 检索产物层 | 生成的 JSON 和 HTML | repair bundles、search indexes、HTML site、`llms.txt` |
+| 边缘缓存层 | 本地 checkout 或下载的 bundle | 给临时修复 agent 的 compact context |
 
-Team deployments should default to GitLab self-managed because it fits scheduled pipelines, Pages, merge requests, and internal access control. Personal deployments can use GitHub Actions and GitHub Pages.
+团队部署默认使用 GitLab self-managed，因为它适合 Scheduled Pipelines、Pages、Merge Requests 和内网访问控制。个人部署默认使用 GitHub Actions 和 GitHub Pages。
 
-## Directory Protocol
+## 目录协议
 
-The repository should expose a stable file protocol:
+仓库暴露一个稳定的 file protocol：
 
 ```text
 .llmhtml/
@@ -79,6 +81,9 @@ The repository should expose a stable file protocol:
     episodes/
     proposals/
     reviews/
+  outbox/
+    episodes/
+    proposals/
   indexes/
     kb-index.json
     search-index.json
@@ -108,26 +113,30 @@ dist/
   repair-bundles/
 ```
 
-`.llmhtml/` is the agent protocol layer. Temporary agents should be able to use this without understanding the whole wiki.
+`.llmhtml/` 是 agent 协议层。临时 agent 应该只理解这一层就能工作，不需要读完整 wiki。
 
-`kb/` is the stable knowledge layer. It stores reviewed Markdown/YAML objects.
+`kb/` 是稳定知识层，存放审核后的 Markdown/YAML 对象。
 
-`skills/` is the executable knowledge layer. It should remain compatible with `SKILL.md`-style ecosystems so OpenClaw, Hermes, Codex, and other agents can consume it.
+`skills/` 是可执行知识层，保持 `SKILL.md` 风格兼容，方便 OpenClaw、Hermes、Codex 和其他 agent 消费。
 
-`dist/` is the published inspection layer for humans and agents.
+`dist/` 是发布与观察层，给人和 agent 查看。
 
-## Object Model
+## 对象模型
 
 ### Episode
 
-An episode records one agent run. For OpenClaw repair, each repair attempt should create one episode.
+Episode 记录一次 agent 运行。OpenClaw repair 场景下，每次修复尝试都应该创建一个 episode。
 
 ```json
 {
   "id": "episode_20260517_abc",
+  "protocol_version": "0.1",
   "type": "repair_episode",
   "scope": "team",
   "agent_id": "openclaw-temp-xyz",
+  "agent_type": "temporary_repair_agent",
+  "environment_id": "sandbox-123",
+  "run_id": "run-456",
   "problem_signature": "openclaw:claude-auth-expired",
   "result": "success",
   "used_skills": ["skills/openclaw/auth-repair/SKILL.md"],
@@ -138,11 +147,11 @@ An episode records one agent run. For OpenClaw repair, each repair attempt shoul
 }
 ```
 
-Episodes are append-only input to the learning system. They can be summarized or superseded, but the original episode record should remain auditable.
+Episode 是学习系统的 append-only 输入。它可以被总结或 supersede，但原始 episode 记录应该保留审计能力。
 
 ### Problem Signature
 
-A problem signature is a normalized fault label used for retrieval and clustering:
+Problem signature 是标准化故障标签，用于检索和聚类：
 
 ```text
 openclaw:claude-auth-expired
@@ -152,15 +161,16 @@ k8s:pod-crashloop-imagepull
 k8s:ingress-5xx-upstream-timeout
 ```
 
-Signatures do not need to be perfect on first detection. They can be merged or aliased by curator proposals later.
+第一次识别不需要完美。后续 curator 可以通过 proposal 合并、重命名或增加 alias。
 
 ### Known Fix
 
-A known fix is a short, stable repair unit:
+Known fix 是短小、稳定的修复单元：
 
 ```markdown
 ---
 id: openclaw-auth-expired
+protocol_version: "0.1"
 type: known_fix
 scope: team
 risk: medium
@@ -199,89 +209,92 @@ Restore the previous auth state snapshot if the refresh makes the session worse.
 
 ### Procedure
 
-A procedure is a longer diagnostic or remediation workflow. It can reference known fixes and skills.
+Procedure 是更长的诊断或修复流程，可以引用 known fixes 和 skills。
 
 ### Skill
 
-A skill is an agent-facing instruction document. It should include when to use it, required context, commands, verification, and rollback guidance.
+Skill 是 agent-facing instruction document。它应该说明什么时候使用、需要什么上下文、可执行命令、验证方式和回滚方式。
 
 ### Proposal
 
-A proposal is an agent's suggested update to stable knowledge. It can create, patch, archive, or link objects.
+Proposal 是 agent 对稳定知识的更新建议。它可以 create、patch、archive 或 link 对象。
 
 ### Review
 
-A review records the independent reviewer agent's decision, confidence, risk classification, and merge result.
+Review 记录独立 reviewer agent 的决策、置信度、风险分级和合入结果。
 
 ### Repair Bundle
 
-A repair bundle is a generated context package for temporary agents. It is not the source of truth. It contains the compact subset of procedures, skills, known fixes, forbidden operations, diagnostic commands, verification steps, and source references relevant to a scenario or problem signature.
+Repair bundle 是给临时 agent 的生成型上下文包，不是 source of truth。它包含某个场景或 problem signature 相关的 procedures、skills、known fixes、forbidden operations、diagnostic commands、verification steps 和 source refs。
 
-## OpenClaw Repair Flow
+## OpenClaw 修复流程
 
-1. A sandbox repair is triggered by a health check, monitor, Feishu command, manual button, or webhook.
-2. A repair agent starts in the sandbox. It can be temporary or persistent.
-3. The agent gathers local signals: log excerpts, OpenClaw status, Claude Code status, recent commands, environment version, and error stack.
-4. The agent calls:
+1. 沙箱修复由 health check、monitor、飞书命令、人工按钮或 webhook 触发。
+2. 一个 repair agent 在沙箱中启动。它可以是临时 agent，也可以是持久 agent。
+3. agent 收集本地信号：日志片段、OpenClaw 状态、Claude Code 状态、最近命令、环境版本和错误栈。
+4. agent 调用：
 
    ```bash
    llmhtml repair-context openclaw --logs /path/to/logs --json
    ```
 
-5. LLMHTML returns a compact repair bundle: likely problem signature, relevant known fixes, skills, procedures, diagnostic commands, verification steps, and forbidden operations.
-6. The agent repairs the sandbox and verifies the outcome.
-7. The agent submits an episode:
+5. LLMHTML 返回 compact repair bundle：可能的 problem signature、相关 known fixes、skills、procedures、diagnostic commands、verification steps 和 forbidden operations。
+6. agent 在沙箱内修复并验证结果。
+7. agent 提交 episode：
 
    ```bash
    llmhtml episode submit episode.json
    ```
 
-8. If the run produced reusable learning, the agent submits a proposal:
+8. 如果这次运行产生了可复用经验，agent 提交 proposal：
 
    ```bash
    llmhtml propose proposal.json
    ```
 
-9. Reviewer agents process proposals. Routine updates auto-merge; risky or uncertain changes enter the human exception queue.
-10. Build regenerates indexes, repair bundles, HTML, and `llms.txt`.
+9. Reviewer agents 处理 proposals。常规更新自动合入；高风险或不确定项进入 human exception queue。
+10. Build 重新生成 indexes、repair bundles、HTML 和 `llms.txt`。
 
-The important property is that every repair is a learning opportunity, but stable shared knowledge changes only through the proposal and review path.
+关键性质：每次修复都是学习机会，但稳定共享知识只能通过 proposal 和 review 流程改变。
 
-## K8s Incident Flow
+## K8s 故障流程
 
-The K8s incident system reuses the same protocol:
+K8s 故障系统复用同一协议：
 
-1. Scheduled ingest pulls tickets, Feishu messages, docs, postmortems, alerts, and K8s event summaries.
-2. The incident system, whether implemented with Agent SDK or a procedural AI workflow, retrieves context through LLMHTML.
-3. It produces a root-cause hypothesis, evidence summary, suggested runbook, and response text for the Feishu bot.
-4. The run submits an episode.
-5. New patterns or runbook improvements become proposals.
-6. AI review and promotion update shared K8s knowledge and bundles.
+1. Scheduled ingest 定期拉取工单、飞书消息、文档、postmortem、告警和 K8s event 摘要。
+2. 故障系统无论使用 Agent SDK 还是流程化 AI，都先通过 LLMHTML 获取 context。
+3. 系统输出 root-cause hypothesis、evidence summary、suggested runbook，以及给飞书 bot 的回复文本。
+4. 该次分析提交 episode。
+5. 新 pattern 或 runbook 改进提交 proposal。
+6. AI review 和 promotion 更新共享 K8s 知识与 bundles。
 
-The design does not force a choice between Agent SDK and procedural AI orchestration. Both are peer clients of LLMHTML.
+这个设计不强迫你在 Agent SDK 和流程化 AI 调用之间二选一。两者都是 LLMHTML 的 peer client。
 
-## Interfaces
+## 接口
 
 ### File Protocol
 
-Any agent can read stable knowledge and generated bundles from the repository. Temporary repair agents can write only inbox objects by default:
+任意 agent 都可以从仓库读取稳定知识和生成 bundle。临时修复 agent 默认只能写 inbox/outbox 对象：
 
 ```text
 .llmhtml/inbox/episodes/*.json
 .llmhtml/inbox/proposals/*.json
+.llmhtml/outbox/episodes/*.json
+.llmhtml/outbox/proposals/*.json
 ```
 
-Stable objects under `kb/` and `skills/` are written only by reviewer, promoter, or curator roles.
+`kb/` 和 `skills/` 下的稳定对象只由 reviewer、promoter 或 curator 写入。
 
 ### CLI
 
-The CLI is the first implementation surface:
+CLI 是第一实现入口：
 
 ```bash
 llmhtml init
 llmhtml search "claude auth expired" --scope openclaw --json
 llmhtml read known_fix openclaw-auth-expired
 llmhtml repair-context openclaw --logs /path/to/logs --json
+llmhtml bundle fetch openclaw --signature openclaw:claude-auth-expired
 llmhtml episode submit episode.json
 llmhtml propose proposal.json
 llmhtml review --auto
@@ -293,7 +306,7 @@ llmhtml check
 
 ### MCP
 
-MCP should be a thin wrapper over the same core and can be added after the CLI and file protocol are stable:
+MCP 是未来的 thin wrapper，复用同一 core，不重新实现逻辑：
 
 - `search_knowledge`
 - `read_object`
@@ -304,9 +317,11 @@ MCP should be a thin wrapper over the same core and can be added after the CLI a
 - `list_skills`
 - `get_skill`
 
+MCP 不进入 MVP 必做范围，但 file protocol 和 CLI 的设计必须让 MCP 可以自然封装。
+
 ### Agent Environment
 
-Agents should receive these environment variables:
+Agent 启动时应该收到这些环境变量：
 
 ```text
 LLMHTML_ROOT=/path/to/repo-or-bundle
@@ -315,7 +330,7 @@ LLMHTML_MODE=episode_writer
 LLMHTML_SCOPE=team
 ```
 
-Suggested modes:
+建议模式：
 
 - `read_only`
 - `episode_writer`
@@ -323,11 +338,11 @@ Suggested modes:
 - `reviewer`
 - `curator`
 
-## Autonomy And Review
+## 自治与审核
 
-LLMHTML uses D-lite autonomy: simple rules classify risk, an independent reviewer agent checks proposals, and humans intervene only for exceptions.
+LLMHTML 使用 **D-lite autonomy**：简单规则做风险分级，独立 reviewer agent 检查 proposal，人工只处理异常。
 
-The default mode is:
+默认模式：
 
 ```yaml
 autonomy:
@@ -347,64 +362,64 @@ autonomy:
     - reduce_safety_checks
 ```
 
-Low-risk changes can auto-merge:
+低风险变更可以自动合入：
 
 - episode summaries
 - source reference additions
-- typo, tag, and link fixes
+- typo、tag、link 修复
 - personal memory
-- new known fixes kept in `draft` status
+- 新 known fix，但保持 `draft` status
 
-Medium-risk changes can auto-merge after AI reviewer approval:
+中风险变更在 AI reviewer 通过后自动合入：
 
-- new team notes
-- known fixes promoted to `published`
-- small procedure patches
-- skill documentation additions
-- additional successful cases for an existing fault signature
+- 新 team note
+- known fix 晋升到 `published`
+- procedure 小 patch
+- skill 文档补充
+- 给已有 fault signature 增加新的成功案例
 
-High-risk changes enter the human exception queue:
+高风险变更进入 human exception queue：
 
-- deleting or rewriting decisions, procedures, or skills
-- enabling a new default repair skill
-- changing security policy, permissions, runners, or connectors
-- reducing verification requirements
-- touching credentials or production-change rules
-- reviewer confidence below threshold
-- conflict between generator and reviewer
-- failed `llmhtml check` or build
+- 删除或重写 decision、procedure、skill
+- 启用新的默认 repair skill
+- 修改 security policy、permissions、runners、connectors
+- 降低 verification 要求
+- 触及凭据或生产变更规则
+- reviewer confidence 低于阈值
+- generator 与 reviewer 判断冲突
+- `llmhtml check` 或 build 失败
 
-Automatic merge requires:
+自动合入需要满足：
 
-1. provenance: episode id, source URI, log hash, ticket id, or document reference
-2. independent reviewer approval
-3. reviewer confidence above threshold
-4. successful `llmhtml check`
-5. no `manual_required` rule hit
-6. verification and rollback sections for skill or procedure changes
+1. 有 provenance：episode id、source URI、log hash、ticket id 或 document reference
+2. 独立 reviewer approve
+3. reviewer confidence 高于阈值
+4. `llmhtml check` 成功
+5. 没有命中 `manual_required` 规则
+6. skill 或 procedure 变更必须包含 verification 和 rollback 段落
 
-MRs and commits are audit units, not default human approval units. Medium-risk MRs can be created, reviewed by AI, and merged automatically. Humans see only the exception queue with the reason, reviewer judgment, risk rule, and recommended action.
+MR 和 commit 是审计单位，不是默认人工审批单位。中风险 MR 可以由 AI reviewer 评论、打分并自动 merge。人只看 exception queue：卡住原因、reviewer 判断、风险命中规则和推荐动作。
 
-## Scheduling And Triggering
+## 调度与触发
 
-LLMHTML separates event-triggered repair from scheduled knowledge maintenance.
+LLMHTML 区分 event-triggered repair 和 scheduled knowledge maintenance。
 
-### Event Triggers
+### 事件触发
 
-OpenClaw repair should not wait for cron. It is triggered by:
+OpenClaw 修复不应该等待 cron。触发源可以是：
 
-- sandbox health checks
-- monitoring alerts
-- Feishu bot commands
-- manual repair buttons
-- webhooks
-- a polling repair launcher if no event system exists yet
+- sandbox health check
+- monitoring alert
+- 飞书 bot command
+- 人工 repair button
+- webhook
+- 如果暂时没有事件系统，可以用 polling repair launcher
 
-The event starts a repair agent, which retrieves context, repairs, submits an episode, and optionally submits a proposal.
+事件启动 repair agent；agent 获取 context、修复、提交 episode，并按需提交 proposal。
 
-### Scheduled Tasks
+### 定时任务
 
-Scheduled maintenance is declarative:
+定时维护使用声明式配置：
 
 ```yaml
 # .llmhtml/schedules.yaml
@@ -440,7 +455,7 @@ schedules:
     runner: gitlab-ci
 ```
 
-The runner executes CLI tasks:
+Runner 执行 CLI 任务：
 
 ```bash
 llmhtml run ingest --profile openclaw
@@ -450,99 +465,57 @@ llmhtml run curate --profile openclaw
 llmhtml build
 ```
 
-Team MVP should use GitLab Scheduled Pipelines. Personal deployments can use GitHub Actions or local cron. A Hermes runner or `llmhtml-daemon` can be added later for persistent scheduling.
+团队 MVP 默认用 GitLab Scheduled Pipelines。个人部署可用 GitHub Actions 或 local cron。后续可增加 Hermes runner 或 `llmhtml-daemon` 做持久调度。
 
-To avoid write conflicts, write jobs should use a single write lock, such as GitLab `resource_group: llmhtml-write`. Episodes and proposals are independent files, so many agents can submit without editing the same stable object.
+为避免写冲突，写任务应使用单写锁，例如 GitLab `resource_group: llmhtml-write`。Episodes 和 proposals 是独立文件，所以多个 agent 可以并发提交，不需要编辑同一个稳定对象。
 
-## Retrieval And Indexing
+## 检索与索引
 
-The retrieval interface is required, but the MVP implementation should be static generated artifacts:
+检索接口必须存在，但 MVP 物理实现用静态生成产物：
 
 - `.llmhtml/indexes/kb-index.json`
 - `.llmhtml/indexes/search-index.json`
 - `.llmhtml/bundles/openclaw-sandbox.json`
 - `dist/repair-bundles/openclaw-sandbox.json`
+- `dist/repair-bundles/manifest.json`
 
-This is enough for dozens of repair runs per day and a growing number of sandboxes, as long as repair concurrency remains moderate. External search services become useful only when:
+以现在“一天几十次修复、沙箱数量增长但修复并发中等”的规模，静态索引和 bundle 足够。只有出现这些情况才需要外部检索服务：
 
-- objects or episodes grow to very large scale
-- many sandboxes query simultaneously
-- near-real-time search after write is required
-- cross-repository search is needed
-- semantic or vector retrieval becomes important
+- objects 或 episodes 规模很大
+- 很多沙箱同时查询
+- 写入后必须近实时可搜
+- 需要跨多个 repo 统一搜索
+- 需要语义检索或向量召回
 
-External Meilisearch, Typesense, SQLite service, ClickHouse, or vector search should remain Phase 2+ options.
+Meilisearch、Typesense、SQLite service、ClickHouse、vector search 都应保留为 Phase 2+ 选项。
 
-## Hermes Integration
+## Bundle 分发与缓存
 
-Hermes should be a first-class peer client, not the LLMHTML core.
-
-Hermes can act as:
-
-- persistent curator: consolidate duplicate proposals, detect stale skills, suggest cleanup
-- skill consumer: load `skills/**/*.md`
-- memory peer: export relevant Hermes memory changes into LLMHTML episodes or proposals
-- runner: periodically trigger review, promote, curate, and build tasks
-
-This keeps LLMHTML agent-neutral while still allowing Hermes-like self-learning behavior.
-
-## MVP Scope
-
-MVP must include:
-
-- file protocol under `.llmhtml/`, `kb/`, and `skills/`
-- core object schemas for episode, proposal, review, known fix, procedure, skill, and policy
-- CLI for search, read, repair-context, episode submit, propose, review, promote, build, and check
-- OpenClaw repair bundle generation
-- D-lite AI review and automatic promotion
-- static indexes and bundles
-- GitLab scheduled pipeline template
-- HTML inspection output
-
-## MVP Readiness Additions
-
-The architecture above is not enough by itself. To make the MVP operational for real OpenClaw sandboxes, the first version also needs the following practical pieces.
-
-### Agent Identity And Trust
-
-Every submitted episode or proposal must include:
-
-- `agent_id`
-- `agent_type`: temporary repair agent, persistent bot, reviewer, curator, or system ingest
-- `environment_id`: sandbox id, cluster id, or source system id
-- `scope`: personal, project, team, or global
-- `run_id`
-- `submitted_at`
-
-Temporary sandbox agents should not need broad Git credentials. The MVP should support at least one low-friction submission path:
-
-- local file drop when the agent runs in a checkout
-- Git branch or MR submission with a restricted bot token
-- HTTP webhook submission gateway as an optional adapter
-
-The gateway can be small, but the protocol must not assume that every sandbox can push directly to the authority repository.
-
-### Bundle Distribution
-
-Repair agents need a reliable way to fetch the latest context before repair:
+Repair agent 在修复前需要稳定获取最新上下文：
 
 ```bash
 llmhtml bundle fetch openclaw --signature openclaw:claude-auth-expired
 ```
 
-MVP distribution can use GitLab Pages or CI artifacts:
+MVP 可通过 GitLab Pages 或 CI artifacts 分发：
 
 - `dist/repair-bundles/openclaw-sandbox.json`
 - `dist/repair-bundles/openclaw/<signature>.json`
 - `dist/repair-bundles/manifest.json`
 
-The manifest should include bundle version, commit SHA, generated time, compatible CLI version, and checksum. Agents should cache the last known good bundle and fall back to it if the latest bundle cannot be fetched.
+Manifest 应包含：
 
-### Submission Queue And Retry
+- bundle version
+- commit SHA
+- generated time
+- compatible CLI version
+- checksum
 
-Event repair and scheduled promotion are decoupled. A repair run should never fail just because the knowledge repo is temporarily unavailable.
+Agent 应缓存 last-known-good bundle。如果最新 bundle 拉取失败，repair agent 可以 fallback 到本地缓存，不因为知识库短暂不可用而无法修复。
 
-MVP should allow agents to write a local outbox:
+## 提交队列与重试
+
+修复运行不应因为知识库暂时不可用而失败。MVP 支持本地 outbox：
 
 ```text
 .llmhtml/outbox/
@@ -550,73 +523,82 @@ MVP should allow agents to write a local outbox:
   proposals/
 ```
 
-A later sync step can submit these objects. Each object needs an idempotency key so retrying does not create duplicate learning records.
+后续 sync step 再提交这些对象。每个对象需要 idempotency key，避免重试造成重复学习记录。
 
-### Evidence Contract
+临时沙箱 agent 不应该默认拥有宽泛 Git 写权限。MVP 至少支持一种低摩擦提交通道：
 
-Auto-promotion depends on evidence. Proposals should be rejected or kept in draft when they lack evidence.
+- agent 在 checkout 内运行时，直接落本地文件
+- 使用受限 bot token 提交 Git branch 或 MR
+- 可选 HTTP webhook submission gateway
 
-Minimum evidence fields:
+协议不能假设每个沙箱都能直接 push 到权威仓库。
 
-- source URI or log reference
-- hash of the referenced source excerpt or raw object
-- short quoted or summarized evidence excerpt
-- repair result: success, failed, partial, or unknown
-- verification command or verification observation
+## Evidence Contract
 
-For privacy, the evidence excerpt should be redacted before entering Git.
+自动晋升依赖证据。缺少证据的 proposal 应被拒绝或保留为 draft。
 
-### Evaluation And Success Metrics
+最小 evidence 字段：
 
-The MVP needs basic metrics to know whether self-learning is helping:
+- source URI 或 log reference
+- 被引用 source excerpt 或 raw object 的 hash
+- 简短的证据摘录或总结
+- repair result：success、failed、partial、unknown
+- verification command 或 verification observation
+
+出于隐私和合规，证据摘录进入 Git 前必须先脱敏。
+
+## 成功指标
+
+MVP 需要基础指标来判断自学习是否真的提升修复能力：
 
 - repair success rate by problem signature
-- number of repeated failures before and after a known fix
+- 新 known fix 出现前后的重复失败次数
 - average repair duration
 - proposal approval rate
 - reviewer auto-merge rate
 - human exception rate
 - stale or unverified skill count
 
-These can be generated as JSON and rendered in the HTML inspection output. A full dashboard is not required.
+这些指标可以生成 JSON，并渲染到 HTML inspection output。第一版不需要完整 dashboard。
 
-### Cold Start Knowledge
+## Cold Start Seed Pack
 
-The system needs seed content before it can help repair agents. MVP should include a small seed pack:
+系统需要初始知识，否则第一次 `repair-context` 没法帮忙。MVP 应包含一个小 seed pack：
 
-- 5 to 10 common OpenClaw sandbox problem signatures
+- 5 到 10 个常见 OpenClaw sandbox problem signatures
 - baseline diagnostic procedure
 - sandbox safety policy
-- one or two example repair skills
-- one example episode and proposal
+- 1 到 2 个示例 repair skills
+- 1 个示例 episode
+- 1 个示例 proposal
 
-This makes the first `repair-context` useful and gives future agents examples of the expected object shape.
+这既让第一版立刻可用，也给后续 agent 示例化对象格式。
 
-### Conflict Handling
+## 冲突处理
 
-Multiple proposals may touch the same known fix or skill. MVP can use simple conflict rules:
+多个 proposal 可能修改同一个 known fix 或 skill。MVP 使用简单规则：
 
-- episodes never conflict because they are append-only
-- proposals are independent files
-- promotion locks writes through GitLab `resource_group`
-- if two approved proposals patch the same object and the patch fails, the later one returns to the review queue with `conflict`
+- episode 永远不冲突，因为它们是 append-only
+- proposal 是独立文件
+- promotion 通过 GitLab `resource_group` 锁住写入
+- 如果两个已批准 proposal patch 同一对象，后提交者 patch 失败后回到 review queue，状态为 `conflict`
 
-### Reviewer Configuration
+## Reviewer 配置
 
-Reviewer behavior must be configurable:
+Reviewer 行为必须可配置：
 
-- model provider and fallback
+- model provider 和 fallback
 - confidence threshold
 - max proposals per run
 - allowed auto-merge risk levels
 - required checks
 - prompt template version
 
-The review result should record the reviewer model, prompt version, confidence, risk level, and reason.
+Review 结果应记录 reviewer model、prompt version、confidence、risk level 和 reason。
 
-### Safety Boundary For Repair Agents
+## Repair Agent 安全边界
 
-LLMHTML provides repair knowledge; it should not silently grant execution authority. Each repair bundle must include:
+LLMHTML 提供修复知识，但不应该默默扩大执行权限。每个 repair bundle 必须包含：
 
 - allowed action class
 - forbidden operations
@@ -624,19 +606,46 @@ LLMHTML provides repair knowledge; it should not silently grant execution author
 - rollback steps
 - escalation condition
 
-For OpenClaw sandboxes, the MVP can allow repair actions inside the sandbox but should mark production-impacting actions as high risk or out of scope.
+对 OpenClaw 沙箱，MVP 可以允许 sandbox 内修复动作，但任何影响生产系统的动作都应标记为 high risk 或 out of scope。
 
-### Compatibility And Versioning
+## 兼容性与版本
 
-The file protocol needs a version field from the start:
+File protocol 从一开始就需要版本字段：
 
 ```yaml
 protocol_version: 0.1
 ```
 
-Bundles, episodes, proposals, reviews, and skills should record the protocol version they target. This prevents older temporary agents from misreading newer bundle formats.
+Bundles、episodes、proposals、reviews、skills 都应记录其目标 protocol version，避免旧临时 agent 误读新 bundle 格式。
 
-MVP should not include:
+## Hermes 集成
+
+Hermes 应该是 first-class peer client，而不是 LLMHTML core。
+
+Hermes 可以作为：
+
+- persistent curator：合并重复 proposal、发现 stale skills、提出 cleanup
+- skill consumer：加载 `skills/**/*.md`
+- memory peer：把 Hermes memory 变化导出为 LLMHTML episode 或 proposal
+- runner：周期性触发 review、promote、curate、build
+
+这样 LLMHTML 保持 agent-neutral，同时获得 Hermes-like 自学习能力。
+
+## MVP 范围
+
+MVP 必须包含：
+
+- `.llmhtml/`、`kb/`、`skills/` file protocol
+- episode、proposal、review、known fix、procedure、skill、policy 核心 schema
+- CLI：search、read、repair-context、episode submit、propose、review、promote、build、check
+- OpenClaw repair bundle generation
+- D-lite AI review 和 automatic promotion
+- static indexes 和 bundles
+- GitLab scheduled pipeline template
+- HTML inspection output
+- agent identity、bundle distribution、outbox retry、evidence contract、metrics、seed pack、conflict handling、reviewer config、protocol versioning
+
+MVP 不做：
 
 - blockchain
 - external search service
@@ -644,39 +653,46 @@ MVP should not include:
 - complex multi-tenant permissions
 - full MCP server implementation
 - full Hermes runner implementation
-- storing all raw logs in Git
-- fully automatic production-changing actions outside the repair agent's own sandbox authority
+- 把所有 raw logs 存进 Git
+- 在 repair agent 自身沙箱权限之外，自动执行生产变更
 
-## Phasing
+## 分阶段路线
 
-### Phase 0: Reframe Documentation
+### Phase 0：重定文档方向
 
-Update project docs from "self-updating wiki" to "agent knowledge substrate". Keep the existing Markdown-to-HTML idea as the publishing layer.
+把项目文档从 “self-updating wiki” 改成 “agent knowledge substrate”。保留 Markdown-to-HTML 作为发布层。
 
-### Phase 1: OpenClaw Repair Closed Loop
+### Phase 1：OpenClaw 修复闭环
 
-Implement file protocol, CLI, OpenClaw repair context retrieval, episode submission, proposal submission, AI review, promotion, generated bundles, and HTML inspection.
+实现 file protocol、CLI、OpenClaw repair context retrieval、episode submission、proposal submission、AI review、promotion、generated bundles 和 HTML inspection。
 
-### Phase 2: K8s Incident System
+### Phase 2：K8s 故障系统
 
-Add K8s ingest profiles, incident bundles, Feishu bot response workflow, and runbook proposal flow.
+增加 K8s ingest profiles、incident bundles、飞书 bot 响应流程和 runbook proposal flow。
 
-### Phase 3: Thin MCP Server And Hermes Runner
+### Phase 3：Thin MCP Server 与 Hermes Runner
 
-Wrap the stable core with MCP tools and add Hermes as a persistent curator or scheduler.
+用 MCP tools 包装稳定 core，并加入 Hermes 作为 persistent curator 或 scheduler。
 
-### Phase 4: Federation And Scaling
+### Phase 4：Federation 与 Scaling
 
-Support multiple repositories, external search backends, stronger access policies, signed provenance, and cross-team synchronization.
+支持多 repository、外部搜索后端、更强访问策略、signed provenance 和跨团队同步。
 
-## Implementation Planning Inputs
+## 实施计划输入
 
-The following decisions are intentionally fixed for the MVP:
+以下决策在 MVP 中固定：
 
-- Use GitLab as the default team authority layer and GitHub as the default personal authority layer.
-- Use static generated search and bundle artifacts before introducing external indexes.
-- Use AI-reviewed auto-merge with human exceptions.
-- Treat OpenClaw sandbox repair as the first production scenario.
-- Keep K8s incident analysis on the same protocol instead of building a separate knowledge system.
+- 团队权威层默认 GitLab，个人权威层默认 GitHub。
+- 先用静态 search 和 bundle 产物，再引入外部索引。
+- 使用 AI-reviewed auto-merge with human exceptions。
+- OpenClaw 沙箱修复是第一生产场景。
+- K8s 故障定位复用同一协议，不做独立知识系统。
+- Hermes 是 peer client，不是 LLMHTML 内核。
 
-The implementation plan should decide concrete schemas, CLI package boundaries, reviewer prompt templates, and the exact GitLab CI template.
+实施计划需要进一步确定：
+
+- 具体 schema 文件
+- CLI package 边界
+- reviewer prompt templates
+- GitLab CI 模板
+- seed pack 的第一批 OpenClaw problem signatures
