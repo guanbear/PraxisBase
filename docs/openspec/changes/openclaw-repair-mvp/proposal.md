@@ -2,7 +2,7 @@
 
 ## Why
 
-LLMHTML 当前方向必须从 “self-updating wiki” 收束为 “agent knowledge substrate”。第一版需要证明 OpenClaw 沙箱修复 agent 能够：
+PraxisBase 当前方向必须从 “self-updating wiki” 收束为 “agent knowledge substrate”。第一版需要证明 OpenClaw 沙箱修复 agent 能够：
 
 1. 获取最新修复上下文和 skill。
 2. 在沙箱内完成修复。
@@ -14,7 +14,7 @@ LLMHTML 当前方向必须从 “self-updating wiki” 收束为 “agent knowle
 
 ## What Changes
 
-- 新增 `.llmhtml/` file protocol。
+- 新增 `.praxisbase/` file protocol。
 - 新增 episode、proposal、review、known fix、repair bundle 等对象 schema。
 - 新增 CLI：`init`、`repair-context`、`episode submit`、`propose`、`review --auto`、`promote --auto`、`build`、`check`。
 - 新增 OpenClaw repair context 生成能力。
@@ -36,13 +36,13 @@ LLMHTML 当前方向必须从 “self-updating wiki” 收束为 “agent knowle
 
 ## Acceptance Summary
 
-- `llmhtml init` 创建可用的协议骨架和 seed pack。
-- `llmhtml repair-context openclaw --logs <file> --json` 能识别 auth-expired 夹具日志并返回安全 repair bundle。
-- `llmhtml episode submit <file>` 和 `llmhtml propose <file>` 校验对象并写入 inbox。
-- `llmhtml review --auto` 对中低风险 proposal 生成可自动合入 review，对高风险 proposal 标记人工异常。
-- `llmhtml promote --auto` 只晋升 AI reviewer 批准且符合自动合入条件的 proposal。
-- `llmhtml build` 生成静态 bundle、manifest、索引、HTML 和 `llms.txt`。
-- GitLab template 包含 scheduled review/promote/build jobs，并对写任务使用 `resource_group: llmhtml-write`。
+- `praxisbase init` 创建可用的协议骨架和 seed pack。
+- `praxisbase repair-context openclaw --logs <file> --json` 能识别 auth-expired 夹具日志并返回安全 repair bundle。
+- `praxisbase episode submit <file>` 和 `praxisbase propose <file>` 校验对象并写入 inbox。
+- `praxisbase review --auto` 对中低风险 proposal 生成可自动合入 review，对高风险 proposal 标记人工异常。
+- `praxisbase promote --auto` 只晋升 AI reviewer 批准且符合自动合入条件的 proposal。
+- `praxisbase build` 生成静态 bundle、manifest、索引、HTML 和 `llms.txt`。
+- GitLab template 包含 scheduled review/promote/build jobs，并对写任务使用 `resource_group: praxisbase-write`。
 
 ## Guardrails For Implementing Agents
 

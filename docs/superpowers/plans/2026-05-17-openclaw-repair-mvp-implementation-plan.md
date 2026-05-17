@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the Phase 1 LLMHTML MVP: a Git-backed agent knowledge substrate that lets OpenClaw repair agents fetch repair context, submit episodes, propose knowledge updates, run AI-reviewed promotion, and generate static bundles.
+**Goal:** Build the Phase 1 PraxisBase MVP: a Git-backed agent knowledge substrate that lets OpenClaw repair agents fetch repair context, submit episodes, propose knowledge updates, run AI-reviewed promotion, and generate static bundles.
 
-**Architecture:** Implement a TypeScript pnpm monorepo with `@llmhtml/core` for schemas and domain logic, `@llmhtml/cli` for agent and CI entrypoints, and templates/seed data for the file protocol. The MVP is file-first and CLI-first; MCP, external search services, Hermes runner, and K8s runtime integration stay outside this implementation plan.
+**Architecture:** Implement a TypeScript pnpm monorepo with `@praxisbase/core` for schemas and domain logic, `@praxisbase/cli` for agent and CI entrypoints, and templates/seed data for the file protocol. The MVP is file-first and CLI-first; MCP, external search services, Hermes runner, and K8s runtime integration stay outside this implementation plan.
 
 **Tech Stack:** Node.js 20+, TypeScript 5.x, pnpm workspaces, Vitest, Zod, Commander, gray-matter, MiniSearch or a lightweight in-repo search index, GitLab CI templates.
 
@@ -67,10 +67,10 @@ packages/cli/src/commands/build.ts
 packages/cli/src/commands/check.ts
 
 templates/gitlab/.gitlab-ci.yml
-templates/llmhtml/config.yaml
-templates/llmhtml/schedules.yaml
-templates/llmhtml/policies/autonomy.yaml
-templates/llmhtml/policies/risk-rules.yaml
+templates/praxisbase/config.yaml
+templates/praxisbase/schedules.yaml
+templates/praxisbase/policies/autonomy.yaml
+templates/praxisbase/policies/risk-rules.yaml
 templates/skills/openclaw/baseline-diagnostics/SKILL.md
 templates/skills/openclaw/auth-repair/SKILL.md
 
@@ -90,23 +90,23 @@ tests/cli/review-promote.test.ts
 Responsibilities:
 
 - `protocol/*`: object schemas, path conventions, ids, redaction helpers.
-- `store/file-store.ts`: read/write `.llmhtml/`, `kb/`, `skills/`, `dist/` using the protocol.
+- `store/file-store.ts`: read/write `.praxisbase/`, `kb/`, `skills/`, `dist/` using the protocol.
 - `repair/*`: classify OpenClaw logs and construct compact repair context.
 - `review/*`: classify risk and run deterministic MVP review logic with a mockable reviewer provider.
 - `promote/*`: convert approved proposals into stable known-fix/procedure/skill objects.
 - `build/*`: generate static indexes, repair bundles, manifest, and HTML inspection output.
 - `templates/*`: seed protocol files, baseline OpenClaw skills, and GitLab scheduled pipeline.
-- `cli/*`: thin command wrappers over `@llmhtml/core`.
+- `cli/*`: thin command wrappers over `@praxisbase/core`.
 
 ## Milestones
 
 ### Milestone 1: Monorepo And Protocol Schemas
 
-**Acceptance:** `pnpm test` passes schema tests; `llmhtml init` can create the protocol skeleton in a temp directory.
+**Acceptance:** `pnpm test` passes schema tests; `praxisbase init` can create the protocol skeleton in a temp directory.
 
 ### Milestone 2: OpenClaw Repair Context
 
-**Acceptance:** Given an auth-expired fixture log, `llmhtml repair-context openclaw --logs <file> --json` returns a bundle with the expected signature, skill refs, diagnostics, verification, rollback, and forbidden operations.
+**Acceptance:** Given an auth-expired fixture log, `praxisbase repair-context openclaw --logs <file> --json` returns a bundle with the expected signature, skill refs, diagnostics, verification, rollback, and forbidden operations.
 
 ### Milestone 3: Episode And Proposal Intake
 
@@ -118,11 +118,11 @@ Responsibilities:
 
 ### Milestone 5: Static Build And Distribution
 
-**Acceptance:** `llmhtml build` generates `dist/repair-bundles/manifest.json`, scenario bundles, `kb-index.json`, `search-index.json`, `llms.txt`, and an HTML inspection page.
+**Acceptance:** `praxisbase build` generates `dist/repair-bundles/manifest.json`, scenario bundles, `kb-index.json`, `search-index.json`, `llms.txt`, and an HTML inspection page.
 
 ### Milestone 6: GitLab Scheduled Automation
 
-**Acceptance:** Generated GitLab CI template includes scheduled ingest/review/promote/build jobs and a `resource_group: llmhtml-write` lock for write jobs.
+**Acceptance:** Generated GitLab CI template includes scheduled ingest/review/promote/build jobs and a `resource_group: praxisbase-write` lock for write jobs.
 
 ## Task 1: Create Monorepo Scaffold
 
@@ -145,7 +145,7 @@ Write `package.json`:
 
 ```json
 {
-  "name": "llmhtml",
+  "name": "praxisbase",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.0",
@@ -213,7 +213,7 @@ coverage/
 *.secret.*
 kb/.cache/
 kb/.logs/
-.llmhtml/outbox/
+.praxisbase/outbox/
 ```
 
 - [ ] **Step 2: Create core package**
@@ -222,7 +222,7 @@ Write `packages/core/package.json`:
 
 ```json
 {
-  "name": "@llmhtml/core",
+  "name": "@praxisbase/core",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -267,18 +267,18 @@ Write `packages/cli/package.json`:
 
 ```json
 {
-  "name": "@llmhtml/cli",
+  "name": "@praxisbase/cli",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "llmhtml": "./dist/index.js"
+    "praxisbase": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@llmhtml/core": "workspace:*",
+    "@praxisbase/core": "workspace:*",
     "commander": "^12.1.0"
   }
 }
@@ -306,7 +306,7 @@ import { Command } from "commander";
 const program = new Command();
 
 program
-  .name("llmhtml")
+  .name("praxisbase")
   .description("Agent-native knowledge substrate for OpenClaw repair workflows")
   .version("0.1.0");
 
@@ -341,7 +341,7 @@ Expected: typecheck and tests complete successfully. If there are no tests yet, 
 
 ```bash
 git add package.json pnpm-workspace.yaml tsconfig.base.json vitest.config.ts .gitignore packages
-git commit -m "Establish LLMHTML TypeScript workspace"
+git commit -m "Establish PraxisBase TypeScript workspace"
 ```
 
 ## Task 2: Define Protocol Schemas
@@ -455,7 +455,7 @@ describe("protocol schemas", () => {
       risk: "medium",
       confidence: 0.82,
       reasons: ["Evidence references a successful repair episode."],
-      required_checks: ["llmhtml check"],
+      required_checks: ["praxisbase check"],
       created_at: "2026-05-17T10:00:00Z"
     });
 
@@ -664,7 +664,7 @@ Expected: PASS.
 
 ```bash
 git add packages/core/src/protocol tests/core/protocol-schemas.test.ts
-git commit -m "Define LLMHTML protocol schemas"
+git commit -m "Define PraxisBase protocol schemas"
 ```
 
 ## Task 3: Implement File Store And Init Templates
@@ -688,18 +688,18 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { initializeWorkspace } from "../../packages/cli/src/commands/init.js";
 
-describe("llmhtml init", () => {
+describe("praxisbase init", () => {
   it("creates the protocol skeleton and seed content", async () => {
-    const root = await mkdtemp(join(tmpdir(), "llmhtml-init-"));
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-init-"));
 
     await initializeWorkspace(root);
 
-    await expect(stat(join(root, ".llmhtml/config.yaml"))).resolves.toBeTruthy();
-    await expect(stat(join(root, ".llmhtml/policies/autonomy.yaml"))).resolves.toBeTruthy();
+    await expect(stat(join(root, ".praxisbase/config.yaml"))).resolves.toBeTruthy();
+    await expect(stat(join(root, ".praxisbase/policies/autonomy.yaml"))).resolves.toBeTruthy();
     await expect(stat(join(root, "skills/openclaw/auth-repair/SKILL.md"))).resolves.toBeTruthy();
     await expect(stat(join(root, "kb/known-fixes/openclaw-auth-expired.md"))).resolves.toBeTruthy();
 
-    const config = await readFile(join(root, ".llmhtml/config.yaml"), "utf8");
+    const config = await readFile(join(root, ".praxisbase/config.yaml"), "utf8");
     expect(config).toContain("protocol_version: \"0.1\"");
   });
 });
@@ -721,17 +721,17 @@ Write `packages/core/src/protocol/paths.ts`:
 
 ```ts
 export const protocolPaths = {
-  config: ".llmhtml/config.yaml",
-  schedules: ".llmhtml/schedules.yaml",
-  autonomyPolicy: ".llmhtml/policies/autonomy.yaml",
-  riskRules: ".llmhtml/policies/risk-rules.yaml",
-  inboxEpisodes: ".llmhtml/inbox/episodes",
-  inboxProposals: ".llmhtml/inbox/proposals",
-  inboxReviews: ".llmhtml/inbox/reviews",
-  outboxEpisodes: ".llmhtml/outbox/episodes",
-  outboxProposals: ".llmhtml/outbox/proposals",
-  indexes: ".llmhtml/indexes",
-  bundles: ".llmhtml/bundles",
+  config: ".praxisbase/config.yaml",
+  schedules: ".praxisbase/schedules.yaml",
+  autonomyPolicy: ".praxisbase/policies/autonomy.yaml",
+  riskRules: ".praxisbase/policies/risk-rules.yaml",
+  inboxEpisodes: ".praxisbase/inbox/episodes",
+  inboxProposals: ".praxisbase/inbox/proposals",
+  inboxReviews: ".praxisbase/inbox/reviews",
+  outboxEpisodes: ".praxisbase/outbox/episodes",
+  outboxProposals: ".praxisbase/outbox/proposals",
+  indexes: ".praxisbase/indexes",
+  bundles: ".praxisbase/bundles",
   knownFixes: "kb/known-fixes",
   procedures: "kb/procedures",
   notes: "kb/notes",
@@ -748,11 +748,11 @@ Write `packages/core/src/templates/seed.ts`:
 
 ```ts
 export const seedFiles: Record<string, string> = {
-  ".llmhtml/config.yaml": `protocol_version: "0.1"
-name: llmhtml-openclaw-repair
+  ".praxisbase/config.yaml": `protocol_version: "0.1"
+name: praxisbase-openclaw-repair
 default_scope: team
 `,
-  ".llmhtml/schedules.yaml": `schedules:
+  ".praxisbase/schedules.yaml": `schedules:
   - id: review-proposals
     task: review
     mode: auto
@@ -768,7 +768,7 @@ default_scope: team
     cron: "*/30 * * * *"
     runner: gitlab-ci
 `,
-  ".llmhtml/policies/autonomy.yaml": `autonomy:
+  ".praxisbase/policies/autonomy.yaml": `autonomy:
   mode: ai_automerge_with_human_exceptions
   reviewer:
     min_confidence: 0.75
@@ -778,7 +778,7 @@ default_scope: team
     medium: true
     high: false
 `,
-  ".llmhtml/policies/risk-rules.yaml": `human_required_for:
+  ".praxisbase/policies/risk-rules.yaml": `human_required_for:
   - delete
   - rewrite_policy
   - enable_new_default_skill
@@ -872,9 +872,9 @@ Write `packages/cli/src/commands/init.ts`:
 ```ts
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { seedFiles } from "@llmhtml/core";
-import { writeText } from "@llmhtml/core/store/file-store.js";
-import { protocolPaths } from "@llmhtml/core/protocol/paths.js";
+import { seedFiles } from "@praxisbase/core";
+import { writeText } from "@praxisbase/core/store/file-store.js";
+import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 
 export async function initializeWorkspace(root: string): Promise<void> {
   const directories = [
@@ -919,7 +919,7 @@ import { initializeWorkspace } from "./commands/init.js";
 const program = new Command();
 
 program
-  .name("llmhtml")
+  .name("praxisbase")
   .description("Agent-native knowledge substrate for OpenClaw repair workflows")
   .version("0.1.0");
 
@@ -948,7 +948,7 @@ Expected: PASS.
 
 ```bash
 git add packages/core/src packages/cli/src tests/cli/init.test.ts
-git commit -m "Add LLMHTML workspace initialization"
+git commit -m "Add PraxisBase workspace initialization"
 ```
 
 ## Task 4: Build OpenClaw Repair Context
@@ -1112,7 +1112,7 @@ Write `packages/cli/src/commands/repair-context.ts`:
 
 ```ts
 import { readFile } from "node:fs/promises";
-import { buildOpenClawRepairContext } from "@llmhtml/core/repair/context.js";
+import { buildOpenClawRepairContext } from "@praxisbase/core/repair/context.js";
 
 export async function repairContextCommand(scenario: string, options: { logs: string; json?: boolean }): Promise<string> {
   if (scenario !== "openclaw") {
@@ -1258,20 +1258,20 @@ import { submitProposal } from "../../packages/cli/src/commands/propose.js";
 
 describe("episode and proposal intake", () => {
   it("writes a valid episode to inbox", async () => {
-    const root = await mkdtemp(join(tmpdir(), "llmhtml-episode-"));
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-episode-"));
 
     await submitEpisode(root, "tests/fixtures/openclaw/episodes/success.json");
 
-    await expect(stat(join(root, ".llmhtml/inbox/episodes/episode_20260517_abc.json"))).resolves.toBeTruthy();
+    await expect(stat(join(root, ".praxisbase/inbox/episodes/episode_20260517_abc.json"))).resolves.toBeTruthy();
   });
 
   it("writes a valid proposal to inbox", async () => {
-    const root = await mkdtemp(join(tmpdir(), "llmhtml-proposal-"));
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-proposal-"));
 
     await submitProposal(root, "tests/fixtures/openclaw/proposals/known-fix.json");
 
     const stored = await readFile(
-      join(root, ".llmhtml/inbox/proposals/proposal_20260517_known_fix.json"),
+      join(root, ".praxisbase/inbox/proposals/proposal_20260517_known_fix.json"),
       "utf8"
     );
     expect(stored).toContain("openclaw-auth-expired");
@@ -1285,13 +1285,13 @@ Write `packages/cli/src/commands/episode.ts`:
 
 ```ts
 import { readFile } from "node:fs/promises";
-import { EpisodeSchema } from "@llmhtml/core";
-import { writeJson } from "@llmhtml/core/store/file-store.js";
+import { EpisodeSchema } from "@praxisbase/core";
+import { writeJson } from "@praxisbase/core/store/file-store.js";
 
 export async function submitEpisode(root: string, inputPath: string): Promise<void> {
   const raw = JSON.parse(await readFile(inputPath, "utf8"));
   const episode = EpisodeSchema.parse(raw);
-  await writeJson(root, `.llmhtml/inbox/episodes/${episode.id}.json`, episode);
+  await writeJson(root, `.praxisbase/inbox/episodes/${episode.id}.json`, episode);
 }
 ```
 
@@ -1301,13 +1301,13 @@ Write `packages/cli/src/commands/propose.ts`:
 
 ```ts
 import { readFile } from "node:fs/promises";
-import { ProposalSchema } from "@llmhtml/core";
-import { writeJson } from "@llmhtml/core/store/file-store.js";
+import { ProposalSchema } from "@praxisbase/core";
+import { writeJson } from "@praxisbase/core/store/file-store.js";
 
 export async function submitProposal(root: string, inputPath: string): Promise<void> {
   const raw = JSON.parse(await readFile(inputPath, "utf8"));
   const proposal = ProposalSchema.parse(raw);
-  await writeJson(root, `.llmhtml/inbox/proposals/${proposal.id}.json`, proposal);
+  await writeJson(root, `.praxisbase/inbox/proposals/${proposal.id}.json`, proposal);
 }
 ```
 
@@ -1446,7 +1446,7 @@ export function reviewProposal(proposal: Proposal): Review {
       decision === "approve"
         ? ["Evidence and verification are present."]
         : ["Proposal is high risk or lacks evidence required for auto-merge."],
-    required_checks: ["llmhtml check"],
+    required_checks: ["praxisbase check"],
     created_at: new Date().toISOString()
   };
 }
@@ -1465,7 +1465,7 @@ import { promoteApprovedProposal } from "../../packages/core/src/promote/promote
 
 describe("promotion", () => {
   it("writes approved known-fix proposal content into kb", async () => {
-    const root = await mkdtemp(join(tmpdir(), "llmhtml-promote-"));
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-"));
 
     await promoteApprovedProposal(root, {
       proposal: {
@@ -1505,7 +1505,7 @@ describe("promotion", () => {
         risk: "medium",
         confidence: 0.82,
         reasons: ["Evidence exists."],
-        required_checks: ["llmhtml check"],
+        required_checks: ["praxisbase check"],
         created_at: "2026-05-17T10:00:00Z"
       }
     });
@@ -1555,19 +1555,19 @@ Write `packages/cli/src/commands/review.ts`:
 ```ts
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ProposalSchema } from "@llmhtml/core";
-import { reviewProposal } from "@llmhtml/core/review/reviewer.js";
-import { writeJson } from "@llmhtml/core/store/file-store.js";
+import { ProposalSchema } from "@praxisbase/core";
+import { reviewProposal } from "@praxisbase/core/review/reviewer.js";
+import { writeJson } from "@praxisbase/core/store/file-store.js";
 
 export async function reviewAuto(root: string): Promise<void> {
-  const proposalDir = join(root, ".llmhtml/inbox/proposals");
+  const proposalDir = join(root, ".praxisbase/inbox/proposals");
   const files = await readdir(proposalDir).catch(() => []);
 
   for (const file of files.filter((name) => name.endsWith(".json"))) {
     const raw = JSON.parse(await readFile(join(proposalDir, file), "utf8"));
     const proposal = ProposalSchema.parse(raw);
     const review = reviewProposal(proposal);
-    await writeJson(root, `.llmhtml/inbox/reviews/${review.id}.json`, review);
+    await writeJson(root, `.praxisbase/inbox/reviews/${review.id}.json`, review);
   }
 }
 ```
@@ -1577,13 +1577,13 @@ Write `packages/cli/src/commands/promote.ts`:
 ```ts
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ProposalSchema, ReviewSchema } from "@llmhtml/core";
-import { promoteApprovedProposal } from "@llmhtml/core/promote/promote.js";
-import { shouldAutoMergeReview } from "@llmhtml/core/review/risk.js";
+import { ProposalSchema, ReviewSchema } from "@praxisbase/core";
+import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
+import { shouldAutoMergeReview } from "@praxisbase/core/review/risk.js";
 
 export async function promoteAuto(root: string): Promise<void> {
-  const proposalDir = join(root, ".llmhtml/inbox/proposals");
-  const reviewDir = join(root, ".llmhtml/inbox/reviews");
+  const proposalDir = join(root, ".praxisbase/inbox/proposals");
+  const reviewDir = join(root, ".praxisbase/inbox/reviews");
   const proposalFiles = await readdir(proposalDir).catch(() => []);
   const reviewFiles = await readdir(reviewDir).catch(() => []);
 
@@ -1659,7 +1659,7 @@ import { buildStaticArtifacts } from "../../packages/core/src/build/build.js";
 
 describe("static build", () => {
   it("generates repair bundles, indexes, manifest, llms.txt, and HTML", async () => {
-    const root = await mkdtemp(join(tmpdir(), "llmhtml-build-"));
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-build-"));
     await initializeWorkspace(root);
 
     await buildStaticArtifacts(root);
@@ -1756,12 +1756,12 @@ export async function buildStaticArtifacts(root: string): Promise<void> {
     protocol_version: "0.1",
     documents: knownFix ? [{ id: "openclaw-auth-expired", text: knownFix }] : []
   });
-  await writeText(root, "dist/llms.txt", "# LLMHTML\n\n- OpenClaw repair bundle: /repair-bundles/openclaw-sandbox.json\n");
+  await writeText(root, "dist/llms.txt", "# PraxisBase\n\n- OpenClaw repair bundle: /repair-bundles/openclaw-sandbox.json\n");
   await writeText(
     root,
     "dist/index.html",
     renderInspectionHtml({
-      title: "LLMHTML OpenClaw Repair MVP",
+      title: "PraxisBase OpenClaw Repair MVP",
       body: "<p>Static inspection output for repair knowledge.</p>"
     })
   );
@@ -1783,7 +1783,7 @@ Expected: PASS.
 Write `packages/cli/src/commands/build.ts`:
 
 ```ts
-import { buildStaticArtifacts } from "@llmhtml/core/build/build.js";
+import { buildStaticArtifacts } from "@praxisbase/core/build/build.js";
 
 export async function buildCommand(root: string): Promise<void> {
   await buildStaticArtifacts(root);
@@ -1796,7 +1796,7 @@ Write `packages/cli/src/commands/check.ts`:
 import { stat } from "node:fs/promises";
 
 export async function checkCommand(root: string): Promise<void> {
-  const required = [".llmhtml/config.yaml", "skills/openclaw/baseline-diagnostics/SKILL.md"];
+  const required = [".praxisbase/config.yaml", "skills/openclaw/baseline-diagnostics/SKILL.md"];
   for (const path of required) {
     await stat(`${root}/${path}`);
   }
@@ -1835,49 +1835,49 @@ Write `templates/gitlab/.gitlab-ci.yml`:
 ```yaml
 variables:
   NODE_IMAGE: node:20-alpine
-  LLMHTML_ROOT: $CI_PROJECT_DIR
+  PRAXISBASE_ROOT: $CI_PROJECT_DIR
 
 stages:
   - review
   - promote
   - build
 
-.llmhtml-node:
+.praxisbase-node:
   image: $NODE_IMAGE
   before_script:
     - corepack enable
     - pnpm install --frozen-lockfile
 
-llmhtml:review:
-  extends: .llmhtml-node
+praxisbase:review:
+  extends: .praxisbase-node
   stage: review
-  resource_group: llmhtml-write
+  resource_group: praxisbase-write
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" && $LLMHTML_TASK == "review"
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "review"
   script:
-    - pnpm --filter @llmhtml/cli build
-    - pnpm exec llmhtml review --auto
+    - pnpm --filter @praxisbase/cli build
+    - pnpm exec praxisbase review --auto
 
-llmhtml:promote:
-  extends: .llmhtml-node
+praxisbase:promote:
+  extends: .praxisbase-node
   stage: promote
-  resource_group: llmhtml-write
+  resource_group: praxisbase-write
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" && $LLMHTML_TASK == "promote"
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "promote"
   script:
-    - pnpm --filter @llmhtml/cli build
-    - pnpm exec llmhtml promote --auto
-    - pnpm exec llmhtml check
+    - pnpm --filter @praxisbase/cli build
+    - pnpm exec praxisbase promote --auto
+    - pnpm exec praxisbase check
 
-llmhtml:build:
-  extends: .llmhtml-node
+praxisbase:build:
+  extends: .praxisbase-node
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" && $LLMHTML_TASK == "build"
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "build"
     - if: $CI_COMMIT_BRANCH == "main"
   script:
-    - pnpm --filter @llmhtml/cli build
-    - pnpm exec llmhtml build
+    - pnpm --filter @praxisbase/cli build
+    - pnpm exec praxisbase build
   artifacts:
     paths:
       - dist/
@@ -1889,7 +1889,7 @@ llmhtml:build:
 Run:
 
 ```bash
-rg "resource_group: llmhtml-write" templates/gitlab/.gitlab-ci.yml
+rg "resource_group: praxisbase-write" templates/gitlab/.gitlab-ci.yml
 ```
 
 Expected: at least two matches for review and promote jobs.
@@ -1898,7 +1898,7 @@ Expected: at least two matches for review and promote jobs.
 
 ```bash
 git add templates/gitlab/.gitlab-ci.yml
-git commit -m "Add GitLab schedules for LLMHTML automation"
+git commit -m "Add GitLab schedules for PraxisBase automation"
 ```
 
 ## Final Verification
@@ -1916,7 +1916,7 @@ Expected: PASS.
 ```bash
 repo=$(pwd)
 tmpdir=$(mktemp -d)
-pnpm --filter @llmhtml/cli build
+pnpm --filter @praxisbase/cli build
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" init)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" repair-context openclaw --logs "$repo/tests/fixtures/openclaw/logs/claude-auth-expired.log" --json)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" build)

@@ -2,13 +2,21 @@
 
 ## Project Essence
 
-The project is not a normal wiki and not a single master agent. It is a durable memory and skill substrate for disposable agents.
+**PraxisBase / 知行基座** is not a normal wiki and not a single master agent. It is a durable memory and skill substrate for disposable agents.
 
 The core idea:
 
 > Agents and sandboxes are cattle. Repair knowledge, skills, episodes, reviews, and bundles are the durable memory.
 
-## What The Name Should Express
+## Final Name
+
+- English: **PraxisBase**
+- Chinese: **知行基座**
+- Tagline: **Shared knowledge, skills, and repair memory for autonomous agents.**
+
+Praxis means action informed by knowledge. Base gives the name an infrastructure shape: this is the shared layer beneath many temporary and persistent agents, not a single bot. 知行基座 keeps the same meaning in Chinese: agents learn from action, act from knowledge, and leave reusable experience behind.
+
+## What The Name Expresses
 
 - Temporary and persistent agents are peer clients.
 - Agents can disappear after one task, but their useful experience survives.
@@ -41,7 +49,7 @@ The core idea:
 - Mesh: good concept, but direct names like MemoryMesh/WikiMesh/MeshWiki have collision risk.
 - Evo: good concept, but EvoWiki is already close to an LLM benchmark and historical wiki usage.
 
-## Naming Directions
+## Previous Candidate Directions
 
 ### Durable Memory
 
@@ -71,7 +79,7 @@ The core idea:
 - ReflexRunbook / 反射手册
 - OpsMemory / 运维记忆
 
-## Current Favorite Directions
+## Previous Shortlist
 
 1. **ReflexMemory / 反射记忆**
 

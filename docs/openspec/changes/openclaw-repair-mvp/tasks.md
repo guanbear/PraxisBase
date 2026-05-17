@@ -2,10 +2,10 @@
 
 - [ ] Create TypeScript pnpm monorepo scaffold.
 - [ ] Define protocol schemas and schema tests.
-- [ ] Implement file store and `llmhtml init`.
+- [ ] Implement file store and `praxisbase init`.
 - [ ] Add OpenClaw seed skills and known fix.
 - [ ] Implement OpenClaw log signature detection.
-- [ ] Implement `llmhtml repair-context openclaw --logs <file> --json`.
+- [ ] Implement `praxisbase repair-context openclaw --logs <file> --json`.
 - [ ] Implement episode intake and proposal intake.
 - [ ] Implement deterministic MVP reviewer and risk classifier.
 - [ ] Implement promotion for approved proposals.
@@ -26,7 +26,7 @@ The final branch must also pass a local smoke flow:
 ```bash
 repo=$(pwd)
 tmpdir=$(mktemp -d)
-pnpm --filter @llmhtml/cli build
+pnpm --filter @praxisbase/cli build
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" init)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" repair-context openclaw --logs "$repo/tests/fixtures/openclaw/logs/claude-auth-expired.log" --json)
 (cd "$tmpdir" && node "$repo/packages/cli/dist/index.js" build)

@@ -2,20 +2,20 @@
 
 ## Overview
 
-This change builds the first executable LLMHTML slice: OpenClaw sandbox repair as an agent knowledge substrate. The system is file-first and CLI-first. Agents interact through generated bundles and inbox/outbox files; CI and reviewer agents process proposals into stable Git-backed knowledge.
+This change builds the first executable PraxisBase slice: OpenClaw sandbox repair as an agent knowledge substrate. The system is file-first and CLI-first. Agents interact through generated bundles and inbox/outbox files; CI and reviewer agents process proposals into stable Git-backed knowledge.
 
 ## Runtime Flow
 
 ```text
 OpenClaw sandbox issue
   -> repair agent starts
-  -> llmhtml repair-context openclaw --logs ...
+  -> praxisbase repair-context openclaw --logs ...
   -> agent repairs and verifies inside sandbox
-  -> llmhtml episode submit episode.json
-  -> llmhtml propose proposal.json
-  -> scheduled llmhtml review --auto
-  -> scheduled llmhtml promote --auto
-  -> llmhtml build regenerates bundles
+  -> praxisbase episode submit episode.json
+  -> praxisbase propose proposal.json
+  -> scheduled praxisbase review --auto
+  -> scheduled praxisbase promote --auto
+  -> praxisbase build regenerates bundles
   -> next agent fetches improved context
 ```
 
@@ -23,10 +23,10 @@ OpenClaw sandbox issue
 
 | Surface | Purpose |
 | --- | --- |
-| `.llmhtml/inbox/episodes` | Validated submitted repair episodes |
-| `.llmhtml/inbox/proposals` | Validated submitted knowledge proposals |
-| `.llmhtml/inbox/reviews` | AI reviewer decisions |
-| `.llmhtml/outbox` | Local retry queue when authority repo is unavailable |
+| `.praxisbase/inbox/episodes` | Validated submitted repair episodes |
+| `.praxisbase/inbox/proposals` | Validated submitted knowledge proposals |
+| `.praxisbase/inbox/reviews` | AI reviewer decisions |
+| `.praxisbase/outbox` | Local retry queue when authority repo is unavailable |
 | `kb/known-fixes` | Reviewed stable known fixes |
 | `kb/procedures` | Reviewed stable procedures |
 | `skills/openclaw` | Agent-facing repair skills |
@@ -109,7 +109,7 @@ The manifest includes protocol version, bundle path, checksum, generated time, c
 ## Failure Handling
 
 - If bundle fetch fails, agents use last-known-good cache.
-- If episode/proposal submission fails, agents write to `.llmhtml/outbox`.
+- If episode/proposal submission fails, agents write to `.praxisbase/outbox`.
 - If promotion patch conflicts, proposal returns to review queue with status `conflict`.
 - If review confidence is below threshold, proposal enters human exception queue.
 

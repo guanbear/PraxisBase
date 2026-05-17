@@ -9,8 +9,8 @@ The system shall initialize an agent knowledge substrate workspace for OpenClaw 
 #### Scenario: Initialize a new workspace
 
 - **GIVEN** an empty directory
-- **WHEN** the user runs `llmhtml init`
-- **THEN** the system creates `.llmhtml/`, `kb/`, `skills/`, and `dist/` protocol directories
+- **WHEN** the user runs `praxisbase init`
+- **THEN** the system creates `.praxisbase/`, `kb/`, `skills/`, and `dist/` protocol directories
 - **AND** creates OpenClaw seed skills and a draft auth-expired known fix
 - **AND** writes `protocol_version: "0.1"` into protocol configuration
 
@@ -21,7 +21,7 @@ The system shall return a compact repair context for OpenClaw sandbox repair age
 #### Scenario: Auth expired log
 
 - **GIVEN** a log containing `authentication expired` or `401 unauthorized`
-- **WHEN** the agent runs `llmhtml repair-context openclaw --logs <file> --json`
+- **WHEN** the agent runs `praxisbase repair-context openclaw --logs <file> --json`
 - **THEN** the response includes `problem_signature: "openclaw:claude-auth-expired"`
 - **AND** includes auth repair skill references
 - **AND** includes forbidden operations, verification steps, rollback steps, and escalation conditions
@@ -33,14 +33,14 @@ The system shall accept structured repair episodes from temporary and persistent
 #### Scenario: Submit valid episode
 
 - **GIVEN** a valid episode JSON with identity, scope, source refs, result, and idempotency key
-- **WHEN** the agent runs `llmhtml episode submit <file>`
+- **WHEN** the agent runs `praxisbase episode submit <file>`
 - **THEN** the system validates the episode
-- **AND** writes it to `.llmhtml/inbox/episodes/<episode-id>.json`
+- **AND** writes it to `.praxisbase/inbox/episodes/<episode-id>.json`
 
 #### Scenario: Reject episode without provenance
 
 - **GIVEN** an episode JSON with no `source_refs`
-- **WHEN** the agent runs `llmhtml episode submit <file>`
+- **WHEN** the agent runs `praxisbase episode submit <file>`
 - **THEN** the command fails with a machine-readable validation error
 - **AND** no inbox episode file is written
 
@@ -51,14 +51,14 @@ The system shall accept knowledge update proposals with evidence.
 #### Scenario: Submit valid known-fix proposal
 
 - **GIVEN** a proposal JSON with evidence source URI, source hash, repair result, and verification observation
-- **WHEN** the agent runs `llmhtml propose <file>`
+- **WHEN** the agent runs `praxisbase propose <file>`
 - **THEN** the system validates the proposal
-- **AND** writes it to `.llmhtml/inbox/proposals/<proposal-id>.json`
+- **AND** writes it to `.praxisbase/inbox/proposals/<proposal-id>.json`
 
 #### Scenario: Reject proposal without evidence
 
 - **GIVEN** a proposal JSON missing evidence source hash
-- **WHEN** the agent runs `llmhtml propose <file>`
+- **WHEN** the agent runs `praxisbase propose <file>`
 - **THEN** the command fails with a machine-readable validation error
 - **AND** no inbox proposal file is written
 
@@ -70,7 +70,7 @@ The system shall allow routine knowledge improvements to be reviewed and promote
 
 - **GIVEN** a valid create proposal for `target_type: "known_fix"`
 - **AND** the proposal contains evidence and verification
-- **WHEN** `llmhtml review --auto` runs
+- **WHEN** `praxisbase review --auto` runs
 - **THEN** the review decision is `approve`
 - **AND** risk is `medium`
 - **AND** confidence is at least `0.75`
@@ -78,7 +78,7 @@ The system shall allow routine knowledge improvements to be reviewed and promote
 #### Scenario: High-risk policy proposal
 
 - **GIVEN** a valid patch proposal for `target_type: "policy"`
-- **WHEN** `llmhtml review --auto` runs
+- **WHEN** `praxisbase review --auto` runs
 - **THEN** the review decision is `needs_human`
 - **AND** the proposal is not promoted automatically
 
@@ -90,13 +90,13 @@ The system shall only promote approved proposals into stable knowledge paths.
 
 - **GIVEN** an approved review for a medium-risk proposal
 - **AND** the proposal patch path starts with `kb/` or `skills/`
-- **WHEN** `llmhtml promote --auto` runs
+- **WHEN** `praxisbase promote --auto` runs
 - **THEN** the patch content is written to the stable knowledge path
 
 #### Scenario: Reject unsafe patch path
 
 - **GIVEN** an approved proposal with patch path `../outside.md`
-- **WHEN** `llmhtml promote --auto` runs
+- **WHEN** `praxisbase promote --auto` runs
 - **THEN** promotion fails
 - **AND** no file outside the workspace is written
 
@@ -107,7 +107,7 @@ The system shall build static artifacts for repair agents.
 #### Scenario: Build static artifacts
 
 - **GIVEN** an initialized workspace
-- **WHEN** `llmhtml build` runs
+- **WHEN** `praxisbase build` runs
 - **THEN** the system writes `dist/repair-bundles/manifest.json`
 - **AND** writes `dist/repair-bundles/openclaw-sandbox.json`
 - **AND** writes `dist/kb-index.json`, `dist/search-index.json`, `dist/llms.txt`, and `dist/index.html`
@@ -120,5 +120,5 @@ The system shall provide a GitLab CI template for scheduled review, promotion, a
 
 - **GIVEN** the generated GitLab CI template
 - **WHEN** another agent reviews the template
-- **THEN** review and promote jobs include `resource_group: llmhtml-write`
+- **THEN** review and promote jobs include `resource_group: praxisbase-write`
 - **AND** build artifacts include `dist/`
