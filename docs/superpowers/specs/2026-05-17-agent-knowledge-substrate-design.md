@@ -15,11 +15,30 @@ LLMHTML 不应该只是一个自更新 wiki，而应该成为一个 **agent-nati
 ## 设计原则
 
 - **Agent 是平级节点。** 临时修复 agent、持久 OpenClaw 机器人、飞书机器人、Hermes runner、K8s 分析系统都使用同一套读写协议。
+- **Agent 和沙箱是 cattle，不是 pets。** 临时 agent、持久 agent harness、OpenClaw 沙箱都应该可替换、可重启、可丢弃；不能把组织记忆绑在某个不可丢的容器或会话里。
+- **持久的是经验，不是执行体。** Episode、proposal、review、known fix、procedure、skill 和 repair bundle 才是要长期保存和演进的资产。
+- **Skill 是可进化资产。** 系统不只保存知识，还要能像 Hermes 一样从重复成功的 episode 中总结出可复用 `SKILL.md`，让后续 agent 直接加载。
 - **人工只处理异常。** 常规审核和知识晋升由 AI reviewer agent 完成；人只看高风险、不确定或验证失败的项。
 - **Git 是权威层，不是完整运行时。** Git 存稳定知识、审计历史、review 记录和发布产物；原始日志和高容量数据可以继续留在外部系统。
 - **MVP 使用静态索引和 bundle。** 外部搜索服务、向量库、队列、daemon 都是后续扩展，不是第一版前置条件。
 - **大日志不进 Git。** Git 里只保存摘要、source URI、hash、provenance；完整日志继续放现有日志平台或对象存储。
 - **OpenClaw 修复是第一证明场景。** K8s 故障定位复用同一对象模型和接口。
+
+## 与 Anthropic Managed Agents 思想的关系
+
+Anthropic 在 Managed Agents 架构中强调把 agent 拆成可替换的接口：session 是持久事件日志，harness/brain 负责调用模型和组织上下文，sandbox/hands 负责执行动作。这样 harness 和 sandbox 都可以像 cattle 一样失败、重启或替换，而不会丢失 session。
+
+LLMHTML 采用同一个分离思想，但切入点更偏组织级学习：
+
+| Anthropic Managed Agents | LLMHTML |
+| --- | --- |
+| session log 持久化一次 agent run | episode/proposal/review 持久化很多 agent runs |
+| harness/brain 可以重启 | 临时和持久 agent 都是可替换 peer clients |
+| sandbox/hands 是 cattle | OpenClaw 沙箱和 repair agent 都是 cattle |
+| brain 通过接口调用 hands | agent 通过 file/CLI/future MCP 调用知识底座 |
+| 解决长任务 agent 的可靠性 | 解决多 agent 的共享学习和经验晋升 |
+
+因此，LLMHTML 可以理解为 **cattle-not-pets agent 架构中的持久经验层**：执行体可以消失，但修复经验、技能和决策会留下来，经过 AI review 后进入下一批 agent 的上下文。
 
 ## 总体架构
 
@@ -214,6 +233,8 @@ Procedure 是更长的诊断或修复流程，可以引用 known fixes 和 skill
 ### Skill
 
 Skill 是 agent-facing instruction document。它应该说明什么时候使用、需要什么上下文、可执行命令、验证方式和回滚方式。
+
+Skill 不应该只靠人工手写。系统应支持从多次 episode 和 known fix 中自动提出 skill proposal：把重复的诊断步骤、修复命令、验证方式、回滚方式和禁用操作总结成 `SKILL.md`。这些 skill proposal 走同一套 review/promote 流程；只有通过 AI reviewer 和 risk policy 后，才进入 `skills/` 并出现在后续 repair bundle 中。
 
 ### Proposal
 
@@ -627,9 +648,45 @@ Hermes 可以作为：
 - persistent curator：合并重复 proposal、发现 stale skills、提出 cleanup
 - skill consumer：加载 `skills/**/*.md`
 - memory peer：把 Hermes memory 变化导出为 LLMHTML episode 或 proposal
+- skill synthesizer：把复杂任务或重复成功修复总结成本地 `SKILL.md`，再提交为 LLMHTML skill proposal
 - runner：周期性触发 review、promote、curate、build
 
 这样 LLMHTML 保持 agent-neutral，同时获得 Hermes-like 自学习能力。
+
+边界要明确：
+
+- Hermes 可以让第一版 skill synthesis 更快出现，因为它已有 agent-managed skills、persistent memory 和 curator。
+- Hermes 生成或维护的 skill 不能直接绕过 LLMHTML 的 evidence/review/promote 流程进入团队共享层。
+- LLMHTML 的 file protocol、CLI、future MCP wrapper 必须继续支持非 Hermes agent。
+- 团队共享 skill registry 的 source of truth 仍然是 LLMHTML/Git，而不是某个 Hermes 本地目录。
+
+## Skill 自总结与复用
+
+除了沉淀 known fix 和 procedure，LLMHTML 还需要一条 **skill synthesis loop**：
+
+```text
+episodes -> pattern clustering -> skill draft proposal -> AI review -> promote to skills/ -> bundle includes skill -> next agent reuses it
+```
+
+触发条件可以是：
+
+- 同一 problem signature 多次修复成功
+- 多个 episode 重复出现相同诊断命令或验证步骤
+- reviewer/curator 发现某个 known fix 已经足够稳定
+- 持久 OpenClaw bot 或 Hermes curator 主动提出 skill draft
+
+Skill proposal 必须包含：
+
+- 使用条件
+- 需要的上下文
+- 操作步骤
+- 禁用操作
+- verification
+- rollback
+- evidence refs
+- 适用范围和风险等级
+
+Phase 1 只实现 skill 作为稳定对象和 proposal/promotion 目标；完整自动总结 skill 放在 Phase 2。这样 MVP 不跑偏，但协议从第一天就支持 Hermes-like skill evolution。
 
 ## MVP 范围
 
@@ -669,6 +726,8 @@ MVP 不做：
 ### Phase 2：K8s 故障系统
 
 增加 K8s ingest profiles、incident bundles、飞书 bot 响应流程和 runbook proposal flow。
+
+同时加入 Hermes-like skill synthesis：从重复成功的 OpenClaw/K8s episodes 中自动生成 `SKILL.md` proposal，经过 AI review 后进入 `skills/` 并被后续 agent 复用。
 
 ### Phase 3：Thin MCP Server 与 Hermes Runner
 
