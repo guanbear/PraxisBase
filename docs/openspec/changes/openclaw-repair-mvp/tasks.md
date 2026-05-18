@@ -1,18 +1,18 @@
 # OpenClaw Repair MVP Tasks
 
-- [ ] Create TypeScript pnpm monorepo scaffold.
-- [ ] Define protocol schemas and schema tests.
-- [ ] Implement file store and `praxisbase init`.
-- [ ] Add OpenClaw seed skills and known fix.
-- [ ] Implement OpenClaw log signature detection.
-- [ ] Implement `praxisbase repair-context openclaw --logs <file> --json`.
-- [ ] Implement episode intake and proposal intake.
-- [ ] Implement deterministic MVP reviewer and risk classifier.
-- [ ] Implement promotion for approved proposals.
-- [ ] Implement static build for bundles, indexes, HTML, and `llms.txt`.
-- [ ] Implement `praxisbase bundle fetch` with last-known-good cache fallback.
-- [ ] Add GitLab scheduled pipeline template.
-- [ ] Run full verification with `pnpm check` and local smoke flow.
+- [x] Create TypeScript pnpm monorepo scaffold.
+- [x] Define protocol schemas and schema tests.
+- [x] Implement file store and `praxisbase init`.
+- [x] Add OpenClaw seed skills and known fix.
+- [x] Implement OpenClaw log signature detection.
+- [x] Implement `praxisbase repair-context openclaw --logs <file> --json`.
+- [x] Implement episode intake and proposal intake.
+- [x] Implement deterministic MVP reviewer and risk classifier.
+- [x] Implement promotion for approved proposals.
+- [x] Implement static build for bundles, indexes, HTML, and `llms.txt`.
+- [x] Implement `praxisbase bundle fetch` with last-known-good cache fallback.
+- [x] Add GitLab scheduled pipeline template.
+- [x] Run full verification with `pnpm check` and local smoke flow.
 
 ## Required Verification
 

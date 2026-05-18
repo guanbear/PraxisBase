@@ -1,0 +1,18 @@
+{
+  "id": "episode_20260517_abc",
+  "protocol_version": "0.1",
+  "type": "repair_episode",
+  "scope": "team",
+  "agent_id": "openclaw-temp-xyz",
+  "agent_type": "temporary_repair_agent",
+  "environment_id": "sandbox-123",
+  "run_id": "run-456",
+  "idempotency_key": "episode_20260517_abc",
+  "problem_signature": "openclaw:claude-auth-expired",
+  "result": "success",
+  "used_skills": ["skills/openclaw/auth-repair/SKILL.md"],
+  "used_objects": ["kb/known-fixes/openclaw-auth-expired.md"],
+  "source_refs": ["log://openclaw/sandbox-123/run-456"],
+  "summary": "Refreshed auth state and restarted the session.",
+  "created_at": "2026-05-17T10:00:00Z"
+}

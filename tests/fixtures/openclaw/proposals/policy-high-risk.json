@@ -1,0 +1,26 @@
+{
+  "id": "proposal_20260517_policy_high",
+  "protocol_version": "0.1",
+  "type": "knowledge_proposal",
+  "scope": "team",
+  "action": "patch",
+  "target_type": "policy",
+  "target_id": "autonomy-policy",
+  "agent_id": "openclaw-temp-xyz",
+  "agent_type": "temporary_repair_agent",
+  "environment_id": "sandbox-123",
+  "run_id": "run-456",
+  "idempotency_key": "proposal_20260517_policy_high",
+  "evidence": {
+    "source_uri": "log://openclaw/sandbox-123/run-456",
+    "source_hash": "sha256:def",
+    "excerpt": "Policy change needed.",
+    "repair_result": "success",
+    "verification": "Policy applied."
+  },
+  "patch": {
+    "path": "kb/policies/autonomy.md",
+    "content": "# Updated policy\n"
+  },
+  "created_at": "2026-05-17T10:00:00Z"
+}

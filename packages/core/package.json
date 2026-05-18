@@ -1,0 +1,75 @@
+{
+  "name": "@praxisbase/core",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./protocol/types.js": {
+      "types": "./src/protocol/types.ts",
+      "default": "./dist/protocol/types.js"
+    },
+    "./protocol/schemas.js": {
+      "types": "./src/protocol/schemas.ts",
+      "default": "./dist/protocol/schemas.js"
+    },
+    "./protocol/paths.js": {
+      "types": "./src/protocol/paths.ts",
+      "default": "./dist/protocol/paths.js"
+    },
+    "./protocol/id.js": {
+      "types": "./src/protocol/id.ts",
+      "default": "./dist/protocol/id.js"
+    },
+    "./store/file-store.js": {
+      "types": "./src/store/file-store.ts",
+      "default": "./dist/store/file-store.js"
+    },
+    "./templates/seed.js": {
+      "types": "./src/templates/seed.ts",
+      "default": "./dist/templates/seed.js"
+    },
+    "./repair/signature.js": {
+      "types": "./src/repair/signature.ts",
+      "default": "./dist/repair/signature.js"
+    },
+    "./repair/context.js": {
+      "types": "./src/repair/context.ts",
+      "default": "./dist/repair/context.js"
+    },
+    "./review/risk.js": {
+      "types": "./src/review/risk.ts",
+      "default": "./dist/review/risk.js"
+    },
+    "./review/reviewer.js": {
+      "types": "./src/review/reviewer.ts",
+      "default": "./dist/review/reviewer.js"
+    },
+    "./promote/promote.js": {
+      "types": "./src/promote/promote.ts",
+      "default": "./dist/promote/promote.js"
+    },
+    "./build/build.js": {
+      "types": "./src/build/build.ts",
+      "default": "./dist/build/build.js"
+    },
+    "./build/html.js": {
+      "types": "./src/build/html.ts",
+      "default": "./dist/build/html.js"
+    },
+    "./bundles/fetch.js": {
+      "types": "./src/bundles/fetch.ts",
+      "default": "./dist/bundles/fetch.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {}
+}

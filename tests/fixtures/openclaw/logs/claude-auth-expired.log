@@ -1,0 +1,4 @@
+2026-05-17T10:00:00Z openclaw session failed
+Claude Code error: authentication expired
+Model gateway call returned 401 unauthorized
+Please refresh credentials and retry.

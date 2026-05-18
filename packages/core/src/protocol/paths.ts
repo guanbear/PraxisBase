@@ -1,0 +1,22 @@
+export const protocolPaths = {
+  config: ".praxisbase/config.yaml",
+  schedules: ".praxisbase/schedules.yaml",
+  autonomyPolicy: ".praxisbase/policies/autonomy.yaml",
+  riskRules: ".praxisbase/policies/risk-rules.yaml",
+  inboxEpisodes: ".praxisbase/inbox/episodes",
+  inboxProposals: ".praxisbase/inbox/proposals",
+  inboxReviews: ".praxisbase/inbox/reviews",
+  outboxEpisodes: ".praxisbase/outbox/episodes",
+  outboxProposals: ".praxisbase/outbox/proposals",
+  indexes: ".praxisbase/indexes",
+  bundles: ".praxisbase/bundles",
+  cache: ".praxisbase/cache",
+  knownFixes: "kb/known-fixes",
+  procedures: "kb/procedures",
+  notes: "kb/notes",
+  memory: "kb/memory",
+  sources: "kb/sources",
+  skillsOpenClaw: "skills/openclaw",
+  dist: "dist",
+  distRepairBundles: "dist/repair-bundles"
+} as const;

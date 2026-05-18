@@ -1,0 +1,58 @@
+{
+  "name": "@praxisbase/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./commands/init.js": {
+      "types": "./src/commands/init.ts",
+      "default": "./dist/commands/init.js"
+    },
+    "./commands/episode.js": {
+      "types": "./src/commands/episode.ts",
+      "default": "./dist/commands/episode.js"
+    },
+    "./commands/propose.js": {
+      "types": "./src/commands/propose.ts",
+      "default": "./dist/commands/propose.js"
+    },
+    "./commands/repair-context.js": {
+      "types": "./src/commands/repair-context.ts",
+      "default": "./dist/commands/repair-context.js"
+    },
+    "./commands/review.js": {
+      "types": "./src/commands/review.ts",
+      "default": "./dist/commands/review.js"
+    },
+    "./commands/promote.js": {
+      "types": "./src/commands/promote.ts",
+      "default": "./dist/commands/promote.js"
+    },
+    "./commands/build.js": {
+      "types": "./src/commands/build.ts",
+      "default": "./dist/commands/build.js"
+    },
+    "./commands/bundle-fetch.js": {
+      "types": "./src/commands/bundle-fetch.ts",
+      "default": "./dist/commands/bundle-fetch.js"
+    },
+    "./commands/check.js": {
+      "types": "./src/commands/check.ts",
+      "default": "./dist/commands/check.js"
+    }
+  },
+  "bin": {
+    "praxisbase": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@praxisbase/core": "workspace:*",
+    "commander": "^12.1.0"
+  }
+}

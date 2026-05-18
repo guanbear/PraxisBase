@@ -1,0 +1,49 @@
+variables:
+  NODE_IMAGE: node:20-alpine
+  PRAXISBASE_ROOT: $CI_PROJECT_DIR
+
+stages:
+  - review
+  - promote
+  - build
+
+.praxisbase-node:
+  image: $NODE_IMAGE
+  before_script:
+    - corepack enable
+    - pnpm install --frozen-lockfile
+
+praxisbase:review:
+  extends: .praxisbase-node
+  stage: review
+  resource_group: praxisbase-write
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "review"
+  script:
+    - pnpm --filter @praxisbase/cli build
+    - pnpm exec praxisbase review --auto
+
+praxisbase:promote:
+  extends: .praxisbase-node
+  stage: promote
+  resource_group: praxisbase-write
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "promote"
+  script:
+    - pnpm --filter @praxisbase/cli build
+    - pnpm exec praxisbase promote --auto
+    - pnpm exec praxisbase check
+
+praxisbase:build:
+  extends: .praxisbase-node
+  stage: build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "build"
+    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - pnpm --filter @praxisbase/cli build
+    - pnpm exec praxisbase build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 7 days
