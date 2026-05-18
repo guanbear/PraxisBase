@@ -99,9 +99,12 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 ## Current Documents
 
 - [Agent Knowledge Substrate Design](docs/superpowers/specs/2026-05-17-agent-knowledge-substrate-design.md)
+- [SRE-autopilot K8s Incident Integration Design](docs/superpowers/specs/2026-05-18-sre-autopilot-k8s-incident-integration-design.md)
 - [OpenClaw Repair MVP Implementation Plan](docs/superpowers/plans/2026-05-17-openclaw-repair-mvp-implementation-plan.md)
 - [OpenSpec Change](docs/openspec/changes/openclaw-repair-mvp/proposal.md)
 - [BDD Acceptance Feature](docs/bdd/openclaw-repair-mvp.feature)
+- [SRE-autopilot K8s Incident OpenSpec](docs/openspec/changes/sre-autopilot-k8s-incident-integration/proposal.md)
+- [SRE-autopilot K8s Incident BDD](docs/bdd/sre-autopilot-k8s-incident-integration.feature)
 
 ## Roadmap
 

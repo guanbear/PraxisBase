@@ -291,6 +291,101 @@ K8s 故障系统复用同一协议：
 
 这个设计不强迫你在 Agent SDK 和流程化 AI 调用之间二选一。两者都是 PraxisBase 的 peer client。
 
+## SRE-autopilot / K8s Live Incident 集成契约
+
+OpenClaw repair 是沙箱内修复场景，agent 可以在 sandbox 权限内执行变更；SRE-autopilot 这类 K8s live incident 系统是生产诊断场景，默认必须只读。两者共用 episode、proposal、known fix、skill 和 repair bundle 对象模型，但运行时集成边界不同。
+
+### 角色定位
+
+| 系统 | PraxisBase 视角 | 边界 |
+| --- | --- | --- |
+| `sre-autopilot` | live incident peer client / evidence producer / bundle consumer | 生产诊断主流程不能依赖 PraxisBase 在线可用 |
+| PraxisBase | durable knowledge substrate / static bundle publisher / episode receiver | 不接管 live incident 调度，不替代告警平台，不执行生产变更 |
+| SRE bot / Feishu bot | presentation peer client | 可以读取 bundle 或 episode summary，但不绕过 review/promotion |
+
+### 只读 bundle 输入
+
+SRE-autopilot 在诊断开始前可以读取静态 K8s incident bundle：
+
+```bash
+praxisbase bundle fetch k8s-incident --signature k8s:pod-oomkilled --json
+```
+
+也可以直接读取发布产物：
+
+```text
+dist/repair-bundles/k8s-incident/manifest.json
+dist/repair-bundles/k8s-incident/<signature>.json
+```
+
+约束：
+
+- bundle 是可选增强，不是 live diagnosis 的必需依赖。
+- bundle 缺失、过期或校验失败时，调用方必须继续使用规则和实时证据诊断。
+- bundle 必须 compact：只包含匹配 problem signature、domain、risk policy 的 known fixes、procedures、skills、forbidden operations、verification steps、rollback/escalation guidance 和 source refs。
+- bundle 不包含完整原始日志、未脱敏数据或可执行生产写操作。
+
+### Episode / proposal 输出
+
+SRE-autopilot 每次诊断结束后可以生成 PraxisBase-compatible episode：
+
+```json
+{
+  "id": "episode_20260518_cp_abc",
+  "protocol_version": "0.1",
+  "type": "incident_episode",
+  "scope": "team",
+  "agent_id": "sre-autopilot-cp",
+  "agent_type": "live_incident_analyzer",
+  "environment_id": "prod",
+  "run_id": "trace-123",
+  "problem_signature": "k8s:pod-oomkilled",
+  "result": "confirmed",
+  "used_skills": ["skills/k8s/incident-triage/SKILL.md"],
+  "used_objects": ["kb/known-fixes/k8s-pod-oomkilled.md"],
+  "source_refs": [
+    "prometheus://cluster-a/prod/order-api?query=kube_pod_container_status_last_terminated_reason",
+    "k8s-event://cluster-a/prod/order-api-123/OOMKilling"
+  ],
+  "evidence_summary": "Pod order-api-123 was OOMKilled within the alert window; restart count increased from 1 to 5.",
+  "created_at": "2026-05-18T10:00:00Z"
+}
+```
+
+如果诊断发现新的稳定模式、runbook 改进或 skill 改进，应提交 proposal，而不是直接写 `kb/` 或 `skills/`：
+
+```bash
+praxisbase episode submit episode.json
+praxisbase propose proposal.json
+```
+
+当 live incident 进程不能直接访问 authority repo 时，必须写 outbox 或通过受控 submission gateway：
+
+```text
+.praxisbase/outbox/episodes/*.json
+.praxisbase/outbox/proposals/*.json
+```
+
+### 风险与权限
+
+K8s live incident profile 默认风险策略：
+
+| 内容 | 默认 |
+| --- | --- |
+| 读取 bundle | allow |
+| 提交 episode | allow，需 provenance/source refs |
+| 提交 proposal | allow，默认 draft/review |
+| 自动晋升 known fix/procedure | 仅中低风险且 reviewer 通过 |
+| 自动启用新默认 skill | manual required |
+| 生产写操作建议 | allowed as recommendation only |
+| 生产写操作执行 | out of scope |
+
+Repair bundle 可包含 remediation guidance，但必须标记为建议、验证和升级条件。PraxisBase 不授予 sre-autopilot 新的 Kubernetes 权限。
+
+### 与 OpenClaw MVP 的关系
+
+K8s live incident 集成不进入 Phase 1 OpenClaw repair MVP 的执行范围。Phase 1 只需要确保 protocol、schemas、bundle manifest、outbox、evidence contract 足够支持该集成。具体 K8s signature detector、bundle generator、episode adapter 和 Feishu bot 流程放在 Phase 2。
+
 ## 接口
 
 ### File Protocol
