@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..");
 const CI_PATH = resolve(REPO_ROOT, "templates/gitlab/.gitlab-ci.yml");
+const KNOWLEDGE_CI_PATH = resolve(REPO_ROOT, "templates/gitlab/knowledge-repo.gitlab-ci.yml");
 
 describe("GitLab CI template", () => {
   it("includes resource_group on review and promote jobs", async () => {
@@ -48,5 +49,33 @@ describe("GitLab CI template", () => {
   it("uses node:20-alpine image", async () => {
     const ci = await readFile(CI_PATH, "utf8");
     assert.match(ci, /node:20-alpine/, "expected node:20-alpine image");
+  });
+});
+
+
+describe("split knowledge repo GitLab CI template", () => {
+  it("clones the PraxisBase tool repo and runs the built CLI", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+
+    assert.ok(ci.includes("PRAXISBASE_TOOL_REPO"));
+    assert.ok(ci.includes("git clone --depth 1 --branch"));
+    assert.ok(ci.includes("node /tmp/PraxisBase/packages/cli/dist/index.js"));
+  });
+
+  it("serializes write jobs and supports optional writeback", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+
+    assert.match(ci, /praxisbase:review:[\s\S]*?resource_group:\s+praxisbase-write/);
+    assert.match(ci, /praxisbase:promote:[\s\S]*?resource_group:\s+praxisbase-write/);
+    assert.ok(ci.includes("PRAXISBASE_WRITEBACK"));
+    assert.ok(ci.includes("PRAXISBASE_PUSH_TOKEN"));
+  });
+
+  it("can publish dist through GitLab Pages", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+
+    assert.ok(ci.includes("pages:"));
+    assert.match(ci, /cp -r dist\/\* public\//);
+    assert.match(ci, /paths:[\s\S]*?-\s+public/);
   });
 });

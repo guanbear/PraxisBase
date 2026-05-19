@@ -5,12 +5,24 @@ import matter from "gray-matter";
 import { readText, writeJson, writeText } from "../store/file-store.js";
 import { renderInspectionHtml } from "./html.js";
 
+type KnowledgeProfile = "all" | "openclaw" | "k8s";
+
 async function exists(root: string, path: string): Promise<boolean> {
   try {
     await stat(join(root, path));
     return true;
   } catch {
     return false;
+  }
+}
+
+async function readKnowledgeProfile(root: string): Promise<KnowledgeProfile> {
+  try {
+    const config = await readText(root, ".praxisbase/config.yaml");
+    const match = config.match(/^profile:\s*(all|openclaw|k8s)\s*$/m);
+    return (match?.[1] as KnowledgeProfile | undefined) ?? "all";
+  } catch {
+    return "all";
   }
 }
 
@@ -60,146 +72,135 @@ export interface BuildResult {
 }
 
 export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
-  // --- OpenClaw sandbox bundle ---
-  const knownFixPath = "kb/known-fixes/openclaw-auth-expired.md";
-  const knownFix = (await exists(root, knownFixPath)) ? await readText(root, knownFixPath) : "";
-
-  const openclawBundle = {
-    protocol_version: "0.1",
-    id: "openclaw-sandbox",
-    scenario: "openclaw",
-    generated_at: new Date().toISOString(),
-    known_fixes: knownFix ? [knownFixPath] : [],
-    skills: ["skills/openclaw/baseline-diagnostics/SKILL.md", "skills/openclaw/auth-repair/SKILL.md"],
-    forbidden_operations: ["modify production systems", "delete user workspace data", "print secrets into chat"],
-    diagnostic_commands: ["openclaw status", "claude --version"],
-    verification_steps: ["Run a minimal model call from the sandbox", "Confirm OpenClaw session resumes"],
-    rollback_steps: ["Restore previous auth state snapshot if available"],
-    escalation_conditions: ["Auth refresh fails twice", "Verification command cannot run"],
-  };
-
-  await writeJson(root, "dist/repair-bundles/openclaw-sandbox.json", openclawBundle);
-
-  // --- K8s incident bundle contract shape (empty/static-compatible for Phase 1) ---
-  const k8sForbiddenOps = [
-    "Do not automatically delete pods in production",
-    "Do not change resource limits without owner approval",
-    "Do not modify production Kubernetes resources without explicit owner approval",
-  ];
-
-  const k8sManifest = {
-    protocol_version: "0.1",
-    bundle_id: "k8s-incident",
-    generated_at: new Date().toISOString(),
-    commit_sha: "",
-    compatible_cli: ">=0.1.0",
-    entries: [] as Array<{ signature: string; path: string; checksum: string; risk: string }>,
-  };
-
-  const kbFilesAll = await listFiles(root, "kb");
-  const k8sEntries: Array<{
-    protocol_version: string;
-    signature: string;
-    domain: string;
-    status: string;
-    risk: string;
-    recommendation_only: boolean;
-    known_fixes: Array<{
-      id: string;
-      summary: string;
-      diagnosis_steps: string[];
-      remediation_guidance: string[];
-      verification_steps: string[];
-      forbidden_operations: string[];
-      source_refs: string[];
-    }>;
-    skills: string[];
-    forbidden_operations: string[];
-    verification_steps: string[];
-    source_refs: string[];
-    escalation_conditions: string[];
+  const profile = await readKnowledgeProfile(root);
+  const buildOpenClaw = profile !== "k8s";
+  const buildK8s = profile !== "openclaw";
+  const builtBundles: string[] = [];
+  const manifestBundles: Array<{
+    id: string;
+    path: string;
+    checksum: string;
+    compatible_cli_version: string;
   }> = [];
 
-  for (const file of kbFilesAll) {
-    if (!file.startsWith("kb/known-fixes/") || !file.endsWith(".md")) continue;
-    const content = await readText(root, file);
-    const parsed = matter(content);
-    const data = parsed.data as Record<string, unknown>;
-    const signatures = Array.isArray(data.signatures) ? data.signatures as string[] : [];
-    const k8sSigs = signatures.filter((s: string) => s.startsWith("k8s:"));
-    if (k8sSigs.length === 0) continue;
+  if (buildOpenClaw) {
+    const knownFixPath = "kb/known-fixes/openclaw-auth-expired.md";
+    const knownFix = (await exists(root, knownFixPath)) ? await readText(root, knownFixPath) : "";
 
-    const body = parsed.content as string;
-    const sections = extractSections(body);
+    const openclawBundle = {
+      protocol_version: "0.1",
+      id: "openclaw-sandbox",
+      scenario: "openclaw",
+      generated_at: new Date().toISOString(),
+      known_fixes: knownFix ? [knownFixPath] : [],
+      skills: ["skills/openclaw/baseline-diagnostics/SKILL.md", "skills/openclaw/auth-repair/SKILL.md"],
+      forbidden_operations: ["modify production systems", "delete user workspace data", "print secrets into chat"],
+      diagnostic_commands: ["openclaw status", "claude --version"],
+      verification_steps: ["Run a minimal model call from the sandbox", "Confirm OpenClaw session resumes"],
+      rollback_steps: ["Restore previous auth state snapshot if available"],
+      escalation_conditions: ["Auth refresh fails twice", "Verification command cannot run"],
+    };
 
-    for (const sig of k8sSigs) {
-      const slug = sig.replace("k8s:", "");
-      const skills = Array.isArray(data.skills) ? data.skills as string[] : [];
-      const sources = Array.isArray(data.sources) ? (data.sources as Array<{ uri: string; hash: string }>) : [];
-      const fixId = String(data.id ?? slug);
-      const entry = {
-        protocol_version: "0.1",
-        signature: sig,
-        domain: "k8s",
-        status: String(data.status ?? "draft"),
-        risk: String(data.risk ?? "medium"),
-        recommendation_only: true,
-        known_fixes: [{
-          id: fixId,
-          summary: sections.Symptoms ?? `Known fix for ${sig}`,
-          diagnosis_steps: splitLines(sections.Diagnosis),
-          remediation_guidance: splitLines(sections.Fix),
-          verification_steps: splitLines(sections.Verification),
-          forbidden_operations: k8sForbiddenOps,
-          source_refs: sources.map((s) => s.uri),
-        }],
-        skills,
-        forbidden_operations: k8sForbiddenOps,
-        verification_steps: splitLines(sections.Verification).length > 0
-          ? splitLines(sections.Verification)
-          : ["Confirm diagnosis matches observed symptoms"],
-        source_refs: sources.map((s) => s.uri),
-        escalation_conditions: ["Diagnosis inconclusive after initial triage", "Multiple pods affected simultaneously"],
-      };
-      k8sEntries.push(entry);
-      const entryPath = `k8s-incident/${slug}.json`;
-      // writeJson uses JSON.stringify(value, null, 2) + "\n" — compute checksum on that exact output
-      const writtenContent = `${JSON.stringify(entry, null, 2)}\n`;
-      await writeJson(root, `dist/repair-bundles/${entryPath}`, entry);
-      k8sManifest.entries.push({
-        signature: sig,
-        path: entryPath,
-        checksum: sha256(writtenContent),
-        risk: entry.risk,
-      });
-    }
+    await writeJson(root, "dist/repair-bundles/openclaw-sandbox.json", openclawBundle);
+    builtBundles.push("dist/repair-bundles/openclaw-sandbox.json");
+    manifestBundles.push({
+      id: "openclaw-sandbox",
+      path: "repair-bundles/openclaw-sandbox.json",
+      checksum: sha256(JSON.stringify(openclawBundle)),
+      compatible_cli_version: "0.1.x",
+    });
   }
 
-  await writeJson(root, "dist/repair-bundles/k8s-incident/manifest.json", k8sManifest);
+  if (buildK8s) {
+    const k8sForbiddenOps = [
+      "Do not automatically delete pods in production",
+      "Do not change resource limits without owner approval",
+      "Do not modify production Kubernetes resources without explicit owner approval",
+    ];
 
-  // --- Top-level manifest ---
+    const k8sManifest = {
+      protocol_version: "0.1",
+      bundle_id: "k8s-incident",
+      generated_at: new Date().toISOString(),
+      commit_sha: "",
+      compatible_cli: ">=0.1.0",
+      entries: [] as Array<{ signature: string; path: string; checksum: string; risk: string }>,
+    };
+
+    const kbFilesAll = await listFiles(root, "kb");
+    for (const file of kbFilesAll) {
+      if (!file.startsWith("kb/known-fixes/") || !file.endsWith(".md")) continue;
+      const content = await readText(root, file);
+      const parsed = matter(content);
+      const data = parsed.data as Record<string, unknown>;
+      const signatures = Array.isArray(data.signatures) ? data.signatures as string[] : [];
+      const k8sSigs = signatures.filter((s: string) => s.startsWith("k8s:"));
+      if (k8sSigs.length === 0) continue;
+
+      const body = parsed.content as string;
+      const sections = extractSections(body);
+
+      for (const sig of k8sSigs) {
+        const slug = sig.replace("k8s:", "");
+        const skills = Array.isArray(data.skills) ? data.skills as string[] : [];
+        const sources = Array.isArray(data.sources) ? (data.sources as Array<{ uri: string; hash: string }>) : [];
+        const fixId = String(data.id ?? slug);
+        const entry = {
+          protocol_version: "0.1",
+          signature: sig,
+          domain: "k8s",
+          status: String(data.status ?? "draft"),
+          risk: String(data.risk ?? "medium"),
+          recommendation_only: true,
+          known_fixes: [{
+            id: fixId,
+            summary: sections.Symptoms ?? `Known fix for ${sig}`,
+            diagnosis_steps: splitLines(sections.Diagnosis),
+            remediation_guidance: splitLines(sections.Fix),
+            verification_steps: splitLines(sections.Verification),
+            forbidden_operations: k8sForbiddenOps,
+            source_refs: sources.map((s) => s.uri),
+          }],
+          skills,
+          forbidden_operations: k8sForbiddenOps,
+          verification_steps: splitLines(sections.Verification).length > 0
+            ? splitLines(sections.Verification)
+            : ["Confirm diagnosis matches observed symptoms"],
+          source_refs: sources.map((s) => s.uri),
+          escalation_conditions: ["Diagnosis inconclusive after initial triage", "Multiple pods affected simultaneously"],
+        };
+        const entryPath = `k8s-incident/${slug}.json`;
+        const writtenContent = `${JSON.stringify(entry, null, 2)}
+`;
+        await writeJson(root, `dist/repair-bundles/${entryPath}`, entry);
+        k8sManifest.entries.push({
+          signature: sig,
+          path: entryPath,
+          checksum: sha256(writtenContent),
+          risk: entry.risk,
+        });
+      }
+    }
+
+    await writeJson(root, "dist/repair-bundles/k8s-incident/manifest.json", k8sManifest);
+    builtBundles.push("dist/repair-bundles/k8s-incident/manifest.json");
+    manifestBundles.push({
+      id: "k8s-incident",
+      path: "repair-bundles/k8s-incident/manifest.json",
+      checksum: sha256(JSON.stringify(k8sManifest)),
+      compatible_cli_version: "0.1.x",
+    });
+  }
+
   const manifest = {
     protocol_version: "0.1",
     generated_at: new Date().toISOString(),
-    bundles: [
-      {
-        id: "openclaw-sandbox",
-        path: "repair-bundles/openclaw-sandbox.json",
-        checksum: sha256(JSON.stringify(openclawBundle)),
-        compatible_cli_version: "0.1.x",
-      },
-      {
-        id: "k8s-incident",
-        path: "repair-bundles/k8s-incident/manifest.json",
-        checksum: sha256(JSON.stringify(k8sManifest)),
-        compatible_cli_version: "0.1.x",
-      },
-    ],
+    profile,
+    bundles: manifestBundles,
   };
 
   await writeJson(root, "dist/repair-bundles/manifest.json", manifest);
 
-  // --- Knowledge index ---
   const kbFiles = await listFiles(root, "kb");
   const kbObjects = [];
   for (const file of kbFiles) {
@@ -215,7 +216,6 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
     objects: kbObjects,
   });
 
-  // --- Search index ---
   const searchDocs = [];
   for (const obj of kbObjects) {
     try {
@@ -231,7 +231,6 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
     documents: searchDocs,
   });
 
-  // --- llms.txt ---
   const llmsLines = [
     "# PraxisBase",
     "",
@@ -239,12 +238,10 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
     "",
     "## Bundles",
     "",
-    `- OpenClaw repair bundle: /repair-bundles/openclaw-sandbox.json`,
-    `- K8s incident bundle: /repair-bundles/k8s-incident/manifest.json`,
-    "",
-    "## Knowledge Objects",
-    "",
   ];
+  if (buildOpenClaw) llmsLines.push("- OpenClaw repair bundle: /repair-bundles/openclaw-sandbox.json");
+  if (buildK8s) llmsLines.push("- K8s incident bundle: /repair-bundles/k8s-incident/manifest.json");
+  llmsLines.push("", "## Knowledge Objects", "");
   for (const obj of kbObjects) {
     llmsLines.push(`- ${obj.type}: ${obj.path}`);
   }
@@ -252,7 +249,6 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
 
   await writeText(root, "dist/llms.txt", llmsLines.join("\n"));
 
-  // --- HTML inspection ---
   const bodyParts = [
     "<p>Static inspection output for repair knowledge.</p>",
     '<section class="bundle">',
@@ -284,10 +280,7 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
   );
 
   return {
-    bundles: [
-      "dist/repair-bundles/openclaw-sandbox.json",
-      "dist/repair-bundles/k8s-incident/manifest.json",
-    ],
+    bundles: builtBundles,
     indexes: ["dist/kb-index.json", "dist/search-index.json"],
     manifest: "dist/repair-bundles/manifest.json",
   };

@@ -19,10 +19,13 @@ program
   .description("Agent-native knowledge substrate for OpenClaw repair workflows")
   .version("0.1.0");
 
-program.command("init").action(async () => {
-  await initializeWorkspace(process.cwd());
-  console.log("PraxisBase workspace initialized.");
-});
+program
+  .command("init")
+  .option("--profile <profile>", "knowledge profile: all, openclaw, or k8s", "all")
+  .action(async (options: { profile: "all" | "openclaw" | "k8s" }) => {
+    await initializeWorkspace(process.cwd(), { profile: options.profile });
+    console.log(`PraxisBase workspace initialized (${options.profile}).`);
+  });
 
 program
   .command("repair-context")

@@ -98,6 +98,7 @@ PraxisBase 把“需要持久化的部分”显式抽出来。它是面向可丢
 
 ## 当前文档
 
+- [部署指南](docs/deployment.md)
 - [Agent Knowledge Substrate 设计](docs/superpowers/specs/2026-05-17-agent-knowledge-substrate-design.md)
 - [SRE-autopilot K8s Incident 集成设计](docs/superpowers/specs/2026-05-18-sre-autopilot-k8s-incident-integration-design.md)
 - [OpenClaw Repair MVP 实施计划](docs/superpowers/plans/2026-05-17-openclaw-repair-mvp-implementation-plan.md)

@@ -42,4 +42,35 @@ describe("static build", () => {
     assert.ok(Array.isArray(parsed.entries));
     assert.ok(parsed.compatible_cli.length > 0);
   });
+
+  it("honors an OpenClaw-only workspace profile", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-build-openclaw-"));
+    await initializeWorkspace(root, { profile: "openclaw" });
+    const result = await buildStaticArtifacts(root);
+
+    assert.deepEqual(result.bundles, ["dist/repair-bundles/openclaw-sandbox.json"]);
+    await assert.doesNotReject(stat(join(root, "dist/repair-bundles/openclaw-sandbox.json")));
+    await assert.rejects(stat(join(root, "dist/repair-bundles/k8s-incident/manifest.json")));
+
+    const manifest = JSON.parse(await readFile(join(root, "dist/repair-bundles/manifest.json"), "utf8"));
+    assert.equal(manifest.profile, "openclaw");
+    assert.equal(manifest.bundles.length, 1);
+    assert.equal(manifest.bundles[0].id, "openclaw-sandbox");
+  });
+
+  it("honors a K8s-only workspace profile", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-build-k8s-"));
+    await initializeWorkspace(root, { profile: "k8s" });
+    const result = await buildStaticArtifacts(root);
+
+    assert.deepEqual(result.bundles, ["dist/repair-bundles/k8s-incident/manifest.json"]);
+    await assert.doesNotReject(stat(join(root, "dist/repair-bundles/k8s-incident/manifest.json")));
+    await assert.rejects(stat(join(root, "dist/repair-bundles/openclaw-sandbox.json")));
+
+    const manifest = JSON.parse(await readFile(join(root, "dist/repair-bundles/manifest.json"), "utf8"));
+    assert.equal(manifest.profile, "k8s");
+    assert.equal(manifest.bundles.length, 1);
+    assert.equal(manifest.bundles[0].id, "k8s-incident");
+  });
+
 });
