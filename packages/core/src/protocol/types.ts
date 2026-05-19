@@ -12,8 +12,10 @@ export type RepairResult = "success" | "failed" | "partial" | "unknown";
 export type IncidentResult = "confirmed" | "ruled_out" | "inconclusive" | "data_gap";
 export type RiskLevel = "low" | "medium" | "high";
 export type ProposalAction = "create" | "patch" | "archive" | "link";
-export type TargetType = "note" | "known_fix" | "procedure" | "skill" | "policy" | "decision";
+export type TargetType = "note" | "known_fix" | "procedure" | "skill" | "policy" | "decision" | "pitfall";
 export type ReviewDecision = "approve" | "reject" | "needs_human" | "conflict";
+export type KnowledgeType = "known_fix" | "procedure" | "skill" | "decision" | "policy" | "pitfall" | "guideline" | "model" | "note";
+export type Maturity = "draft" | "verified" | "proven";
 
 export interface Evidence {
   source_uri: string;

@@ -70,4 +70,42 @@ describe("episode and proposal intake", () => {
 
     await assert.doesNotReject(stat(join(root, ".praxisbase/outbox/proposals/proposal_20260517_known_fix.json")));
   });
+
+  it("preserves knowledge_references in submitted episode", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-krefs-"));
+
+    await submitEpisode(root, "tests/fixtures/openclaw/episodes/with-knowledge-refs.json");
+
+    const stored = await readFile(
+      join(root, ".praxisbase/inbox/episodes/episode_20260517_refs.json"),
+      "utf8"
+    );
+    const parsed = JSON.parse(stored);
+    assert.ok(Array.isArray(parsed.knowledge_references));
+    assert.equal(parsed.knowledge_references.length, 2);
+    assert.equal(parsed.knowledge_references[0].id, "openclaw-auth-expired");
+    assert.equal(parsed.knowledge_references[0].used_in_phase, "diagnosis");
+    assert.equal(parsed.knowledge_references[0].effect, "helped_fix");
+    assert.equal(parsed.knowledge_references[0].outcome, "success");
+    assert.equal(parsed.knowledge_references[1].id, "openclaw-auth-repair");
+    assert.equal(parsed.knowledge_references[1].used_in_phase, "repair");
+  });
+
+  it("preserves knowledge_references from success fixture", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-knowledge-refs-"));
+
+    await submitEpisode(root, "tests/fixtures/openclaw/episodes/success.json");
+
+    const stored = await readFile(
+      join(root, ".praxisbase/inbox/episodes/episode_20260517_abc.json"),
+      "utf8"
+    );
+    const parsed = JSON.parse(stored);
+    assert.ok(Array.isArray(parsed.knowledge_references));
+    assert.equal(parsed.knowledge_references.length, 1);
+    assert.equal(parsed.knowledge_references[0].id, "openclaw-auth-expired");
+    assert.equal(parsed.knowledge_references[0].used_in_phase, "diagnosis");
+    assert.equal(parsed.knowledge_references[0].effect, "helped_fix");
+    assert.equal(parsed.knowledge_references[0].outcome, "success");
+  });
 });

@@ -8,6 +8,10 @@ import {
   K8sIncidentManifestEntrySchema,
   K8sIncidentManifestSchema,
   KnownFixFrontmatterSchema,
+  KnowledgeReferenceSchema,
+  KnowledgeTypeSchema,
+  MaturitySchema,
+  PitfallFrontmatterSchema,
   ProposalSchema,
   ReviewSchema,
 } from "@praxisbase/core/protocol/schemas.js";
@@ -281,5 +285,261 @@ describe("protocol schemas", () => {
 
     assert.equal(manifest.bundle_id, "k8s-incident");
     assert.equal(manifest.entries[0].signature, "k8s:pod-oomkilled");
+  });
+
+  it("repair episode accepts knowledge_references", () => {
+    const parsed = EpisodeSchema.parse({
+      id: "episode_20260517_refs",
+      protocol_version: "0.1",
+      type: "repair_episode",
+      scope: "team",
+      agent_id: "openclaw-temp-xyz",
+      agent_type: "temporary_repair_agent",
+      environment_id: "sandbox-123",
+      run_id: "run-456",
+      idempotency_key: "episode_20260517_refs",
+      problem_signature: "openclaw:claude-auth-expired",
+      result: "success",
+      source_refs: ["log://openclaw/sandbox-123/run-456"],
+      summary: "Used known fix and skill.",
+      knowledge_references: [
+        {
+          id: "openclaw-auth-expired",
+          path: "kb/known-fixes/openclaw-auth-expired.md",
+          used_in_phase: "diagnosis",
+          effect: "helped_fix",
+          outcome: "success",
+        },
+        {
+          id: "openclaw-auth-repair",
+          path: "skills/openclaw/auth-repair/SKILL.md",
+          used_in_phase: "repair",
+          effect: "guided_action",
+          outcome: "success",
+        },
+      ],
+      created_at: "2026-05-17T10:00:00Z",
+    });
+
+    assert.equal(parsed.knowledge_references!.length, 2);
+    assert.equal(parsed.knowledge_references![0].id, "openclaw-auth-expired");
+    assert.equal(parsed.knowledge_references![0].used_in_phase, "diagnosis");
+    assert.equal(parsed.knowledge_references![1].effect, "guided_action");
+  });
+
+  it("episode without knowledge_references is backward compatible", () => {
+    const parsed = EpisodeSchema.parse({
+      id: "ep_backward",
+      protocol_version: "0.1",
+      type: "repair_episode",
+      scope: "team",
+      agent_id: "a",
+      agent_type: "temporary_repair_agent",
+      environment_id: "sandbox",
+      run_id: "r1",
+      idempotency_key: "ep_backward",
+      problem_signature: "openclaw:x",
+      result: "success",
+      source_refs: ["log://x"],
+      summary: "No refs.",
+      created_at: "2026-05-17T10:00:00Z",
+    });
+
+    assert.deepEqual(parsed.knowledge_references, []);
+  });
+
+  it("incident episode accepts knowledge_references", () => {
+    const parsed = IncidentEpisodeSchema.parse({
+      id: "incident_refs",
+      protocol_version: "0.1",
+      type: "incident_episode",
+      scope: "team",
+      agent_id: "sre",
+      agent_type: "live_incident_analyzer",
+      environment_id: "prod",
+      run_id: "r1",
+      idempotency_key: "incident_refs",
+      problem_signature: "k8s:pod-oomkilled",
+      result: "confirmed",
+      source_refs: ["k8s://x"],
+      evidence_summary: "Confirmed.",
+      knowledge_references: [
+        {
+          id: "k8s-pod-oomkilled",
+          path: "kb/known-fixes/k8s-pod-oomkilled.md",
+          used_in_phase: "diagnosis",
+          effect: "helped_fix",
+          outcome: "success",
+        },
+      ],
+      created_at: "2026-05-18T10:00:00Z",
+    });
+
+    assert.equal(parsed.knowledge_references!.length, 1);
+  });
+
+  it("knowledge_reference schema validates required fields", () => {
+    const ref = KnowledgeReferenceSchema.parse({
+      id: "test-fix",
+      path: "kb/known-fixes/test.md",
+      used_in_phase: "repair",
+      effect: "guided_action",
+      outcome: "success",
+    });
+
+    assert.equal(ref.id, "test-fix");
+    assert.equal(ref.used_in_phase, "repair");
+
+    assert.throws(() => KnowledgeReferenceSchema.parse({
+      id: "missing-fields",
+      path: "kb/test.md",
+    }));
+  });
+
+  it("known_fix frontmatter accepts governance fields", () => {
+    const parsed = KnownFixFrontmatterSchema.parse({
+      id: "openclaw-auth-expired",
+      protocol_version: "0.1",
+      type: "known_fix",
+      knowledge_type: "known_fix",
+      scope: "team",
+      risk: "medium",
+      status: "published",
+      maturity: "verified",
+      signatures: ["openclaw:claude-auth-expired"],
+      skills: ["skills/openclaw/auth-repair/SKILL.md"],
+      sources: [{ uri: "log://x", hash: "sha256:abc" }],
+      confidence: 0.84,
+      reference_count: 3,
+      last_referenced_at: "2026-05-17T12:00:00Z",
+      supersedes: ["old-auth-fix"],
+      superseded_by: null,
+      updated_at: "2026-05-17T10:00:00Z",
+    });
+
+    assert.equal(parsed.knowledge_type, "known_fix");
+    assert.equal(parsed.maturity, "verified");
+    assert.equal(parsed.reference_count, 3);
+    assert.equal(parsed.last_referenced_at, "2026-05-17T12:00:00Z");
+    assert.deepEqual(parsed.supersedes, ["old-auth-fix"]);
+    assert.equal(parsed.superseded_by, null);
+  });
+
+  it("known_fix frontmatter backward compatible without governance fields", () => {
+    const parsed = KnownFixFrontmatterSchema.parse({
+      id: "minimal-fix",
+      protocol_version: "0.1",
+      type: "known_fix",
+      scope: "team",
+      risk: "medium",
+      status: "draft",
+      signatures: ["test:sig"],
+      sources: [{ uri: "seed://test", hash: "sha256:seed" }],
+      confidence: 0.5,
+      updated_at: "2026-05-17T10:00:00Z",
+    });
+
+    assert.equal(parsed.knowledge_type, "known_fix");
+    assert.equal(parsed.maturity, "draft");
+    assert.equal(parsed.reference_count, 0);
+    assert.equal(parsed.last_referenced_at, null);
+    assert.deepEqual(parsed.supersedes, []);
+    assert.equal(parsed.superseded_by, null);
+  });
+
+  it("pitfall frontmatter validates with knowledge_type pitfall", () => {
+    const parsed = PitfallFrontmatterSchema.parse({
+      id: "do-not-force-delete-pods",
+      protocol_version: "0.1",
+      type: "pitfall",
+      knowledge_type: "pitfall",
+      scope: "team",
+      risk: "high",
+      status: "published",
+      signatures: ["k8s:pod-force-delete"],
+      summary: "Do not force-delete pods in production without drain.",
+      forbidden_actions: ["force-delete production pods without drain"],
+      maturity: "verified",
+      reference_count: 5,
+      last_referenced_at: "2026-05-15T08:00:00Z",
+      supersedes: [],
+      superseded_by: null,
+      updated_at: "2026-05-01T10:00:00Z",
+    });
+
+    assert.equal(parsed.knowledge_type, "pitfall");
+    assert.equal(parsed.type, "pitfall");
+    assert.equal(parsed.risk, "high");
+    assert.equal(parsed.maturity, "verified");
+  });
+
+  it("pitfall frontmatter rejects non-pitfall knowledge_type", () => {
+    assert.throws(() => PitfallFrontmatterSchema.parse({
+      id: "wrong-type",
+      protocol_version: "0.1",
+      type: "pitfall",
+      knowledge_type: "known_fix",
+      scope: "team",
+      risk: "medium",
+      status: "draft",
+      signatures: ["test:sig"],
+      summary: "Test.",
+      forbidden_actions: ["do bad thing"],
+      updated_at: "2026-05-17T10:00:00Z",
+    }));
+  });
+
+  it("accepts pitfall frontmatter with governance fields", () => {
+    const parsed = PitfallFrontmatterSchema.parse({
+      id: "openclaw-dont-force-kill",
+      protocol_version: "0.1",
+      type: "pitfall",
+      knowledge_type: "pitfall",
+      scope: "team",
+      risk: "medium",
+      status: "draft",
+      signatures: ["openclaw:force-kill-risk"],
+      summary: "Do not force-kill the OpenClaw process; it corrupts workspace state.",
+      forbidden_actions: ["force-kill openclaw process", "rm -rf workspace without backup"],
+      maturity: "draft",
+      reference_count: 0,
+      last_referenced_at: null,
+      supersedes: [],
+      superseded_by: null,
+      updated_at: "2026-05-17T10:00:00Z",
+    });
+
+    assert.equal(parsed.knowledge_type, "pitfall");
+    assert.equal(parsed.type, "pitfall");
+    assert.equal(parsed.maturity, "draft");
+    assert.deepEqual(parsed.forbidden_actions, ["force-kill openclaw process", "rm -rf workspace without backup"]);
+  });
+
+  it("pitfall governance fields default correctly", () => {
+    const parsed = PitfallFrontmatterSchema.parse({
+      id: "test-pitfall",
+      protocol_version: "0.1",
+      type: "pitfall",
+      knowledge_type: "pitfall",
+      scope: "team",
+      risk: "medium",
+      status: "draft",
+      signatures: ["test:pitfall-sig"],
+      summary: "Test pitfall.",
+      forbidden_actions: ["do bad thing"],
+      updated_at: "2026-05-17T10:00:00Z",
+    });
+
+    assert.equal(parsed.maturity, "draft");
+    assert.equal(parsed.reference_count, 0);
+    assert.equal(parsed.superseded_by, null);
+    assert.deepEqual(parsed.supersedes, []);
+  });
+
+  it("accepts valid knowledge type and maturity enum values", () => {
+    const kt = KnowledgeTypeSchema.parse("pitfall");
+    assert.equal(kt, "pitfall");
+    const m = MaturitySchema.parse("proven");
+    assert.equal(m, "proven");
   });
 });

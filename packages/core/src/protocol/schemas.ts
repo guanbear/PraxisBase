@@ -15,11 +15,24 @@ export const RepairResultSchema = z.enum(["success", "failed", "partial", "unkno
 export const IncidentResultSchema = z.enum(["confirmed", "ruled_out", "inconclusive", "data_gap"]);
 export const RiskLevelSchema = z.enum(["low", "medium", "high"]);
 export const ProposalActionSchema = z.enum(["create", "patch", "archive", "link"]);
-export const TargetTypeSchema = z.enum(["note", "known_fix", "procedure", "skill", "policy", "decision"]);
+export const TargetTypeSchema = z.enum(["note", "known_fix", "procedure", "skill", "policy", "decision", "pitfall"]);
 export const ReviewDecisionSchema = z.enum(["approve", "reject", "needs_human", "conflict"]);
+export const KnowledgeTypeSchema = z.enum([
+  "known_fix", "procedure", "skill", "decision", "policy",
+  "pitfall", "guideline", "model", "note"
+]);
+export const MaturitySchema = z.enum(["draft", "verified", "proven"]);
 
 const DateTimeSchema = z.string().datetime();
 const NonEmptyStringArray = z.array(z.string().min(1)).min(1);
+
+export const KnowledgeReferenceSchema = z.object({
+  id: z.string().min(1),
+  path: z.string().min(1),
+  used_in_phase: z.string().min(1),
+  effect: z.string().min(1),
+  outcome: z.string().min(1),
+});
 
 export const EvidenceSchema = z.object({
   source_uri: z.string().min(1),
@@ -47,6 +60,7 @@ export const EpisodeSchema = z.object({
   used_skills: z.array(z.string()).default([]),
   used_objects: z.array(z.string()).default([]),
   source_refs: NonEmptyStringArray,
+  knowledge_references: z.array(KnowledgeReferenceSchema).default([]),
   summary: z.string().min(1),
   created_at: DateTimeSchema
 });
@@ -68,6 +82,7 @@ export const IncidentEpisodeSchema = z.object({
   used_objects: z.array(z.string()).default([]),
   source_refs: NonEmptyStringArray,
   evidence_summary: z.string().min(1),
+  knowledge_references: z.array(KnowledgeReferenceSchema).default([]),
   created_at: DateTimeSchema
 });
 
@@ -114,13 +129,38 @@ export const KnownFixFrontmatterSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   protocol_version: ProtocolVersionSchema,
   type: z.literal("known_fix"),
+  knowledge_type: z.literal("known_fix").default("known_fix"),
   scope: ScopeSchema,
   risk: RiskLevelSchema,
   status: z.enum(["draft", "published", "archived"]),
+  maturity: MaturitySchema.default("draft"),
   signatures: NonEmptyStringArray,
   skills: z.array(z.string()).default([]),
   sources: z.array(z.object({ uri: z.string().min(1), hash: z.string().min(1) })).min(1),
   confidence: z.number().min(0).max(1),
+  reference_count: z.number().int().min(0).default(0),
+  last_referenced_at: z.string().datetime().nullable().default(null),
+  supersedes: z.array(z.string()).default([]),
+  superseded_by: z.string().nullable().default(null),
+  updated_at: DateTimeSchema
+});
+
+export const PitfallFrontmatterSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("pitfall"),
+  knowledge_type: z.literal("pitfall"),
+  scope: ScopeSchema,
+  risk: RiskLevelSchema,
+  status: z.enum(["draft", "published", "archived"]),
+  signatures: NonEmptyStringArray,
+  summary: z.string().min(1),
+  forbidden_actions: z.array(z.string().min(1)).min(1),
+  maturity: MaturitySchema.default("draft"),
+  reference_count: z.number().int().min(0).default(0),
+  last_referenced_at: z.string().datetime().nullable().default(null),
+  supersedes: z.array(z.string()).default([]),
+  superseded_by: z.string().nullable().default(null),
   updated_at: DateTimeSchema
 });
 
@@ -145,5 +185,7 @@ export type IncidentEpisode = z.infer<typeof IncidentEpisodeSchema>;
 export type Proposal = z.infer<typeof ProposalSchema>;
 export type Review = z.infer<typeof ReviewSchema>;
 export type KnownFixFrontmatter = z.infer<typeof KnownFixFrontmatterSchema>;
+export type PitfallFrontmatter = z.infer<typeof PitfallFrontmatterSchema>;
+export type KnowledgeReference = z.infer<typeof KnowledgeReferenceSchema>;
 export type K8sIncidentManifest = z.infer<typeof K8sIncidentManifestSchema>;
 export type K8sIncidentManifestEntry = z.infer<typeof K8sIncidentManifestEntrySchema>;

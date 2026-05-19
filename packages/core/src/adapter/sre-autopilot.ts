@@ -38,6 +38,7 @@ export function adaptDirectionResult(input: DirectionResultInput): AdapterOutput
     used_skills: [],
     used_objects: [],
     source_refs: input.source_refs,
+    knowledge_references: [],
     evidence_summary: input.evidence_summary,
     created_at: now,
   };

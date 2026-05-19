@@ -119,9 +119,11 @@ Restore the previous auth state snapshot if refresh makes the session worse.
 id: openclaw-auth-expired
 protocol_version: "0.1"
 type: known_fix
+knowledge_type: known_fix
 scope: team
 risk: medium
 status: draft
+maturity: draft
 signatures:
   - openclaw:claude-auth-expired
 skills:
@@ -130,6 +132,10 @@ sources:
   - uri: seed://openclaw/auth-expired
     hash: sha256:seed
 confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
 updated_at: 2026-05-17T00:00:00Z
 ---
 
@@ -194,9 +200,11 @@ Incident triage is read-only; no rollback needed.
 id: k8s-pod-oomkilled
 protocol_version: "0.1"
 type: known_fix
+knowledge_type: known_fix
 scope: team
 risk: medium
 status: draft
+maturity: draft
 signatures:
   - k8s:pod-oomkilled
 skills:
@@ -205,6 +213,10 @@ sources:
   - uri: seed://k8s/pod-oomkilled
     hash: sha256:seed
 confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
 updated_at: 2026-05-17T00:00:00Z
 ---
 
@@ -232,9 +244,11 @@ Revert resource changes to previous values.
 id: k8s-pod-crashloop-imagepull
 protocol_version: "0.1"
 type: known_fix
+knowledge_type: known_fix
 scope: team
 risk: medium
 status: draft
+maturity: draft
 signatures:
   - k8s:pod-crashloop-imagepull
 skills:
@@ -243,6 +257,10 @@ sources:
   - uri: seed://k8s/pod-crashloop-imagepull
     hash: sha256:seed
 confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
 updated_at: 2026-05-17T00:00:00Z
 ---
 

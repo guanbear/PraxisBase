@@ -5,6 +5,7 @@ export function classifyProposalRisk(input: { action: ProposalAction; target_typ
   if (input.target_type === "policy" || input.target_type === "decision") return "high";
   if (input.target_type === "skill" && input.action !== "link") return "medium";
   if (input.target_type === "known_fix" || input.target_type === "procedure") return "medium";
+  if (input.target_type === "pitfall") return "medium";
   return "low";
 }
 
