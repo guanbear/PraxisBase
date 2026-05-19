@@ -11,8 +11,25 @@ The system shall initialize an agent knowledge substrate workspace for OpenClaw 
 - **GIVEN** an empty directory
 - **WHEN** the user runs `praxisbase init`
 - **THEN** the system creates `.praxisbase/`, `kb/`, `skills/`, and `dist/` protocol directories
+- **AND** creates `.praxisbase/exceptions/` and `.praxisbase/runs/` protocol directories
 - **AND** creates OpenClaw seed skills and a draft auth-expired known fix
 - **AND** writes `protocol_version: "0.1"` into protocol configuration
+
+### Requirement: Knowledge Governance Metadata
+
+The system shall preserve lightweight governance metadata needed for later knowledge maturation, decay, and linting.
+
+#### Scenario: Accept governed knowledge object metadata
+
+- **GIVEN** a valid known-fix or pitfall object
+- **WHEN** the object is parsed by the protocol schema
+- **THEN** it includes `knowledge_type`
+- **AND** includes `maturity`
+- **AND** includes `scope`
+- **AND** includes `reference_count`
+- **AND** includes `last_referenced_at`
+- **AND** includes `supersedes`
+- **AND** includes `superseded_by`
 
 ### Requirement: OpenClaw Repair Context Retrieval
 
@@ -36,6 +53,7 @@ The system shall accept structured repair episodes from temporary and persistent
 - **WHEN** the agent runs `praxisbase episode submit <file>`
 - **THEN** the system validates the episode
 - **AND** writes it to `.praxisbase/inbox/episodes/<episode-id>.json`
+- **AND** preserves `knowledge_references` with phase, effect, and outcome when provided
 
 #### Scenario: Reject episode without provenance
 
@@ -81,6 +99,7 @@ The system shall allow routine knowledge improvements to be reviewed and promote
 - **WHEN** `praxisbase review --auto` runs
 - **THEN** the review decision is `needs_human`
 - **AND** the proposal is not promoted automatically
+- **AND** the exception is written under `.praxisbase/exceptions/human-required/`
 
 ### Requirement: Promotion Safety
 

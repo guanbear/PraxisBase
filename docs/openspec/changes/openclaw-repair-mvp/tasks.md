@@ -3,6 +3,7 @@
 - [ ] Create TypeScript pnpm monorepo scaffold.
 - [ ] Define protocol schemas and schema tests.
 - [ ] Implement file store and `praxisbase init`.
+- [ ] Add knowledge governance schema fields and protocol directories for exceptions and run records.
 - [ ] Add OpenClaw seed skills and known fix.
 - [ ] Implement OpenClaw log signature detection.
 - [ ] Implement `praxisbase repair-context openclaw --logs <file> --json`.
@@ -42,3 +43,4 @@ test -f "$tmpdir/dist/repair-bundles/manifest.json"
 - No Hermes runner files are created.
 - No external search or vector database dependency is added.
 - No K8s runtime integration code is added.
+- No automatic maturity promotion, automatic decay, knowledge lint, or cold-start import code is added.

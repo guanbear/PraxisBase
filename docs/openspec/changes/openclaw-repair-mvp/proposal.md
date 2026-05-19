@@ -16,6 +16,9 @@ PraxisBase 当前方向必须从 “self-updating wiki” 收束为 “agent kno
 
 - 新增 `.praxisbase/` file protocol。
 - 新增 episode、proposal、review、known fix、repair bundle 等对象 schema。
+- 新增轻量知识治理字段：`maturity`、`knowledge_type`、`knowledge_references`、`reference_count`、`last_referenced_at`、`supersedes`、`superseded_by`。
+- 新增 `pitfall` 知识类型，表达已知坑、反模式和禁止操作。
+- 新增 exception queue 与 run records 目录，用文件协议记录人工异常和 review/promote/build 运行状态。
 - 新增 CLI：`init`、`repair-context`、`bundle fetch`、`episode submit`、`propose`、`review --auto`、`promote --auto`、`build`、`check`。
 - 新增 OpenClaw repair context 生成能力。
 - 新增 D-lite risk review 和 AI-reviewed auto-merge 机制。
@@ -29,6 +32,7 @@ PraxisBase 当前方向必须从 “self-updating wiki” 收束为 “agent kno
 - 不实现 Hermes runner。
 - 不实现 K8s 故障定位 runtime。
 - 不实现 `search`、`read`、`curate`、`run ingest` 等 Phase 2+ 命令。
+- 不实现自动成熟度晋升、自动衰减、knowledge lint 或 cold-start import。
 - 不接外部搜索服务、向量库、队列或 daemon。
 - 不做区块链或分布式共识。
 - 不实现复杂多租户权限系统。
@@ -38,6 +42,8 @@ PraxisBase 当前方向必须从 “self-updating wiki” 收束为 “agent kno
 ## Acceptance Summary
 
 - `praxisbase init` 创建可用的协议骨架和 seed pack。
+- 协议骨架包含 `.praxisbase/exceptions/*` 和 `.praxisbase/runs/*`。
+- Schema 支持 `maturity`、`knowledge_type`、`knowledge_references`、引用计数和 supersession 字段。
 - `praxisbase repair-context openclaw --logs <file> --json` 能识别 auth-expired 夹具日志并返回安全 repair bundle。
 - `praxisbase episode submit <file>` 和 `praxisbase propose <file>` 校验对象并写入 inbox。
 - `praxisbase review --auto` 对中低风险 proposal 生成可自动合入 review，对高风险 proposal 标记人工异常。
