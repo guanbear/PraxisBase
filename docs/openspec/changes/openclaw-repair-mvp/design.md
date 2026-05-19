@@ -27,7 +27,10 @@ OpenClaw sandbox issue
 | `.praxisbase/inbox/proposals` | Validated submitted knowledge proposals |
 | `.praxisbase/inbox/reviews` | AI reviewer decisions |
 | `.praxisbase/outbox` | Local retry queue when authority repo is unavailable |
+| `.praxisbase/exceptions` | Human-required, conflict, and failed-check exception queues |
+| `.praxisbase/runs` | Review, promote, and build run records for recovery and audit |
 | `kb/known-fixes` | Reviewed stable known fixes |
+| `kb/pitfalls` | Reviewed known pitfalls, anti-patterns, and forbidden repair paths |
 | `kb/procedures` | Reviewed stable procedures |
 | `skills/openclaw` | Agent-facing repair skills |
 | `dist/repair-bundles` | Generated context bundles for agents |
@@ -42,9 +45,23 @@ Implement Zod schemas for:
 - `Proposal`
 - `Review`
 - `KnownFixFrontmatter`
+- `KnowledgeReference`
+- `PitfallFrontmatter`
 - `Evidence`
 
 Every schema must require `protocol_version: "0.1"`.
+
+Knowledge objects must include governance metadata:
+
+- `knowledge_type`
+- `maturity: draft | verified | proven`
+- `scope: personal | project | team | global`
+- `reference_count`
+- `last_referenced_at`
+- `supersedes`
+- `superseded_by`
+
+Episodes must include `knowledge_references` entries with object id, path, phase, effect, and outcome. Phase 1 records these fields but does not automatically promote or decay maturity.
 
 ### Repair Context
 
@@ -73,6 +90,8 @@ Risk classification:
 - `archive` is high risk.
 - `policy` and `decision` changes are high risk.
 - `skill`, `known_fix`, and `procedure` changes are medium risk unless only linking.
+- `pitfall` create or patch changes are medium risk.
+- evidence/reference additions and run records are low risk.
 - note/link metadata changes are low risk.
 
 Auto-merge requires:
@@ -116,6 +135,8 @@ The manifest includes protocol version, bundle path, checksum, generated time, c
 - If episode/proposal submission fails, agents write to `.praxisbase/outbox`.
 - If promotion patch conflicts, proposal returns to review queue with status `conflict`.
 - If review confidence is below threshold, proposal enters human exception queue.
+- Human-required, conflict, and failed-check cases are written under `.praxisbase/exceptions`.
+- Each `review`, `promote`, and `build` invocation writes a run record under `.praxisbase/runs`.
 
 ## Security Boundary
 

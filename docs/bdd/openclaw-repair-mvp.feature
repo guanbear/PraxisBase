@@ -17,6 +17,12 @@
     并且 系统创建 ".praxisbase/inbox/episodes"
     并且 系统创建 ".praxisbase/inbox/proposals"
     并且 系统创建 ".praxisbase/outbox/episodes"
+    并且 系统创建 ".praxisbase/exceptions/human-required"
+    并且 系统创建 ".praxisbase/exceptions/conflicts"
+    并且 系统创建 ".praxisbase/exceptions/failed-checks"
+    并且 系统创建 ".praxisbase/runs/review"
+    并且 系统创建 ".praxisbase/runs/promote"
+    并且 系统创建 ".praxisbase/runs/build"
     并且 系统创建 "skills/openclaw/baseline-diagnostics/SKILL.md"
     并且 系统创建 "skills/openclaw/auth-repair/SKILL.md"
     并且 系统创建 "kb/known-fixes/openclaw-auth-expired.md"
@@ -39,11 +45,21 @@
     并且 "episode.json" 包含 "agent_type"
     并且 "episode.json" 包含 "environment_id"
     并且 "episode.json" 包含 "source_refs"
+    并且 "episode.json" 包含 "knowledge_references"
     并且 "episode.json" 包含 "idempotency_key"
     当 agent 运行 "praxisbase episode submit episode.json"
     那么 系统写入 ".praxisbase/inbox/episodes/<episode-id>.json"
     并且 写入文件保留原始 "source_refs"
     并且 写入文件保留原始 "problem_signature"
+    并且 写入文件保留原始 "knowledge_references"
+
+  场景: 知识对象保留轻量治理字段
+    假如 文件 "known-fix-proposal.json" 的 patch content 是 known_fix frontmatter
+    那么 patch content 包含 "knowledge_type: known_fix"
+    并且 patch content 包含 "maturity: draft"
+    并且 patch content 包含 "reference_count:"
+    并且 patch content 包含 "last_referenced_at:"
+    并且 patch content 包含 "supersedes:"
 
   场景: 缺少 provenance 的 episode 被拒绝
     假如 文件 "episode-without-source.json" 是一个 repair_episode
@@ -86,6 +102,7 @@
     那么 系统写入 review
     并且 review 的 "decision" 等于 "needs_human"
     并且 review 的 "risk" 等于 "high"
+    并且 系统写入 ".praxisbase/exceptions/human-required/<exception-id>.json"
     当 scheduled job 运行 "praxisbase promote --auto"
     那么 系统不修改 "kb/"
     并且 系统不修改 "skills/"
@@ -146,4 +163,6 @@
     并且 diff 不包含 K8s runtime integration
     并且 diff 不新增 external search service dependency
     并且 diff 不新增 vector database dependency
+    并且 diff 不包含 automatic maturity promotion 或 decay implementation
+    并且 diff 不包含 knowledge lint 或 cold-start import implementation
     并且 diff 不包含 blockchain 或 distributed consensus implementation

@@ -379,8 +379,15 @@ describe("protocol schemas", () => {
       idempotency_key: "episode_20260517_abc",
       problem_signature: "openclaw:claude-auth-expired",
       result: "success",
-      used_skills: ["skills/openclaw/auth-repair/SKILL.md"],
-      used_objects: ["kb/known-fixes/openclaw-auth-expired.md"],
+      knowledge_references: [
+        {
+          id: "openclaw-auth-expired",
+          path: "kb/known-fixes/openclaw-auth-expired.md",
+          used_in_phase: "diagnosis",
+          effect: "helped_fix",
+          outcome: "success"
+        }
+      ],
       source_refs: ["log://openclaw/sandbox-123/run-456"],
       summary: "Refreshed auth state and restarted the session.",
       created_at: "2026-05-17T10:00:00Z"
@@ -402,8 +409,7 @@ describe("protocol schemas", () => {
       idempotency_key: "episode_20260517_abc",
       problem_signature: "openclaw:claude-auth-expired",
       result: "success",
-      used_skills: [],
-      used_objects: [],
+      knowledge_references: [],
       source_refs: [],
       summary: "Missing provenance.",
       created_at: "2026-05-17T10:00:00Z"
@@ -470,10 +476,16 @@ describe("protocol schemas", () => {
       scope: "team",
       risk: "medium",
       status: "published",
+      knowledge_type: "known_fix",
+      maturity: "draft",
       signatures: ["openclaw:claude-auth-expired"],
       skills: ["skills/openclaw/auth-repair/SKILL.md"],
       sources: [{ uri: "log://openclaw/sandbox-123/run-456", hash: "sha256:abc" }],
       confidence: 0.84,
+      reference_count: 0,
+      last_referenced_at: null,
+      supersedes: [],
+      superseded_by: null,
       updated_at: "2026-05-17T10:00:00Z"
     });
 
@@ -509,8 +521,21 @@ export type AgentType =
 export type RepairResult = "success" | "failed" | "partial" | "unknown";
 export type RiskLevel = "low" | "medium" | "high";
 export type ProposalAction = "create" | "patch" | "archive" | "link";
-export type TargetType = "note" | "known_fix" | "procedure" | "skill" | "policy" | "decision";
+export type KnowledgeType =
+  | "note"
+  | "known_fix"
+  | "procedure"
+  | "skill"
+  | "policy"
+  | "decision"
+  | "pitfall"
+  | "guideline"
+  | "model";
+export type TargetType = KnowledgeType;
+export type Maturity = "draft" | "verified" | "proven";
 export type ReviewDecision = "approve" | "reject" | "needs_human" | "conflict";
+export type UsedInPhase = "diagnosis" | "repair" | "verification" | "proposal";
+export type KnowledgeEffect = "helped_fix" | "guided_action" | "prevented_risk" | "not_useful";
 
 export interface Evidence {
   source_uri: string;
@@ -518,6 +543,14 @@ export interface Evidence {
   excerpt: string;
   repair_result: RepairResult;
   verification: string;
+}
+
+export interface KnowledgeReference {
+  id: string;
+  path: string;
+  used_in_phase: UsedInPhase;
+  effect: KnowledgeEffect;
+  outcome: RepairResult;
 }
 ```
 
@@ -561,8 +594,22 @@ export const AgentTypeSchema = z.enum([
 export const RepairResultSchema = z.enum(["success", "failed", "partial", "unknown"]);
 export const RiskLevelSchema = z.enum(["low", "medium", "high"]);
 export const ProposalActionSchema = z.enum(["create", "patch", "archive", "link"]);
-export const TargetTypeSchema = z.enum(["note", "known_fix", "procedure", "skill", "policy", "decision"]);
+export const KnowledgeTypeSchema = z.enum([
+  "note",
+  "known_fix",
+  "procedure",
+  "skill",
+  "policy",
+  "decision",
+  "pitfall",
+  "guideline",
+  "model"
+]);
+export const TargetTypeSchema = KnowledgeTypeSchema;
+export const MaturitySchema = z.enum(["draft", "verified", "proven"]);
 export const ReviewDecisionSchema = z.enum(["approve", "reject", "needs_human", "conflict"]);
+export const UsedInPhaseSchema = z.enum(["diagnosis", "repair", "verification", "proposal"]);
+export const KnowledgeEffectSchema = z.enum(["helped_fix", "guided_action", "prevented_risk", "not_useful"]);
 
 const DateTimeSchema = z.string().datetime();
 const NonEmptyStringArray = z.array(z.string().min(1)).min(1);
@@ -573,6 +620,24 @@ export const EvidenceSchema = z.object({
   excerpt: z.string().min(1),
   repair_result: RepairResultSchema,
   verification: z.string().min(1)
+});
+
+export const KnowledgeReferenceSchema = z.object({
+  id: z.string().min(1),
+  path: z.string().min(1),
+  used_in_phase: UsedInPhaseSchema,
+  effect: KnowledgeEffectSchema,
+  outcome: RepairResultSchema
+});
+
+export const GovernanceMetadataSchema = z.object({
+  knowledge_type: KnowledgeTypeSchema,
+  maturity: MaturitySchema,
+  scope: ScopeSchema,
+  reference_count: z.number().int().min(0).default(0),
+  last_referenced_at: DateTimeSchema.nullable().default(null),
+  supersedes: z.array(z.string()).default([]),
+  superseded_by: z.string().nullable().default(null)
 });
 
 export const EpisodeSchema = z.object({
@@ -587,8 +652,7 @@ export const EpisodeSchema = z.object({
   idempotency_key: z.string().min(1),
   problem_signature: z.string().min(1),
   result: RepairResultSchema,
-  used_skills: z.array(z.string()).default([]),
-  used_objects: z.array(z.string()).default([]),
+  knowledge_references: z.array(KnowledgeReferenceSchema).default([]),
   source_refs: NonEmptyStringArray,
   summary: z.string().min(1),
   created_at: DateTimeSchema
@@ -634,13 +698,31 @@ export const KnownFixFrontmatterSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   protocol_version: ProtocolVersionSchema,
   type: z.literal("known_fix"),
+  knowledge_type: z.literal("known_fix"),
   scope: ScopeSchema,
   risk: RiskLevelSchema,
   status: z.enum(["draft", "published", "archived"]),
+  maturity: MaturitySchema,
   signatures: NonEmptyStringArray,
   skills: z.array(z.string()).default([]),
   sources: z.array(z.object({ uri: z.string().min(1), hash: z.string().min(1) })).min(1),
   confidence: z.number().min(0).max(1),
+  reference_count: z.number().int().min(0).default(0),
+  last_referenced_at: DateTimeSchema.nullable().default(null),
+  supersedes: z.array(z.string()).default([]),
+  superseded_by: z.string().nullable().default(null),
+  updated_at: DateTimeSchema
+});
+
+export const PitfallFrontmatterSchema = GovernanceMetadataSchema.extend({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("pitfall"),
+  knowledge_type: z.literal("pitfall"),
+  risk: RiskLevelSchema,
+  status: z.enum(["draft", "published", "archived"]),
+  signatures: NonEmptyStringArray,
+  sources: z.array(z.object({ uri: z.string().min(1), hash: z.string().min(1) })).min(1),
   updated_at: DateTimeSchema
 });
 
@@ -648,6 +730,7 @@ export type Episode = z.infer<typeof EpisodeSchema>;
 export type Proposal = z.infer<typeof ProposalSchema>;
 export type Review = z.infer<typeof ReviewSchema>;
 export type KnownFixFrontmatter = z.infer<typeof KnownFixFrontmatterSchema>;
+export type PitfallFrontmatter = z.infer<typeof PitfallFrontmatterSchema>;
 ```
 
 - [ ] **Step 5: Run schema tests**
@@ -696,6 +779,8 @@ describe("praxisbase init", () => {
 
     await expect(stat(join(root, ".praxisbase/config.yaml"))).resolves.toBeTruthy();
     await expect(stat(join(root, ".praxisbase/policies/autonomy.yaml"))).resolves.toBeTruthy();
+    await expect(stat(join(root, ".praxisbase/exceptions/human-required"))).resolves.toBeTruthy();
+    await expect(stat(join(root, ".praxisbase/runs/review"))).resolves.toBeTruthy();
     await expect(stat(join(root, "skills/openclaw/auth-repair/SKILL.md"))).resolves.toBeTruthy();
     await expect(stat(join(root, "kb/known-fixes/openclaw-auth-expired.md"))).resolves.toBeTruthy();
 
@@ -730,9 +815,17 @@ export const protocolPaths = {
   inboxReviews: ".praxisbase/inbox/reviews",
   outboxEpisodes: ".praxisbase/outbox/episodes",
   outboxProposals: ".praxisbase/outbox/proposals",
+  exceptionsHumanRequired: ".praxisbase/exceptions/human-required",
+  exceptionsConflicts: ".praxisbase/exceptions/conflicts",
+  exceptionsFailedChecks: ".praxisbase/exceptions/failed-checks",
+  runsReview: ".praxisbase/runs/review",
+  runsPromote: ".praxisbase/runs/promote",
+  runsBuild: ".praxisbase/runs/build",
+  cacheLastKnownGood: ".praxisbase/cache/last-known-good",
   indexes: ".praxisbase/indexes",
   bundles: ".praxisbase/bundles",
   knownFixes: "kb/known-fixes",
+  pitfalls: "kb/pitfalls",
   procedures: "kb/procedures",
   notes: "kb/notes",
   memory: "kb/memory",
@@ -785,6 +878,13 @@ default_scope: team
   - modify_permissions
   - reduce_safety_checks
 `,
+  ".praxisbase/exceptions/human-required/.keep": "",
+  ".praxisbase/exceptions/conflicts/.keep": "",
+  ".praxisbase/exceptions/failed-checks/.keep": "",
+  ".praxisbase/runs/review/.keep": "",
+  ".praxisbase/runs/promote/.keep": "",
+  ".praxisbase/runs/build/.keep": "",
+  ".praxisbase/cache/last-known-good/.keep": "",
   "skills/openclaw/baseline-diagnostics/SKILL.md": `# OpenClaw Baseline Diagnostics
 
 Use this skill before applying a repair. Capture OpenClaw status, Claude Code status, recent logs, workspace path, runtime version, and network reachability. Do not modify production systems from a sandbox repair run.
@@ -805,9 +905,11 @@ Restore the previous auth state snapshot if refresh makes the session worse.
 id: openclaw-auth-expired
 protocol_version: "0.1"
 type: known_fix
+knowledge_type: known_fix
 scope: team
 risk: medium
 status: draft
+maturity: draft
 signatures:
   - openclaw:claude-auth-expired
 skills:
@@ -816,6 +918,10 @@ sources:
   - uri: seed://openclaw/auth-expired
     hash: sha256:seed
 confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
 updated_at: 2026-05-17T00:00:00Z
 ---
 
@@ -1209,8 +1315,15 @@ Write `tests/fixtures/openclaw/episodes/success.json`:
   "idempotency_key": "episode_20260517_abc",
   "problem_signature": "openclaw:claude-auth-expired",
   "result": "success",
-  "used_skills": ["skills/openclaw/auth-repair/SKILL.md"],
-  "used_objects": ["kb/known-fixes/openclaw-auth-expired.md"],
+  "knowledge_references": [
+    {
+      "id": "openclaw-auth-expired",
+      "path": "kb/known-fixes/openclaw-auth-expired.md",
+      "used_in_phase": "diagnosis",
+      "effect": "helped_fix",
+      "outcome": "success"
+    }
+  ],
   "source_refs": ["log://openclaw/sandbox-123/run-456"],
   "summary": "Refreshed auth state and restarted the session.",
   "created_at": "2026-05-17T10:00:00Z"
@@ -1387,6 +1500,11 @@ describe("review risk", () => {
     expect(risk).toBe("high");
   });
 
+  it("classifies pitfall create as medium risk", () => {
+    const risk = classifyProposalRisk({ action: "create", target_type: "pitfall" });
+    expect(risk).toBe("medium");
+  });
+
   it("allows auto-merge for medium approval above confidence threshold", () => {
     expect(shouldAutoMergeReview({ decision: "approve", risk: "medium", confidence: 0.8 })).toBe(true);
   });
@@ -1408,7 +1526,9 @@ export function classifyProposalRisk(input: { action: ProposalAction; target_typ
   if (input.action === "archive") return "high";
   if (input.target_type === "policy" || input.target_type === "decision") return "high";
   if (input.target_type === "skill" && input.action !== "link") return "medium";
-  if (input.target_type === "known_fix" || input.target_type === "procedure") return "medium";
+  if (input.target_type === "known_fix" || input.target_type === "procedure" || input.target_type === "pitfall") {
+    return "medium";
+  }
   return "low";
 }
 
@@ -1572,7 +1692,12 @@ export async function reviewAuto(root: string): Promise<void> {
     const proposal = ProposalSchema.parse(raw);
     const review = reviewProposal(proposal);
     await writeJson(root, `.praxisbase/inbox/reviews/${review.id}.json`, review);
+    if (review.decision === "needs_human") {
+      await writeJson(root, `.praxisbase/exceptions/human-required/${review.id}.json`, { proposal_id: proposal.id, review_id: review.id, reasons: review.reasons });
+    }
   }
+  const runId = new Date().toISOString().replace(/[:.]/g, "-");
+  await writeJson(root, `.praxisbase/runs/review/${runId}.json`, { task: "review", status: "completed" });
 }
 ```
 
@@ -1584,6 +1709,7 @@ import { join } from "node:path";
 import { ProposalSchema, ReviewSchema } from "@praxisbase/core";
 import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
 import { shouldAutoMergeReview } from "@praxisbase/core/review/risk.js";
+import { writeJson } from "@praxisbase/core/store/file-store.js";
 
 export async function promoteAuto(root: string): Promise<void> {
   const proposalDir = join(root, ".praxisbase/inbox/proposals");
@@ -1605,6 +1731,8 @@ export async function promoteAuto(root: string): Promise<void> {
       await promoteApprovedProposal(root, { proposal, review });
     }
   }
+  const runId = new Date().toISOString().replace(/[:.]/g, "-");
+  await writeJson(root, `.praxisbase/runs/promote/${runId}.json`, { task: "promote", status: "completed" });
 }
 ```
 
@@ -1772,6 +1900,8 @@ export async function buildStaticArtifacts(root: string): Promise<void> {
       body: "<p>Static inspection output for repair knowledge.</p>"
     })
   );
+  const runId = new Date().toISOString().replace(/[:.]/g, "-");
+  await writeJson(root, `.praxisbase/runs/build/${runId}.json`, { task: "build", status: "completed" });
 }
 ```
 
