@@ -27,6 +27,13 @@ describe("praxisbase init", () => {
     await assert.doesNotReject(stat(join(root, ".praxisbase/inbox/episodes")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/inbox/proposals")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/outbox/episodes")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/exceptions/human-required")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/exceptions/conflicts")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/exceptions/failed-checks")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/review")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/promote")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/build")));
+    await assert.doesNotReject(stat(join(root, "kb/pitfalls")));
     await assert.doesNotReject(stat(join(root, "skills/openclaw/auth-repair/SKILL.md")));
     await assert.doesNotReject(stat(join(root, "skills/openclaw/baseline-diagnostics/SKILL.md")));
     await assert.doesNotReject(stat(join(root, "kb/known-fixes/openclaw-auth-expired.md")));

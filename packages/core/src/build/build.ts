@@ -1,9 +1,14 @@
 import { createHash } from "node:crypto";
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { mkdir } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import matter from "gray-matter";
 import { readText, writeJson, writeText } from "../store/file-store.js";
 import { renderInspectionHtml } from "./html.js";
+import { PROTOCOL_VERSION } from "../protocol/types.js";
+import type { RunRecord } from "../protocol/schemas.js";
+import { protocolPaths } from "../protocol/paths.js";
 
 type KnowledgeProfile = "all" | "openclaw" | "k8s";
 
@@ -72,6 +77,7 @@ export interface BuildResult {
 }
 
 export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
+  const buildStartedAt = new Date().toISOString();
   const profile = await readKnowledgeProfile(root);
   const buildOpenClaw = profile !== "k8s";
   const buildK8s = profile !== "openclaw";
@@ -278,6 +284,19 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
       body: bodyParts.join("\n"),
     })
   );
+
+  const buildRun: RunRecord = {
+    id: `run_build_${randomUUID().slice(0, 8)}`,
+    protocol_version: PROTOCOL_VERSION,
+    command: "build",
+    status: "completed",
+    started_at: buildStartedAt,
+    finished_at: new Date().toISOString(),
+    counts: { bundles: builtBundles.length, kb_objects: kbObjects.length },
+    errors: [],
+  };
+  await mkdir(join(root, protocolPaths.runsBuild), { recursive: true });
+  await writeJson(root, `${protocolPaths.runsBuild}/${buildRun.id}.json`, buildRun);
 
   return {
     bundles: builtBundles,

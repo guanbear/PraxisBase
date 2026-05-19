@@ -164,6 +164,33 @@ export const PitfallFrontmatterSchema = z.object({
   updated_at: DateTimeSchema
 });
 
+export const ExceptionCategorySchema = z.enum(["human_required", "conflict", "failed_check"]);
+
+export const ExceptionRecordSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("exception_record"),
+  category: ExceptionCategorySchema,
+  source_id: z.string().min(1),
+  reason: z.string().min(1),
+  details: z.record(z.unknown()).optional(),
+  created_at: DateTimeSchema,
+});
+
+export const RunCommandSchema = z.enum(["review", "promote", "build"]);
+export const RunStatusSchema = z.enum(["completed", "partial", "failed"]);
+
+export const RunRecordSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  command: RunCommandSchema,
+  status: RunStatusSchema,
+  started_at: DateTimeSchema,
+  finished_at: DateTimeSchema,
+  counts: z.record(z.number()).default({}),
+  errors: z.array(z.string()).default([]),
+});
+
 export const K8sIncidentManifestEntrySchema = z.object({
   signature: z.string().min(1),
   path: z.string().min(1),
@@ -187,5 +214,7 @@ export type Review = z.infer<typeof ReviewSchema>;
 export type KnownFixFrontmatter = z.infer<typeof KnownFixFrontmatterSchema>;
 export type PitfallFrontmatter = z.infer<typeof PitfallFrontmatterSchema>;
 export type KnowledgeReference = z.infer<typeof KnowledgeReferenceSchema>;
+export type ExceptionRecord = z.infer<typeof ExceptionRecordSchema>;
+export type RunRecord = z.infer<typeof RunRecordSchema>;
 export type K8sIncidentManifest = z.infer<typeof K8sIncidentManifestSchema>;
 export type K8sIncidentManifestEntry = z.infer<typeof K8sIncidentManifestEntrySchema>;

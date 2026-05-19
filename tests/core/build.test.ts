@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -71,6 +71,29 @@ describe("static build", () => {
     assert.equal(manifest.profile, "k8s");
     assert.equal(manifest.bundles.length, 1);
     assert.equal(manifest.bundles[0].id, "k8s-incident");
+  });
+
+  it("writes a build run record", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-build-run-"));
+    await initializeWorkspace(root);
+    await buildStaticArtifacts(root);
+
+    const runDir = join(root, ".praxisbase/runs/build");
+    const runFiles = await readdir(runDir);
+    assert.ok(runFiles.length >= 1, "expected at least one build run record");
+
+    const run = JSON.parse(
+      await readFile(join(runDir, runFiles[0]), "utf8")
+    );
+    assert.equal(run.command, "build");
+    assert.equal(run.protocol_version, "0.1");
+    assert.equal(run.status, "completed");
+    assert.ok(run.started_at);
+    assert.ok(run.finished_at);
+    assert.equal(typeof run.counts.bundles, "number");
+    assert.equal(typeof run.counts.kb_objects, "number");
+    assert.ok(Array.isArray(run.errors));
+    assert.ok(run.errors.length === 0);
   });
 
 });

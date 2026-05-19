@@ -3,7 +3,7 @@
 - [x] Create TypeScript pnpm monorepo scaffold.
 - [x] Define protocol schemas and schema tests.
 - [x] Implement file store and `praxisbase init`.
-- [ ] Add knowledge governance schema fields and protocol directories for exceptions and run records.
+- [x] Add knowledge governance schema fields and protocol directories for exceptions and run records.
 - [x] Add OpenClaw seed skills and known fix.
 - [x] Implement OpenClaw log signature detection.
 - [x] Implement `praxisbase repair-context openclaw --logs <file> --json`.
