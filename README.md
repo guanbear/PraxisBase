@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/brand/praxisbase-logo.png" alt="PraxisBase — Agent-Native Knowledge Substrate" width="900">
+</p>
+
 # PraxisBase — Agent-Native Knowledge Substrate
 
 **Languages:** English | [简体中文](README.zh-CN.md)
@@ -92,18 +96,11 @@ PraxisBase should reuse agent-native memory instead of replacing it. Existing Co
 
 `memory import` backfills native memory into capture/proposal candidates. `memory refresh` sends reviewed PraxisBase knowledge back as runtime context, install snippets, or patch proposals. It is not silent bidirectional sync: native memory is a source and cache, while reviewed PraxisBase objects remain the shared authority.
 
-## Hermes Relationship
+### Example: Hermes Skill Evolution
 
-Hermes can make the first skill-evolution prototype simpler because it already has agent-managed skills, persistent memory, and a curator that maintains agent-created skills. PraxisBase should integrate with that, not depend on it.
+Hermes already has agent-managed skills, persistent memory, and curator-style skill maintenance. PraxisBase can reuse those outputs as proposal sources and send reviewed shared skills back as context or patch proposals.
 
-Recommended boundary:
-
-- Hermes may act as a **skill synthesizer**: turn successful runs into local skills.
-- Hermes may act as a **curator**: patch, consolidate, archive, or propose improvements.
-- PraxisBase remains the **shared substrate**: evidence, review, promotion, Git history, repair bundles, and cross-agent distribution.
-- Non-Hermes agents must still be able to use file protocol, CLI, and future MCP wrappers.
-
-This keeps the MVP simpler without making Hermes a hard dependency.
+Hermes is an accelerator, not a dependency: Codex, Claude Code, OpenCode, OpenHuman, OpenClaw, and generic agents must still work through the same CLI/file protocol.
 
 ## Why This Exists
 
