@@ -9,6 +9,9 @@ import {
   K8sIncidentManifestSchema,
   KnownFixFrontmatterSchema,
   KnowledgeReferenceSchema,
+  KnowledgeReferencePhaseSchema,
+  KnowledgeReferenceEffectSchema,
+  KnowledgeReferenceOutcomeSchema,
   KnowledgeTypeSchema,
   MaturitySchema,
   PitfallFrontmatterSchema,
@@ -541,5 +544,72 @@ describe("protocol schemas", () => {
     assert.equal(kt, "pitfall");
     const m = MaturitySchema.parse("proven");
     assert.equal(m, "proven");
+  });
+
+  it("knowledge_reference used_in_phase accepts valid enum values", () => {
+    for (const phase of ["diagnosis", "repair", "verification", "proposal"] as const) {
+      const parsed = KnowledgeReferencePhaseSchema.parse(phase);
+      assert.equal(parsed, phase);
+    }
+  });
+
+  it("knowledge_reference used_in_phase rejects invalid values", () => {
+    assert.throws(() => KnowledgeReferencePhaseSchema.parse("invalid_phase"));
+    assert.throws(() => KnowledgeReferencePhaseSchema.parse(""));
+  });
+
+  it("knowledge_reference effect accepts valid enum values", () => {
+    for (const effect of ["helped_fix", "guided_action"] as const) {
+      const parsed = KnowledgeReferenceEffectSchema.parse(effect);
+      assert.equal(parsed, effect);
+    }
+  });
+
+  it("knowledge_reference effect rejects invalid values", () => {
+    assert.throws(() => KnowledgeReferenceEffectSchema.parse("invalid_effect"));
+    assert.throws(() => KnowledgeReferenceEffectSchema.parse("helped"));
+  });
+
+  it("knowledge_reference outcome accepts valid enum values from repair and incident results", () => {
+    const validOutcomes = ["success", "failed", "partial", "unknown", "confirmed", "ruled_out", "inconclusive", "data_gap"] as const;
+    for (const outcome of validOutcomes) {
+      const parsed = KnowledgeReferenceOutcomeSchema.parse(outcome);
+      assert.equal(parsed, outcome);
+    }
+  });
+
+  it("knowledge_reference outcome rejects invalid values", () => {
+    assert.throws(() => KnowledgeReferenceOutcomeSchema.parse("invalid_outcome"));
+    assert.throws(() => KnowledgeReferenceOutcomeSchema.parse(""));
+  });
+
+  it("knowledge_reference rejects arbitrary string for used_in_phase", () => {
+    assert.throws(() => KnowledgeReferenceSchema.parse({
+      id: "test-fix",
+      path: "kb/known-fixes/test.md",
+      used_in_phase: "arbitrary_string",
+      effect: "helped_fix",
+      outcome: "success",
+    }));
+  });
+
+  it("knowledge_reference rejects arbitrary string for effect", () => {
+    assert.throws(() => KnowledgeReferenceSchema.parse({
+      id: "test-fix",
+      path: "kb/known-fixes/test.md",
+      used_in_phase: "repair",
+      effect: "arbitrary_effect",
+      outcome: "success",
+    }));
+  });
+
+  it("knowledge_reference rejects arbitrary string for outcome", () => {
+    assert.throws(() => KnowledgeReferenceSchema.parse({
+      id: "test-fix",
+      path: "kb/known-fixes/test.md",
+      used_in_phase: "repair",
+      effect: "helped_fix",
+      outcome: "arbitrary_outcome",
+    }));
   });
 });

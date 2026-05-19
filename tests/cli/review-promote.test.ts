@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -139,5 +139,61 @@ describe("review and promote commands", () => {
     assert.equal(exception.protocol_version, "0.1");
 
     await assert.rejects(readFile(join(root, "../outside.md"), "utf8"));
+  });
+
+  it("writes failed run record when proposal has bad JSON", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-review-bad-json-"));
+    await initializeWorkspace(root);
+
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/bad-json.json"),
+      "{ invalid json content "
+    );
+
+    await reviewAuto(root);
+
+    const runDir = join(root, ".praxisbase/runs/review");
+    const runFiles = await readdir(runDir);
+    assert.ok(runFiles.length >= 1, "expected at least one review run record");
+
+    const run = JSON.parse(
+      await readFile(join(runDir, runFiles[0]), "utf8")
+    );
+    assert.equal(run.command, "review");
+    assert.equal(run.protocol_version, "0.1");
+    assert.ok(run.status === "failed" || run.status === "partial", `expected failed or partial status, got ${run.status}`);
+    assert.ok(run.errors.length >= 1, "expected at least one error");
+    assert.ok(run.errors[0].includes("bad-json.json"), `error should mention file name: ${run.errors[0]}`);
+    assert.equal(run.counts.reviewed, 0);
+  });
+
+  it("writes partial run record when some proposals have bad schema", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-review-bad-schema-"));
+    await initializeWorkspace(root);
+
+    await submitProposal(root, "tests/fixtures/openclaw/proposals/known-fix.json");
+
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/bad-schema.json"),
+      JSON.stringify({ id: "bad", type: "knowledge_proposal" })
+    );
+
+    await reviewAuto(root);
+
+    const runDir = join(root, ".praxisbase/runs/review");
+    const runFiles = await readdir(runDir);
+    assert.ok(runFiles.length >= 1, "expected at least one review run record");
+
+    const run = JSON.parse(
+      await readFile(join(runDir, runFiles[0]), "utf8")
+    );
+    assert.equal(run.command, "review");
+    assert.equal(run.status, "partial", `expected partial status, got ${run.status}`);
+    assert.ok(run.errors.length >= 1, "expected at least one error for bad schema");
+    assert.ok(run.errors[0].includes("bad-schema.json"), `error should mention file name: ${run.errors[0]}`);
+    assert.equal(run.counts.reviewed, 1, "should have reviewed the valid proposal");
+    const reviewDir = join(root, ".praxisbase/inbox/reviews");
+    const reviewFiles = await readdir(reviewDir);
+    assert.ok(reviewFiles.length >= 1, "expected at least one review for the valid proposal");
   });
 });

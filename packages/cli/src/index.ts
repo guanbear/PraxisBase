@@ -11,6 +11,7 @@ import { checkCommand } from "./commands/check.js";
 import { bundleFetchCommand } from "./commands/bundle-fetch.js";
 import { feishuSummaryCommand, feishuProposalDraftCommand } from "./commands/feishu-summary.js";
 import { synthesizeSkillCommand } from "./commands/synthesize.js";
+import { lintCommand } from "./commands/lint.js";
 
 const program = new Command();
 
@@ -75,6 +76,10 @@ program.command("build").action(async () => {
 program.command("check").action(async () => {
   await checkCommand(process.cwd());
   console.log("Check passed.");
+});
+
+program.command("lint").option("--json").action(async (options: { json?: boolean }) => {
+  console.log(await lintCommand(process.cwd(), options));
 });
 
 program

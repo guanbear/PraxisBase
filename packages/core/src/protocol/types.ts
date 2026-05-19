@@ -17,7 +17,7 @@ export type ReviewDecision = "approve" | "reject" | "needs_human" | "conflict";
 export type KnowledgeType = "known_fix" | "procedure" | "skill" | "decision" | "policy" | "pitfall" | "guideline" | "model" | "note";
 export type Maturity = "draft" | "verified" | "proven";
 export type ExceptionCategory = "human_required" | "conflict" | "failed_check";
-export type RunCommand = "review" | "promote" | "build";
+export type RunCommand = "review" | "promote" | "build" | "lint";
 export type RunStatus = "completed" | "partial" | "failed";
 
 export interface Evidence {

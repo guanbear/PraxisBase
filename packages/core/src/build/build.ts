@@ -78,6 +78,30 @@ export interface BuildResult {
 
 export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
   const buildStartedAt = new Date().toISOString();
+  let result: BuildResult | undefined;
+
+  try {
+    result = await buildStaticArtifactsInner(root, buildStartedAt);
+    return result;
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const buildRun: RunRecord = {
+      id: `run_build_${randomUUID().slice(0, 8)}`,
+      protocol_version: PROTOCOL_VERSION,
+      command: "build",
+      status: "failed",
+      started_at: buildStartedAt,
+      finished_at: new Date().toISOString(),
+      counts: result ? { bundles: result.bundles.length } : {},
+      errors: [errorMessage],
+    };
+    await mkdir(join(root, protocolPaths.runsBuild), { recursive: true });
+    await writeJson(root, `${protocolPaths.runsBuild}/${buildRun.id}.json`, buildRun);
+    throw err;
+  }
+}
+
+async function buildStaticArtifactsInner(root: string, buildStartedAt: string): Promise<BuildResult> {
   const profile = await readKnowledgeProfile(root);
   const buildOpenClaw = profile !== "k8s";
   const buildK8s = profile !== "openclaw";

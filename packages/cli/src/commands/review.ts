@@ -22,29 +22,34 @@ export async function reviewAuto(root: string): Promise<void> {
   const errors: string[] = [];
 
   for (const file of files.filter((name) => name.endsWith(".json"))) {
-    const raw = JSON.parse(await readFile(join(proposalDir, file), "utf8"));
-    const proposal = ProposalSchema.parse(raw);
-    const review = reviewProposal(proposal);
-    await writeJson(root, `.praxisbase/inbox/reviews/${review.id}.json`, review);
-    reviewed++;
+    try {
+      const raw = JSON.parse(await readFile(join(proposalDir, file), "utf8"));
+      const proposal = ProposalSchema.parse(raw);
+      const review = reviewProposal(proposal);
+      await writeJson(root, `.praxisbase/inbox/reviews/${review.id}.json`, review);
+      reviewed++;
 
-    if (review.decision === "approve") {
-      approved++;
-    }
+      if (review.decision === "approve") {
+        approved++;
+      }
 
-    if (review.decision === "needs_human" || review.risk === "high" || review.confidence < 0.75) {
-      needsHuman++;
-      const exception: ExceptionRecord = {
-        id: `exc_${randomUUID().slice(0, 8)}`,
-        protocol_version: PROTOCOL_VERSION,
-        type: "exception_record",
-        category: "human_required",
-        source_id: review.id,
-        reason: `Review decision=${review.decision} risk=${review.risk} confidence=${review.confidence}`,
-        details: { proposal_id: proposal.id, review_decision: review.decision, risk: review.risk, confidence: review.confidence },
-        created_at: new Date().toISOString(),
-      };
-      await writeJson(root, `${protocolPaths.exceptionsHumanRequired}/${exception.id}.json`, exception);
+      if (review.decision === "needs_human" || review.risk === "high" || review.confidence < 0.75) {
+        needsHuman++;
+        const exception: ExceptionRecord = {
+          id: `exc_${randomUUID().slice(0, 8)}`,
+          protocol_version: PROTOCOL_VERSION,
+          type: "exception_record",
+          category: "human_required",
+          source_id: review.id,
+          reason: `Review decision=${review.decision} risk=${review.risk} confidence=${review.confidence}`,
+          details: { proposal_id: proposal.id, review_decision: review.decision, risk: review.risk, confidence: review.confidence },
+          created_at: new Date().toISOString(),
+        };
+        await writeJson(root, `${protocolPaths.exceptionsHumanRequired}/${exception.id}.json`, exception);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${file}: ${message}`);
     }
   }
 
@@ -53,7 +58,7 @@ export async function reviewAuto(root: string): Promise<void> {
     id: `run_review_${randomUUID().slice(0, 8)}`,
     protocol_version: PROTOCOL_VERSION,
     command: "review",
-    status: errors.length > 0 ? "partial" : "completed",
+    status: errors.length > 0 && reviewed === 0 ? "failed" : errors.length > 0 ? "partial" : "completed",
     started_at: startedAt,
     finished_at: finishedAt,
     counts: { reviewed, approved, needs_human: needsHuman },

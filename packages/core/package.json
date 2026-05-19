@@ -74,6 +74,10 @@
     "./synthesis/skill.js": {
       "types": "./src/synthesis/skill.ts",
       "default": "./dist/synthesis/skill.js"
+    },
+    "./lint/index.js": {
+      "types": "./src/lint/index.ts",
+      "default": "./dist/lint/index.js"
     }
   },
   "scripts": {

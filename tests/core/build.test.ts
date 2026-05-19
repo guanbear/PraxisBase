@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, stat } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -94,6 +94,29 @@ describe("static build", () => {
     assert.equal(typeof run.counts.kb_objects, "number");
     assert.ok(Array.isArray(run.errors));
     assert.ok(run.errors.length === 0);
+  });
+
+  it("writes a failed build run record when build fails", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-build-fail-"));
+    await initializeWorkspace(root);
+
+    await writeFile(join(root, "dist/repair-bundles"), "blocker");
+
+    await assert.rejects(buildStaticArtifacts(root));
+
+    const runDir = join(root, ".praxisbase/runs/build");
+    const runFiles = await readdir(runDir);
+    assert.ok(runFiles.length >= 1, "expected at least one build run record after failure");
+
+    const run = JSON.parse(
+      await readFile(join(runDir, runFiles[0]), "utf8")
+    );
+    assert.equal(run.command, "build");
+    assert.equal(run.protocol_version, "0.1");
+    assert.equal(run.status, "failed", `expected failed status, got ${run.status}`);
+    assert.ok(run.errors.length >= 1, "expected at least one error");
+    assert.ok(run.started_at);
+    assert.ok(run.finished_at);
   });
 
 });

@@ -26,12 +26,19 @@ export const MaturitySchema = z.enum(["draft", "verified", "proven"]);
 const DateTimeSchema = z.string().datetime();
 const NonEmptyStringArray = z.array(z.string().min(1)).min(1);
 
+export const KnowledgeReferencePhaseSchema = z.enum(["diagnosis", "repair", "verification", "proposal"]);
+export const KnowledgeReferenceEffectSchema = z.enum(["helped_fix", "guided_action"]);
+export const KnowledgeReferenceOutcomeSchema = z.enum([
+  "success", "failed", "partial", "unknown",
+  "confirmed", "ruled_out", "inconclusive", "data_gap",
+]);
+
 export const KnowledgeReferenceSchema = z.object({
   id: z.string().min(1),
   path: z.string().min(1),
-  used_in_phase: z.string().min(1),
-  effect: z.string().min(1),
-  outcome: z.string().min(1),
+  used_in_phase: KnowledgeReferencePhaseSchema,
+  effect: KnowledgeReferenceEffectSchema,
+  outcome: KnowledgeReferenceOutcomeSchema,
 });
 
 export const EvidenceSchema = z.object({
@@ -177,7 +184,7 @@ export const ExceptionRecordSchema = z.object({
   created_at: DateTimeSchema,
 });
 
-export const RunCommandSchema = z.enum(["review", "promote", "build"]);
+export const RunCommandSchema = z.enum(["review", "promote", "build", "lint"]);
 export const RunStatusSchema = z.enum(["completed", "partial", "failed"]);
 
 export const RunRecordSchema = z.object({
@@ -207,6 +214,43 @@ export const K8sIncidentManifestSchema = z.object({
   entries: z.array(K8sIncidentManifestEntrySchema),
 });
 
+export const LintSeveritySchema = z.enum(["error", "warning"]);
+export const LintRuleSchema = z.enum([
+  "missing_frontmatter",
+  "invalid_frontmatter",
+  "missing_governance_metadata",
+  "missing_evidence_source",
+  "raw_log_content",
+  "duplicate_id",
+  "duplicate_source_hash",
+  "duplicate_signature",
+  "contradiction_action_forbidden",
+  "superseded_active",
+]);
+
+export const LintFindingSchema = z.object({
+  rule: LintRuleSchema,
+  severity: LintSeveritySchema,
+  path: z.string().min(1),
+  message: z.string().min(1),
+  object_id: z.string().optional(),
+  signature: z.string().optional(),
+  details: z.record(z.unknown()).optional(),
+});
+
+export const LintReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("lint_report"),
+  run_id: z.string().min(1),
+  findings: z.array(LintFindingSchema),
+  summary: z.object({
+    errors: z.number().int().min(0),
+    warnings: z.number().int().min(0),
+  }),
+  created_at: DateTimeSchema,
+});
+
 export type Episode = z.infer<typeof EpisodeSchema>;
 export type IncidentEpisode = z.infer<typeof IncidentEpisodeSchema>;
 export type Proposal = z.infer<typeof ProposalSchema>;
@@ -218,3 +262,10 @@ export type ExceptionRecord = z.infer<typeof ExceptionRecordSchema>;
 export type RunRecord = z.infer<typeof RunRecordSchema>;
 export type K8sIncidentManifest = z.infer<typeof K8sIncidentManifestSchema>;
 export type K8sIncidentManifestEntry = z.infer<typeof K8sIncidentManifestEntrySchema>;
+export type KnowledgeReferencePhase = z.infer<typeof KnowledgeReferencePhaseSchema>;
+export type KnowledgeReferenceEffect = z.infer<typeof KnowledgeReferenceEffectSchema>;
+export type KnowledgeReferenceOutcome = z.infer<typeof KnowledgeReferenceOutcomeSchema>;
+export type LintSeverity = z.infer<typeof LintSeveritySchema>;
+export type LintRule = z.infer<typeof LintRuleSchema>;
+export type LintFinding = z.infer<typeof LintFindingSchema>;
+export type LintReport = z.infer<typeof LintReportSchema>;

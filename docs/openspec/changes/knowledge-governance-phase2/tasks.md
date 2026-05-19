@@ -2,15 +2,15 @@
 
 ## P2-A: Lint And Deterministic Duplicate Detection
 
-- [ ] Implement `praxisbase lint --json`.
-- [ ] Add lint report schema and tests.
-- [ ] Detect missing/invalid frontmatter.
-- [ ] Detect missing required governance metadata.
-- [ ] Detect raw log-like content under `kb/`.
-- [ ] Detect duplicate ids, duplicate source hashes, and duplicate signatures.
-- [ ] Detect deterministic contradictions between recommended and forbidden actions for the same signature.
-- [ ] Emit errors vs warnings according to the design table.
-- [ ] Write lint run records and reports.
+- [x] Implement `praxisbase lint --json`.
+- [x] Add lint report schema and tests.
+- [x] Detect missing/invalid frontmatter.
+- [x] Detect missing required governance metadata.
+- [x] Detect raw log-like content under `kb/`.
+- [x] Detect duplicate ids, duplicate source hashes, and duplicate signatures.
+- [x] Detect deterministic contradictions between recommended and forbidden actions for the same signature.
+- [x] Emit errors vs warnings according to the design table.
+- [x] Write lint run records and reports.
 
 ## P2-B: Reference Tracking And Maturity Proposals
 
