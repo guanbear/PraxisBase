@@ -4,9 +4,9 @@
 
 > Agent knowledge substrate · Git-backed memory · Reusable skills · Static repair bundles · AI-reviewed evolution
 
-PraxisBase is an agent-native knowledge substrate for teams running many temporary and persistent agents. It keeps the agents disposable while making their knowledge, repair experience, reusable skills, and decisions durable.
+PraxisBase is an agent-native experience layer for people and teams running many temporary and persistent agents. It keeps the agents disposable while making their knowledge, repair experience, reusable skills, decisions, and preferences durable.
 
-The project started from the LLM Wiki idea, but its current direction is broader: **agents are cattle, knowledge is the herd memory**. Temporary repair agents, persistent OpenClaw bots, Feishu bots, Hermes-like curators, and future MCP clients should all be replaceable peers that read and write the same durable knowledge layer.
+The project started from the LLM Wiki idea, but its current direction is broader: **agents are cattle, knowledge is the herd memory**. Codex, Claude Code, OpenCode, Hermes, OpenClaw bots, Feishu bots, temporary repair agents, and future MCP clients should all be replaceable peers that read and write the same durable experience layer through a common CLI and file protocol.
 
 ## Core Philosophy
 
@@ -18,12 +18,12 @@ Modern agent systems should not depend on one precious long-lived container or o
 
 Anthropic decouples session, harness, and sandbox so failed harnesses or sandboxes can be replaced. PraxisBase applies the same philosophy to organizational learning: an agent can disappear after one repair run, but its useful experience can survive, be reviewed, be promoted, and become part of the next agent's context.
 
-One important long-term capability is **skill synthesis**: repeated successful episodes should be summarized into reusable `SKILL.md` files, reviewed by AI, promoted into the shared skill registry, and loaded by later agents.
+One important long-term capability is **skill synthesis**: repeated successful episodes should be summarized into reusable `SKILL.md` files, reviewed by AI, promoted into the shared skill registry, and loaded by later agents. The same loop should work for personal memories, project-local lessons, team knowledge, and organization-level policies.
 
 ## What It Does
 
 ```text
-OpenClaw / K8s / Feishu / Docs / Logs
+Codex / Claude Code / OpenCode / Hermes / OpenClaw / K8s / Feishu
           |
           v
   temporary and persistent agent peers
@@ -71,6 +71,17 @@ PraxisBase stores different knowledge lifecycles in different places:
 
 Large raw logs stay outside Git. Git stores references, summaries, hashes, and redacted evidence.
 
+Knowledge objects are classified across four dimensions:
+
+| Dimension | Values |
+| --- | --- |
+| Scope | `personal`, `project`, `team`, `org` |
+| Layer | `preference`, `convention`, `technical`, `domain`, `project` |
+| Type | `model`, `decision`, `guideline`, `pitfall`, `process`, `known_fix`, `procedure`, `skill`, `policy`, `note` |
+| Maturity | `draft`, `verified`, `proven`, `stale`, `archived` |
+
+Adapters should stay thin: hooks capture evidence, watchers support agents without hooks, and scheduled distill jobs turn captures into episodes, proposals, reports, and exceptions.
+
 ## Hermes Relationship
 
 Hermes can make the first skill-evolution prototype simpler because it already has agent-managed skills, persistent memory, and a curator that maintains agent-created skills. PraxisBase should integrate with that, not depend on it.
@@ -100,6 +111,10 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 
 - [Deployment Guide](docs/deployment.md)
 - [Agent Knowledge Substrate Design](docs/superpowers/specs/2026-05-17-agent-knowledge-substrate-design.md)
+- [Multi-Agent Experience Layer Design](docs/superpowers/specs/2026-05-19-multi-agent-experience-layer-design.md)
+- [Multi-Agent Experience Layer Implementation Plan](docs/superpowers/plans/2026-05-19-multi-agent-experience-layer-implementation-plan.md)
+- [Multi-Agent Experience Layer OpenSpec](docs/openspec/changes/multi-agent-experience-layer/proposal.md)
+- [Multi-Agent Experience Layer BDD](docs/bdd/multi-agent-experience-layer.feature)
 - [SRE-autopilot K8s Incident Integration Design](docs/superpowers/specs/2026-05-18-sre-autopilot-k8s-incident-integration-design.md)
 - [OpenClaw Repair MVP Implementation Plan](docs/superpowers/plans/2026-05-17-openclaw-repair-mvp-implementation-plan.md)
 - [OpenSpec Change](docs/openspec/changes/openclaw-repair-mvp/proposal.md)
@@ -112,7 +127,7 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 - **Phase 0**: Reframe PraxisBase from self-updating wiki to agent knowledge substrate
 - **Phase 1**: OpenClaw repair closed loop with file protocol, CLI, AI review, promotion, and static bundles
 - **Phase 2**: K8s incident ingest, Feishu bot workflows, and Hermes-like automatic skill synthesis
-- **Phase 3**: Thin MCP wrapper and Hermes runner/curator integration
+- **Phase 3**: Multi-agent CLI adapters for Codex, Claude Code, OpenCode, OpenClaw, Hermes, and generic agents
 - **Phase 4**: Multi-repo federation, external search backends, stronger provenance, and cross-team synchronization
 
 ## Name
