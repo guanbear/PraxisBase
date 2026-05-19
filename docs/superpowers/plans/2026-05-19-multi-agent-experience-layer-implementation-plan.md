@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add the first PraxisBase multi-agent experience layer so Codex, Claude Code, OpenCode, OpenClaw, Hermes, and generic agents can share one CLI/file protocol for context retrieval, capture, adapter installation, and proposal-based distillation.
+**Goal:** Add the first PraxisBase multi-agent experience layer so Codex, Claude Code, OpenCode, OpenClaw, Hermes, OpenHuman, and generic agents can share one CLI/file protocol for context retrieval, native memory backfill, capture, adapter installation, and proposal-based distillation.
 
-**Architecture:** Extend the existing TypeScript pnpm monorepo without adding new runtime dependencies. Keep durable knowledge changes proposal-based: capture/watch/distill write outbox, inbox, reports, runs, and exceptions; only review/promote can write stable `kb/` or `skills/` objects.
+**Architecture:** Extend the existing TypeScript pnpm monorepo without adding new runtime dependencies. Keep durable knowledge changes proposal-based: memory import/refresh, capture, watch, and distill write outbox, inbox, reports, runs, exceptions, and refresh plans; only review/promote can write stable `kb/` or `skills/` objects.
 
 **Tech Stack:** Node.js 20+, TypeScript 5.x, pnpm workspaces, Zod, Commander, built-in Node filesystem APIs, existing PraxisBase file-store helpers, `node --test`.
 
@@ -20,12 +20,12 @@ Read these in order:
 4. `docs/bdd/multi-agent-experience-layer.feature`
 5. this implementation plan
 
-Current delivery target is M0-M4 below. Do not implement GUI, deep IDE plugins, MCP server, vector search, external DB, queue workers, or semantic import. Do not store raw transcripts/logs/chats in Git. Do not let capture/watch/distill directly mutate stable `kb/` or `skills/`.
+Current delivery target is M0-M6 below. Do not implement GUI, deep IDE plugins, MCP server, vector search, external DB, queue workers, semantic import, or bidirectional live memory sync. Do not store raw transcripts/logs/chats in Git. Do not let memory import, memory refresh, capture, watch, or distill directly mutate stable `kb/` or `skills/`.
 
 ## Existing Code To Reuse
 
-- `packages/core/src/protocol/schemas.ts`: add capture, adapter, context, distill, and structured error schemas.
-- `packages/core/src/protocol/paths.ts`: add outbox captures, reports, raw vault refs, adapters, and context paths.
+- `packages/core/src/protocol/schemas.ts`: add capture, adapter, native memory, context, distill, and structured error schemas.
+- `packages/core/src/protocol/paths.ts`: add outbox captures, memory reports, raw vault refs, adapters, context paths, and memory refresh paths.
 - `packages/core/src/store/file-store.ts`: reuse read/write helpers for protocol writes.
 - `packages/core/src/protocol/id.ts`: reuse id creation patterns and add idempotency helpers if needed.
 - `packages/core/src/protocol/redact.ts`: reuse and extend redaction helpers for summaries.
@@ -44,20 +44,25 @@ packages/core/src/experience/context.ts
 packages/core/src/experience/distill.ts
 packages/core/src/experience/errors.ts
 packages/core/src/experience/install.ts
+packages/core/src/experience/native-memory.ts
 packages/core/src/experience/profiles.ts
 packages/core/src/experience/raw-vault.ts
 packages/cli/src/commands/capture.ts
 packages/cli/src/commands/context.ts
 packages/cli/src/commands/distill.ts
 packages/cli/src/commands/install.ts
+packages/cli/src/commands/memory.ts
 packages/cli/src/commands/watch.ts
 tests/core/experience-capture.test.ts
 tests/core/experience-context.test.ts
 tests/core/experience-distill.test.ts
 tests/core/experience-install.test.ts
+tests/core/experience-native-memory.test.ts
 tests/cli/experience-commands.test.ts
 tests/fixtures/experience/captures/codex-success.json
 tests/fixtures/experience/raw/codex-session-redacted.txt
+tests/fixtures/experience/native-memory/hermes-skill-summary.json
+tests/fixtures/experience/native-memory/openhuman-preference.json
 ```
 
 Modify:
@@ -82,13 +87,14 @@ Responsibilities:
 - `experience/raw-vault.ts`: reject Git-tracked raw content and produce source refs/hashes.
 - `experience/profiles.ts`: built-in agent profile definitions for `codex`, `claude-code`, `opencode`, `openclaw`, `hermes`, `generic`.
 - `experience/install.ts`: dry-run and write instruction snippets or watcher config for supported profiles.
+- `experience/native-memory.ts`: read native memory source refs, create backfill captures/import reports, and generate refresh outputs without direct stable writes.
 - `experience/context.ts`: stage-aware generic context output using existing indexes/bundles where possible.
 - `experience/distill.ts`: deterministic first pass from captures to episodes/proposals/reports/exceptions.
 - CLI command files stay thin and only format input/output.
 
 ## M0: Protocol Schemas And Paths
 
-**Acceptance:** Zod schemas validate capture records, adapter profiles, context requests/responses, distill reports, and structured errors. `pnpm check` passes.
+**Acceptance:** Zod schemas validate capture records, adapter profiles, native memory sources, memory refresh plans, context requests/responses, distill reports, and structured errors. `pnpm check` passes.
 
 - [ ] **Step 1: Add failing protocol schema tests**
 
@@ -100,6 +106,8 @@ import test from "node:test";
 import {
   CaptureRecordSchema,
   AdapterProfileSchema,
+  NativeMemorySourceSchema,
+  MemoryRefreshPlanSchema,
   ContextRequestSchema,
   StructuredErrorSchema
 } from "../../packages/core/src/protocol/schemas.js";
@@ -167,6 +175,25 @@ test("structured errors are machine-readable", () => {
   });
   assert.equal(error.retryable, false);
 });
+
+test("validates native memory source and refresh plan schemas", () => {
+  NativeMemorySourceSchema.parse({
+    agent: "hermes",
+    kind: "skill_summary",
+    source_ref: "raw-vault://hermes/skill-auth-repair",
+    source_hash: "sha256:hermes1",
+    redacted_summary: "Hermes synthesized an auth repair skill.",
+    scope_hint: "personal",
+    created_at: "2026-05-19T00:00:00Z"
+  });
+
+  MemoryRefreshPlanSchema.parse({
+    agent: "codex",
+    target: "instruction-snippet",
+    writes_native_memory: false,
+    outputs: [{ kind: "install_snippet", target_path: "AGENTS.md", source_refs: ["kb/known-fixes/openclaw-auth-expired.md"] }]
+  });
+});
 ```
 
 - [ ] **Step 2: Run schema tests and confirm failure**
@@ -187,6 +214,9 @@ Modify `packages/core/src/protocol/schemas.ts`:
 - add `LayerSchema`,
 - add `CaptureRecordSchema`,
 - add `AdapterProfileSchema`,
+- add `NativeMemorySourceSchema`,
+- add `MemoryImportReportSchema`,
+- add `MemoryRefreshPlanSchema`,
 - add `ContextStageSchema`,
 - add `ContextRequestSchema`,
 - add `StructuredErrorSchema`,
@@ -201,6 +231,9 @@ reportsContext: ".praxisbase/reports/context",
 runsCapture: ".praxisbase/runs/capture",
 runsDistill: ".praxisbase/runs/distill",
 adapters: ".praxisbase/adapters",
+reportsMemory: ".praxisbase/reports/memory",
+runsMemoryImport: ".praxisbase/runs/memory-import",
+memoryRefresh: ".praxisbase/memory-refresh",
 rawVaultRefs: ".praxisbase/raw-vault/refs"
 ```
 
@@ -346,6 +379,7 @@ Create `packages/core/src/experience/profiles.ts` with built-in profiles:
 - `opencode`: instruction file/profile path, watcher-first.
 - `openclaw`: sandbox logs, repair stages.
 - `hermes`: skill synthesis and curator bridge.
+- `openhuman`: persona/preference memory sources, personal scope by default.
 - `generic`: JSON outbox only.
 
 Use TypeScript objects, not YAML parsing.
@@ -366,7 +400,7 @@ Rules:
 Create `packages/cli/src/commands/install.ts` and register:
 
 ```text
-praxisbase install <codex|claude-code|opencode|openclaw|hermes|generic> --dry-run --json
+praxisbase install <codex|claude-code|opencode|openclaw|hermes|openhuman|generic> --dry-run --json
 ```
 
 - [ ] **Step 5: Run verification**
@@ -379,7 +413,110 @@ pnpm check
 
 Expected: PASS.
 
-## M3: Context Get
+## M3: Native Memory Bridge
+
+**Acceptance:** `praxisbase memory import --agent hermes --source <file> --json` writes a memory import report plus capture/proposal candidates, defaults personal sources to `scope=personal`, and never copies raw native memory into Git stable knowledge.
+
+- [ ] **Step 1: Add failing native memory tests**
+
+Create `tests/core/experience-native-memory.test.ts`:
+
+```ts
+import { mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import assert from "node:assert/strict";
+import test from "node:test";
+import { importNativeMemory, planMemoryRefresh } from "../../packages/core/src/experience/native-memory.js";
+
+test("imports Hermes skill summaries as proposal candidates only", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-memory-"));
+  const source = join(root, "hermes-skill-summary.json");
+  await writeFile(source, JSON.stringify({
+    agent: "hermes",
+    kind: "skill_summary",
+    source_ref: "raw-vault://hermes/skill-auth-repair",
+    source_hash: "sha256:hermes1",
+    redacted_summary: "Hermes synthesized an auth repair skill after repeated successes."
+  }));
+
+  const report = await importNativeMemory(root, { agent: "hermes", source, json: true });
+  assert.equal(report.changed_stable_knowledge, false);
+  assert.equal(report.imported_sources, 1);
+  const proposals = await readdir(join(root, ".praxisbase/inbox/proposals"));
+  assert.ok(proposals.length >= 1);
+});
+
+test("imports OpenHuman preferences as personal by default", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-memory-"));
+  const source = join(root, "openhuman-preference.json");
+  await writeFile(source, JSON.stringify({
+    agent: "openhuman",
+    kind: "preference",
+    source_ref: "raw-vault://openhuman/preference-language",
+    source_hash: "sha256:openhuman1",
+    redacted_summary: "User prefers Chinese explanations."
+  }));
+
+  const report = await importNativeMemory(root, { agent: "openhuman", source, json: true });
+  assert.equal(report.default_scope, "personal");
+  assert.equal(report.changed_stable_knowledge, false);
+});
+
+test("memory refresh produces a plan without overwriting native memory", async () => {
+  const plan = await planMemoryRefresh({
+    agent: "codex",
+    target: "instruction-snippet",
+    contextRefs: ["kb/known-fixes/openclaw-auth-expired.md"]
+  });
+  assert.equal(plan.writes_native_memory, false);
+  assert.ok(plan.outputs.some((output) => output.kind === "install_snippet" || output.kind === "context_bundle"));
+});
+```
+
+- [ ] **Step 2: Implement native memory core**
+
+Create `packages/core/src/experience/native-memory.ts`.
+
+Rules:
+
+- support agents `codex`, `claude-code`, `opencode`, `hermes`, `openhuman`, `openclaw`, `generic`,
+- read JSON source descriptors in the first implementation,
+- require `source_ref`, `source_hash`, and `redacted_summary`,
+- write `.praxisbase/runs/memory-import/<run-id>.json`,
+- write `.praxisbase/reports/memory/<run-id>.json`,
+- create capture/proposal candidates only,
+- default `openhuman` and personal agent sources to `scope=personal`,
+- default `hermes` skill summaries to proposal candidates, not stable skills,
+- reject direct source refs under `kb/`, `skills/`, or `dist/`,
+- set `changed_stable_knowledge: false`.
+
+- [ ] **Step 3: Add CLI command**
+
+Create `packages/cli/src/commands/memory.ts` and register:
+
+```text
+praxisbase memory import --agent <agent> --source <file> --json
+praxisbase memory refresh --agent <agent> --target <context|instruction-snippet|patch-proposal> --json
+```
+
+First implementation may accept one JSON source file per import. Directory scanning can be a later batch.
+
+- [ ] **Step 4: Add CLI tests**
+
+Extend `tests/cli/experience-commands.test.ts` with a temp repo flow that runs `memory import` for Hermes and OpenHuman fixtures and asserts stable `kb/` and `skills/` are unchanged.
+
+- [ ] **Step 5: Run verification**
+
+Run:
+
+```bash
+pnpm check
+```
+
+Expected: PASS.
+
+## M4: Context Get
 
 **Acceptance:** `praxisbase context get --agent codex --stage diagnosis --json` returns bounded context with citations and does not read the whole repository into output.
 
@@ -437,7 +574,7 @@ pnpm check
 
 Expected: PASS.
 
-## M4: Distill Proposal Skeleton
+## M5: Distill Proposal Skeleton
 
 **Acceptance:** `praxisbase distill run --json` reads captures and emits proposals/reports/exceptions without modifying `kb/` or `skills/`.
 
@@ -519,7 +656,7 @@ pnpm check
 
 Expected: PASS.
 
-## M5: Docs, Seed, And Smoke Flow
+## M6: Docs, Seed, And Smoke Flow
 
 **Acceptance:** README, deployment docs, templates, OpenSpec tasks, and BDD all match the implemented commands.
 
@@ -531,9 +668,12 @@ Modify `packages/core/src/templates/seed.ts` so `praxisbase init` creates:
 .praxisbase/outbox/captures/
 .praxisbase/reports/distill/
 .praxisbase/reports/context/
+.praxisbase/reports/memory/
 .praxisbase/runs/capture/
 .praxisbase/runs/distill/
+.praxisbase/runs/memory-import/
 .praxisbase/adapters/
+.praxisbase/memory-refresh/
 .praxisbase/raw-vault/refs/
 ```
 
@@ -558,6 +698,8 @@ pnpm build
 cd "$tmpdir"
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js init --profile all
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js install codex --dry-run --json
+printf '{"agent":"hermes","kind":"skill_summary","source_ref":"raw-vault://hermes/skill-auth-repair","source_hash":"sha256:hermes1","redacted_summary":"Hermes synthesized an auth repair skill."}' > hermes-memory.json
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js memory import --agent hermes --source hermes-memory.json --json
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js distill run --json
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
@@ -566,10 +708,11 @@ node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js context get --a
 Expected:
 
 - all commands exit 0,
+- memory import report appears under `.praxisbase/reports/memory/`,
 - capture appears under `.praxisbase/outbox/captures/`,
 - distill report appears under `.praxisbase/reports/distill/`,
 - context response contains `stage`, `warnings`, and `citations`,
-- no files are written under `kb/` or `skills/` by capture/distill.
+- no files are written under `kb/` or `skills/` by memory import, capture, memory refresh, or distill.
 
 - [ ] **Step 4: Run repository verification**
 
@@ -587,17 +730,19 @@ Expected: PASS.
 Use the Lore Commit Protocol from `AGENTS.md`. Suggested commit intent:
 
 ```text
-Make multi-agent experience capture proposal-based
+Make native agent experience proposal-based
 
-PraxisBase needs to ingest personal and team agent experience without turning capture into hidden stable knowledge mutation. This adds the CLI/file protocol for context, capture, adapter profiles, and distill reports while keeping review/promotion as the only stable write path.
+PraxisBase needs to ingest personal and team agent experience without turning native memory or capture into hidden stable knowledge mutation. This adds the CLI/file protocol for context, native memory import/refresh, capture, adapter profiles, and distill reports while keeping review/promotion as the only stable write path.
 
 Constraint: No new runtime dependencies for adapter profiles
 Constraint: Raw transcripts and logs must not enter Git
+Constraint: Agent-native memories are source/cache, not trusted stable authority
 Rejected: Deep per-agent plugins in MVP | profile plus CLI is enough to validate the protocol
+Rejected: Bidirectional live native-memory sync | too easy to spread unreviewed or private memory
 Rejected: Direct distill-to-kb writes | bypasses review and audit
 Confidence: medium
 Scope-risk: moderate
-Directive: Keep capture/watch/distill proposal-based; do not let them mutate kb/ or skills/
-Tested: pnpm check; multi-agent experience smoke flow
+Directive: Keep memory import/refresh/capture/watch/distill proposal-based; do not let them mutate kb/ or skills/
+Tested: pnpm check; multi-agent experience smoke flow including memory import
 Not-tested: Long-running filesystem watcher under continuous transcript churn
 ```

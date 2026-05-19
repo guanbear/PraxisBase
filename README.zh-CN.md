@@ -1,12 +1,18 @@
-# PraxisBase / 知行基座 — 面向可丢弃 Agent 的持久记忆
+# PraxisBase / 知行基座 — Agent 原生知识底座
 
 **语言:** [English](README.md) | 简体中文
 
-> Agent 知识底座 · Git-backed memory · 可复用 Skill · 静态修复 Bundle · AI 审核演进
+> **AGENT-NATIVE KNOWLEDGE SUBSTRATE**
+>
+> **Agent 原生知识底座**
+>
+> **知行未必一，经验自成基。**
+>
+> **Disposable Agents. Durable Experience.**
 
-PraxisBase / 知行基座 是一个面向个人与团队多 agent 的经验提炼、共享与演进基座。它适合同时运行大量临时 agent 和持久 agent 的个人、项目和团队，让 agent 本身保持可替换、可丢弃，同时让知识、修复经验、可复用 skill、决策记录和个人偏好长期留存。
+PraxisBase / 知行基座 是一个面向个人与团队多 agent 的 Agent 原生知识底座。它适合同时运行大量临时 agent 和持久 agent 的个人、项目和团队，让 agent 本身保持可替换、可丢弃，同时让经验可以长期沉淀：知识、修复记忆、可复用 skill、决策记录和个人偏好。
 
-这个项目起源于 LLM Wiki 的想法，但当前定位更宽：**agent 是可替换执行体，知识是长期记忆**。Codex、Claude Code、OpenCode、Hermes、OpenClaw 机器人、飞书机器人、临时修复 agent，以及未来的 MCP client，都应该作为平级 client，通过统一 CLI 和 file protocol 读写同一层持久经验。
+这个项目起源于 LLM Wiki 的想法，但当前定位更宽：**agent 是可替换执行体，知识是长期记忆**。Codex、Claude Code、OpenCode、Hermes、OpenHuman、OpenClaw、临时修复 agent，以及未来的 MCP client，都应该作为平级 client，通过统一 CLI 和 file protocol 读写同一层持久经验。
 
 ## 核心思想
 
@@ -23,7 +29,7 @@ Anthropic 将 session、harness 和 sandbox 解耦，让 harness 或 sandbox 失
 ## 系统做什么
 
 ```text
-Codex / Claude Code / OpenCode / Hermes / OpenClaw / K8s / 飞书
+Codex / Claude Code / OpenCode / Hermes / OpenHuman / OpenClaw / K8s / 飞书
           |
           v
   临时和持久的 agent peers
@@ -82,6 +88,12 @@ PraxisBase 按知识生命周期使用不同载体：
 
 不同 agent 的适配保持轻量：hook 负责捕获，watcher 负责兼容，scheduled distill 负责提炼、去重、晋升和衰减。
 
+## 原生记忆桥
+
+PraxisBase 应该复用各 agent 自己已有的记忆，而不是替代它们。已有 Codex session、Hermes skill summary、OpenHuman persona/preference、OpenClaw repair record，以及 generic agent notes，都可以带着 source ref、hash 和脱敏摘要进入 PraxisBase。
+
+`memory import` 负责把原生记忆初始回填成 capture/proposal candidate。`memory refresh` 负责把已审核的 PraxisBase 知识回流为 runtime context、install snippet 或 patch proposal。它不是静默双向同步：原生记忆是来源和缓存，经过审核的 PraxisBase 对象才是共享权威。
+
 ## 与 Hermes 的关系
 
 Hermes 可以让第一版 skill evolution 原型更简单，因为它已经有 agent-managed skills、persistent memory，以及维护 agent-created skills 的 curator。PraxisBase 应该集成 Hermes，而不是依赖 Hermes。
@@ -126,8 +138,8 @@ PraxisBase 把“需要持久化的部分”显式抽出来。它是面向可丢
 
 - **Phase 0**：将 PraxisBase 从 self-updating wiki 重新定位为 agent knowledge substrate
 - **Phase 1**：OpenClaw 修复闭环，包括 file protocol、CLI、AI review、promotion 和静态 bundle
-- **Phase 2**：K8s 故障 ingest、飞书机器人 workflow、Hermes-like 自动 skill synthesis
-- **Phase 3**：Codex、Claude Code、OpenCode、OpenClaw、Hermes 和 generic agent 的统一 CLI adapters
+- **Phase 2**：K8s 故障 ingest、飞书 workflow、Hermes-like 自动 skill synthesis
+- **Phase 3**：Codex、Claude Code、OpenCode、OpenClaw、Hermes、OpenHuman 和 generic agent 的统一 CLI adapters 与原生记忆桥
 - **Phase 4**：多 repo federation、外部搜索后端、更强 provenance、跨团队同步
 
 ## 名字

@@ -1,12 +1,16 @@
-# PraxisBase — Durable Memory for Disposable Agents
+# PraxisBase — Agent-Native Knowledge Substrate
 
 **Languages:** English | [简体中文](README.zh-CN.md)
 
-> Agent knowledge substrate · Git-backed memory · Reusable skills · Static repair bundles · AI-reviewed evolution
+> **AGENT-NATIVE KNOWLEDGE SUBSTRATE**
+>
+> **Disposable Agents. Durable Experience.**
+>
+> 中文：**知行未必一，经验自成基。**
 
-PraxisBase is an agent-native experience layer for people and teams running many temporary and persistent agents. It keeps the agents disposable while making their knowledge, repair experience, reusable skills, decisions, and preferences durable.
+PraxisBase is an agent-native knowledge substrate for people and teams running many temporary and persistent agents. It keeps the agents disposable while making their experience durable: knowledge, repair memory, reusable skills, decisions, and preferences.
 
-The project started from the LLM Wiki idea, but its current direction is broader: **agents are cattle, knowledge is the herd memory**. Codex, Claude Code, OpenCode, Hermes, OpenClaw bots, Feishu bots, temporary repair agents, and future MCP clients should all be replaceable peers that read and write the same durable experience layer through a common CLI and file protocol.
+The project started from the LLM Wiki idea, but its current direction is broader: **agents are cattle, knowledge is the herd memory**. Codex, Claude Code, OpenCode, Hermes, OpenHuman, OpenClaw, temporary repair agents, and future MCP clients should all be replaceable peers that read and write the same durable experience layer through a common CLI and file protocol.
 
 ## Core Philosophy
 
@@ -23,7 +27,7 @@ One important long-term capability is **skill synthesis**: repeated successful e
 ## What It Does
 
 ```text
-Codex / Claude Code / OpenCode / Hermes / OpenClaw / K8s / Feishu
+Codex / Claude Code / OpenCode / Hermes / OpenHuman / OpenClaw / K8s / Feishu
           |
           v
   temporary and persistent agent peers
@@ -82,6 +86,12 @@ Knowledge objects are classified across four dimensions:
 
 Adapters should stay thin: hooks capture evidence, watchers support agents without hooks, and scheduled distill jobs turn captures into episodes, proposals, reports, and exceptions.
 
+## Native Memory Bridge
+
+PraxisBase should reuse agent-native memory instead of replacing it. Existing Codex sessions, Hermes skill summaries, OpenHuman persona/preferences, OpenClaw repair records, and generic agent notes can enter as source refs with hashes and redacted summaries.
+
+`memory import` backfills native memory into capture/proposal candidates. `memory refresh` sends reviewed PraxisBase knowledge back as runtime context, install snippets, or patch proposals. It is not silent bidirectional sync: native memory is a source and cache, while reviewed PraxisBase objects remain the shared authority.
+
 ## Hermes Relationship
 
 Hermes can make the first skill-evolution prototype simpler because it already has agent-managed skills, persistent memory, and a curator that maintains agent-created skills. PraxisBase should integrate with that, not depend on it.
@@ -126,8 +136,8 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 
 - **Phase 0**: Reframe PraxisBase from self-updating wiki to agent knowledge substrate
 - **Phase 1**: OpenClaw repair closed loop with file protocol, CLI, AI review, promotion, and static bundles
-- **Phase 2**: K8s incident ingest, Feishu bot workflows, and Hermes-like automatic skill synthesis
-- **Phase 3**: Multi-agent CLI adapters for Codex, Claude Code, OpenCode, OpenClaw, Hermes, and generic agents
+- **Phase 2**: K8s incident ingest, Feishu workflows, and Hermes-like automatic skill synthesis
+- **Phase 3**: Multi-agent CLI adapters and native memory bridge for Codex, Claude Code, OpenCode, OpenClaw, Hermes, OpenHuman, and generic agents
 - **Phase 4**: Multi-repo federation, external search backends, stronger provenance, and cross-team synchronization
 
 ## Name

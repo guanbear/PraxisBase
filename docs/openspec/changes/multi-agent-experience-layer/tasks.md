@@ -4,12 +4,14 @@
 
 - [ ] Add capture record schema.
 - [ ] Add adapter profile schema.
+- [ ] Add native memory source, memory import report, and memory refresh plan schemas.
 - [ ] Add context request/response schemas.
 - [ ] Add structured error schema.
-- [ ] Add paths for captures, reports, runs, adapters, and raw vault refs.
+- [ ] Add paths for captures, memory reports, memory import runs, memory refresh outputs, reports, runs, adapters, and raw vault refs.
 - [ ] Export new schemas and types through existing core exports.
 - [ ] Add tests for valid and invalid capture records.
 - [ ] Add tests for adapter profile validation.
+- [ ] Add tests for native memory source and memory refresh validation.
 - [ ] Add tests for structured errors.
 
 ## M1: Capture And Raw Vault
@@ -24,7 +26,7 @@
 
 ## M2: Adapter Profiles And Install
 
-- [ ] Add built-in profiles for `codex`, `claude-code`, `opencode`, `openclaw`, `hermes`, and `generic`.
+- [ ] Add built-in profiles for `codex`, `claude-code`, `opencode`, `openclaw`, `hermes`, `openhuman`, and `generic`.
 - [ ] Add install dry-run planner.
 - [ ] Add non-dry-run install that writes `.praxisbase/adapters/<agent>.json`.
 - [ ] Append instruction snippets only inside PraxisBase markers.
@@ -32,7 +34,22 @@
 - [ ] Add `praxisbase install <agent> --dry-run --json`.
 - [ ] Add tests for dry-run output and safe write behavior.
 
-## M3: Context Get
+## M3: Native Memory Bridge
+
+- [ ] Implement `importNativeMemory` in `packages/core/src/experience/native-memory.ts`.
+- [ ] Implement `planMemoryRefresh` in `packages/core/src/experience/native-memory.ts`.
+- [ ] Preserve source refs, source hashes, summaries, scope hints, and agent ids.
+- [ ] Deduplicate native memory sources by source hash.
+- [ ] Default OpenHuman preferences and personal memories to `scope=personal`.
+- [ ] Treat Hermes skill summaries and curator patches as proposal candidates only.
+- [ ] Reject source refs under `kb/`, `skills/`, or `dist/`.
+- [ ] Write memory import reports under `.praxisbase/reports/memory/`.
+- [ ] Write memory import runs under `.praxisbase/runs/memory-import/`.
+- [ ] Add `praxisbase memory import --agent <agent> --source <file> --json`.
+- [ ] Add `praxisbase memory refresh --agent <agent> --target <context|instruction-snippet|patch-proposal> --json`.
+- [ ] Add tests proving memory import and refresh do not modify stable `kb/` or `skills/`.
+
+## M4: Context Get
 
 - [ ] Implement stage-aware `context get` core logic.
 - [ ] Support `diagnosis`, `repair`, `verification`, and `proposal` stages.
@@ -42,7 +59,7 @@
 - [ ] Add `praxisbase context get`.
 - [ ] Add tests for budget, citations, and no-hard-fail behavior.
 
-## M4: Distill And Watch
+## M5: Distill And Watch
 
 - [ ] Implement `distill run` that reads captures and writes reports/proposals/exceptions.
 - [ ] Default generated candidates to `scope=personal`.
@@ -53,7 +70,7 @@
 - [ ] Add `praxisbase watch --agent <agent> --workspace <path> --once --json`.
 - [ ] Add tests for proposal output, exception output, and stable knowledge non-mutation.
 
-## M5: Docs, Seed, And Smoke Flow
+## M6: Docs, Seed, And Smoke Flow
 
 - [ ] Update `praxisbase init` seed paths.
 - [ ] Update README links and command examples.
@@ -76,6 +93,8 @@ pnpm build
 cd "$tmpdir"
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js init --profile all
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js install codex --dry-run --json
+printf '{"agent":"hermes","kind":"skill_summary","source_ref":"raw-vault://hermes/skill-auth-repair","source_hash":"sha256:hermes1","redacted_summary":"Hermes synthesized an auth repair skill."}' > hermes-memory.json
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js memory import --agent hermes --source hermes-memory.json --json
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js distill run --json
 node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
@@ -84,9 +103,10 @@ node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js context get --a
 Expected:
 
 - capture is written under `.praxisbase/outbox/captures/`,
+- memory import report is written under `.praxisbase/reports/memory/`,
 - distill writes report/proposal/exception outputs only,
 - context response contains stage, warnings, and citations,
-- capture/watch/distill do not write stable `kb/` or `skills/`.
+- memory import/memory refresh/capture/watch/distill do not write stable `kb/` or `skills/`.
 
 ## Out Of Scope
 
@@ -94,6 +114,6 @@ Expected:
 - Vector database or external semantic search.
 - Long-running database service or queue worker.
 - Deep per-agent plugin frameworks.
+- Unreviewed bidirectional live sync with agent-native memories.
 - Raw transcript/log/chat storage in Git.
-- Direct stable knowledge mutation from capture, watch, or distill.
-
+- Direct stable knowledge mutation from memory import, memory refresh, capture, watch, or distill.
