@@ -1,0 +1,32 @@
+{
+  "id": "proposal_20260518_k8s_skill",
+  "protocol_version": "0.1",
+  "type": "knowledge_proposal",
+  "scope": "team",
+  "action": "create",
+  "target_type": "skill",
+  "target_id": "k8s-memory-triage",
+  "agent_id": "sre-autopilot-cp",
+  "agent_type": "live_incident_analyzer",
+  "environment_id": "prod",
+  "run_id": "trace-oom-001",
+  "idempotency_key": "proposal_20260518_k8s_skill",
+  "evidence": {
+    "source_uri": "synthesis://k8s/pod-oomkilled/episodes",
+    "source_hash": "sha256:synth-hash",
+    "excerpt": "Repeated OOMKilled pattern triaged successfully.",
+    "repair_result": "success",
+    "verification": "Multiple confirmed episodes support this skill pattern.",
+    "source_refs": [
+      { "uri": "k8s-event://cluster-a/prod/order-api-123/OOMKilling", "hash": "sha256:evt1" },
+      { "uri": "k8s-event://cluster-a/prod/order-api-456/OOMKilling", "hash": "sha256:evt2" },
+      { "uri": "k8s-event://cluster-a/prod/order-api-789/OOMKilling", "hash": "sha256:evt3" }
+    ],
+    "redacted_summary": "Pattern: OOMKilled on order-api pods with 256Mi limit."
+  },
+  "patch": {
+    "path": "skills/k8s/memory-triage/SKILL.md",
+    "content": "# K8s Memory Triage\n\nUse this skill when pods are OOMKilled.\n"
+  },
+  "created_at": "2026-05-18T12:00:00Z"
+}

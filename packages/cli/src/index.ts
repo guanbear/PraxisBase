@@ -9,6 +9,8 @@ import { promoteAuto } from "./commands/promote.js";
 import { buildCommand } from "./commands/build.js";
 import { checkCommand } from "./commands/check.js";
 import { bundleFetchCommand } from "./commands/bundle-fetch.js";
+import { feishuSummaryCommand, feishuProposalDraftCommand } from "./commands/feishu-summary.js";
+import { synthesizeSkillCommand } from "./commands/synthesize.js";
 
 const program = new Command();
 
@@ -80,6 +82,35 @@ program
   .action(async (_fetch: string, scenario: string, options: { signature?: string }) => {
     const result = await bundleFetchCommand(scenario, options.signature);
     console.log(JSON.stringify(result, null, 2));
+  });
+
+program
+  .command("feishu-summary")
+  .argument("<episode-file>")
+  .option("--json")
+  .action(async (file: string, options: { json?: boolean }) => {
+    console.log(await feishuSummaryCommand(file, options));
+  });
+
+program
+  .command("feishu-proposal-draft")
+  .argument("<episode-file>")
+  .requiredOption("--path <patch-path>")
+  .requiredOption("--content <patch-content>")
+  .option("--json")
+  .action(async (file: string, options: { path: string; content: string; json?: boolean }) => {
+    console.log(await feishuProposalDraftCommand(file, options.path, options.content, options));
+  });
+
+program
+  .command("synthesize")
+  .argument("skill")
+  .requiredOption("--signature <signature>")
+  .option("--min-episodes <n>", "3")
+  .option("--json")
+  .action(async (_skill: string, options: { signature: string; minEpisodes?: string; json?: boolean }) => {
+    const min = options.minEpisodes ? parseInt(options.minEpisodes, 10) : 3;
+    console.log(await synthesizeSkillCommand(process.cwd(), { signature: options.signature, minEpisodes: min, json: options.json }));
   });
 
 program.parseAsync(process.argv).catch((error: unknown) => {

@@ -42,6 +42,14 @@
     "./commands/check.js": {
       "types": "./src/commands/check.ts",
       "default": "./dist/commands/check.js"
+    },
+    "./commands/feishu-summary.js": {
+      "types": "./src/commands/feishu-summary.ts",
+      "default": "./dist/commands/feishu-summary.js"
+    },
+    "./commands/synthesize.js": {
+      "types": "./src/commands/synthesize.ts",
+      "default": "./dist/commands/synthesize.js"
     }
   },
   "bin": {

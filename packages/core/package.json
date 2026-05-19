@@ -62,6 +62,18 @@
     "./bundles/fetch.js": {
       "types": "./src/bundles/fetch.ts",
       "default": "./dist/bundles/fetch.js"
+    },
+    "./adapter/sre-autopilot.js": {
+      "types": "./src/adapter/sre-autopilot.ts",
+      "default": "./dist/adapter/sre-autopilot.js"
+    },
+    "./feishu/summary.js": {
+      "types": "./src/feishu/summary.ts",
+      "default": "./dist/feishu/summary.js"
+    },
+    "./synthesis/skill.js": {
+      "types": "./src/synthesis/skill.ts",
+      "default": "./dist/synthesis/skill.js"
     }
   },
   "scripts": {
@@ -69,7 +81,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "gray-matter": "^4.0.3",
     "zod": "^3.24.1"
-  },
-  "devDependencies": {}
+  }
 }

@@ -152,5 +152,118 @@ Run a minimal model call.
 ## Rollback
 
 Restore the previous auth state snapshot.
+`,
+  "skills/k8s/incident-triage/SKILL.md": `# K8s Incident Triage
+
+Use this skill when triaging Kubernetes pod incidents in production or staging clusters.
+
+## When To Use
+
+Pod events show OOMKilled, CrashLoopBackOff, or ImagePullBackOff patterns.
+
+## Required Context
+
+- Cluster name
+- Namespace
+- Pod name
+- kubectl access (read-only)
+
+## Steps
+
+1. Check pod events with kubectl describe pod.
+2. Check resource usage and limits.
+3. Check container logs for error messages.
+4. Record all diagnostic results for the incident.
+
+## Forbidden Operations
+
+- Do not automatically delete pods in production.
+- Do not change resource limits without owner approval.
+- Do not modify production Kubernetes resources without explicit owner approval.
+- Do not execute kubectl commands that modify live cluster state.
+
+## Verification
+
+Confirm that diagnosis matches observed symptoms.
+
+## Rollback
+
+Incident triage is read-only; no rollback needed.
+`,
+  "kb/known-fixes/k8s-pod-oomkilled.md": `---
+id: k8s-pod-oomkilled
+protocol_version: "0.1"
+type: known_fix
+scope: team
+risk: medium
+status: draft
+signatures:
+  - k8s:pod-oomkilled
+skills:
+  - skills/k8s/incident-triage/SKILL.md
+sources:
+  - uri: seed://k8s/pod-oomkilled
+    hash: sha256:seed
+confidence: 0.6
+updated_at: 2026-05-17T00:00:00Z
+---
+
+## Symptoms
+
+Pod is repeatedly terminated with OOMKilled reason.
+
+## Diagnosis
+
+Check resource limits and memory requests for the container. Compare actual memory usage against configured limits.
+
+## Fix
+
+Recommendation: increase memory limits with owner approval.
+
+## Verification
+
+Confirm pod is stable after the change.
+
+## Rollback
+
+Revert resource changes to previous values.
+`,
+  "kb/known-fixes/k8s-pod-crashloop-imagepull.md": `---
+id: k8s-pod-crashloop-imagepull
+protocol_version: "0.1"
+type: known_fix
+scope: team
+risk: medium
+status: draft
+signatures:
+  - k8s:pod-crashloop-imagepull
+skills:
+  - skills/k8s/incident-triage/SKILL.md
+sources:
+  - uri: seed://k8s/pod-crashloop-imagepull
+    hash: sha256:seed
+confidence: 0.6
+updated_at: 2026-05-17T00:00:00Z
+---
+
+## Symptoms
+
+Pod is in CrashLoopBackOff or ImagePullBackOff state.
+
+## Diagnosis
+
+Check image pull secrets, registry access, and image tag validity.
+
+## Fix
+
+Recommendation: verify image registry credentials and image tag.
+
+## Verification
+
+Confirm pod starts successfully after credential or image correction.
+
+## Rollback
+
+Revert image or credential changes to previous values.
 `
 };

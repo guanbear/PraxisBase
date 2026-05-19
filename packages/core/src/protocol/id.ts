@@ -1,3 +1,9 @@
+import { createHash } from "node:crypto";
+
+export function computeHash(input: string): string {
+  return `sha256:${createHash("sha256").update(input).digest("hex")}`;
+}
+
 export function slugifyId(input: string): string {
   return input
     .trim()

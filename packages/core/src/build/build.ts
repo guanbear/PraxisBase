@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import matter from "gray-matter";
 import { readText, writeJson, writeText } from "../store/file-store.js";
 import { renderInspectionHtml } from "./html.js";
 
@@ -35,6 +36,23 @@ async function listFiles(root: string, dir: string): Promise<string[]> {
   return results;
 }
 
+function extractSections(body: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const parts = body.split(/^## /m);
+  for (const part of parts) {
+    const newline = part.indexOf("\n");
+    if (newline === -1) continue;
+    const heading = part.slice(0, newline).trim();
+    result[heading] = part.slice(newline + 1).trim();
+  }
+  return result;
+}
+
+function splitLines(text: string | undefined): string[] {
+  if (!text) return [];
+  return text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+}
+
 export interface BuildResult {
   bundles: string[];
   indexes: string[];
@@ -63,6 +81,12 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
   await writeJson(root, "dist/repair-bundles/openclaw-sandbox.json", openclawBundle);
 
   // --- K8s incident bundle contract shape (empty/static-compatible for Phase 1) ---
+  const k8sForbiddenOps = [
+    "Do not automatically delete pods in production",
+    "Do not change resource limits without owner approval",
+    "Do not modify production Kubernetes resources without explicit owner approval",
+  ];
+
   const k8sManifest = {
     protocol_version: "0.1",
     bundle_id: "k8s-incident",
@@ -71,6 +95,85 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
     compatible_cli: ">=0.1.0",
     entries: [] as Array<{ signature: string; path: string; checksum: string; risk: string }>,
   };
+
+  const kbFilesAll = await listFiles(root, "kb");
+  const k8sEntries: Array<{
+    protocol_version: string;
+    signature: string;
+    domain: string;
+    status: string;
+    risk: string;
+    recommendation_only: boolean;
+    known_fixes: Array<{
+      id: string;
+      summary: string;
+      diagnosis_steps: string[];
+      remediation_guidance: string[];
+      verification_steps: string[];
+      forbidden_operations: string[];
+      source_refs: string[];
+    }>;
+    skills: string[];
+    forbidden_operations: string[];
+    verification_steps: string[];
+    source_refs: string[];
+    escalation_conditions: string[];
+  }> = [];
+
+  for (const file of kbFilesAll) {
+    if (!file.startsWith("kb/known-fixes/") || !file.endsWith(".md")) continue;
+    const content = await readText(root, file);
+    const parsed = matter(content);
+    const data = parsed.data as Record<string, unknown>;
+    const signatures = Array.isArray(data.signatures) ? data.signatures as string[] : [];
+    const k8sSigs = signatures.filter((s: string) => s.startsWith("k8s:"));
+    if (k8sSigs.length === 0) continue;
+
+    const body = parsed.content as string;
+    const sections = extractSections(body);
+
+    for (const sig of k8sSigs) {
+      const slug = sig.replace("k8s:", "");
+      const skills = Array.isArray(data.skills) ? data.skills as string[] : [];
+      const sources = Array.isArray(data.sources) ? (data.sources as Array<{ uri: string; hash: string }>) : [];
+      const fixId = String(data.id ?? slug);
+      const entry = {
+        protocol_version: "0.1",
+        signature: sig,
+        domain: "k8s",
+        status: String(data.status ?? "draft"),
+        risk: String(data.risk ?? "medium"),
+        recommendation_only: true,
+        known_fixes: [{
+          id: fixId,
+          summary: sections.Symptoms ?? `Known fix for ${sig}`,
+          diagnosis_steps: splitLines(sections.Diagnosis),
+          remediation_guidance: splitLines(sections.Fix),
+          verification_steps: splitLines(sections.Verification),
+          forbidden_operations: k8sForbiddenOps,
+          source_refs: sources.map((s) => s.uri),
+        }],
+        skills,
+        forbidden_operations: k8sForbiddenOps,
+        verification_steps: splitLines(sections.Verification).length > 0
+          ? splitLines(sections.Verification)
+          : ["Confirm diagnosis matches observed symptoms"],
+        source_refs: sources.map((s) => s.uri),
+        escalation_conditions: ["Diagnosis inconclusive after initial triage", "Multiple pods affected simultaneously"],
+      };
+      k8sEntries.push(entry);
+      const entryPath = `k8s-incident/${slug}.json`;
+      // writeJson uses JSON.stringify(value, null, 2) + "\n" — compute checksum on that exact output
+      const writtenContent = `${JSON.stringify(entry, null, 2)}\n`;
+      await writeJson(root, `dist/repair-bundles/${entryPath}`, entry);
+      k8sManifest.entries.push({
+        signature: sig,
+        path: entryPath,
+        checksum: sha256(writtenContent),
+        risk: entry.risk,
+      });
+    }
+  }
 
   await writeJson(root, "dist/repair-bundles/k8s-incident/manifest.json", k8sManifest);
 

@@ -13,11 +13,14 @@ This change is primarily a boundary/spec change. Do not implement K8s runtime in
 
 These belong to Phase 2:
 
-- [ ] Add K8s known-fix seed pack.
-- [ ] Generate `dist/repair-bundles/k8s-incident/*`.
-- [ ] Implement `praxisbase bundle fetch k8s-incident --signature ...`.
-- [ ] Add an sre-autopilot episode adapter example.
-- [ ] Add Feishu bot summary/proposal flow.
+- [x] Add K8s known-fix seed pack.
+- [x] Generate `dist/repair-bundles/k8s-incident/*`.
+- [x] Implement `praxisbase bundle fetch k8s-incident --signature ...`.
+- [x] Add an sre-autopilot episode adapter example.
+- [x] Add Feishu bot summary/proposal flow.
+- [x] Add skill synthesis from confirmed episodes.
+- [x] All Phase 2 tests passing (96/96).
+- [x] Smoke flow verified (init, build, k8s fetch, episode submit, feishu summary, skill synthesis).
 
 ## Required Verification
 

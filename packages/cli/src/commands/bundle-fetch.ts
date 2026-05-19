@@ -6,8 +6,9 @@ export async function bundleFetchCommand(
 ): Promise<{ bundle: unknown; warning?: string }> {
   const root = process.cwd();
   const result = await fetchRepairBundle(root, scenario, signature);
-  return {
-    bundle: result.bundle,
-    warning: result.warning,
-  };
+  const output: { bundle: unknown; warning?: string } = { bundle: result.bundle };
+  if (result.warning) {
+    output.warning = result.warning;
+  }
+  return output;
 }

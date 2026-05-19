@@ -17,6 +17,7 @@ export const protocolPaths = {
   memory: "kb/memory",
   sources: "kb/sources",
   skillsOpenClaw: "skills/openclaw",
+  skillsK8s: "skills/k8s",
   dist: "dist",
   distRepairBundles: "dist/repair-bundles"
 } as const;

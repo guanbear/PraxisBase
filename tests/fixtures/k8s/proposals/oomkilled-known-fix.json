@@ -1,0 +1,30 @@
+{
+  "id": "proposal_20260518_k8s_oomkilled",
+  "protocol_version": "0.1",
+  "type": "knowledge_proposal",
+  "scope": "team",
+  "action": "create",
+  "target_type": "known_fix",
+  "target_id": "k8s-pod-oomkilled",
+  "agent_id": "sre-autopilot-cp",
+  "agent_type": "live_incident_analyzer",
+  "environment_id": "prod",
+  "run_id": "trace-oom-001",
+  "idempotency_key": "proposal_20260518_k8s_oomkilled",
+  "evidence": {
+    "source_uri": "k8s-event://cluster-a/prod/order-api-123/OOMKilling",
+    "source_hash": "sha256:oom-event-hash",
+    "excerpt": "Pod OOMKilled; memory limit exceeded.",
+    "repair_result": "success",
+    "verification": "Pod stable after memory limit increase.",
+    "source_refs": [
+      { "uri": "prometheus://cluster-a/prod/order-api?query=memory", "hash": "sha256:prom-hash" }
+    ],
+    "redacted_summary": "Memory limit increased from 256Mi to 512Mi; secrets redacted."
+  },
+  "patch": {
+    "path": "kb/known-fixes/k8s-pod-oomkilled.md",
+    "content": "# K8s Pod OOMKilled\n"
+  },
+  "created_at": "2026-05-18T10:30:00Z"
+}
