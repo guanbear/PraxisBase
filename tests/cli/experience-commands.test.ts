@@ -152,6 +152,46 @@ describe("experience CLI commands", () => {
     await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
   });
 
+  it("memory scan returns Codex candidates without writes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-memory-scan-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented wiki retrieval and pnpm check passed.");
+
+    const output = await memoryCommand(root, "scan", {
+      agent: "codex",
+      sources: [sessions],
+      limit: 5,
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.candidates.length, 1);
+    await assert.rejects(() => stat(join(root, ".praxisbase/raw-vault/refs")), { code: "ENOENT" });
+  });
+
+  it("memory ingest writes protocol evidence only", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-memory-ingest-"));
+    const source = join(root, "session-1.txt");
+    await writeFile(source, "Implemented wiki health lint and tests passed.");
+
+    const output = await memoryCommand(root, "ingest", {
+      agent: "codex",
+      sources: [source],
+      write: true,
+      limit: 5,
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.imported, 1);
+    await assert.doesNotReject(() => stat(join(root, ".praxisbase/raw-vault/refs")));
+    await assert.rejects(() => stat(join(root, "kb")), { code: "ENOENT" });
+    await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
+  });
+
   it("memory refresh returns a plan without modifying stable knowledge", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-memory-"));
 

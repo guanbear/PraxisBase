@@ -7,12 +7,18 @@ import {
   AgentMemoryCandidateSchema,
   AgentMemoryIngestReportSchema,
   ExceptionRecordSchema,
+  RealWikiSmokeReportSchema,
   type AgentMemoryCandidate,
   type AgentMemoryIngestReport,
+  type RealWikiSmokeReport,
 } from "../protocol/schemas.js";
 import { writeJson, readJson } from "../store/file-store.js";
 import { detectOpenClawProblemSignature } from "../repair/signature.js";
 import { containsPrivateMaterial } from "../wiki/lint.js";
+import { compileWiki } from "../wiki/compile.js";
+import { buildWikiGraph } from "../wiki/resolver.js";
+import { buildWikiSite, collectWikiPages } from "../wiki/render-site.js";
+import { buildContext } from "./context.js";
 
 const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log"]);
 const DEFAULT_LIMIT = 20;
@@ -235,6 +241,10 @@ export interface IngestAgentMemoryInput extends ScanAgentMemoryInput {
   scope?: "personal" | "project" | "team";
 }
 
+export interface RunRealWikiSmokeInput extends IngestAgentMemoryInput {
+  query?: string;
+}
+
 async function loadExistingHashes(root: string, dirs: string[]): Promise<Set<string>> {
   const hashes = new Set<string>();
   for (const dir of dirs) {
@@ -451,4 +461,56 @@ export async function ingestAgentMemory(
   }
 
   return report;
+}
+
+function uniqueSorted(values: string[]): string[] {
+  return Array.from(new Set(values)).sort();
+}
+
+export async function runRealWikiSmoke(root: string, input: RunRealWikiSmokeInput): Promise<RealWikiSmokeReport> {
+  const now = input.now ?? new Date().toISOString();
+  const ingestReport = await ingestAgentMemory(root, {
+    ...input,
+    mode: "write",
+    now,
+  });
+  const compileReport = await compileWiki(root, { mode: "review", now });
+  const pages = await collectWikiPages(root);
+  const graph = buildWikiGraph(pages);
+  const site = await buildWikiSite(root);
+  const context = await buildContext({
+    root,
+    workspace: root,
+    agent: input.agent,
+    stage: "repair",
+    query: input.query ?? "wiki compile",
+  });
+
+  return RealWikiSmokeReportSchema.parse({
+    id: makeId("real-wiki-smoke", `${input.agent}_${now.replace(/[^a-z0-9]/gi, "-")}`),
+    protocol_version: PROTOCOL_VERSION,
+    type: "real_wiki_smoke_report",
+    agent: input.agent,
+    scanned: ingestReport.scanned,
+    imported: ingestReport.imported,
+    duplicates: ingestReport.duplicates,
+    skipped: ingestReport.skipped,
+    unsafe: ingestReport.unsafe,
+    proposal_candidates: compileReport.candidate_ids.length,
+    graph_nodes: graph.nodes.length,
+    graph_broken_links: graph.broken_links.length,
+    graph_duplicates: graph.duplicates.length,
+    graph_orphans: graph.orphans.length,
+    site_pages: site.pages,
+    context_items: context.items.length,
+    outputs: uniqueSorted([
+      ...ingestReport.outputs,
+      `${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`,
+      `${protocolPaths.reportsContext}/${context.id}.json`,
+      ...site.outputs,
+    ]),
+    warnings: ingestReport.warnings,
+    changed_stable_knowledge: false as const,
+    created_at: now,
+  });
 }

@@ -19,8 +19,14 @@ import { contextCommand } from "./commands/context.js";
 import { distillCommand } from "./commands/distill.js";
 import { watchCommand } from "./commands/watch.js";
 import { wikiCommand } from "./commands/wiki.js";
+import { smokeCommand } from "./commands/smoke.js";
 
 const program = new Command();
+
+function collectOptionValue(value: string, previous: string[]): string[] {
+  previous.push(value);
+  return previous;
+}
 
 program
   .name("praxisbase")
@@ -142,9 +148,13 @@ program
 
 program
   .command("memory")
-  .argument("<sub>", "subcommand (import|refresh)")
+  .argument("<sub>", "subcommand (scan|ingest|import|refresh)")
   .requiredOption("--agent <agent>")
-  .option("--source <file>")
+  .option("--source <path>", "source file or directory", collectOptionValue, [])
+  .option("--limit <n>")
+  .option("--dry-run")
+  .option("--write")
+  .option("--scope <scope>")
   .option("--source-refs <refs>", "comma-separated source refs for memory refresh")
   .option("--target <target>")
   .option("--json")
@@ -152,7 +162,11 @@ program
     sub: string,
     options: {
       agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
-      source?: string;
+      source?: string[];
+      limit?: string;
+      dryRun?: boolean;
+      write?: boolean;
+      scope?: "personal" | "project" | "team";
       sourceRefs?: string;
       target?: "context" | "instruction-snippet" | "patch-proposal";
       json?: boolean;
@@ -160,7 +174,36 @@ program
   ) => {
     console.log(await memoryCommand(process.cwd(), sub, {
       ...options,
+      source: options.source?.[0],
+      sources: options.source,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
       sourceRefs: options.sourceRefs?.split(",").map((ref) => ref.trim()).filter(Boolean),
+    }));
+  });
+
+program
+  .command("smoke")
+  .argument("<sub>", "subcommand (real-wiki)")
+  .requiredOption("--agent <agent>")
+  .option("--source <path>", "source file or directory", collectOptionValue, [])
+  .option("--limit <n>")
+  .option("--query <query>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      agent: "codex" | "openclaw";
+      source?: string[];
+      limit?: string;
+      query?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await smokeCommand(process.cwd(), sub, {
+      ...options,
+      source: options.source?.[0],
+      sources: options.source,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
     }));
   });
 
