@@ -91,6 +91,10 @@
       "types": "./src/experience/remote-adapters.ts",
       "default": "./dist/experience/remote-adapters.js"
     },
+    "./experience/harvest.js": {
+      "types": "./src/experience/harvest.ts",
+      "default": "./dist/experience/harvest.js"
+    },
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"
