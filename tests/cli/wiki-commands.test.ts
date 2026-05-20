@@ -53,4 +53,29 @@ describe("wiki CLI commands", () => {
     const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
     assert.equal(proposalFiles.length, 1);
   });
+
+  it("wiki graph and build-site return JSON reports", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-wiki-site-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(join(root, "kb/notes/wiki-auth.md"), `---
+id: wiki-auth
+type: note
+scope: team
+maturity: draft
+---
+# Wiki Auth
+
+Auth note.
+`);
+
+    const graphOutput = await wikiCommand(root, "graph", { json: true });
+    const graphParsed = JSON.parse(graphOutput);
+    assert.equal(graphParsed.ok, true);
+    assert.equal(graphParsed.graph.nodes.length, 1);
+
+    const siteOutput = await wikiCommand(root, "build-site", { json: true });
+    const siteParsed = JSON.parse(siteOutput);
+    assert.equal(siteParsed.ok, true);
+    assert.ok(siteParsed.result.outputs.includes("dist/index.html"));
+  });
 });
