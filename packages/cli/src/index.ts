@@ -12,7 +12,6 @@ import { bundleFetchCommand } from "./commands/bundle-fetch.js";
 import { feishuSummaryCommand, feishuProposalDraftCommand } from "./commands/feishu-summary.js";
 import { synthesizeSkillCommand } from "./commands/synthesize.js";
 import { lintCommand } from "./commands/lint.js";
-import { captureFinishCommand } from "./commands/capture.js";
 
 const program = new Command();
 
@@ -120,33 +119,6 @@ program
   .action(async (_skill: string, options: { signature: string; minEpisodes?: string; json?: boolean }) => {
     const min = options.minEpisodes ? parseInt(options.minEpisodes, 10) : 3;
     console.log(await synthesizeSkillCommand(process.cwd(), { signature: options.signature, minEpisodes: min, json: options.json }));
-  });
-
-program
-  .command("capture")
-  .argument("finish")
-  .requiredOption("--agent <agent>")
-  .requiredOption("--result <result>")
-  .requiredOption("--source-ref <ref>")
-  .requiredOption("--source-hash <hash>")
-  .requiredOption("--summary <text>")
-  .option("--json")
-  .action(async (_finish: string, options: {
-    agent: string;
-    result: "success" | "failed" | "partial" | "unknown";
-    sourceRef: string;
-    sourceHash: string;
-    summary: string;
-    json?: boolean;
-  }) => {
-    if (_finish !== "finish") {
-      program.error(`Unknown subcommand "capture ${_finish}". Use "capture finish".`, { exitCode: 1 });
-    }
-    const { ok, output } = await captureFinishCommand(process.cwd(), options);
-    console.log(output);
-    if (!ok) {
-      process.exitCode = 1;
-    }
   });
 
 program.parseAsync(process.argv).catch((error: unknown) => {

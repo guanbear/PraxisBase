@@ -1,6 +1,6 @@
 export const PROTOCOL_VERSION = "0.1" as const;
 
-export type Scope = "personal" | "project" | "team" | "org" | "global";
+export type Scope = "personal" | "project" | "team" | "global";
 export type AgentType =
   | "temporary_repair_agent"
   | "persistent_bot"
