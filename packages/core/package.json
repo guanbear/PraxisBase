@@ -75,6 +75,10 @@
       "types": "./src/synthesis/skill.ts",
       "default": "./dist/synthesis/skill.js"
     },
+    "./experience/agent-memory.js": {
+      "types": "./src/experience/agent-memory.ts",
+      "default": "./dist/experience/agent-memory.js"
+    },
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"
