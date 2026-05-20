@@ -12,6 +12,12 @@ import { bundleFetchCommand } from "./commands/bundle-fetch.js";
 import { feishuSummaryCommand, feishuProposalDraftCommand } from "./commands/feishu-summary.js";
 import { synthesizeSkillCommand } from "./commands/synthesize.js";
 import { lintCommand } from "./commands/lint.js";
+import { captureFinishCommand } from "./commands/capture.js";
+import { installCommand } from "./commands/install.js";
+import { memoryCommand } from "./commands/memory.js";
+import { contextCommand } from "./commands/context.js";
+import { distillCommand } from "./commands/distill.js";
+import { watchCommand } from "./commands/watch.js";
 
 const program = new Command();
 
@@ -119,6 +125,109 @@ program
   .action(async (_skill: string, options: { signature: string; minEpisodes?: string; json?: boolean }) => {
     const min = options.minEpisodes ? parseInt(options.minEpisodes, 10) : 3;
     console.log(await synthesizeSkillCommand(process.cwd(), { signature: options.signature, minEpisodes: min, json: options.json }));
+  });
+
+program
+  .command("install")
+  .argument("<agent>", "agent profile")
+  .option("--dry-run")
+  .option("--json")
+  .action(async (
+    agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic",
+    options: { dryRun?: boolean; json?: boolean }
+  ) => {
+    console.log(await installCommand(process.cwd(), { agent, dryRun: options.dryRun, json: options.json }));
+  });
+
+program
+  .command("memory")
+  .argument("<sub>", "subcommand (import|refresh)")
+  .requiredOption("--agent <agent>")
+  .option("--source <file>")
+  .option("--target <target>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
+      source?: string;
+      target?: "context" | "instruction-snippet" | "patch-proposal";
+      json?: boolean;
+    }
+  ) => {
+    console.log(await memoryCommand(process.cwd(), sub, options));
+  });
+
+program
+  .command("context")
+  .argument("<sub>", "subcommand (get)")
+  .requiredOption("--agent <agent>")
+  .requiredOption("--stage <stage>")
+  .option("--query <query>")
+  .option("--max-bytes <n>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
+      stage: "diagnosis" | "repair" | "verification" | "proposal";
+      query?: string;
+      maxBytes?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await contextCommand(process.cwd(), sub, options));
+  });
+
+program
+  .command("distill")
+  .argument("<sub>", "subcommand (run)")
+  .option("--json")
+  .action(async (sub: string, options: { json?: boolean }) => {
+    console.log(await distillCommand(process.cwd(), sub, options));
+  });
+
+program
+  .command("watch")
+  .requiredOption("--agent <agent>")
+  .option("--workspace <path>", "workspace path", process.cwd())
+  .option("--once")
+  .option("--json")
+  .action(async (
+    options: {
+      agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
+      workspace: string;
+      once?: boolean;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await watchCommand(process.cwd(), options));
+  });
+
+program
+  .command("capture")
+  .argument("<sub>", "subcommand (finish)")
+  .requiredOption("--agent <agent>")
+  .requiredOption("--result <result>")
+  .requiredOption("--source-ref <ref>")
+  .requiredOption("--source-hash <hash>")
+  .requiredOption("--summary <summary>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
+      result: "success" | "failed" | "partial" | "unknown";
+      sourceRef: string;
+      sourceHash: string;
+      summary: string;
+      json?: boolean;
+    }
+  ) => {
+    if (sub !== "finish") {
+      program.error(`Unknown subcommand "capture ${sub}". Use "capture finish".`, { exitCode: 1 });
+    }
+    console.log(await captureFinishCommand(process.cwd(), options));
   });
 
 program.parseAsync(process.argv).catch((error: unknown) => {

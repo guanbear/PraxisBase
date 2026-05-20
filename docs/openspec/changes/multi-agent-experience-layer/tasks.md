@@ -2,81 +2,81 @@
 
 ## M0: Protocol Schemas And Paths
 
-- [ ] Add capture record schema.
-- [ ] Add adapter profile schema.
-- [ ] Add native memory source, memory import report, and memory refresh plan schemas.
-- [ ] Add context request/response schemas.
-- [ ] Add structured error schema.
-- [ ] Add paths for captures, memory reports, memory import runs, memory refresh outputs, reports, runs, adapters, and raw vault refs.
-- [ ] Export new schemas and types through existing core exports.
-- [ ] Add tests for valid and invalid capture records.
-- [ ] Add tests for adapter profile validation.
-- [ ] Add tests for native memory source and memory refresh validation.
-- [ ] Add tests for structured errors.
+- [x] Add capture record schema.
+- [x] Add adapter profile schema.
+- [x] Add native memory source, memory import report, and memory refresh plan schemas.
+- [x] Add context request/response schemas.
+- [x] Add structured error schema.
+- [x] Add paths for captures, memory reports, memory import runs, memory refresh outputs, reports, runs, adapters, and raw vault refs.
+- [x] Export new schemas and types through existing core exports.
+- [x] Add tests for valid and invalid capture records.
+- [x] Add tests for adapter profile validation.
+- [x] Add tests for native memory source and memory refresh validation.
+- [x] Add tests for structured errors.
 
 ## M1: Capture And Raw Vault
 
-- [ ] Implement `finishCapture` in `packages/core/src/experience/capture.ts`.
-- [ ] Reject raw refs that point under `kb/`, `skills/`, or `dist/`.
-- [ ] Allow `raw-vault://`, `log://`, `artifact://`, `file-ref://`, and `ci-artifact://` refs.
-- [ ] Write capture records under `.praxisbase/outbox/captures/`.
-- [ ] Add `praxisbase capture finish`.
+- [x] Implement `finishCapture` in `packages/core/src/experience/capture.ts`.
+- [x] Reject raw refs that point under `kb/`, `skills/`, or `dist/`.
+- [x] Allow `raw-vault://`, `log://`, `artifact://`, `file-ref://`, and `ci-artifact://` refs.
+- [x] Write capture records under `.praxisbase/outbox/captures/`.
+- [x] Add `praxisbase capture finish`.
 - [ ] Add `praxisbase capture submit` if structured capture file submission is implemented in the same batch.
-- [ ] Add CLI tests for capture output and rejection behavior.
+- [x] Add CLI tests for capture output and rejection behavior.
 
 ## M2: Adapter Profiles And Install
 
-- [ ] Add built-in profiles for `codex`, `claude-code`, `opencode`, `openclaw`, `hermes`, `openhuman`, and `generic`.
-- [ ] Add install dry-run planner.
-- [ ] Add non-dry-run install that writes `.praxisbase/adapters/<agent>.json`.
-- [ ] Append instruction snippets only inside PraxisBase markers.
-- [ ] Prevent whole-file overwrite of instruction files.
-- [ ] Add `praxisbase install <agent> --dry-run --json`.
-- [ ] Add tests for dry-run output and safe write behavior.
+- [x] Add built-in profiles for `codex`, `claude-code`, `opencode`, `openclaw`, `hermes`, `openhuman`, and `generic`.
+- [x] Add install dry-run planner.
+- [x] Add non-dry-run install that writes `.praxisbase/adapters/<agent>.json`.
+- [x] Append instruction snippets only inside PraxisBase markers.
+- [x] Prevent whole-file overwrite of instruction files.
+- [x] Add `praxisbase install <agent> --dry-run --json`.
+- [x] Add tests for dry-run output and safe write behavior.
 
 ## M3: Native Memory Bridge
 
-- [ ] Implement `importNativeMemory` in `packages/core/src/experience/native-memory.ts`.
-- [ ] Implement `planMemoryRefresh` in `packages/core/src/experience/native-memory.ts`.
-- [ ] Preserve source refs, source hashes, summaries, scope hints, and agent ids.
-- [ ] Deduplicate native memory sources by source hash.
-- [ ] Default OpenHuman preferences and personal memories to `scope=personal`.
-- [ ] Treat Hermes skill summaries and curator patches as proposal candidates only.
-- [ ] Reject source refs under `kb/`, `skills/`, or `dist/`.
-- [ ] Write memory import reports under `.praxisbase/reports/memory/`.
-- [ ] Write memory import runs under `.praxisbase/runs/memory-import/`.
-- [ ] Add `praxisbase memory import --agent <agent> --source <file> --json`.
-- [ ] Add `praxisbase memory refresh --agent <agent> --target <context|instruction-snippet|patch-proposal> --json`.
-- [ ] Add tests proving memory import and refresh do not modify stable `kb/` or `skills/`.
+- [x] Implement `importNativeMemory` in `packages/core/src/experience/native-memory.ts`.
+- [x] Implement `planMemoryRefresh` in `packages/core/src/experience/native-memory.ts`.
+- [x] Preserve source refs, source hashes, summaries, scope hints, and agent ids.
+- [x] Deduplicate native memory sources by source hash.
+- [x] Default OpenHuman preferences and personal memories to `scope=personal`.
+- [x] Treat Hermes skill summaries and curator patches as proposal candidates only.
+- [x] Reject source refs under `kb/`, `skills/`, or `dist/`.
+- [x] Write memory import reports under `.praxisbase/reports/memory/`.
+- [x] Write memory import runs under `.praxisbase/runs/memory-import/`.
+- [x] Add `praxisbase memory import --agent <agent> --source <file> --json`.
+- [x] Add `praxisbase memory refresh --agent <agent> --target <context|instruction-snippet|patch-proposal> --json`.
+- [x] Add tests proving memory import and refresh do not modify stable `kb/` or `skills/`.
 
 ## M4: Context Get
 
-- [ ] Implement stage-aware `context get` core logic.
-- [ ] Support `diagnosis`, `repair`, `verification`, and `proposal` stages.
-- [ ] Enforce default stage budgets.
-- [ ] Preserve citations when dropping full object bodies.
-- [ ] Return warnings when generated bundles or indexes are missing.
-- [ ] Add `praxisbase context get`.
-- [ ] Add tests for budget, citations, and no-hard-fail behavior.
+- [x] Implement stage-aware `context get` core logic.
+- [x] Support `diagnosis`, `repair`, `verification`, and `proposal` stages.
+- [x] Enforce default stage budgets.
+- [x] Preserve citations when dropping full object bodies.
+- [x] Return warnings when generated bundles or indexes are missing.
+- [x] Add `praxisbase context get`.
+- [x] Add tests for budget, citations, and no-hard-fail behavior.
 
 ## M5: Distill And Watch
 
-- [ ] Implement `distill run` that reads captures and writes reports/proposals/exceptions.
-- [ ] Default generated candidates to `scope=personal`.
-- [ ] Suggest `scope=project` only when workspace evidence is clear.
-- [ ] Never suggest `team` or `org` without explicit marker or reviewer input.
-- [ ] Ensure distill reports `changed_stable_knowledge: false`.
-- [ ] Add `praxisbase distill run --json`.
-- [ ] Add `praxisbase watch --agent <agent> --workspace <path> --once --json`.
-- [ ] Add tests for proposal output, exception output, and stable knowledge non-mutation.
+- [x] Implement `distill run` that reads captures and writes reports/proposals/exceptions.
+- [x] Default generated candidates to `scope=personal`.
+- [x] Suggest `scope=project` only when workspace evidence is clear.
+- [x] Never suggest `team` or `org` without explicit marker or reviewer input.
+- [x] Ensure distill reports `changed_stable_knowledge: false`.
+- [x] Add `praxisbase distill run --json`.
+- [x] Add `praxisbase watch --agent <agent> --workspace <path> --once --json`.
+- [x] Add tests for proposal output, exception output, and stable knowledge non-mutation.
 
 ## M6: Docs, Seed, And Smoke Flow
 
-- [ ] Update `praxisbase init` seed paths.
-- [ ] Update README links and command examples.
-- [ ] Update deployment docs for personal local use and team scheduled use.
-- [ ] Keep design, implementation plan, OpenSpec, and BDD in sync with final command names.
-- [ ] Run full smoke flow from the implementation plan.
+- [x] Update `praxisbase init` seed paths.
+- [x] Update README links and command examples.
+- [x] Update deployment docs for personal local use and team scheduled use.
+- [x] Keep design, implementation plan, OpenSpec, and BDD in sync with final command names.
+- [x] Run full smoke flow from the implementation plan.
 
 ## Required Verification
 

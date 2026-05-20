@@ -136,6 +136,32 @@ node /path/to/PraxisBase/packages/cli/dist/index.js episode submit repair-episod
 node /path/to/PraxisBase/packages/cli/dist/index.js propose knowledge-proposal.json --offline-ok
 ```
 
+## Multi-Agent Experience Commands
+
+For local personal use, install a lightweight adapter snippet and fetch bounded context before a task:
+
+```bash
+node /path/to/PraxisBase/packages/cli/dist/index.js install codex --dry-run --json
+node /path/to/PraxisBase/packages/cli/dist/index.js context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+```
+
+After a task, capture redacted evidence by reference only:
+
+```bash
+node /path/to/PraxisBase/packages/cli/dist/index.js capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
+node /path/to/PraxisBase/packages/cli/dist/index.js distill run --json
+```
+
+To backfill agent-native memory or prepare reviewed knowledge for an agent:
+
+```bash
+node /path/to/PraxisBase/packages/cli/dist/index.js memory import --agent hermes --source hermes-memory.json --json
+node /path/to/PraxisBase/packages/cli/dist/index.js memory refresh --agent hermes --target instruction-snippet --json
+node /path/to/PraxisBase/packages/cli/dist/index.js watch --agent claude-code --workspace . --once --json
+```
+
+Team scheduled use should run `distill run`, review, promote, and build as separate jobs. `memory import`, `memory refresh`, `capture`, `watch`, and `distill` must not write stable `kb/` or `skills/` files directly; they produce reports, proposals, captures, refresh plans, or exceptions for review.
+
 ## K8s Incident Integration
 
 Fetch optional incident context:

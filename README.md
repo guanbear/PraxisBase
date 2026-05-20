@@ -96,6 +96,22 @@ PraxisBase should reuse agent-native memory instead of replacing it. Existing Co
 
 `memory import` backfills native memory into capture/proposal candidates. `memory refresh` sends reviewed PraxisBase knowledge back as runtime context, install snippets, or patch proposals. It is not silent bidirectional sync: native memory is a source and cache, while reviewed PraxisBase objects remain the shared authority.
 
+## Multi-Agent CLI Flow
+
+The first multi-agent experience layer is CLI-first and proposal-based:
+
+```bash
+praxisbase install codex --dry-run --json
+praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+praxisbase capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
+praxisbase memory import --agent hermes --source hermes-memory.json --json
+praxisbase memory refresh --agent hermes --target instruction-snippet --json
+praxisbase distill run --json
+praxisbase watch --agent claude-code --workspace . --once --json
+```
+
+These commands write only protocol state under `.praxisbase/` and proposal candidates under `.praxisbase/inbox/proposals/`. Stable `kb/` and `skills/` changes still go through review and promotion.
+
 ### Example: Hermes Skill Evolution
 
 Hermes already has agent-managed skills, persistent memory, and curator-style skill maintenance. PraxisBase can reuse those outputs as proposal sources and send reviewed shared skills back as context or patch proposals.

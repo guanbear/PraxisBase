@@ -2,7 +2,17 @@ import { z } from "zod";
 import { PROTOCOL_VERSION } from "./types.js";
 
 export const ProtocolVersionSchema = z.literal(PROTOCOL_VERSION);
-export const ScopeSchema = z.enum(["personal", "project", "team", "global"]);
+export const ScopeSchema = z.enum(["personal", "project", "team", "global", "org"]);
+export const LayerSchema = z.enum(["preference", "convention", "technical", "domain", "project"]);
+export const AgentProfileSchema = z.enum([
+  "codex",
+  "claude-code",
+  "opencode",
+  "openclaw",
+  "hermes",
+  "openhuman",
+  "generic",
+]);
 export const AgentTypeSchema = z.enum([
   "temporary_repair_agent",
   "persistent_bot",
@@ -13,6 +23,7 @@ export const AgentTypeSchema = z.enum([
 ]);
 export const RepairResultSchema = z.enum(["success", "failed", "partial", "unknown"]);
 export const IncidentResultSchema = z.enum(["confirmed", "ruled_out", "inconclusive", "data_gap"]);
+export const CaptureResultSchema = z.enum(["success", "failed", "partial", "unknown"]);
 export const RiskLevelSchema = z.enum(["low", "medium", "high"]);
 export const ProposalActionSchema = z.enum(["create", "patch", "archive", "link"]);
 export const TargetTypeSchema = z.enum(["note", "known_fix", "procedure", "skill", "policy", "decision", "pitfall"]);
@@ -22,6 +33,7 @@ export const KnowledgeTypeSchema = z.enum([
   "pitfall", "guideline", "model", "note"
 ]);
 export const MaturitySchema = z.enum(["draft", "verified", "proven"]);
+export const ContextStageSchema = z.enum(["diagnosis", "repair", "verification", "proposal"]);
 
 const DateTimeSchema = z.string().datetime();
 const NonEmptyStringArray = z.array(z.string().min(1)).min(1);
@@ -251,6 +263,135 @@ export const LintReportSchema = z.object({
   created_at: DateTimeSchema,
 });
 
+export const ArtifactRefSchema = z.object({
+  kind: z.string().min(1),
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1),
+  redacted_summary: z.string().min(1),
+});
+
+export const CaptureRecordSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("capture_record"),
+  agent: AgentProfileSchema,
+  workspace: z.string().min(1),
+  scope_hint: ScopeSchema,
+  result: CaptureResultSchema,
+  triggers: NonEmptyStringArray,
+  signals: z.array(z.string().min(1)).default([]),
+  artifacts: z.array(ArtifactRefSchema).min(1),
+  created_at: DateTimeSchema,
+});
+
+export const AdapterProfileSchema = z.object({
+  agent: AgentProfileSchema,
+  instruction_files: z.array(z.string().min(1)).default([]),
+  transcript_paths: z.array(z.string().min(1)).default([]),
+  raw_artifact_paths: z.array(z.string().min(1)).default([]),
+  workspace_markers: z.array(z.string().min(1)).default([]),
+  capture: z.object({
+    default_triggers: NonEmptyStringArray,
+  }),
+  context: z.object({
+    default_stages: z.array(ContextStageSchema).min(1),
+  }),
+  privacy: z.object({
+    redaction_profile: z.string().min(1),
+  }),
+});
+
+export const NativeMemoryKindSchema = z.enum([
+  "memory",
+  "skill_summary",
+  "session_summary",
+  "preference",
+  "instruction",
+]);
+
+export const NativeMemorySourceSchema = z.object({
+  agent: AgentProfileSchema,
+  kind: NativeMemoryKindSchema,
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1),
+  redacted_summary: z.string().min(1),
+  scope_hint: ScopeSchema.default("personal"),
+  created_at: DateTimeSchema.optional(),
+});
+
+export const MemoryImportReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("memory_import_report"),
+  agent: AgentProfileSchema,
+  imported_sources: z.number().int().min(0),
+  proposal_candidates: z.array(z.string().min(1)).default([]),
+  capture_candidates: z.array(z.string().min(1)).default([]),
+  default_scope: ScopeSchema,
+  changed_stable_knowledge: z.literal(false),
+  warnings: z.array(z.string()).default([]),
+  created_at: DateTimeSchema,
+});
+
+export const MemoryRefreshTargetSchema = z.enum(["context", "instruction-snippet", "patch-proposal"]);
+
+export const MemoryRefreshOutputSchema = z.object({
+  kind: z.enum(["context_bundle", "install_snippet", "patch_proposal"]),
+  target_path: z.string().min(1).optional(),
+  source_refs: z.array(z.string().min(1)).default([]),
+  content: z.string().optional(),
+});
+
+export const MemoryRefreshPlanSchema = z.object({
+  agent: AgentProfileSchema,
+  target: MemoryRefreshTargetSchema,
+  writes_native_memory: z.literal(false),
+  outputs: z.array(MemoryRefreshOutputSchema),
+  created_at: DateTimeSchema.optional(),
+});
+
+export const ContextRequestSchema = z.object({
+  agent: AgentProfileSchema,
+  workspace: z.string().min(1),
+  stage: ContextStageSchema,
+  query: z.string().default(""),
+  max_bytes: z.number().int().positive().optional(),
+});
+
+export const ContextCitationSchema = z.object({
+  id: z.string().min(1),
+  path: z.string().min(1),
+});
+
+export const ContextItemSchema = z.object({
+  id: z.string().min(1),
+  path: z.string().min(1),
+  kind: z.string().min(1),
+  summary: z.string().optional(),
+  body: z.string().optional(),
+});
+
+export const ContextResponseSchema = z.object({
+  agent: AgentProfileSchema,
+  stage: ContextStageSchema,
+  items: z.array(ContextItemSchema),
+  citations: z.array(ContextCitationSchema),
+  warnings: z.array(z.string()).default([]),
+  truncated: z.boolean(),
+  budget: z.object({
+    max_bytes: z.number().int().positive(),
+    used_bytes: z.number().int().min(0),
+  }),
+});
+
+export const StructuredErrorSchema = z.object({
+  ok: z.literal(false),
+  code: z.string().min(1),
+  message: z.string().min(1),
+  retryable: z.boolean(),
+  details: z.record(z.unknown()).optional(),
+});
+
 export type Episode = z.infer<typeof EpisodeSchema>;
 export type IncidentEpisode = z.infer<typeof IncidentEpisodeSchema>;
 export type Proposal = z.infer<typeof ProposalSchema>;
@@ -258,6 +399,16 @@ export type Review = z.infer<typeof ReviewSchema>;
 export type KnownFixFrontmatter = z.infer<typeof KnownFixFrontmatterSchema>;
 export type PitfallFrontmatter = z.infer<typeof PitfallFrontmatterSchema>;
 export type KnowledgeReference = z.infer<typeof KnowledgeReferenceSchema>;
+export type ArtifactRef = z.infer<typeof ArtifactRefSchema>;
+export type CaptureRecord = z.infer<typeof CaptureRecordSchema>;
+export type AdapterProfile = z.infer<typeof AdapterProfileSchema>;
+export type NativeMemorySource = z.infer<typeof NativeMemorySourceSchema>;
+export type MemoryImportReport = z.infer<typeof MemoryImportReportSchema>;
+export type MemoryRefreshPlan = z.infer<typeof MemoryRefreshPlanSchema>;
+export type ContextStage = z.infer<typeof ContextStageSchema>;
+export type ContextRequest = z.infer<typeof ContextRequestSchema>;
+export type ContextResponse = z.infer<typeof ContextResponseSchema>;
+export type StructuredError = z.infer<typeof StructuredErrorSchema>;
 export type ExceptionRecord = z.infer<typeof ExceptionRecordSchema>;
 export type RunRecord = z.infer<typeof RunRecordSchema>;
 export type K8sIncidentManifest = z.infer<typeof K8sIncidentManifestSchema>;
