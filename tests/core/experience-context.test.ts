@@ -71,4 +71,43 @@ Refresh auth state when OpenClaw logs mention auth expired. ${"details ".repeat(
     assert.equal(report.stage, "verification");
     assert.equal(report.changed_stable_knowledge, false);
   });
+
+  it("uses wiki retrieval for CJK and graph-related context while preserving citations", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-wiki-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await mkdir(join(root, "skills/openclaw/auth-repair"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/openclaw-auth-expired.md"), `---
+id: openclaw-auth-expired
+type: known_fix
+scope: team
+maturity: proven
+signatures: ["openclaw:auth-expired"]
+---
+# 认证失败
+
+OpenClaw 认证失败 needs auth repair. [[auth-repair]]
+`);
+    await writeFile(join(root, "skills/openclaw/auth-repair/SKILL.md"), `---
+id: auth-repair
+scope: team
+maturity: verified
+---
+# Auth Repair
+
+Refresh credentials safely.
+`);
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "认证失败",
+      maxBytes: 4000,
+    });
+
+    assert.equal(output.items[0].path, "kb/known-fixes/openclaw-auth-expired.md");
+    assert.ok(output.items.some((item) => item.path === "skills/openclaw/auth-repair/SKILL.md"));
+    assert.ok(output.citations.some((citation) => citation.path === "kb/known-fixes/openclaw-auth-expired.md"));
+  });
 });
