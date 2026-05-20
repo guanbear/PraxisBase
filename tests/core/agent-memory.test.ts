@@ -12,6 +12,7 @@ import {
 } from "@praxisbase/core";
 import { scanAgentMemory } from "@praxisbase/core/experience/agent-memory.js";
 import { ingestAgentMemory } from "@praxisbase/core/experience/agent-memory.js";
+import { fetchOpenClawRemoteMemory } from "@praxisbase/core/experience/openclaw-remote.js";
 
 describe("agent memory ingestion protocol", () => {
   it("exposes M12 paths and validates report schemas", () => {
@@ -97,6 +98,31 @@ describe("scanAgentMemory", () => {
     await assert.rejects(() => stat(join(root, ".praxisbase/raw-vault/refs")), { code: "ENOENT" });
   });
 
+  it("expands explicit tilde source paths", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-codex-tilde-"));
+    const previousHome = process.env.HOME;
+    try {
+      process.env.HOME = root;
+      await writeFile(join(root, "session-tilde.txt"), "Implemented tilde path support and tests passed.");
+
+      const result = await scanAgentMemory(root, {
+        agent: "codex",
+        sources: ["~/session-tilde.txt"],
+        limit: 10,
+        now: "2026-05-20T00:00:00.000Z",
+      });
+
+      assert.equal(result.candidates.length, 1);
+      assert.equal(result.candidates[0].source_path, join(root, "session-tilde.txt"));
+    } finally {
+      if (previousHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = previousHome;
+      }
+    }
+  });
+
   it("scans OpenClaw logs and detects known signatures", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-openclaw-scan-"));
     const logs = join(root, "logs");
@@ -113,6 +139,39 @@ describe("scanAgentMemory", () => {
     assert.equal(result.candidates.length, 1);
     assert.equal(result.candidates[0].kind, "openclaw_log");
     assert.ok(result.candidates[0].summary_hint?.includes("openclaw:claude-auth-expired"));
+  });
+
+  it("scans staged OpenClaw remote envelopes as redacted memory candidates", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-openclaw-staged-scan-"));
+    const source = join(root, "openclaw-export.json");
+    await writeFile(source, JSON.stringify({
+      items: [{
+        id: "remote-auth-expired-1",
+        summary: "OpenClaw detected Claude auth expired and asked the user to login again.",
+        signature: "openclaw:claude-auth-expired",
+        raw_log: "RAW REMOTE LOG SHOULD NOT BE INGESTED",
+      }],
+    }));
+
+    const fetchReport = await fetchOpenClawRemoteMemory(root, {
+      provider: "exported-json",
+      sources: [source],
+      now: "2026-05-20T00:00:00.000Z",
+    });
+    assert.equal(fetchReport.staged, 1);
+
+    const result = await scanAgentMemory(root, {
+      agent: "openclaw",
+      sources: [join(root, protocolPaths.stagingOpenClaw)],
+      limit: 10,
+      now: "2026-05-20T00:00:00.000Z",
+    });
+
+    const envelope = JSON.parse(await readFile(join(root, fetchReport.outputs[0]), "utf8"));
+    assert.equal(result.candidates.length, 1);
+    assert.equal(result.candidates[0].source_hash, envelope.source_hash);
+    assert.equal(result.candidates[0].source_ref, envelope.source_ref);
+    assert.equal(result.candidates[0].summary_hint, envelope.redacted_summary);
   });
 });
 
@@ -166,5 +225,40 @@ describe("ingestAgentMemory", () => {
     assert.equal(report.unsafe, 1);
     const exceptions = await readdir(join(root, ".praxisbase/exceptions/human-required"));
     assert.equal(exceptions.length, 1);
+  });
+
+  it("ingests staged OpenClaw remote envelopes without raw remote logs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-openclaw-staged-ingest-"));
+    const source = join(root, "openclaw-export.json");
+    await writeFile(source, JSON.stringify({
+      items: [{
+        id: "remote-workspace-lock-1",
+        summary: "OpenClaw workspace lock was detected and cleared.",
+        signature: "openclaw:workspace-lock-stuck",
+        raw_log: "RAW REMOTE LOG SHOULD NOT BE WRITTEN",
+      }],
+    }));
+
+    const fetchReport = await fetchOpenClawRemoteMemory(root, {
+      provider: "exported-json",
+      sources: [source],
+      now: "2026-05-20T00:00:00.000Z",
+    });
+    const envelope = JSON.parse(await readFile(join(root, fetchReport.outputs[0]), "utf8"));
+
+    const report = await ingestAgentMemory(root, {
+      agent: "openclaw",
+      sources: [join(root, protocolPaths.stagingOpenClaw)],
+      mode: "write",
+      limit: 10,
+      now: "2026-05-20T00:00:00.000Z",
+    });
+
+    assert.equal(report.imported, 1);
+    const refs = await readdir(join(root, ".praxisbase/raw-vault/refs"));
+    const refRaw = await readFile(join(root, ".praxisbase/raw-vault/refs", refs[0]), "utf8");
+    assert.equal(refRaw.includes("RAW REMOTE LOG SHOULD NOT BE WRITTEN"), false);
+    assert.equal(refRaw.includes(envelope.redacted_summary), true);
+    assert.equal(refRaw.includes(envelope.source_hash), true);
   });
 });

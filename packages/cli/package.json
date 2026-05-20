@@ -67,6 +67,10 @@
       "types": "./src/commands/memory.ts",
       "default": "./dist/commands/memory.js"
     },
+    "./commands/doctor.js": {
+      "types": "./src/commands/doctor.ts",
+      "default": "./dist/commands/doctor.js"
+    },
     "./commands/context.js": {
       "types": "./src/commands/context.ts",
       "default": "./dist/commands/context.js"

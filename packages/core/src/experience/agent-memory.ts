@@ -1,4 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import { basename, extname, join } from "node:path";
 import { computeHash, makeId } from "../protocol/id.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
@@ -6,6 +7,7 @@ import { protocolPaths } from "../protocol/paths.js";
 import {
   AgentMemoryCandidateSchema,
   AgentMemoryIngestReportSchema,
+  OpenClawRemoteMemoryEnvelopeSchema,
   ExceptionRecordSchema,
   RealWikiSmokeReportSchema,
   type AgentMemoryCandidate,
@@ -124,6 +126,69 @@ function makeKind(agent: "codex" | "openclaw", filePath: string): "codex_session
   return "openclaw_log";
 }
 
+function expandSourcePath(sourcePath: string): string {
+  if (sourcePath === "~") {
+    return homedir();
+  }
+  if (sourcePath.startsWith("~/")) {
+    return join(homedir(), sourcePath.slice(2));
+  }
+  return sourcePath;
+}
+
+function parseStagedOpenClawEnvelope(content: string): {
+  source_ref: string;
+  source_hash: string;
+  redacted_summary: string;
+  warnings: string[];
+} | undefined {
+  try {
+    const parsed = OpenClawRemoteMemoryEnvelopeSchema.safeParse(JSON.parse(content));
+    if (!parsed.success) {
+      return undefined;
+    }
+    return {
+      source_ref: parsed.data.source_ref,
+      source_hash: parsed.data.source_hash,
+      redacted_summary: parsed.data.redacted_summary,
+      warnings: parsed.data.warnings,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function makeCandidateFromSource(
+  input: ScanAgentMemoryInput,
+  filePath: string,
+  sizeBytes: number,
+  content: string,
+  now: string
+): AgentMemoryCandidate {
+  const stagedEnvelope = input.agent === "openclaw"
+    ? parseStagedOpenClawEnvelope(content)
+    : undefined;
+  const sourceHash = stagedEnvelope?.source_hash ?? computeHash(content);
+  const sourceRef = stagedEnvelope?.source_ref ?? makeSourceRef(input.agent, filePath);
+  const kind = input.agent === "openclaw" && stagedEnvelope
+    ? "openclaw_episode"
+    : makeKind(input.agent, filePath);
+  const summaryHint = stagedEnvelope?.redacted_summary ?? extractSummaryHint(content, input.agent);
+
+  return AgentMemoryCandidateSchema.parse({
+    id: makeId("agent-memory-candidate", `${input.agent}_${kind}_${sourceHash.slice(0, 16)}`),
+    agent: input.agent,
+    kind,
+    source_path: filePath,
+    source_ref: sourceRef,
+    source_hash: sourceHash,
+    size_bytes: sizeBytes,
+    created_at: now,
+    summary_hint: summaryHint,
+    warnings: stagedEnvelope?.warnings ?? [],
+  });
+}
+
 export async function scanAgentMemory(
   root: string,
   input: ScanAgentMemoryInput
@@ -140,7 +205,8 @@ export async function scanAgentMemory(
   }
 
   let totalSkipped = 0;
-  for (const sourcePath of sources) {
+  for (const rawSourcePath of sources) {
+    const sourcePath = expandSourcePath(rawSourcePath);
     let s;
     try {
       s = await stat(sourcePath);
@@ -165,24 +231,7 @@ export async function scanAgentMemory(
           continue;
         }
 
-        const sourceHash = computeHash(content);
-        const sourceRef = makeSourceRef(input.agent, file.path);
-        const kind = makeKind(input.agent, file.path);
-        const summaryHint = extractSummaryHint(content, input.agent);
-
-        const candidate = AgentMemoryCandidateSchema.parse({
-          id: makeId("agent-memory-candidate", `${input.agent}_${kind}_${sourceHash.slice(0, 16)}`),
-          agent: input.agent,
-          kind,
-          source_path: file.path,
-          source_ref: sourceRef,
-          source_hash: sourceHash,
-          size_bytes: file.size,
-          created_at: now,
-          summary_hint: summaryHint,
-          warnings: [],
-        });
-        candidates.push(candidate);
+        candidates.push(makeCandidateFromSource(input, file.path, file.size, content, now));
       }
     } else if (s.isFile()) {
       const ext = extname(sourcePath).toLowerCase();
@@ -206,24 +255,7 @@ export async function scanAgentMemory(
         continue;
       }
 
-      const sourceHash = computeHash(content);
-      const sourceRef = makeSourceRef(input.agent, sourcePath);
-      const kind = makeKind(input.agent, sourcePath);
-      const summaryHint = extractSummaryHint(content, input.agent);
-
-      const candidate = AgentMemoryCandidateSchema.parse({
-        id: makeId("agent-memory-candidate", `${input.agent}_${kind}_${sourceHash.slice(0, 16)}`),
-        agent: input.agent,
-        kind,
-        source_path: sourcePath,
-        source_ref: sourceRef,
-        source_hash: sourceHash,
-        size_bytes: s.size,
-        created_at: now,
-        summary_hint: summaryHint,
-        warnings: [],
-      });
-      candidates.push(candidate);
+      candidates.push(makeCandidateFromSource(input, sourcePath, s.size, content, now));
     }
   }
 

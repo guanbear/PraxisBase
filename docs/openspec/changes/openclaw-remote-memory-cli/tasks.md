@@ -4,30 +4,30 @@ M12.1 should be implemented after M12 local `memory scan`, `memory ingest`, and 
 
 ## M12.1: PraxisBase CLI Remote OpenClaw Memory Fetch
 
-- [ ] Add protocol paths for `.praxisbase/staging/openclaw`, `.praxisbase/reports/memory-fetch`, and `.praxisbase/runs/memory-fetch`.
-- [ ] Add schemas for `OpenClawRemoteMemoryEnvelope`, `AgentMemoryFetchReport`, and `OpenClawRemoteDoctorReport`.
-- [ ] Ensure initialized workspaces ignore `.praxisbase/staging/` in Git.
-- [ ] Add `fetchOpenClawRemoteMemory(root, input)` in `@praxisbase/core`.
-- [ ] Add provider interface with `exported-json`, `openclaw-api`, and optional `openclaw-cli`.
-- [ ] Implement `exported-json` provider first.
-- [ ] Implement `openclaw-api` provider with environment token support.
-- [ ] Add structured diagnostics for missing `OPENCLAW_TOKEN`, invalid base URL, missing OpenClaw CLI, and unsupported provider.
-- [ ] Write safe remote envelopes to `.praxisbase/staging/openclaw/*.json`.
-- [ ] Write fetch reports to `.praxisbase/reports/memory-fetch/*.json`.
-- [ ] Write fetch run records to `.praxisbase/runs/memory-fetch/*.json`.
-- [ ] Never write tokens, cookies, headers, raw response bodies, raw logs, or private keys.
-- [ ] Add CLI `praxisbase memory fetch --agent openclaw --provider exported-json --source <file> --json`.
-- [ ] Add CLI `praxisbase memory fetch --agent openclaw --provider openclaw-api --remote <id> --json`.
-- [ ] Add CLI `praxisbase doctor openclaw-remote --provider <provider> --json`.
-- [ ] Preserve source checkout invocation with `node packages/cli/dist/index.js memory fetch ...`.
-- [ ] Preserve installed invocation with `praxisbase memory fetch ...`.
-- [ ] Preserve CI invocation through a built tool repo path.
-- [ ] Make staged envelopes compatible with `praxisbase memory ingest --agent openclaw --source .praxisbase/staging/openclaw --write --json`.
-- [ ] Add tests for exported JSON fetch.
-- [ ] Add tests proving raw remote body and auth secrets are not staged or reported.
-- [ ] Add tests for API fetch using a local mock HTTP server.
-- [ ] Add tests for doctor diagnostics.
-- [ ] Add tests for fetch-to-ingest compatibility.
+- [x] Add protocol paths for `.praxisbase/staging/openclaw`, `.praxisbase/reports/memory-fetch`, and `.praxisbase/runs/memory-fetch`.
+- [x] Add schemas for `OpenClawRemoteMemoryEnvelope`, `AgentMemoryFetchReport`, and `OpenClawRemoteDoctorReport`.
+- [x] Ensure initialized workspaces ignore `.praxisbase/staging/` in Git.
+- [x] Add `fetchOpenClawRemoteMemory(root, input)` in `@praxisbase/core`.
+- [x] Add provider interface with `exported-json`, `openclaw-api`, and optional `openclaw-cli`.
+- [x] Implement `exported-json` provider first.
+- [x] Implement `openclaw-api` provider with environment token support.
+- [x] Add structured diagnostics for missing `OPENCLAW_TOKEN`, invalid base URL, missing OpenClaw CLI, and unsupported provider.
+- [x] Write safe remote envelopes to `.praxisbase/staging/openclaw/*.json`.
+- [x] Write fetch reports to `.praxisbase/reports/memory-fetch/*.json`.
+- [x] Write fetch run records to `.praxisbase/runs/memory-fetch/*.json`.
+- [x] Never write tokens, cookies, headers, raw response bodies, raw logs, or private keys.
+- [x] Add CLI `praxisbase memory fetch --agent openclaw --provider exported-json --source <file> --json`.
+- [x] Add CLI `praxisbase memory fetch --agent openclaw --provider openclaw-api --remote <id> --json`.
+- [x] Add CLI `praxisbase doctor openclaw-remote --provider <provider> --json`.
+- [x] Preserve source checkout invocation with `node packages/cli/dist/index.js memory fetch ...`.
+- [x] Preserve installed invocation with `praxisbase memory fetch ...`.
+- [x] Preserve CI invocation through a built tool repo path.
+- [x] Make staged envelopes compatible with `praxisbase memory ingest --agent openclaw --source .praxisbase/staging/openclaw --write --json`.
+- [x] Add tests for exported JSON fetch.
+- [x] Add tests proving raw remote body and auth secrets are not staged or reported.
+- [x] Add tests for API fetch using a local mock HTTP server.
+- [x] Add tests for doctor diagnostics.
+- [x] Add tests for fetch-to-ingest compatibility.
 
 ## Required Verification
 

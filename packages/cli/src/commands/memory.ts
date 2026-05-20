@@ -1,5 +1,5 @@
-import { importNativeMemory, ingestAgentMemory, planMemoryRefresh, scanAgentMemory } from "@praxisbase/core";
-import type { AgentProfile } from "@praxisbase/core";
+import { fetchOpenClawRemoteMemory, importNativeMemory, ingestAgentMemory, planMemoryRefresh, scanAgentMemory } from "@praxisbase/core";
+import type { AgentProfile, OpenClawRemoteProvider } from "@praxisbase/core";
 
 export interface MemoryCommandOptions {
   agent: AgentProfile;
@@ -9,6 +9,10 @@ export interface MemoryCommandOptions {
   dryRun?: boolean;
   write?: boolean;
   scope?: "personal" | "project" | "team";
+  provider?: OpenClawRemoteProvider;
+  remote?: string;
+  since?: string;
+  out?: string;
   target?: "context" | "instruction-snippet" | "patch-proposal";
   sourceRefs?: string[];
   json?: boolean;
@@ -59,6 +63,29 @@ export async function memoryCommand(root: string, subcommand: string, options: M
     return `Memory ingest: ${report.imported} imported`;
   }
 
+  if (subcommand === "fetch") {
+    if (options.agent !== "openclaw") {
+      throw new Error(`memory fetch requires --agent openclaw, got "${options.agent}".`);
+    }
+    if (!options.provider) {
+      throw new Error("memory fetch requires --provider <exported-json|openclaw-api|openclaw-cli>.");
+    }
+    const report = await fetchOpenClawRemoteMemory(root, {
+      provider: options.provider,
+      sources: sourceList(options),
+      remote: options.remote,
+      since: options.since,
+      limit: options.limit,
+      out: options.out,
+      runtimeMode: "source",
+    });
+
+    if (options.json) {
+      return JSON.stringify({ ok: true, report }, null, 2);
+    }
+    return `Memory fetch: ${report.staged} staged`;
+  }
+
   if (subcommand === "import") {
     if (!options.source) {
       throw new Error("memory import requires --source <file>");
@@ -89,5 +116,5 @@ export async function memoryCommand(root: string, subcommand: string, options: M
     return `Memory refresh plan: ${plan.outputs.map((output) => output.kind).join(", ")}`;
   }
 
-  throw new Error(`Unknown subcommand "memory ${subcommand}". Use "memory scan", "memory ingest", "memory import", or "memory refresh".`);
+  throw new Error(`Unknown subcommand "memory ${subcommand}". Use "memory scan", "memory ingest", "memory fetch", "memory import", or "memory refresh".`);
 }

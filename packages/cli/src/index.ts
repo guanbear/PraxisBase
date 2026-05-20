@@ -15,6 +15,7 @@ import { lintCommand } from "./commands/lint.js";
 import { captureFinishCommand, captureSubmitCommand } from "./commands/capture.js";
 import { installCommand } from "./commands/install.js";
 import { memoryCommand } from "./commands/memory.js";
+import { doctorCommand } from "./commands/doctor.js";
 import { contextCommand } from "./commands/context.js";
 import { distillCommand } from "./commands/distill.js";
 import { watchCommand } from "./commands/watch.js";
@@ -148,13 +149,17 @@ program
 
 program
   .command("memory")
-  .argument("<sub>", "subcommand (scan|ingest|import|refresh)")
+  .argument("<sub>", "subcommand (scan|ingest|fetch|import|refresh)")
   .requiredOption("--agent <agent>")
   .option("--source <path>", "source file or directory", collectOptionValue, [])
   .option("--limit <n>")
   .option("--dry-run")
   .option("--write")
   .option("--scope <scope>")
+  .option("--provider <provider>")
+  .option("--remote <remote>")
+  .option("--since <since>")
+  .option("--out <path>")
   .option("--source-refs <refs>", "comma-separated source refs for memory refresh")
   .option("--target <target>")
   .option("--json")
@@ -167,6 +172,10 @@ program
       dryRun?: boolean;
       write?: boolean;
       scope?: "personal" | "project" | "team";
+      provider?: "exported-json" | "openclaw-api" | "openclaw-cli";
+      remote?: string;
+      since?: string;
+      out?: string;
       sourceRefs?: string;
       target?: "context" | "instruction-snippet" | "patch-proposal";
       json?: boolean;
@@ -177,6 +186,10 @@ program
       source: options.source?.[0],
       sources: options.source,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      provider: options.provider,
+      remote: options.remote,
+      since: options.since,
+      out: options.out,
       sourceRefs: options.sourceRefs?.split(",").map((ref) => ref.trim()).filter(Boolean),
     }));
   });
@@ -205,6 +218,23 @@ program
       sources: options.source,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
     }));
+  });
+
+program
+  .command("doctor")
+  .argument("<sub>", "subcommand (openclaw-remote)")
+  .option("--provider <provider>", "provider: exported-json, openclaw-api, or openclaw-cli")
+  .option("--write-report")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      provider?: "exported-json" | "openclaw-api" | "openclaw-cli";
+      writeReport?: boolean;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await doctorCommand(process.cwd(), sub, options));
   });
 
 program

@@ -192,6 +192,70 @@ describe("experience CLI commands", () => {
     await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
   });
 
+  it("memory fetch stages OpenClaw exported JSON through PraxisBase CLI", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-memory-fetch-"));
+    const source = join(root, "openclaw-export.json");
+    await writeFile(source, JSON.stringify({
+      items: [{
+        id: "remote-auth-expired-1",
+        summary: "OpenClaw detected Claude auth expired.",
+        signature: "openclaw:claude-auth-expired",
+        raw_log: "RAW REMOTE LOG SHOULD NOT BE STAGED",
+      }],
+    }));
+
+    const output = await memoryCommand(root, "fetch", {
+      agent: "openclaw",
+      sources: [source],
+      provider: "exported-json",
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.staged, 1);
+    const staged = await readdir(join(root, ".praxisbase/staging/openclaw"));
+    assert.equal(staged.length, 1);
+    const stagedRaw = await readFile(join(root, ".praxisbase/staging/openclaw", staged[0]), "utf8");
+    assert.equal(stagedRaw.includes("RAW REMOTE LOG SHOULD NOT BE STAGED"), false);
+    await assert.rejects(() => stat(join(root, "kb")), { code: "ENOENT" });
+    await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
+  });
+
+  it("memory fetch output can be ingested from the OpenClaw staging directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-fetch-ingest-"));
+    const source = join(root, "openclaw-export.json");
+    await writeFile(source, JSON.stringify({
+      items: [{
+        id: "remote-lock-1",
+        summary: "OpenClaw workspace lock was detected and cleared.",
+        signature: "openclaw:workspace-lock-stuck",
+        raw_log: "RAW REMOTE LOG SHOULD NOT BE INGESTED",
+      }],
+    }));
+
+    await memoryCommand(root, "fetch", {
+      agent: "openclaw",
+      sources: [source],
+      provider: "exported-json",
+      json: true,
+    });
+    const ingestOutput = await memoryCommand(root, "ingest", {
+      agent: "openclaw",
+      sources: [join(root, ".praxisbase/staging/openclaw")],
+      write: true,
+      json: true,
+    });
+
+    const parsed = JSON.parse(ingestOutput);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.imported, 1);
+    const refs = await readdir(join(root, ".praxisbase/raw-vault/refs"));
+    const refRaw = await readFile(join(root, ".praxisbase/raw-vault/refs", refs[0]), "utf8");
+    assert.equal(refRaw.includes("RAW REMOTE LOG SHOULD NOT BE INGESTED"), false);
+    assert.equal(refRaw.includes("OpenClaw workspace lock was detected and cleared."), true);
+  });
+
   it("memory refresh returns a plan without modifying stable knowledge", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-memory-"));
 

@@ -308,9 +308,14 @@ describe("fetchOpenClawRemoteMemory openclaw-api", () => {
 });
 
 describe("doctorOpenClawRemote", () => {
+  async function writeStagingIgnore(root: string): Promise<void> {
+    await writeFile(join(root, ".gitignore"), ".praxisbase/staging/\n");
+  }
+
   it("reports missing OPENCLAW_TOKEN for openclaw-api", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-openclaw-remote-doctor-"));
     try {
+      await writeStagingIgnore(root);
       const report = await doctorOpenClawRemote(root, {
         provider: "openclaw-api",
         runtimeMode: "source",
@@ -328,6 +333,7 @@ describe("doctorOpenClawRemote", () => {
   it("reports exported-json provider as available", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-doctor-export-"));
     try {
+      await writeStagingIgnore(root);
       const report = await doctorOpenClawRemote(root, {
         provider: "exported-json",
         runtimeMode: "source",
@@ -346,6 +352,7 @@ describe("doctorOpenClawRemote", () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-doctor-process-env-"));
     const previousToken = process.env.OPENCLAW_TOKEN;
     try {
+      await writeStagingIgnore(root);
       process.env.OPENCLAW_TOKEN = "process-env-token";
       const report = await doctorOpenClawRemote(root, {
         provider: "openclaw-api",
@@ -367,6 +374,7 @@ describe("doctorOpenClawRemote", () => {
   it("reports invalid OPENCLAW_BASE_URL", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-doctor-url-"));
     try {
+      await writeStagingIgnore(root);
       const report = await doctorOpenClawRemote(root, {
         provider: "openclaw-api",
         runtimeMode: "source",
@@ -387,6 +395,7 @@ describe("doctorOpenClawRemote", () => {
   it("makes no network calls for exported-json doctor", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-doctor-nonetwork-"));
     try {
+      await writeStagingIgnore(root);
       const report = await doctorOpenClawRemote(root, {
         provider: "exported-json",
         runtimeMode: "source",
@@ -404,6 +413,7 @@ describe("doctorOpenClawRemote", () => {
   it("writes report when writeReport is true", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-doctor-write-"));
     try {
+      await writeStagingIgnore(root);
       await doctorOpenClawRemote(root, {
         provider: "exported-json",
         runtimeMode: "source",
@@ -414,6 +424,27 @@ describe("doctorOpenClawRemote", () => {
 
       const reportFiles = await readdir(join(root, ".praxisbase/reports/memory-fetch"));
       assert.ok(reportFiles.length >= 1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("warns when staging is not ignored by Git", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-doctor-ignore-"));
+    try {
+      await writeFile(join(root, ".gitignore"), "dist/\n");
+      const report = await doctorOpenClawRemote(root, {
+        provider: "exported-json",
+        runtimeMode: "source",
+        env: {},
+        now: "2026-05-20T00:00:00.000Z",
+      });
+
+      assert.equal(report.ok, false);
+      assert.ok(report.warnings.includes("staging_not_ignored"));
+      assert.ok(report.checks.some((check) =>
+        check.id === "staging-gitignore" && check.ok === false && check.severity === "warning"
+      ));
     } finally {
       await rm(root, { recursive: true, force: true });
     }

@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { seedFiles } from "@praxisbase/core";
 import { writeText } from "@praxisbase/core/store/file-store.js";
@@ -37,6 +37,22 @@ function seedMatchesProfile(relativePath: string, profile: InitProfile): boolean
   return isK8sSeed && !isOpenClawSeed;
 }
 
+async function ensureStagingIgnored(root: string): Promise<void> {
+  const gitignorePath = join(root, ".gitignore");
+  let existing = "";
+  try {
+    existing = await readFile(gitignorePath, "utf8");
+  } catch {
+  }
+
+  if (existing.split(/\r?\n/).some((line) => line.trim() === ".praxisbase/staging/")) {
+    return;
+  }
+
+  const prefix = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+  await writeFile(gitignorePath, `${existing}${prefix}.praxisbase/staging/\n`);
+}
+
 export async function initializeWorkspace(root: string, options: InitOptions = {}): Promise<void> {
   const profile = options.profile ?? "all";
   assertProfile(profile);
@@ -57,13 +73,16 @@ export async function initializeWorkspace(root: string, options: InitOptions = {
     protocolPaths.runsCapture,
     protocolPaths.runsDistill,
     protocolPaths.runsMemoryImport,
+    protocolPaths.runsMemoryFetch,
     protocolPaths.indexes,
     protocolPaths.bundles,
     protocolPaths.reportsDistill,
     protocolPaths.reportsContext,
     protocolPaths.reportsMemory,
+    protocolPaths.reportsMemoryFetch,
     protocolPaths.adapters,
     protocolPaths.memoryRefresh,
+    protocolPaths.stagingOpenClaw,
     protocolPaths.rawVaultRefs,
     protocolPaths.procedures,
     protocolPaths.notes,
@@ -80,4 +99,6 @@ export async function initializeWorkspace(root: string, options: InitOptions = {
     const seedContent = relativePath === protocolPaths.config ? profileConfig(profile) : content;
     await writeText(root, relativePath, seedContent);
   }
+
+  await ensureStagingIgnored(root);
 }

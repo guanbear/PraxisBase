@@ -4,36 +4,36 @@ M12 depends on M7-M11 wiki compiler behavior. It should be implemented after `wi
 
 ## M12: Agent Memory Ingestion And Real Smoke
 
-- [ ] Add protocol paths for `.praxisbase/reports/memory-ingest` and `.praxisbase/runs/memory-ingest`.
-- [ ] Add schemas for agent memory candidates, ingest reports, and raw-vault ref records if existing schemas are not sufficient.
-- [ ] Add `packages/core/src/experience/agent-memory.ts`.
-- [ ] Implement `scanAgentMemory(root, input)` for Codex and OpenClaw.
-- [ ] Expand `~` only for known adapter profile roots or explicit user-provided `--source` paths.
-- [ ] Support `.json`, `.jsonl`, `.md`, `.txt`, and `.log` inputs.
-- [ ] Cap per-file reads and report skipped oversized files.
-- [ ] Compute deterministic `source_hash` from raw source content.
-- [ ] Generate stable `source_ref` values using `raw-vault://codex/...` or `log://openclaw/...`.
-- [ ] Extract bounded redacted summaries for Codex sessions.
-- [ ] Extract bounded redacted summaries and problem signatures for OpenClaw logs.
-- [ ] Reuse existing privacy/raw guards before writing any summary.
-- [ ] Deduplicate by source hash across previous raw-vault refs, capture artifacts, and memory import reports.
-- [ ] Implement `ingestAgentMemory(root, input)` with dry-run and write modes.
-- [ ] In write mode, write `.praxisbase/raw-vault/refs/*.json`.
-- [ ] In write mode, write `.praxisbase/outbox/captures/*.json`.
-- [ ] Write `.praxisbase/reports/memory-ingest/*.json` and `.praxisbase/runs/memory-ingest/*.json`.
-- [ ] Ensure all ingest reports include `changed_stable_knowledge: false`.
-- [ ] Add CLI `praxisbase memory scan --agent <agent> --json`.
-- [ ] Add CLI `praxisbase memory ingest --agent <agent> --write --json`.
-- [ ] Add CLI `praxisbase smoke real-wiki --agent <agent> --json`.
-- [ ] Real smoke must run memory ingest, wiki compile review, wiki graph, wiki build-site, and context get.
-- [ ] Real smoke must report counts for scanned, imported, duplicates, unsafe, proposal candidates, graph nodes, graph broken links, site pages, and context items.
-- [ ] Add tests for Codex scan dry-run.
-- [ ] Add tests for Codex ingest write mode.
-- [ ] Add tests proving raw session text is not written.
-- [ ] Add tests for OpenClaw log signature extraction.
-- [ ] Add tests for duplicate source hash skip.
-- [ ] Add tests for private material exception routing.
-- [ ] Add tests for real smoke no stable `kb/` or `skills/` mutation.
+- [x] Add protocol paths for `.praxisbase/reports/memory-ingest` and `.praxisbase/runs/memory-ingest`.
+- [x] Add schemas for agent memory candidates, ingest reports, and raw-vault ref records if existing schemas are not sufficient.
+- [x] Add `packages/core/src/experience/agent-memory.ts`.
+- [x] Implement `scanAgentMemory(root, input)` for Codex and OpenClaw.
+- [x] Expand `~` only for known adapter profile roots or explicit user-provided `--source` paths.
+- [x] Support `.json`, `.jsonl`, `.md`, `.txt`, and `.log` inputs.
+- [x] Cap per-file reads and report skipped oversized files.
+- [x] Compute deterministic `source_hash` from raw source content.
+- [x] Generate stable `source_ref` values using `raw-vault://codex/...` or `log://openclaw/...`.
+- [x] Extract bounded redacted summaries for Codex sessions.
+- [x] Extract bounded redacted summaries and problem signatures for OpenClaw logs.
+- [x] Reuse existing privacy/raw guards before writing any summary.
+- [x] Deduplicate by source hash across previous raw-vault refs, capture artifacts, and memory import reports.
+- [x] Implement `ingestAgentMemory(root, input)` with dry-run and write modes.
+- [x] In write mode, write `.praxisbase/raw-vault/refs/*.json`.
+- [x] In write mode, write `.praxisbase/outbox/captures/*.json`.
+- [x] Write `.praxisbase/reports/memory-ingest/*.json` and `.praxisbase/runs/memory-ingest/*.json`.
+- [x] Ensure all ingest reports include `changed_stable_knowledge: false`.
+- [x] Add CLI `praxisbase memory scan --agent <agent> --json`.
+- [x] Add CLI `praxisbase memory ingest --agent <agent> --write --json`.
+- [x] Add CLI `praxisbase smoke real-wiki --agent <agent> --json`.
+- [x] Real smoke must run memory ingest, wiki compile review, wiki graph, wiki build-site, and context get.
+- [x] Real smoke must report counts for scanned, imported, duplicates, unsafe, proposal candidates, graph nodes, graph broken links, site pages, and context items.
+- [x] Add tests for Codex scan dry-run.
+- [x] Add tests for Codex ingest write mode.
+- [x] Add tests proving raw session text is not written.
+- [x] Add tests for OpenClaw log signature extraction.
+- [x] Add tests for duplicate source hash skip.
+- [x] Add tests for private material exception routing.
+- [x] Add tests for real smoke no stable `kb/` or `skills/` mutation.
 
 ## Required Verification
 

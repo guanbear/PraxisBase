@@ -73,6 +73,22 @@ function makeSourceRef(provider: OpenClawRemoteProvider, remoteId: string): stri
   return `openclaw://${provider}/${remoteId}`;
 }
 
+async function isStagingIgnoredByGit(root: string): Promise<boolean> {
+  try {
+    const gitignore = await readFile(join(root, ".gitignore"), "utf8");
+    return gitignore.split(/\r?\n/).some((line) => {
+      const normalized = line.trim();
+      return normalized === ".praxisbase/staging/" ||
+        normalized === ".praxisbase/staging" ||
+        normalized === ".praxisbase/staging/**" ||
+        normalized === ".praxisbase/staging/openclaw/" ||
+        normalized === ".praxisbase/staging/openclaw";
+    });
+  } catch {
+    return false;
+  }
+}
+
 function buildRedactedSummary(item: RawRemoteItem): string {
   const text = item.redacted_summary ?? item.summary ?? "";
   if (text.length > MAX_SUMMARY_LENGTH) {
@@ -452,6 +468,19 @@ export async function doctorOpenClawRemote(
     message: string;
   }> = [];
   const warnings: string[] = [];
+  const stagingIgnored = await isStagingIgnoredByGit(root);
+
+  checks.push({
+    id: "staging-gitignore",
+    ok: stagingIgnored,
+    severity: stagingIgnored ? "info" : "warning",
+    message: stagingIgnored
+      ? ".praxisbase/staging/ is ignored by Git."
+      : ".praxisbase/staging/ is not covered by .gitignore.",
+  });
+  if (!stagingIgnored) {
+    warnings.push("staging_not_ignored");
+  }
 
   switch (provider) {
     case "exported-json": {
