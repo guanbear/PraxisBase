@@ -78,6 +78,18 @@
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"
+    },
+    "./wiki/model.js": {
+      "types": "./src/wiki/model.ts",
+      "default": "./dist/wiki/model.js"
+    },
+    "./wiki/state.js": {
+      "types": "./src/wiki/state.ts",
+      "default": "./dist/wiki/state.js"
+    },
+    "./wiki/collect.js": {
+      "types": "./src/wiki/collect.ts",
+      "default": "./dist/wiki/collect.js"
     }
   },
   "scripts": {

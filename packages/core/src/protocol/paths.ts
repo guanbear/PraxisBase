@@ -40,5 +40,9 @@ export const protocolPaths = {
   skillsOpenClaw: "skills/openclaw",
   skillsK8s: "skills/k8s",
   dist: "dist",
-  distRepairBundles: "dist/repair-bundles"
+  distRepairBundles: "dist/repair-bundles",
+  wikiRoot: ".praxisbase/wiki",
+  wikiState: ".praxisbase/wiki/state.json",
+  reportsWikiCompile: ".praxisbase/reports/wiki-compile",
+  reportsWikiLint: ".praxisbase/reports/wiki-lint"
 } as const;
