@@ -79,6 +79,10 @@
       "types": "./src/experience/agent-memory.ts",
       "default": "./dist/experience/agent-memory.js"
     },
+    "./experience/openclaw-remote.js": {
+      "types": "./src/experience/openclaw-remote.ts",
+      "default": "./dist/experience/openclaw-remote.js"
+    },
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"

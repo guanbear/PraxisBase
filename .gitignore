@@ -10,4 +10,5 @@ kb/.cache/
 kb/.logs/
 .praxisbase/outbox/
 .praxisbase/cache/
+.praxisbase/staging/
 .sisyphus/

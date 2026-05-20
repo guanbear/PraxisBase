@@ -16,6 +16,7 @@ export * from "./experience/native-memory.js";
 export * from "./experience/context.js";
 export * from "./experience/distill.js";
 export * from "./experience/agent-memory.js";
+export * from "./experience/openclaw-remote.js";
 export * from "./wiki/model.js";
 export * from "./wiki/state.js";
 export * from "./wiki/collect.js";
