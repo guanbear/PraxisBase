@@ -55,4 +55,33 @@ Refresh login. <script>alert("x")</script>
     await assert.doesNotReject(stat(join(root, "dist/style.css")));
     await assert.doesNotReject(stat(join(root, "dist/site.js")));
   });
+
+  it("shows actionable health issues on the dashboard", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-health-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(join(root, "kb/notes/a.md"), `---
+id: a
+type: note
+scope: team
+maturity: draft
+---
+# Same
+
+[[missing]]
+`);
+    await writeFile(join(root, "kb/notes/b.md"), `---
+id: b
+type: note
+scope: team
+maturity: draft
+---
+# Same
+
+Body.
+`);
+    await buildWikiSite(root);
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Broken links"));
+    assert.ok(index.includes("Duplicates"));
+  });
 });
