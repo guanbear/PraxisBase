@@ -1,4 +1,5 @@
 import { compileWiki } from "@praxisbase/core/wiki/compile.js";
+import { runWikiLint } from "@praxisbase/core/wiki/lint.js";
 import { buildWikiGraph } from "@praxisbase/core/wiki/resolver.js";
 import { buildWikiSite, collectWikiPages } from "@praxisbase/core/wiki/render-site.js";
 import { writeJson } from "@praxisbase/core/store/file-store.js";
@@ -26,9 +27,18 @@ export async function wikiCommand(
   if (subcommand === "graph") {
     const pages = await collectWikiPages(root);
     const graph = buildWikiGraph(pages);
+    const lint = await runWikiLint(root, { pages });
+    const health = {
+      sources: new Set(pages.flatMap((page) => page.source_ids ?? [])).size,
+      pages: pages.length,
+      broken_links: graph.broken_links.length,
+      duplicates: graph.duplicates.length,
+      orphans: graph.orphans.length,
+      findings: lint.findings.length,
+    };
     await writeJson(root, "dist/graph.json", graph);
     if (options.json) {
-      return JSON.stringify({ ok: true, graph }, null, 2);
+      return JSON.stringify({ ok: true, graph, health }, null, 2);
     }
     return `Wiki graph: ${graph.nodes.length} nodes`;
   }

@@ -76,3 +76,40 @@ export function computeWikiSourceHash(input: string): string {
   const hex = createHash("sha256").update(input).digest("hex");
   return `sha256:${hex}`;
 }
+
+export function inferWikiLifecycle(input: {
+  maturity?: string;
+  updated_at?: string;
+  superseded_by?: string | null;
+  now?: string;
+}): "draft" | "reviewed" | "verified" | "stale" | "archived" {
+  if (input.superseded_by) return "archived";
+
+  const nowMs = Date.parse(input.now ?? new Date().toISOString());
+  const updatedMs = input.updated_at ? Date.parse(input.updated_at) : Number.NaN;
+  const ageMs = Number.isFinite(updatedMs) && Number.isFinite(nowMs) ? nowMs - updatedMs : 0;
+  if (ageMs > 180 * 24 * 60 * 60 * 1000) return "stale";
+
+  if (input.maturity === "proven" || input.maturity === "verified") return "verified";
+  if (input.maturity === "draft") return "draft";
+  return "reviewed";
+}
+
+export function inferWikiConfidence(input: {
+  sourceCount: number;
+  maturity?: string;
+  referenceCount?: number;
+  explicitConfidence?: number;
+}): number {
+  if (typeof input.explicitConfidence === "number" && Number.isFinite(input.explicitConfidence)) {
+    return Math.max(0, Math.min(1, input.explicitConfidence));
+  }
+
+  const sourceScore = Math.min(input.sourceCount, 4) * 0.12;
+  const maturityScore = input.maturity === "proven" ? 0.32
+    : input.maturity === "verified" ? 0.24
+      : input.maturity === "draft" ? 0.08
+        : 0.12;
+  const referenceScore = Math.min(input.referenceCount ?? 0, 5) * 0.06;
+  return Math.max(0, Math.min(1, 0.2 + sourceScore + maturityScore + referenceScore));
+}

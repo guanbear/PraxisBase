@@ -6,7 +6,7 @@ import { makeWikiSlug } from "./model.js";
 import type { WikiSource } from "./model.js";
 import { collectWikiSources } from "./collect.js";
 import { readWikiState, getChangedWikiSources, writeWikiState, markWikiSourcesCompiled } from "./state.js";
-import { isAllowedWikiPatchPath, containsPrivateMaterial } from "./lint.js";
+import { isAllowedWikiPatchPath, containsPrivateMaterial, validateBodyShrink } from "./lint.js";
 
 export interface CompileWikiOptions {
   mode: "dry-run" | "review";
@@ -81,6 +81,14 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
     }
 
     const patchContent = buildPatchContent(source, now);
+    const shrinkCheck = validateBodyShrink(source.body ?? "", patchContent, source.kind === "stable_kb" ? "patch" : "create");
+    if (!shrinkCheck.ok) {
+      exceptions++;
+      if (mode === "review") {
+        await writeHumanRequiredException(root, source, now, "Wiki candidate body shrink exceeds safe threshold", shrinkCheck);
+      }
+      continue;
+    }
 
     candidateIds.push(candidateId);
 
@@ -142,7 +150,13 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
   return report;
 }
 
-async function writeHumanRequiredException(root: string, source: WikiSource, now: string): Promise<void> {
+async function writeHumanRequiredException(
+  root: string,
+  source: WikiSource,
+  now: string,
+  reason = "Private or raw material detected in wiki source",
+  details: Record<string, unknown> = {}
+): Promise<void> {
   const id = makeId("wiki-exception", source.id);
   await writeJson(
     root,
@@ -153,8 +167,8 @@ async function writeHumanRequiredException(root: string, source: WikiSource, now
       type: "exception_record",
       category: "human_required",
       source_id: source.id,
-      reason: "Private or raw material detected in wiki source",
-      details: { source_kind: source.kind, source_title: source.title },
+      reason,
+      details: { source_kind: source.kind, source_title: source.title, ...details },
       created_at: now,
     }
   );

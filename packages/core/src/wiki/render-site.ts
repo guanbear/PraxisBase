@@ -4,7 +4,8 @@ import matter from "gray-matter";
 import { escapeHtml, escapeJsonForHtml } from "../build/html.js";
 import { readText, writeJson, writeText } from "../store/file-store.js";
 import { collectWikiSources } from "./collect.js";
-import { makeWikiSlug, type WikiSource } from "./model.js";
+import { inferWikiConfidence, inferWikiLifecycle, makeWikiSlug, type WikiSource } from "./model.js";
+import { runWikiLint } from "./lint.js";
 import { buildWikiGraph, type WikiGraph, type WikiPage } from "./resolver.js";
 
 export interface BuildWikiSiteResult {
@@ -16,6 +17,8 @@ export interface BuildWikiSiteResult {
     broken_links: number;
     duplicates: number;
     orphans: number;
+    stale: number;
+    findings: number;
   };
 }
 
@@ -26,7 +29,9 @@ interface WikiSitePage extends WikiPage {
   body_text: string;
   signatures: string[];
   confidence?: number;
+  reference_count?: number;
   updated_at?: string;
+  superseded_by?: string | null;
 }
 
 interface SourceMetadata {
@@ -35,7 +40,9 @@ interface SourceMetadata {
   scope?: string;
   maturity?: string;
   confidence?: number;
+  reference_count?: number;
   updated_at?: string;
+  superseded_by?: string | null;
   signatures: string[];
 }
 
@@ -85,7 +92,9 @@ async function sourceMetadata(root: string, source: WikiSource): Promise<SourceM
       scope: stringValue(data.scope),
       maturity: stringValue(data.maturity),
       confidence: numberValue(data.confidence),
+      reference_count: numberValue(data.reference_count),
       updated_at: stringValue(data.updated_at),
+      superseded_by: stringValue(data.superseded_by) ?? null,
       signatures: stringArrayValue(data.signatures),
     };
   } catch {
@@ -117,7 +126,11 @@ export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
       page_kind: pageKind(source, metadata),
       scope: metadata.scope ?? source.scope,
       maturity: metadata.maturity ?? source.maturity ?? "draft",
-      lifecycle: "reviewed",
+      lifecycle: inferWikiLifecycle({
+        maturity: metadata.maturity ?? source.maturity,
+        updated_at: metadata.updated_at ?? source.updated_at,
+        superseded_by: metadata.superseded_by,
+      }),
       source_ids: [source.id, source.source_hash].filter(Boolean).sort(),
       claims: [],
       outbound_links: [],
@@ -126,8 +139,15 @@ export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
       summary: source.summary,
       body_text: body,
       signatures: metadata.signatures,
-      confidence: metadata.confidence,
+      confidence: inferWikiConfidence({
+        sourceCount: 1,
+        maturity: metadata.maturity ?? source.maturity,
+        referenceCount: metadata.reference_count,
+        explicitConfidence: metadata.confidence,
+      }),
+      reference_count: metadata.reference_count,
       updated_at: metadata.updated_at ?? source.updated_at,
+      superseded_by: metadata.superseded_by,
     });
   }
 
@@ -241,7 +261,7 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 </html>`;
 }
 
-function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: string): string {
+function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: string, stalePages: number): string {
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
   const recent = [...pages]
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
@@ -252,6 +272,7 @@ function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: 
     ["Broken links", String(graph.broken_links.length)],
     ["Duplicates", String(graph.duplicates.length)],
     ["Orphans", String(graph.orphans.length)],
+    ["Stale", String(stalePages)],
     ["Bundle status", bundleStatus],
   ];
 
@@ -375,10 +396,12 @@ async function exists(root: string, path: string): Promise<boolean> {
 export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> {
   const pages = await collectWikiPages(root);
   const graph = buildWikiGraph(pages);
+  const lintReport = await runWikiLint(root, { pages });
   const outputs = [...SITE_OUTPUTS];
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
+  const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: pages.map((page) => ({
@@ -429,6 +452,8 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
       broken_links: graph.broken_links.length,
       duplicates: graph.duplicates.length,
       orphans: graph.orphans.length,
+      stale: stalePages,
+      findings: lintReport.findings.length,
     },
   };
 }
