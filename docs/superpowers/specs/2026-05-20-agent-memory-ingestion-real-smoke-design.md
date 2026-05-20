@@ -20,6 +20,7 @@ Existing pieces:
 Missing piece:
 
 - A deterministic, user-invoked importer that scans local Codex/OpenClaw material and turns it into safe protocol evidence without copying raw source bodies into Git.
+- Non-local OpenClaw memory is intentionally split into M12.1 `openclaw-remote-memory-cli`: PraxisBase CLI fetches remote/exported memory into safe staging envelopes, then this M12 ingest layer imports those staged envelopes.
 
 ## Architecture
 

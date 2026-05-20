@@ -11,6 +11,8 @@ PraxisBase already defines adapter profiles, capture records, native memory repo
 3. write protocol evidence objects only,
 4. run compile/build/context smoke without direct stable knowledge mutation.
 
+Non-local OpenClaw memory is handled by the companion M12.1 change `openclaw-remote-memory-cli`, which stages remote/exported memory through PraxisBase CLI `memory fetch` before this M12 ingest layer reads it.
+
 ## What Changes
 
 - Add a small agent memory ingestion layer for Codex archived sessions and OpenClaw logs/episode refs.

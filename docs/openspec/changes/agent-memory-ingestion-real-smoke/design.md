@@ -62,7 +62,7 @@ log://openclaw/
 .openclaw/
 ```
 
-The first implementation should accept explicit local paths passed by the user. It may classify logs with existing OpenClaw signature helpers when text is available:
+The first implementation should accept explicit local paths passed by the user. Non-local OpenClaw memory must first be normalized by M12.1 `praxisbase memory fetch` into `.praxisbase/staging/openclaw/`, then passed back to this ingest flow as an explicit `--source`. It may classify logs with existing OpenClaw signature helpers when text is available:
 
 - `openclaw:claude-auth-expired`
 - `openclaw:workspace-lock-stuck`
