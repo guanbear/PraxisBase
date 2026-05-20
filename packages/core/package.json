@@ -98,6 +98,14 @@
     "./wiki/lint.js": {
       "types": "./src/wiki/lint.ts",
       "default": "./dist/wiki/lint.js"
+    },
+    "./wiki/resolver.js": {
+      "types": "./src/wiki/resolver.ts",
+      "default": "./dist/wiki/resolver.js"
+    },
+    "./wiki/retrieval.js": {
+      "types": "./src/wiki/retrieval.ts",
+      "default": "./dist/wiki/retrieval.js"
     }
   },
   "scripts": {

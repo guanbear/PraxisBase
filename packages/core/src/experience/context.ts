@@ -1,10 +1,12 @@
 import { readdir } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
+import matter from "gray-matter";
 import { makeId } from "../protocol/id.js";
 import { PROTOCOL_VERSION, type AgentProfile } from "../protocol/types.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { readText, writeJson } from "../store/file-store.js";
 import { ContextResponseSchema, type ContextResponse, type ContextStage } from "../protocol/schemas.js";
+import { rankWikiContextItems, type WikiContextCandidate } from "../wiki/retrieval.js";
 
 const DEFAULT_BUDGETS: Record<ContextStage, number> = {
   diagnosis: 16 * 1024,
@@ -34,13 +36,6 @@ export type BuildContextOutput = ContextResponse & {
   workspace: string;
 };
 
-interface Candidate {
-  path: string;
-  kind: string;
-  body: string;
-  score: number;
-}
-
 async function listFiles(root: string, relativeDir: string): Promise<string[]> {
   const absoluteDir = join(root, relativeDir);
   let entries;
@@ -52,6 +47,7 @@ async function listFiles(root: string, relativeDir: string): Promise<string[]> {
   }
 
   const files: string[] = [];
+  entries.sort((a, b) => a.name.localeCompare(b.name));
   for (const entry of entries) {
     const relativePath = `${relativeDir}${sep}${entry.name}`;
     if (entry.isDirectory()) {
@@ -63,16 +59,6 @@ async function listFiles(root: string, relativeDir: string): Promise<string[]> {
   return files;
 }
 
-function scoreText(path: string, body: string, query: string): number {
-  if (!query.trim()) return 1;
-  const haystack = `${path}\n${body}`.toLowerCase();
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .reduce((score, term) => score + (haystack.includes(term) ? 1 : 0), 0);
-}
-
 function kindFromPath(path: string): string {
   if (path.startsWith("skills/")) return "skill";
   if (path.startsWith("kb/known-fixes/")) return "known_fix";
@@ -80,6 +66,129 @@ function kindFromPath(path: string): string {
   if (path.includes("/bundles/")) return "bundle";
   if (path.includes("/indexes/")) return "index";
   return "context";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function stringArrayValue(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+}
+
+function sourceIdsValue(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string" && item.length > 0) return [item];
+    if (isRecord(item)) {
+      return [stringValue(item.id), stringValue(item.uri), stringValue(item.hash)].filter((entry): entry is string => Boolean(entry));
+    }
+    return [];
+  });
+}
+
+function extractTitle(content: string, data: Record<string, unknown>, fallback: string): string {
+  const headingMatch = content.match(/^#\s+(.+)$/m);
+  if (headingMatch) return headingMatch[1].trim();
+  return stringValue(data.title) ?? stringValue(data.id) ?? fallback;
+}
+
+function stripMarkdownCode(content: string): string {
+  return content
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`\n]*`/g, "");
+}
+
+function extractWikiTargets(content: string): string[] {
+  const stripped = stripMarkdownCode(content);
+  const targets: string[] = [];
+  for (const match of stripped.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g)) {
+    targets.push(match[1].trim());
+  }
+  return Array.from(new Set(targets)).sort();
+}
+
+function idFromPath(path: string): string {
+  const fileName = path.split("/").pop() ?? path;
+  return fileName.replace(/\.(md|json|txt)$/i, "") || path;
+}
+
+function markdownCandidate(path: string, raw: string): WikiContextCandidate {
+  const parsed = matter(raw);
+  const data = parsed.data as Record<string, unknown>;
+  const body = parsed.content.trim();
+  const fallback = idFromPath(path);
+  const signatures = stringArrayValue(data.signatures);
+  const sources = [
+    ...stringArrayValue(data.source_ids),
+    ...stringArrayValue(data.sourceIds),
+    ...sourceIdsValue(data.sources),
+  ];
+  const summary = stringValue(data.summary) ?? [body.slice(0, 240), ...signatures].filter(Boolean).join("\n");
+
+  return {
+    id: stringValue(data.id) ?? fallback,
+    path,
+    kind: stringValue(data.knowledge_type) ?? stringValue(data.type) ?? kindFromPath(path),
+    title: extractTitle(parsed.content, data, fallback),
+    summary,
+    body,
+    maturity: stringValue(data.maturity),
+    scope: stringValue(data.scope),
+    source_ids: Array.from(new Set(sources)).sort(),
+    outbound_links: extractWikiTargets(body),
+  };
+}
+
+function jsonCandidate(path: string, raw: string): WikiContextCandidate | undefined {
+  try {
+    const value = JSON.parse(raw) as unknown;
+    if (!isRecord(value)) return undefined;
+    const fallback = idFromPath(path);
+    const summary = stringValue(value.summary) ?? stringValue(value.title) ?? raw.slice(0, 240);
+    return {
+      id: stringValue(value.id) ?? fallback,
+      path,
+      kind: stringValue(value.knowledge_type) ?? stringValue(value.type) ?? kindFromPath(path),
+      title: stringValue(value.title) ?? stringValue(value.id) ?? fallback,
+      summary,
+      body: stringValue(value.body) ?? raw,
+      maturity: stringValue(value.maturity),
+      scope: stringValue(value.scope),
+      source_ids: [
+        ...stringArrayValue(value.source_ids),
+        ...sourceIdsValue(value.sources),
+      ].sort(),
+      outbound_links: stringArrayValue(value.outbound_links).sort(),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function textCandidate(path: string, raw: string): WikiContextCandidate {
+  const fallback = idFromPath(path);
+  return {
+    id: fallback,
+    path,
+    kind: kindFromPath(path),
+    title: fallback,
+    summary: raw.slice(0, 240),
+    body: raw,
+    outbound_links: extractWikiTargets(raw),
+  };
+}
+
+function buildCandidate(path: string, raw: string): WikiContextCandidate | undefined {
+  if (path.endsWith(".md")) return markdownCandidate(path, raw);
+  if (path.endsWith(".json")) return jsonCandidate(path, raw);
+  if (path.endsWith(".txt")) return textCandidate(path, raw);
+  return undefined;
 }
 
 function serializeSize(value: unknown): number {
@@ -102,7 +211,17 @@ function enforceBudget(output: BuildContextOutput, maxBytes: number): BuildConte
   withoutBodies.budget.used_bytes = serializeSize(withoutBodies);
   if (withoutBodies.budget.used_bytes <= maxBytes) return withoutBodies;
 
-  const reduced: BuildContextOutput = { ...withoutBodies, items: [] };
+  const reduced: BuildContextOutput = { ...withoutBodies };
+  while (serializeSize(reduced) > maxBytes && reduced.items.length > 1) {
+    const removed = reduced.items.pop();
+    if (removed) {
+      reduced.citations = reduced.citations.filter((citation) => citation.path !== removed.path);
+    }
+  }
+  if (serializeSize(reduced) > maxBytes) {
+    reduced.items = [];
+    reduced.citations = [];
+  }
   reduced.budget.used_bytes = serializeSize(reduced);
   return reduced;
 }
@@ -110,17 +229,19 @@ function enforceBudget(output: BuildContextOutput, maxBytes: number): BuildConte
 export async function buildContext(input: BuildContextInput): Promise<BuildContextOutput> {
   const maxBytes = input.maxBytes ?? DEFAULT_BUDGETS[input.stage];
   const filePaths = (await Promise.all(CONTEXT_ROOTS.map((dir) => listFiles(input.root, dir)))).flat();
-  const candidates: Candidate[] = [];
+  const candidates: WikiContextCandidate[] = [];
 
   for (const path of filePaths) {
-    const body = await readText(input.root, path);
-    const score = scoreText(path, body, input.query ?? "");
-    if (score <= 0) continue;
-    candidates.push({ path, kind: kindFromPath(path), body, score });
+    const raw = await readText(input.root, path);
+    const candidate = buildCandidate(path, raw);
+    if (candidate) candidates.push(candidate);
   }
 
-  candidates.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
-  const selected = candidates.slice(0, 8);
+  const selected = rankWikiContextItems(candidates, {
+    query: input.query ?? "",
+    stage: input.stage,
+    maxItems: 8,
+  });
   const id = makeId("context", `${input.agent}-${input.stage}-${input.query ?? "default"}`);
   const warnings = selected.length === 0 ? ["context_unavailable"] : [];
 
@@ -131,7 +252,7 @@ export async function buildContext(input: BuildContextInput): Promise<BuildConte
       id: makeId("context-item", candidate.path),
       path: candidate.path,
       kind: candidate.kind,
-      summary: candidate.body.slice(0, 240),
+      summary: candidate.summary,
       body: candidate.body,
     })),
     citations: selected.map((candidate) => ({

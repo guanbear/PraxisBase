@@ -20,3 +20,5 @@ export * from "./wiki/state.js";
 export * from "./wiki/collect.js";
 export * from "./wiki/compile.js";
 export * from "./wiki/lint.js";
+export * from "./wiki/resolver.js";
+export * from "./wiki/retrieval.js";
