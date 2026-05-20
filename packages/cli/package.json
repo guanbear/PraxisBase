@@ -54,6 +54,10 @@
     "./commands/lint.js": {
       "types": "./src/commands/lint.ts",
       "default": "./dist/commands/lint.js"
+    },
+    "./commands/capture.js": {
+      "types": "./src/commands/capture.ts",
+      "default": "./dist/commands/capture.js"
     }
   },
   "bin": {

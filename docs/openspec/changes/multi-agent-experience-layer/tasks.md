@@ -2,27 +2,27 @@
 
 ## M0: Protocol Schemas And Paths
 
-- [ ] Add capture record schema.
-- [ ] Add adapter profile schema.
-- [ ] Add native memory source, memory import report, and memory refresh plan schemas.
-- [ ] Add context request/response schemas.
-- [ ] Add structured error schema.
-- [ ] Add paths for captures, memory reports, memory import runs, memory refresh outputs, reports, runs, adapters, and raw vault refs.
-- [ ] Export new schemas and types through existing core exports.
-- [ ] Add tests for valid and invalid capture records.
-- [ ] Add tests for adapter profile validation.
-- [ ] Add tests for native memory source and memory refresh validation.
-- [ ] Add tests for structured errors.
+- [x] Add capture record schema.
+- [x] Add adapter profile schema.
+- [x] Add native memory source, memory import report, and memory refresh plan schemas.
+- [x] Add context request/response schemas.
+- [x] Add structured error schema.
+- [x] Add paths for captures, memory reports, memory import runs, memory refresh outputs, reports, runs, adapters, and raw vault refs.
+- [x] Export new schemas and types through existing core exports.
+- [x] Add tests for valid and invalid capture records.
+- [x] Add tests for adapter profile validation.
+- [x] Add tests for native memory source and memory refresh validation.
+- [x] Add tests for structured errors.
 
 ## M1: Capture And Raw Vault
 
-- [ ] Implement `finishCapture` in `packages/core/src/experience/capture.ts`.
-- [ ] Reject raw refs that point under `kb/`, `skills/`, or `dist/`.
-- [ ] Allow `raw-vault://`, `log://`, `artifact://`, `file-ref://`, and `ci-artifact://` refs.
-- [ ] Write capture records under `.praxisbase/outbox/captures/`.
-- [ ] Add `praxisbase capture finish`.
+- [x] Implement `finishCapture` in `packages/core/src/experience/capture.ts`.
+- [x] Reject raw refs that point under `kb/`, `skills/`, or `dist/`.
+- [x] Allow `raw-vault://`, `log://`, `artifact://`, `file-ref://`, and `ci-artifact://` refs.
+- [x] Write capture records under `.praxisbase/outbox/captures/`.
+- [x] Add `praxisbase capture finish`.
 - [ ] Add `praxisbase capture submit` if structured capture file submission is implemented in the same batch.
-- [ ] Add CLI tests for capture output and rejection behavior.
+- [x] Add CLI tests for capture output and rejection behavior.
 
 ## M2: Adapter Profiles And Install
 

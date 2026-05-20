@@ -30,5 +30,15 @@ export const protocolPaths = {
   skillsOpenClaw: "skills/openclaw",
   skillsK8s: "skills/k8s",
   dist: "dist",
-  distRepairBundles: "dist/repair-bundles"
+  distRepairBundles: "dist/repair-bundles",
+  outboxCaptures: ".praxisbase/outbox/captures",
+  reportsDistill: ".praxisbase/reports/distill",
+  reportsContext: ".praxisbase/reports/context",
+  reportsMemory: ".praxisbase/reports/memory",
+  runsCapture: ".praxisbase/runs/capture",
+  runsDistill: ".praxisbase/runs/distill",
+  runsMemoryImport: ".praxisbase/runs/memory-import",
+  adapters: ".praxisbase/adapters",
+  memoryRefresh: ".praxisbase/memory-refresh",
+  rawVaultRefs: ".praxisbase/raw-vault/refs"
 } as const;

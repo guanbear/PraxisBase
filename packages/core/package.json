@@ -78,6 +78,18 @@
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"
+    },
+    "./experience/errors.js": {
+      "types": "./src/experience/errors.ts",
+      "default": "./dist/experience/errors.js"
+    },
+    "./experience/raw-vault.js": {
+      "types": "./src/experience/raw-vault.ts",
+      "default": "./dist/experience/raw-vault.js"
+    },
+    "./experience/capture.js": {
+      "types": "./src/experience/capture.ts",
+      "default": "./dist/experience/capture.js"
     }
   },
   "scripts": {

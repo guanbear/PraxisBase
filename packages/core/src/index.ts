@@ -7,3 +7,6 @@ export * from "./templates/seed.js";
 export * from "./adapter/sre-autopilot.js";
 export * from "./feishu/summary.js";
 export * from "./synthesis/skill.js";
+export * from "./experience/errors.js";
+export * from "./experience/raw-vault.js";
+export * from "./experience/capture.js";
