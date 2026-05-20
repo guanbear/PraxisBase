@@ -9,6 +9,7 @@ import { renderInspectionHtml } from "./html.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import type { RunRecord } from "../protocol/schemas.js";
 import { protocolPaths } from "../protocol/paths.js";
+import { buildWikiSite } from "../wiki/render-site.js";
 
 type KnowledgeProfile = "all" | "openclaw" | "k8s";
 
@@ -309,6 +310,8 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
     })
   );
 
+  const wikiSite = await buildWikiSite(root);
+
   const buildRun: RunRecord = {
     id: `run_build_${randomUUID().slice(0, 8)}`,
     protocol_version: PROTOCOL_VERSION,
@@ -316,7 +319,12 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
     status: "completed",
     started_at: buildStartedAt,
     finished_at: new Date().toISOString(),
-    counts: { bundles: builtBundles.length, kb_objects: kbObjects.length },
+    counts: {
+      bundles: builtBundles.length,
+      kb_objects: kbObjects.length,
+      wiki_pages: wikiSite.pages,
+      wiki_health_issues: wikiSite.health.broken_links + wikiSite.health.duplicates + wikiSite.health.orphans,
+    },
     errors: [],
   };
   await mkdir(join(root, protocolPaths.runsBuild), { recursive: true });
@@ -324,7 +332,15 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
 
   return {
     bundles: builtBundles,
-    indexes: ["dist/kb-index.json", "dist/search-index.json"],
+    indexes: [
+      "dist/kb-index.json",
+      "dist/search-index.json",
+      "dist/graph.json",
+      "dist/graph.jsonld",
+      "dist/llms.txt",
+      "dist/llms-full.txt",
+      "dist/ai-readme.md",
+    ],
     manifest: "dist/repair-bundles/manifest.json",
   };
 }

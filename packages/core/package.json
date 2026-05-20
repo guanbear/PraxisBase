@@ -106,6 +106,10 @@
     "./wiki/retrieval.js": {
       "types": "./src/wiki/retrieval.ts",
       "default": "./dist/wiki/retrieval.js"
+    },
+    "./wiki/render-site.js": {
+      "types": "./src/wiki/render-site.ts",
+      "default": "./dist/wiki/render-site.js"
     }
   },
   "scripts": {

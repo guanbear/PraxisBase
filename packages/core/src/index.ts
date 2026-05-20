@@ -22,3 +22,4 @@ export * from "./wiki/compile.js";
 export * from "./wiki/lint.js";
 export * from "./wiki/resolver.js";
 export * from "./wiki/retrieval.js";
+export * from "./wiki/render-site.js";
