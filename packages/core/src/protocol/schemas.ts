@@ -319,6 +319,110 @@ export const NativeMemorySourceSchema = z.object({
   created_at: DateTimeSchema.optional(),
 });
 
+export const AgentMemoryAgentSchema = z.enum(["codex", "openclaw"]);
+export const AgentMemoryKindSchema = z.enum(["codex_session", "openclaw_log", "openclaw_episode"]);
+
+export const AgentMemoryCandidateSchema = z.object({
+  id: z.string().min(1),
+  agent: AgentMemoryAgentSchema,
+  kind: AgentMemoryKindSchema,
+  source_path: z.string().min(1),
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1),
+  size_bytes: z.number().int().nonnegative(),
+  created_at: z.string().optional(),
+  summary_hint: z.string().optional(),
+  warnings: z.array(z.string()).default([]),
+});
+
+export const AgentMemoryIngestReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("agent_memory_ingest_report"),
+  agent: AgentMemoryAgentSchema,
+  mode: z.enum(["dry-run", "write"]),
+  scanned: z.number().int().nonnegative(),
+  imported: z.number().int().nonnegative(),
+  duplicates: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  unsafe: z.number().int().nonnegative(),
+  outputs: z.array(z.string()),
+  warnings: z.array(z.string()).default([]),
+  changed_stable_knowledge: z.literal(false),
+  created_at: z.string(),
+});
+
+export const RealWikiSmokeReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("real_wiki_smoke_report"),
+  agent: AgentMemoryAgentSchema,
+  imported: z.number().int().nonnegative(),
+  duplicates: z.number().int().nonnegative(),
+  unsafe: z.number().int().nonnegative(),
+  proposal_candidates: z.number().int().nonnegative(),
+  graph_nodes: z.number().int().nonnegative(),
+  graph_broken_links: z.number().int().nonnegative(),
+  site_pages: z.number().int().nonnegative(),
+  context_items: z.number().int().nonnegative(),
+  outputs: z.array(z.string()),
+  changed_stable_knowledge: z.literal(false),
+  created_at: z.string(),
+});
+
+export const OpenClawRemoteProviderSchema = z.enum(["exported-json", "openclaw-api", "openclaw-cli"]);
+export const PraxisBaseCliRuntimeModeSchema = z.enum(["source", "installed", "ci", "unknown"]);
+
+export const OpenClawRemoteMemoryEnvelopeSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("openclaw_remote_memory"),
+  provider: OpenClawRemoteProviderSchema,
+  remote_id: z.string().min(1),
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1),
+  redacted_summary: z.string().min(1),
+  signature: z.string().optional(),
+  created_at: z.string().optional(),
+  fetched_at: z.string(),
+  warnings: z.array(z.string()).default([]),
+});
+
+export const AgentMemoryFetchReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("agent_memory_fetch_report"),
+  agent: z.literal("openclaw"),
+  provider: OpenClawRemoteProviderSchema,
+  runtime_mode: PraxisBaseCliRuntimeModeSchema,
+  fetched: z.number().int().nonnegative(),
+  staged: z.number().int().nonnegative(),
+  duplicates: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  unsafe: z.number().int().nonnegative(),
+  outputs: z.array(z.string()),
+  warnings: z.array(z.string()).default([]),
+  changed_stable_knowledge: z.literal(false),
+  created_at: z.string(),
+});
+
+export const OpenClawRemoteDoctorReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("openclaw_remote_doctor_report"),
+  provider: OpenClawRemoteProviderSchema,
+  runtime_mode: PraxisBaseCliRuntimeModeSchema,
+  ok: z.boolean(),
+  checks: z.array(z.object({
+    id: z.string().min(1),
+    ok: z.boolean(),
+    severity: z.enum(["info", "warning", "error"]),
+    message: z.string().min(1),
+  })),
+  warnings: z.array(z.string()).default([]),
+  created_at: z.string(),
+});
+
 export const MemoryImportReportSchema = z.object({
   id: z.string().min(1),
   protocol_version: ProtocolVersionSchema,
@@ -403,6 +507,14 @@ export type ArtifactRef = z.infer<typeof ArtifactRefSchema>;
 export type CaptureRecord = z.infer<typeof CaptureRecordSchema>;
 export type AdapterProfile = z.infer<typeof AdapterProfileSchema>;
 export type NativeMemorySource = z.infer<typeof NativeMemorySourceSchema>;
+export type AgentMemoryCandidate = z.infer<typeof AgentMemoryCandidateSchema>;
+export type AgentMemoryIngestReport = z.infer<typeof AgentMemoryIngestReportSchema>;
+export type RealWikiSmokeReport = z.infer<typeof RealWikiSmokeReportSchema>;
+export type OpenClawRemoteProvider = z.infer<typeof OpenClawRemoteProviderSchema>;
+export type PraxisBaseCliRuntimeMode = z.infer<typeof PraxisBaseCliRuntimeModeSchema>;
+export type OpenClawRemoteMemoryEnvelope = z.infer<typeof OpenClawRemoteMemoryEnvelopeSchema>;
+export type AgentMemoryFetchReport = z.infer<typeof AgentMemoryFetchReportSchema>;
+export type OpenClawRemoteDoctorReport = z.infer<typeof OpenClawRemoteDoctorReportSchema>;
 export type MemoryImportReport = z.infer<typeof MemoryImportReportSchema>;
 export type MemoryRefreshPlan = z.infer<typeof MemoryRefreshPlanSchema>;
 export type ContextStage = z.infer<typeof ContextStageSchema>;
