@@ -2,6 +2,15 @@
 
 日期：2026-05-20
 
+## 文档追踪
+
+- 设计文档：`docs/superpowers/specs/2026-05-20-wiki-compiler-knowledge-site-design.md`
+- 实施文档：`docs/superpowers/plans/2026-05-20-wiki-compiler-knowledge-site-implementation-plan.md`
+- OpenSpec：`docs/openspec/changes/wiki-compiler-knowledge-site/`
+- BDD：`docs/bdd/wiki-compiler-knowledge-site.feature`
+
+这四份文档描述同一个 M7-M11 范围。设计文档回答为什么和怎么分层；实施文档回答按什么文件和测试顺序落地；OpenSpec 是稳定 contract；BDD 是用户可见验收。
+
 ## AI Handoff Brief
 
 PraxisBase 已经有多 agent capture、native memory bridge、proposal/review/promote、repair bundle 和基础 build。接下来要补的是真正的 **wiki compiler core**：把 `.praxisbase/`、`kb/`、`skills/` 和 reviewed evidence 编译成可追溯、可检索、可浏览、可给 agent 复用的知识模型和静态站。
