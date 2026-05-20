@@ -38,11 +38,16 @@ describe("praxisbase init", () => {
     await assert.doesNotReject(stat(join(root, ".praxisbase/runs/distill")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/runs/memory-import")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/runs/memory-fetch")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/harvest")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/reports/context")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/reports/distill")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/reports/memory")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/reports/memory-fetch")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/reports/harvest")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/remotes")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/staging/openclaw")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/staging/remote-imports")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/cache/remotes")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/adapters")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/memory-refresh")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/raw-vault/refs")));
@@ -58,6 +63,7 @@ describe("praxisbase init", () => {
     assert.ok(config.includes("profile: all"));
     const gitignore = await readFile(join(root, ".gitignore"), "utf8");
     assert.ok(gitignore.includes(".praxisbase/staging/"));
+    assert.ok(gitignore.includes(".praxisbase/cache/"));
   });
 
   it("creates an OpenClaw-only knowledge repo with --profile openclaw", async () => {

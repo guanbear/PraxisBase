@@ -37,7 +37,7 @@ function seedMatchesProfile(relativePath: string, profile: InitProfile): boolean
   return isK8sSeed && !isOpenClawSeed;
 }
 
-async function ensureStagingIgnored(root: string): Promise<void> {
+async function ensureIgnoredPaths(root: string): Promise<void> {
   const gitignorePath = join(root, ".gitignore");
   let existing = "";
   try {
@@ -45,12 +45,14 @@ async function ensureStagingIgnored(root: string): Promise<void> {
   } catch {
   }
 
-  if (existing.split(/\r?\n/).some((line) => line.trim() === ".praxisbase/staging/")) {
+  const lines = new Set(existing.split(/\r?\n/).map((line) => line.trim()));
+  const missing = [".praxisbase/staging/", ".praxisbase/cache/"].filter((line) => !lines.has(line));
+  if (missing.length === 0) {
     return;
   }
 
   const prefix = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
-  await writeFile(gitignorePath, `${existing}${prefix}.praxisbase/staging/\n`);
+  await writeFile(gitignorePath, `${existing}${prefix}${missing.join("\n")}\n`);
 }
 
 export async function initializeWorkspace(root: string, options: InitOptions = {}): Promise<void> {
@@ -74,15 +76,20 @@ export async function initializeWorkspace(root: string, options: InitOptions = {
     protocolPaths.runsDistill,
     protocolPaths.runsMemoryImport,
     protocolPaths.runsMemoryFetch,
+    protocolPaths.runsHarvest,
     protocolPaths.indexes,
     protocolPaths.bundles,
     protocolPaths.reportsDistill,
     protocolPaths.reportsContext,
     protocolPaths.reportsMemory,
     protocolPaths.reportsMemoryFetch,
+    protocolPaths.reportsHarvest,
+    protocolPaths.remotes,
     protocolPaths.adapters,
     protocolPaths.memoryRefresh,
     protocolPaths.stagingOpenClaw,
+    protocolPaths.stagingRemoteImports,
+    protocolPaths.cacheRemotes,
     protocolPaths.rawVaultRefs,
     protocolPaths.procedures,
     protocolPaths.notes,
@@ -100,5 +107,5 @@ export async function initializeWorkspace(root: string, options: InitOptions = {
     await writeText(root, relativePath, seedContent);
   }
 
-  await ensureStagingIgnored(root);
+  await ensureIgnoredPaths(root);
 }
