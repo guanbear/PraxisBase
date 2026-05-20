@@ -21,6 +21,8 @@ import { distillCommand } from "./commands/distill.js";
 import { watchCommand } from "./commands/watch.js";
 import { wikiCommand } from "./commands/wiki.js";
 import { smokeCommand } from "./commands/smoke.js";
+import { remoteCommand } from "./commands/remote.js";
+import { harvestCommand } from "./commands/harvest.js";
 
 const program = new Command();
 
@@ -235,6 +237,80 @@ program
     }
   ) => {
     console.log(await doctorCommand(process.cwd(), sub, options));
+  });
+
+program
+  .command("remote")
+  .argument("<sub>", "subcommand (add|list|remove|doctor)")
+  .argument("[name]")
+  .option("--type <type>")
+  .option("--repo <repo>")
+  .option("--ref <ref>")
+  .option("--path <path>")
+  .option("--host <host>")
+  .option("--url <url>")
+  .option("--remote <remote>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    name: string | undefined,
+    options: {
+      type?: "file" | "git" | "ssh" | "http" | "openclaw-api";
+      repo?: string;
+      ref?: string;
+      path?: string;
+      host?: string;
+      url?: string;
+      remote?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await remoteCommand(process.cwd(), sub, { ...options, name }));
+  });
+
+program
+  .command("harvest")
+  .option("--all")
+  .option("--codex <path>", "Codex source path", collectOptionValue, [])
+  .option("--openclaw <path>", "OpenClaw source path", collectOptionValue, [])
+  .option("--openclaw-export <path>", "OpenClaw export JSON", collectOptionValue, [])
+  .option("--remote <name>", "registered remote source", collectOptionValue, [])
+  .option("--limit <n>")
+  .option("--build-site")
+  .option("--context-query <query>")
+  .option("--team")
+  .option("--branch <name>")
+  .option("--commit")
+  .option("--push")
+  .option("--pr")
+  .option("--auto-review")
+  .option("--auto-promote")
+  .option("--dry-run")
+  .option("--json")
+  .action(async (options: {
+    all?: boolean;
+    codex?: string[];
+    openclaw?: string[];
+    openclawExport?: string[];
+    remote?: string[];
+    limit?: string;
+    buildSite?: boolean;
+    contextQuery?: string;
+    team?: boolean;
+    branch?: string;
+    commit?: boolean;
+    push?: boolean;
+    pr?: boolean;
+    autoReview?: boolean;
+    autoPromote?: boolean;
+    dryRun?: boolean;
+    json?: boolean;
+  }) => {
+    console.log(await harvestCommand(process.cwd(), {
+      ...options,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      openclawExports: options.openclawExport,
+    }));
   });
 
 program

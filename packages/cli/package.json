@@ -90,6 +90,14 @@
     "./commands/smoke.js": {
       "types": "./src/commands/smoke.ts",
       "default": "./dist/commands/smoke.js"
+    },
+    "./commands/remote.js": {
+      "types": "./src/commands/remote.ts",
+      "default": "./dist/commands/remote.js"
+    },
+    "./commands/harvest.js": {
+      "types": "./src/commands/harvest.ts",
+      "default": "./dist/commands/harvest.js"
     }
   },
   "bin": {
