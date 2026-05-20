@@ -87,6 +87,10 @@
       "types": "./src/experience/remote-sources.ts",
       "default": "./dist/experience/remote-sources.js"
     },
+    "./experience/remote-adapters.js": {
+      "types": "./src/experience/remote-adapters.ts",
+      "default": "./dist/experience/remote-adapters.js"
+    },
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"
