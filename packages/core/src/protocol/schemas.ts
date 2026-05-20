@@ -428,6 +428,63 @@ export const OpenClawRemoteDoctorReportSchema = z.object({
   created_at: z.string(),
 });
 
+export const RemoteSourceTypeSchema = z.enum(["file", "git", "ssh", "http", "openclaw-api"]);
+export const HarvestAuthorityModeSchema = z.enum(["personal-local", "team-git"]);
+
+export const RemoteSourceConfigSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("remote_source_config"),
+  name: z.string().min(1),
+  source_type: RemoteSourceTypeSchema,
+  agent: z.literal("openclaw"),
+  repo: z.string().optional(),
+  ref: z.string().optional(),
+  path: z.string().optional(),
+  host: z.string().optional(),
+  url: z.string().optional(),
+  remote: z.string().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const HarvestReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("harvest_report"),
+  authority_mode: HarvestAuthorityModeSchema,
+  mode: z.enum(["dry-run", "write"]),
+  sources: z.array(z.object({
+    name: z.string().min(1),
+    agent: z.enum(["codex", "openclaw"]),
+    source_type: z.enum(["local", "file", "git", "ssh", "http", "openclaw-api"]),
+    status: z.enum(["completed", "partial", "failed"]),
+    scanned: z.number().int().nonnegative(),
+    fetched: z.number().int().nonnegative(),
+    imported: z.number().int().nonnegative(),
+    duplicates: z.number().int().nonnegative(),
+    skipped: z.number().int().nonnegative(),
+    unsafe: z.number().int().nonnegative(),
+    warnings: z.array(z.string()).default([]),
+  })),
+  proposal_candidates: z.number().int().nonnegative(),
+  graph_nodes: z.number().int().nonnegative(),
+  graph_broken_links: z.number().int().nonnegative(),
+  site_pages: z.number().int().nonnegative(),
+  context_items: z.number().int().nonnegative(),
+  git: z.object({
+    branch: z.string().optional(),
+    committed: z.boolean(),
+    pushed: z.boolean(),
+    commit_sha: z.string().optional(),
+    pr_url: z.string().optional(),
+  }).optional(),
+  outputs: z.array(z.string()),
+  warnings: z.array(z.string()).default([]),
+  changed_stable_knowledge: z.boolean(),
+  created_at: z.string(),
+});
+
 export const MemoryImportReportSchema = z.object({
   id: z.string().min(1),
   protocol_version: ProtocolVersionSchema,
@@ -520,6 +577,9 @@ export type PraxisBaseCliRuntimeMode = z.infer<typeof PraxisBaseCliRuntimeModeSc
 export type OpenClawRemoteMemoryEnvelope = z.infer<typeof OpenClawRemoteMemoryEnvelopeSchema>;
 export type AgentMemoryFetchReport = z.infer<typeof AgentMemoryFetchReportSchema>;
 export type OpenClawRemoteDoctorReport = z.infer<typeof OpenClawRemoteDoctorReportSchema>;
+export type RemoteSourceType = z.infer<typeof RemoteSourceTypeSchema>;
+export type RemoteSourceConfig = z.infer<typeof RemoteSourceConfigSchema>;
+export type HarvestReport = z.infer<typeof HarvestReportSchema>;
 export type MemoryImportReport = z.infer<typeof MemoryImportReportSchema>;
 export type MemoryRefreshPlan = z.infer<typeof MemoryRefreshPlanSchema>;
 export type ContextStage = z.infer<typeof ContextStageSchema>;
