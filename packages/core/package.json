@@ -83,6 +83,10 @@
       "types": "./src/experience/openclaw-remote.ts",
       "default": "./dist/experience/openclaw-remote.js"
     },
+    "./experience/remote-sources.js": {
+      "types": "./src/experience/remote-sources.ts",
+      "default": "./dist/experience/remote-sources.js"
+    },
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"
