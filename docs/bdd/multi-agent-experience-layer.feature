@@ -31,6 +31,14 @@
     并且 输出包含 capture id 和 capture path
     并且 系统不写入 "kb/" 或 "skills/"
 
+  场景: M1 capture submit 写入结构化 capture 文件
+    假如 一个 capture JSON 文件通过 capture record schema 验证
+    并且 artifact ref 使用 "raw-vault://codex/submitted-session"
+    当 用户运行 "praxisbase capture submit capture.json --json"
+    那么 系统写入 ".praxisbase/outbox/captures/<capture-id>.json"
+    并且 输出包含 capture id 和 capture path
+    并且 系统不写入 "kb/" 或 "skills/"
+
   场景: M1 capture finish 拒绝 Git 稳定知识路径中的 raw artifact
     当 用户运行 "praxisbase capture finish --agent codex --result success --source-ref kb/raw-transcript.md --source-hash sha256:bad --summary 'Raw transcript' --json"
     那么 命令失败
@@ -75,7 +83,7 @@
 
   场景: M3 memory refresh 不覆盖 agent 原生记忆
     假如 PraxisBase 已有一条 reviewed knowledge 引用 "kb/known-fixes/openclaw-auth-expired.md"
-    当 用户运行 "praxisbase memory refresh --agent hermes --target instruction-snippet --json"
+    当 用户运行 "praxisbase memory refresh --agent hermes --target instruction-snippet --source-refs kb/known-fixes/openclaw-auth-expired.md --json"
     那么 输出包含 install snippet 或 context bundle
     并且 输出保留 source refs 和 target agent
     并且 系统不直接覆盖 Hermes native memory 文件
@@ -112,6 +120,13 @@
     那么 生成的 proposal scope 是 "personal"
     并且 系统不会自动提升为 "team" 或 "org"
 
+  场景: M5 distill 在 workspace marker 明确时建议 project scope
+    假如 一个 success capture 的 workspace 包含 ".git" marker
+    并且 capture summary 表示发现了项目经验
+    当 用户运行 "praxisbase distill run --json"
+    那么 生成的 proposal scope 是 "project"
+    并且 系统不会自动提升为 "team" 或 "org"
+
   场景: M5 distill 遇到隐私不确定进入人工异常
     假如 一个 capture 的 redacted_summary 表示可能包含 token 或 cookie
     当 用户运行 "praxisbase distill run --json"
@@ -123,6 +138,15 @@
     并且 adapter profile 中的 transcript path 不存在
     那么 命令成功
     并且 输出包含 warning "watch_path_unavailable"
+    并且 系统不修改 raw artifact
+
+  场景: M5 watch once 发现本地 transcript 时写入 capture
+    假如 Codex adapter profile 中的本地 transcript path 存在
+    并且 该路径下有新的 transcript 文件
+    当 用户运行 "praxisbase watch --agent codex --workspace . --once --json"
+    那么 命令成功
+    并且 输出包含 capture id 和 capture path
+    并且 capture 出现在 ".praxisbase/outbox/captures/"
     并且 系统不修改 raw artifact
 
   场景: M6 smoke flow 可证明最小闭环

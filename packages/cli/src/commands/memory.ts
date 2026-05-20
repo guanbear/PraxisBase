@@ -5,6 +5,7 @@ export interface MemoryCommandOptions {
   agent: AgentProfile;
   source?: string;
   target?: "context" | "instruction-snippet" | "patch-proposal";
+  sourceRefs?: string[];
   json?: boolean;
 }
 
@@ -30,7 +31,7 @@ export async function memoryCommand(root: string, subcommand: string, options: M
     const plan = await planMemoryRefresh({
       agent: options.agent,
       target,
-      contextRefs: [],
+      contextRefs: options.sourceRefs ?? [],
     });
 
     if (options.json) {

@@ -12,7 +12,7 @@ import { bundleFetchCommand } from "./commands/bundle-fetch.js";
 import { feishuSummaryCommand, feishuProposalDraftCommand } from "./commands/feishu-summary.js";
 import { synthesizeSkillCommand } from "./commands/synthesize.js";
 import { lintCommand } from "./commands/lint.js";
-import { captureFinishCommand } from "./commands/capture.js";
+import { captureFinishCommand, captureSubmitCommand } from "./commands/capture.js";
 import { installCommand } from "./commands/install.js";
 import { memoryCommand } from "./commands/memory.js";
 import { contextCommand } from "./commands/context.js";
@@ -144,6 +144,7 @@ program
   .argument("<sub>", "subcommand (import|refresh)")
   .requiredOption("--agent <agent>")
   .option("--source <file>")
+  .option("--source-refs <refs>", "comma-separated source refs for memory refresh")
   .option("--target <target>")
   .option("--json")
   .action(async (
@@ -151,11 +152,15 @@ program
     options: {
       agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
       source?: string;
+      sourceRefs?: string;
       target?: "context" | "instruction-snippet" | "patch-proposal";
       json?: boolean;
     }
   ) => {
-    console.log(await memoryCommand(process.cwd(), sub, options));
+    console.log(await memoryCommand(process.cwd(), sub, {
+      ...options,
+      sourceRefs: options.sourceRefs?.split(",").map((ref) => ref.trim()).filter(Boolean),
+    }));
   });
 
 program
@@ -206,32 +211,64 @@ program
 
 program
   .command("capture")
-  .argument("<sub>", "subcommand (finish)")
-  .requiredOption("--agent <agent>")
-  .requiredOption("--result <result>")
-  .requiredOption("--source-ref <ref>")
-  .requiredOption("--source-hash <hash>")
-  .requiredOption("--summary <summary>")
+  .argument("<sub>", "subcommand (finish|submit)")
+  .argument("[file]")
+  .option("--agent <agent>")
+  .option("--result <result>")
+  .option("--source-ref <ref>")
+  .option("--source-hash <hash>")
+  .option("--summary <summary>")
   .option("--json")
   .action(async (
     sub: string,
+    file: string | undefined,
     options: {
-      agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
-      result: "success" | "failed" | "partial" | "unknown";
-      sourceRef: string;
-      sourceHash: string;
-      summary: string;
+      agent?: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
+      result?: "success" | "failed" | "partial" | "unknown";
+      sourceRef?: string;
+      sourceHash?: string;
+      summary?: string;
       json?: boolean;
     }
   ) => {
-    if (sub !== "finish") {
-      program.error(`Unknown subcommand "capture ${sub}". Use "capture finish".`, { exitCode: 1 });
+    if (sub === "submit") {
+      if (!file) program.error("capture submit requires <file>.", { exitCode: 1 });
+      console.log(await captureSubmitCommand(process.cwd(), file!, { json: options.json }));
+      return;
     }
-    console.log(await captureFinishCommand(process.cwd(), options));
+
+    if (sub !== "finish") {
+      program.error(`Unknown subcommand "capture ${sub}". Use "capture finish" or "capture submit".`, { exitCode: 1 });
+    }
+    if (!options.agent || !options.result || !options.sourceRef || !options.sourceHash || !options.summary) {
+      program.error("capture finish requires --agent, --result, --source-ref, --source-hash, and --summary.", { exitCode: 1 });
+    }
+    console.log(await captureFinishCommand(process.cwd(), {
+      agent: options.agent!,
+      result: options.result!,
+      sourceRef: options.sourceRef!,
+      sourceHash: options.sourceHash!,
+      summary: options.summary!,
+      json: options.json,
+    }));
   });
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(message);
+  if (process.argv.includes("--json")) {
+    const maybeError = error as { code?: string; details?: Record<string, unknown> };
+    console.error(JSON.stringify({
+      ok: false,
+      code: maybeError.code ?? "CLI_ERROR",
+      message,
+      retryable: false,
+      details: {
+        ...(maybeError.details ?? {}),
+        supported_agents: ["codex", "claude-code", "opencode", "openclaw", "hermes", "openhuman", "generic"],
+      },
+    }, null, 2));
+  } else {
+    console.error(message);
+  }
   process.exitCode = 1;
 });

@@ -1,10 +1,11 @@
-import { readdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { CaptureRecordSchema, type CaptureRecord } from "../protocol/schemas.js";
 import { makeId } from "../protocol/id.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { readJson, writeJson } from "../store/file-store.js";
+import { getAdapterProfile } from "./profiles.js";
 
 export interface RunDistillOptions {
   json?: boolean;
@@ -39,6 +40,24 @@ function shouldPropose(capture: CaptureRecord): boolean {
   return capture.result === "success" && capture.artifacts.length > 0 && !hasPrivacyUncertainty(capture);
 }
 
+async function exists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+async function inferScopeHint(capture: CaptureRecord): Promise<"personal" | "project"> {
+  const profile = getAdapterProfile(capture.agent);
+  for (const marker of profile.workspace_markers) {
+    if (await exists(join(capture.workspace, marker))) return "project";
+  }
+  return "personal";
+}
+
 export async function runDistill(root: string, _options: RunDistillOptions = {}): Promise<DistillReport> {
   const createdAt = new Date().toISOString();
   const id = makeId("distill", createdAt);
@@ -69,13 +88,14 @@ export async function runDistill(root: string, _options: RunDistillOptions = {})
 
     if (shouldPropose(capture)) {
       const proposalId = makeId("distill-proposal", capture.id);
+      const scopeHint = await inferScopeHint(capture);
       await writeJson(root, `${protocolPaths.inboxProposals}/${proposalId}.json`, {
         id: proposalId,
         protocol_version: PROTOCOL_VERSION,
         type: "distill_proposal_candidate",
         agent: capture.agent,
         capture_id: capture.id,
-        scope_hint: "personal",
+        scope_hint: scopeHint,
         source_refs: capture.artifacts.map((artifact) => artifact.source_ref),
         source_hashes: capture.artifacts.map((artifact) => artifact.source_hash),
         redacted_summary: capture.artifacts.map((artifact) => artifact.redacted_summary).join("\n"),

@@ -1,14 +1,19 @@
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { captureFinishCommand } from "@praxisbase/cli/commands/capture.js";
+import { captureFinishCommand, captureSubmitCommand } from "@praxisbase/cli/commands/capture.js";
 import { installCommand } from "@praxisbase/cli/commands/install.js";
 import { memoryCommand } from "@praxisbase/cli/commands/memory.js";
 import { contextCommand } from "@praxisbase/cli/commands/context.js";
 import { distillCommand } from "@praxisbase/cli/commands/distill.js";
 import { watchCommand } from "@praxisbase/cli/commands/watch.js";
+import { PROTOCOL_VERSION } from "@praxisbase/core";
+
+const execFileAsync = promisify(execFile);
 
 describe("experience CLI commands", () => {
   it("capture finish returns JSON and writes capture record", async () => {
@@ -47,6 +52,42 @@ describe("experience CLI commands", () => {
         }),
       /RAW_ARTIFACT_REJECTED/
     );
+  });
+
+  it("capture submit validates a structured capture file and writes it to the outbox", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-capture-submit-"));
+    const capturePath = join(root, "capture.json");
+    await writeFile(capturePath, JSON.stringify({
+      id: "capture_submitted",
+      protocol_version: PROTOCOL_VERSION,
+      type: "capture_record",
+      agent: "codex",
+      workspace: root,
+      scope_hint: "personal",
+      result: "success",
+      triggers: ["task_finish"],
+      signals: [],
+      artifacts: [
+        {
+          kind: "transcript",
+          source_ref: "raw-vault://codex/submitted-session",
+          source_hash: "sha256:submitted",
+          redacted_summary: "Submitted capture file.",
+        },
+      ],
+      created_at: new Date().toISOString(),
+    }));
+
+    const output = await captureSubmitCommand(root, capturePath, { json: true });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.id, "capture_submitted");
+    assert.equal(parsed.path, ".praxisbase/outbox/captures/capture_submitted.json");
+
+    const saved = JSON.parse(await readFile(join(root, parsed.path), "utf8"));
+    assert.equal(saved.id, "capture_submitted");
+    assert.equal(saved.artifacts[0].source_ref, "raw-vault://codex/submitted-session");
   });
 
   it("install dry-run returns JSON without writing files", async () => {
@@ -128,6 +169,25 @@ describe("experience CLI commands", () => {
     await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
   });
 
+  it("memory refresh preserves source refs passed through the CLI", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-memory-"));
+
+    const output = await memoryCommand(root, "refresh", {
+      agent: "hermes",
+      target: "patch-proposal",
+      sourceRefs: ["kb/known-fixes/openclaw-auth-expired.md", "skills/openclaw/auth.md"],
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.plan.agent, "hermes");
+    assert.equal(parsed.plan.outputs[0].kind, "patch_proposal");
+    assert.deepEqual(parsed.plan.outputs[0].source_refs, [
+      "kb/known-fixes/openclaw-auth-expired.md",
+      "skills/openclaw/auth.md",
+    ]);
+  });
+
   it("context get returns JSON warnings when context is unavailable", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-context-"));
 
@@ -165,6 +225,26 @@ describe("experience CLI commands", () => {
     await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
   });
 
+  it("distill suggests project scope when the capture workspace has a configured marker", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-distill-project-"));
+    await mkdir(join(root, ".git"), { recursive: true });
+    await captureFinishCommand(root, {
+      agent: "codex",
+      result: "success",
+      sourceRef: "raw-vault://codex/session-project",
+      sourceHash: "sha256:session-project",
+      summary: "Fixed a project-specific issue and tests passed.",
+      json: true,
+    });
+
+    await distillCommand(root, "run", { json: true });
+
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.length, 1);
+    const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", proposalFiles[0]), "utf8"));
+    assert.equal(proposal.scope_hint, "project");
+  });
+
   it("watch once returns warning when no watchable path exists", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-watch-"));
 
@@ -178,5 +258,53 @@ describe("experience CLI commands", () => {
     const parsed = JSON.parse(output);
     assert.equal(parsed.ok, true);
     assert.ok(parsed.warnings.includes("watch_path_unavailable"));
+  });
+
+  it("watch once emits a capture when a configured local transcript path has content", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-watch-"));
+    const home = await mkdtemp(join(tmpdir(), "praxisbase-home-"));
+    const sessions = join(home, ".codex/archived_sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.log"), "Fixed auth and ran tests.\n");
+    const originalHome = process.env.HOME;
+    process.env.HOME = home;
+
+    try {
+      const output = await watchCommand(root, {
+        agent: "codex",
+        workspace: root,
+        once: true,
+        json: true,
+      });
+
+      const parsed = JSON.parse(output);
+      assert.equal(parsed.ok, true);
+      assert.equal(parsed.warnings.length, 0);
+      assert.equal(parsed.captures.length, 1);
+      assert.match(parsed.captures[0].path, /^\.praxisbase\/outbox\/captures\/capture_/);
+
+      const saved = JSON.parse(await readFile(join(root, parsed.captures[0].path), "utf8"));
+      assert.equal(saved.agent, "codex");
+      assert.equal(saved.triggers[0], "watch_once");
+      assert.equal(saved.artifacts[0].source_ref, `file-ref://${join(sessions, "session-1.log")}`);
+    } finally {
+      process.env.HOME = originalHome;
+    }
+  });
+
+  it("CLI emits structured JSON errors when --json is requested", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-error-"));
+
+    await assert.rejects(
+      () => execFileAsync(process.execPath, [join(process.cwd(), "packages/cli/dist/index.js"), "install", "unknown-agent", "--json"], { cwd: root }),
+      (error: unknown) => {
+        const stderr = (error as { stderr?: string }).stderr ?? "";
+        const parsed = JSON.parse(stderr);
+        assert.equal(parsed.ok, false);
+        assert.equal(parsed.code, "UNKNOWN_ADAPTER_PROFILE");
+        assert.ok(parsed.details.supported_agents.includes("codex"));
+        return true;
+      }
+    );
   });
 });

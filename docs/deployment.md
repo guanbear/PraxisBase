@@ -149,6 +149,7 @@ After a task, capture redacted evidence by reference only:
 
 ```bash
 node /path/to/PraxisBase/packages/cli/dist/index.js capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
+node /path/to/PraxisBase/packages/cli/dist/index.js capture submit capture.json --json
 node /path/to/PraxisBase/packages/cli/dist/index.js distill run --json
 ```
 
@@ -156,7 +157,7 @@ To backfill agent-native memory or prepare reviewed knowledge for an agent:
 
 ```bash
 node /path/to/PraxisBase/packages/cli/dist/index.js memory import --agent hermes --source hermes-memory.json --json
-node /path/to/PraxisBase/packages/cli/dist/index.js memory refresh --agent hermes --target instruction-snippet --json
+node /path/to/PraxisBase/packages/cli/dist/index.js memory refresh --agent hermes --target instruction-snippet --source-refs kb/known-fixes/openclaw-auth-expired.md --json
 node /path/to/PraxisBase/packages/cli/dist/index.js watch --agent claude-code --workspace . --once --json
 ```
 

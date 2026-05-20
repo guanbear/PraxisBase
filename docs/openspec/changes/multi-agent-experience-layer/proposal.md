@@ -39,9 +39,10 @@ This change defines a CLI-first, file-first, proposal-based multi-agent experien
 
 - `praxisbase context get --agent <agent> --stage <stage> --json` returns bounded context with citations and warnings.
 - `praxisbase capture finish ... --json` writes a capture record under `.praxisbase/outbox/captures/`.
+- `praxisbase capture submit <file> --json` validates a structured capture record and writes it under `.praxisbase/outbox/captures/`.
 - Capture rejects raw artifact refs that point into `kb/`, `skills/`, or `dist/`.
 - `praxisbase memory import --agent <agent> --source <file> --json` writes a memory report plus capture/proposal candidates with source refs and hashes.
-- `praxisbase memory refresh --agent <agent> --target <target> --json` produces context bundles, install snippets, or patch proposals without overwriting native memory.
+- `praxisbase memory refresh --agent <agent> --target <target> --source-refs <refs> --json` produces context bundles, install snippets, or patch proposals without overwriting native memory.
 - `praxisbase install codex --dry-run --json` describes planned writes without modifying files.
 - Non-dry-run install writes only documented instruction snippets and `.praxisbase/adapters/<agent>.json`.
 - `praxisbase distill run --json` writes reports/proposals/exceptions and reports `changed_stable_knowledge: false`.

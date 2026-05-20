@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { CaptureRecordSchema } from "../protocol/schemas.js";
 import { makeId } from "../protocol/id.js";
 import { PROTOCOL_VERSION, type AgentProfile, type CaptureResult } from "../protocol/types.js";
@@ -23,6 +24,10 @@ export interface FinishCaptureInput {
 export interface FinishCaptureResult {
   id: string;
   path: string;
+}
+
+export interface SubmitCaptureInput {
+  file: string;
 }
 
 export async function finishCapture(root: string, input: FinishCaptureInput): Promise<FinishCaptureResult> {
@@ -53,4 +58,16 @@ export async function finishCapture(root: string, input: FinishCaptureInput): Pr
   const path = `${protocolPaths.outboxCaptures}/${id}.json`;
   await writeJson(root, path, record);
   return { id, path };
+}
+
+export async function submitCapture(root: string, input: SubmitCaptureInput): Promise<FinishCaptureResult> {
+  const raw = JSON.parse(await readFile(input.file, "utf8"));
+  const record = CaptureRecordSchema.parse(raw);
+  for (const artifact of record.artifacts) {
+    validateRawArtifactRef(artifact.source_ref);
+  }
+
+  const path = `${protocolPaths.outboxCaptures}/${record.id}.json`;
+  await writeJson(root, path, record);
+  return { id: record.id, path };
 }

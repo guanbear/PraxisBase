@@ -104,8 +104,9 @@ The first multi-agent experience layer is CLI-first and proposal-based:
 praxisbase install codex --dry-run --json
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
 praxisbase capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
+praxisbase capture submit capture.json --json
 praxisbase memory import --agent hermes --source hermes-memory.json --json
-praxisbase memory refresh --agent hermes --target instruction-snippet --json
+praxisbase memory refresh --agent hermes --target instruction-snippet --source-refs kb/known-fixes/openclaw-auth-expired.md --json
 praxisbase distill run --json
 praxisbase watch --agent claude-code --workspace . --once --json
 ```

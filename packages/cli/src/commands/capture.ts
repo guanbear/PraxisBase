@@ -1,4 +1,4 @@
-import { finishCapture } from "@praxisbase/core";
+import { finishCapture, submitCapture } from "@praxisbase/core";
 
 export interface CaptureFinishOptions {
   agent: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
@@ -27,4 +27,17 @@ export async function captureFinishCommand(root: string, options: CaptureFinishO
     return JSON.stringify({ ok: true, id: result.id, path: result.path }, null, 2);
   }
   return `Capture written: ${result.path}`;
+}
+
+export async function captureSubmitCommand(
+  root: string,
+  file: string,
+  options: { json?: boolean } = {}
+): Promise<string> {
+  const result = await submitCapture(root, { file });
+
+  if (options.json) {
+    return JSON.stringify({ ok: true, id: result.id, path: result.path }, null, 2);
+  }
+  return `Capture submitted: ${result.path}`;
 }

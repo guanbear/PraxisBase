@@ -21,7 +21,7 @@
 - [x] Allow `raw-vault://`, `log://`, `artifact://`, `file-ref://`, and `ci-artifact://` refs.
 - [x] Write capture records under `.praxisbase/outbox/captures/`.
 - [x] Add `praxisbase capture finish`.
-- [ ] Add `praxisbase capture submit` if structured capture file submission is implemented in the same batch.
+- [x] Add `praxisbase capture submit` for structured capture file submission.
 - [x] Add CLI tests for capture output and rejection behavior.
 
 ## M2: Adapter Profiles And Install
@@ -46,7 +46,7 @@
 - [x] Write memory import reports under `.praxisbase/reports/memory/`.
 - [x] Write memory import runs under `.praxisbase/runs/memory-import/`.
 - [x] Add `praxisbase memory import --agent <agent> --source <file> --json`.
-- [x] Add `praxisbase memory refresh --agent <agent> --target <context|instruction-snippet|patch-proposal> --json`.
+- [x] Add `praxisbase memory refresh --agent <agent> --target <context|instruction-snippet|patch-proposal> --source-refs <refs> --json`.
 - [x] Add tests proving memory import and refresh do not modify stable `kb/` or `skills/`.
 
 ## M4: Context Get
@@ -68,7 +68,7 @@
 - [x] Ensure distill reports `changed_stable_knowledge: false`.
 - [x] Add `praxisbase distill run --json`.
 - [x] Add `praxisbase watch --agent <agent> --workspace <path> --once --json`.
-- [x] Add tests for proposal output, exception output, and stable knowledge non-mutation.
+- [x] Add tests for proposal output, exception output, watch capture output, structured JSON errors, and stable knowledge non-mutation.
 
 ## M6: Docs, Seed, And Smoke Flow
 
