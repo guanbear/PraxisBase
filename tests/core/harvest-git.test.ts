@@ -1,13 +1,17 @@
-import { mkdtemp } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { promisify } from "node:util";
 import {
   executeTeamGitAction,
   planTeamGitAction,
 } from "@praxisbase/core/experience/git-workflow.js";
 import { runHarvest } from "@praxisbase/core/experience/harvest.js";
+
+const execFileAsync = promisify(execFile);
 
 describe("team git workflow", () => {
   it("requires branch when committing on protected branch", async () => {
@@ -32,6 +36,21 @@ describe("team git workflow", () => {
       }),
       /HARVEST_COMMIT_REQUIRED/
     );
+  });
+
+  it("returns a clear diagnostic for PR creation until implemented", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-harvest-git-pr-"));
+    const plan = await planTeamGitAction(root, {
+      team: true,
+      branch: "harvest/test",
+      commit: true,
+      push: true,
+      pr: true,
+      currentBranch: "harvest/test",
+    });
+
+    assert.equal(plan.shouldCreatePr, true);
+    assert.deepEqual(plan.warnings, ["pr_creation_not_implemented"]);
   });
 
   it("executes branch checkout, commit, and push through an injected runner", async () => {
@@ -82,5 +101,28 @@ describe("team git workflow", () => {
     assert.equal(report.git?.pushed, true);
     assert.equal(report.git?.commit_sha, "def456");
     assert.ok(calls.some((call) => call === "git checkout -B harvest/test"));
+  });
+
+  it("commits harvest outputs in a real local git fixture repository", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-harvest-real-git-"));
+    await execFileAsync("git", ["init", "-b", "main"], { cwd: root });
+    await execFileAsync("git", ["config", "user.email", "test@example.com"], { cwd: root });
+    await execFileAsync("git", ["config", "user.name", "PraxisBase Test"], { cwd: root });
+    await writeFile(join(root, "README.md"), "# Fixture\n");
+    await execFileAsync("git", ["add", "README.md"], { cwd: root });
+    await execFileAsync("git", ["commit", "-m", "init"], { cwd: root });
+
+    const report = await runHarvest(root, {
+      team: true,
+      branch: "harvest/test",
+      commit: true,
+      now: "2026-05-20T00:00:00.000Z",
+    });
+    const { stdout: branch } = await execFileAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: root });
+    const { stdout: log } = await execFileAsync("git", ["log", "--oneline", "-1"], { cwd: root });
+
+    assert.equal(branch.trim(), "harvest/test");
+    assert.equal(report.git?.committed, true);
+    assert.match(log, /chore: harvest test/);
   });
 });

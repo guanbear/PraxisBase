@@ -31,6 +31,7 @@ export interface FetchOpenClawRemoteMemoryInput {
   out?: string;
   runtimeMode?: PraxisBaseCliRuntimeMode;
   env?: Record<string, string | undefined>;
+  fetchImpl?: typeof fetch;
   now?: string;
 }
 
@@ -253,7 +254,7 @@ async function fetchOpenClawApi(
 
   let response: Response;
   try {
-    response = await fetch(url.toString(), {
+    response = await (input.fetchImpl ?? fetch)(url.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",

@@ -98,4 +98,19 @@ describe("remote transport adapters", () => {
     const raw = await readFile(join(root, resolved.sources[0]), "utf8");
     assert.ok(raw.includes("Git export summary"));
   });
+
+  it("resolves openclaw-api remotes for M12.1 fetch delegation", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-remote-openclaw-api-"));
+    const config = await addRemoteSource(root, {
+      name: "openclaw-prod",
+      sourceType: "openclaw-api",
+      agent: "openclaw",
+      remote: "prod",
+      now: "2026-05-20T00:00:00.000Z",
+    });
+
+    const resolved = await resolveRemoteSource(root, config);
+    assert.equal(resolved.kind, "openclaw-api");
+    assert.equal(resolved.remote, "prod");
+  });
 });

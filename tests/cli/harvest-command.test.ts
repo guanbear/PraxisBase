@@ -22,4 +22,30 @@ describe("harvest CLI command", () => {
     assert.equal(parsed.report.changed_stable_knowledge, false);
     await assert.doesNotReject(() => stat(join(root, "dist/index.html")));
   });
+
+  it("returns JSON error details for unsafe promotion flags", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-harvest-error-"));
+    const output = await harvestCommand(root, {
+      autoPromote: true,
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.code, "HARVEST_AUTO_REVIEW_REQUIRED");
+  });
+
+  it("returns JSON error details for missing team branch", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-harvest-branch-error-"));
+    const output = await harvestCommand(root, {
+      team: true,
+      commit: true,
+      currentBranchForTests: "main",
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.code, "HARVEST_BRANCH_REQUIRED");
+  });
 });
