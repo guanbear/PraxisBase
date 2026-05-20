@@ -8,6 +8,12 @@ import { ingestAgentMemory } from "./agent-memory.js";
 import { fetchOpenClawRemoteMemory } from "./openclaw-remote.js";
 import { readRemoteSource } from "./remote-sources.js";
 import { resolveRemoteSource, type RemoteCommandRunner } from "./remote-adapters.js";
+import {
+  createDefaultGitRunner,
+  executeTeamGitAction,
+  planTeamGitAction,
+  type GitCommandRunner,
+} from "./git-workflow.js";
 import { compileWiki } from "../wiki/compile.js";
 import { buildWikiGraph } from "../wiki/resolver.js";
 import { buildWikiSite, collectWikiPages } from "../wiki/render-site.js";
@@ -22,12 +28,18 @@ export interface RunHarvestInput {
   contextQuery?: string;
   team?: boolean;
   dryRun?: boolean;
+  branch?: string;
+  commit?: boolean;
+  push?: boolean;
+  pr?: boolean;
+  currentBranchForTests?: string;
   autoReview?: boolean;
   autoPromote?: boolean;
   json?: boolean;
   now?: string;
   fetchImpl?: typeof fetch;
   runRemoteCommandForTests?: RemoteCommandRunner;
+  runGitCommandForTests?: GitCommandRunner;
 }
 
 function reportStatus(warnings: string[], unsafe: number): "completed" | "partial" | "failed" {
@@ -118,6 +130,21 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
   const runInput = { ...input, now };
   const sources: HarvestReport["sources"] = [];
   const outputs: string[] = [];
+  const gitRunner = input.runGitCommandForTests ?? createDefaultGitRunner(root);
+  const currentBranch = input.currentBranchForTests ?? (
+    input.team && input.commit
+      ? (await gitRunner("git", ["rev-parse", "--abbrev-ref", "HEAD"]).catch(() => "unknown")).trim()
+      : undefined
+  );
+  const gitPlan = await planTeamGitAction(root, {
+    team: input.team,
+    branch: input.branch,
+    commit: input.commit,
+    push: input.push,
+    pr: input.pr,
+    currentBranch,
+    message: input.branch ? `chore: harvest ${input.branch.replace(/^harvest\//, "")}` : undefined,
+  });
 
   await ingestLocalSources(root, "codex", input.codexSources ?? [], runInput, sources, outputs);
   await ingestLocalSources(root, "openclaw", input.openclawSources ?? [], runInput, sources, outputs);
@@ -179,11 +206,11 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
 
   outputs.push(`${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`, ...site.outputs);
 
-  const report = HarvestReportSchema.parse({
+  let report = HarvestReportSchema.parse({
     id: harvestReportId(now),
     protocol_version: PROTOCOL_VERSION,
     type: "harvest_report",
-    authority_mode: input.team ? "team-git" : "personal-local",
+    authority_mode: gitPlan.authorityMode,
     mode: input.dryRun ? "dry-run" : "write",
     sources,
     proposal_candidates: compileReport.candidate_ids.length,
@@ -192,7 +219,12 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
     site_pages: site.pages,
     context_items: context.items.length,
     outputs,
-    warnings: sources.flatMap((source) => source.warnings),
+    git: gitPlan.authorityMode === "team-git" ? {
+      branch: gitPlan.branch,
+      committed: false,
+      pushed: false,
+    } : undefined,
+    warnings: [...sources.flatMap((source) => source.warnings), ...gitPlan.warnings],
     changed_stable_knowledge: false,
     created_at: now,
   });
@@ -212,6 +244,12 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
     },
     errors: [],
   });
+
+  if (gitPlan.shouldCommit || gitPlan.shouldPush) {
+    const git = await executeTeamGitAction(root, gitPlan, gitRunner);
+    report = HarvestReportSchema.parse({ ...report, git });
+    await writeJson(root, `${protocolPaths.reportsHarvest}/${report.id}.json`, report);
+  }
 
   return report;
 }

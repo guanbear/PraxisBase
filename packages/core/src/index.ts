@@ -20,6 +20,7 @@ export * from "./experience/openclaw-remote.js";
 export * from "./experience/remote-sources.js";
 export * from "./experience/remote-adapters.js";
 export * from "./experience/harvest.js";
+export * from "./experience/git-workflow.js";
 export * from "./wiki/model.js";
 export * from "./wiki/state.js";
 export * from "./wiki/collect.js";

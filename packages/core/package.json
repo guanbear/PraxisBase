@@ -95,6 +95,10 @@
       "types": "./src/experience/harvest.ts",
       "default": "./dist/experience/harvest.js"
     },
+    "./experience/git-workflow.js": {
+      "types": "./src/experience/git-workflow.ts",
+      "default": "./dist/experience/git-workflow.js"
+    },
     "./lint/index.js": {
       "types": "./src/lint/index.ts",
       "default": "./dist/lint/index.js"
