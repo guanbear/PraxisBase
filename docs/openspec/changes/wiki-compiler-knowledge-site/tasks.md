@@ -1,5 +1,7 @@
 # Wiki Compiler Knowledge Site Tasks
 
+Implementation traceability lives in `docs/superpowers/plans/2026-05-20-wiki-compiler-knowledge-site-traceability.md`. Each milestone below must satisfy its corresponding BDD rows, module contracts, tests, and acceptance gates before it can be marked complete.
+
 ## M7: Wiki Object Model And Collector
 
 - [ ] Add `packages/core/src/wiki/model.ts` with `WikiSource`, `WikiPage`, `WikiClaim`, `WikiCitation`, graph-related types, slug/hash helpers, lifecycle helpers, and confidence helpers.

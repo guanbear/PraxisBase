@@ -6,10 +6,11 @@
 
 - 设计文档：`docs/superpowers/specs/2026-05-20-wiki-compiler-knowledge-site-design.md`
 - 实施文档：`docs/superpowers/plans/2026-05-20-wiki-compiler-knowledge-site-implementation-plan.md`
+- 追踪矩阵：`docs/superpowers/plans/2026-05-20-wiki-compiler-knowledge-site-traceability.md`
 - OpenSpec：`docs/openspec/changes/wiki-compiler-knowledge-site/`
 - BDD：`docs/bdd/wiki-compiler-knowledge-site.feature`
 
-这四份文档描述同一个 M7-M11 范围。设计文档回答为什么和怎么分层；实施文档回答按什么文件和测试顺序落地；OpenSpec 是稳定 contract；BDD 是用户可见验收。
+这些文档描述同一个 M7-M11 范围。设计文档回答为什么和怎么分层；实施文档回答按什么文件和测试顺序落地；追踪矩阵约束 BDD、测试、模块和验收 gate 的对应关系；OpenSpec 是稳定 contract；BDD 是用户可见验收。
 
 ## AI Handoff Brief
 

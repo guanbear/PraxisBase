@@ -14,10 +14,11 @@
 
 - Design: `docs/superpowers/specs/2026-05-20-wiki-compiler-knowledge-site-design.md`
 - Implementation: `docs/superpowers/plans/2026-05-20-wiki-compiler-knowledge-site-implementation-plan.md`
+- Traceability matrix: `docs/superpowers/plans/2026-05-20-wiki-compiler-knowledge-site-traceability.md`
 - OpenSpec: `docs/openspec/changes/wiki-compiler-knowledge-site/`
 - BDD: `docs/bdd/wiki-compiler-knowledge-site.feature`
 
-These documents describe the same M7-M11 scope. If one document changes a command name, output path, or acceptance rule, update the other three before implementation starts.
+These documents describe the same M7-M11 scope. If one document changes a command name, output path, module boundary, test mapping, or acceptance rule, update the others before implementation starts.
 
 ## File Structure
 
