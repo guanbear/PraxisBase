@@ -18,6 +18,7 @@ import { memoryCommand } from "./commands/memory.js";
 import { contextCommand } from "./commands/context.js";
 import { distillCommand } from "./commands/distill.js";
 import { watchCommand } from "./commands/watch.js";
+import { wikiCommand } from "./commands/wiki.js";
 
 const program = new Command();
 
@@ -207,6 +208,16 @@ program
     }
   ) => {
     console.log(await watchCommand(process.cwd(), options));
+  });
+
+program
+  .command("wiki")
+  .argument("<sub>", "subcommand (compile|graph|build-site)")
+  .option("--dry-run")
+  .option("--review")
+  .option("--json")
+  .action(async (sub: string, options: { dryRun?: boolean; review?: boolean; json?: boolean }) => {
+    console.log(await wikiCommand(process.cwd(), sub, options));
   });
 
 program

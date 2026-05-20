@@ -90,6 +90,14 @@
     "./wiki/collect.js": {
       "types": "./src/wiki/collect.ts",
       "default": "./dist/wiki/collect.js"
+    },
+    "./wiki/compile.js": {
+      "types": "./src/wiki/compile.ts",
+      "default": "./dist/wiki/compile.js"
+    },
+    "./wiki/lint.js": {
+      "types": "./src/wiki/lint.ts",
+      "default": "./dist/wiki/lint.js"
     }
   },
   "scripts": {

@@ -18,3 +18,5 @@ export * from "./experience/distill.js";
 export * from "./wiki/model.js";
 export * from "./wiki/state.js";
 export * from "./wiki/collect.js";
+export * from "./wiki/compile.js";
+export * from "./wiki/lint.js";

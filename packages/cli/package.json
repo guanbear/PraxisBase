@@ -78,6 +78,10 @@
     "./commands/watch.js": {
       "types": "./src/commands/watch.ts",
       "default": "./dist/commands/watch.js"
+    },
+    "./commands/wiki.js": {
+      "types": "./src/commands/wiki.ts",
+      "default": "./dist/commands/wiki.js"
     }
   },
   "bin": {
