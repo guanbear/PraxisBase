@@ -30,6 +30,30 @@ async function writeCapture(root: string): Promise<void> {
   }));
 }
 
+async function writeSecondCapture(root: string): Promise<void> {
+  await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
+  await writeFile(join(root, ".praxisbase/outbox/captures/capture_2.json"), JSON.stringify({
+    id: "capture_2",
+    protocol_version: PROTOCOL_VERSION,
+    type: "capture_record",
+    agent: "codex",
+    workspace: root,
+    scope_hint: "personal",
+    result: "success",
+    triggers: ["task_finish"],
+    signals: [],
+    artifacts: [
+      {
+        kind: "transcript",
+        source_ref: "raw-vault://codex/session-2",
+        source_hash: "sha256:session2",
+        redacted_summary: "Run PraxisBase daily with GLM thinking disabled for JSON output.",
+      },
+    ],
+    created_at: "2026-05-21T00:01:00.000Z",
+  }));
+}
+
 describe("wiki curate CLI", () => {
   it("dry-run writes report only", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-curate-"));
@@ -72,5 +96,24 @@ describe("wiki curate CLI", () => {
     assert.equal(parsed.ok, true);
     assert.equal(parsed.report.output_counts.written_proposals, 0);
     await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
+  });
+
+  it("limits curated proposal synthesis when --limit is provided", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-curate-limit-"));
+    await writeCapture(root);
+    await writeSecondCapture(root);
+
+    const output = await wikiCommand(root, "curate", {
+      review: true,
+      degraded: true,
+      limit: 1,
+      json: true,
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.output_counts.written_proposals, 1);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.length, 1);
   });
 });

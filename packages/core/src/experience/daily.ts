@@ -379,6 +379,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     mode: wikiMode,
     now,
     degraded: Boolean(input.degraded || input.noAi),
+    limit: input.limit,
     aiClient: input.aiClient,
     env: input.env,
     fetchImpl: input.fetchImpl,

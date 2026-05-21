@@ -39,6 +39,7 @@ export async function wikiCommand(
       mode,
       degraded: options.degraded,
       minSourceCount: options.minSourceCount,
+      limit: options.limit,
     });
     if (options.json) {
       return JSON.stringify({ ok: true, report }, null, 2);

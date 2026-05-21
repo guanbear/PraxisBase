@@ -35,6 +35,7 @@ export interface CurateWikiOptions {
   now?: string;
   degraded?: boolean;
   minSourceCount?: number;
+  limit?: number;
   aiClient?: AiJsonClient;
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
@@ -433,7 +434,9 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const pool = await buildWikiEvidencePoolFromRoot(root);
   const minSourceCount = options.minSourceCount ?? 1;
   const clusters = clusterWikiEvidence(pool.items);
-  const proposalClusters = clusters.filter((cluster) => cluster.source_count >= minSourceCount);
+  const proposalClusters = clusters
+    .filter((cluster) => cluster.source_count >= minSourceCount)
+    .slice(0, typeof options.limit === "number" && Number.isFinite(options.limit) && options.limit >= 0 ? options.limit : undefined);
   const evidenceById = new Map(pool.items.map((item) => [item.id, item]));
   const proposals: CuratedWikiProposal[] = [];
   let conflicts = 0;
@@ -493,6 +496,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     warnings: [
       ...(degraded ? ["AI curator degraded mode is not production-ready."] : []),
       ...(minSourceCount > 1 ? [`min_source_count:${minSourceCount}`] : []),
+      ...(typeof options.limit === "number" ? [`limit:${options.limit}`] : []),
     ],
   });
   await writeJson(root, `${REPORTS_WIKI_CURATION}/${report.id}.json`, report);
