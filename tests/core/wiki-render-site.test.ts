@@ -104,4 +104,81 @@ Body.
     assert.ok(index.includes("Duplicates"));
     assert.ok(index.includes("Quality findings"));
   });
+
+  it("shows daily experience report summary on homepage when report exists", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-daily-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await writeFile(join(root, "kb/notes/a.md"), `---
+id: a
+type: note
+scope: team
+maturity: draft
+---
+# Note A
+
+Body.
+`);
+    await writeFile(
+      join(root, ".praxisbase/reports/daily/daily_2026_05_21.json"),
+      JSON.stringify({
+        id: "daily_2026_05_21",
+        protocol_version: "0.1",
+        type: "daily_experience_report",
+        authority_mode: "team-git",
+        mode: "write",
+        sources: [
+          { name: "openclaw-bot", agent: "openclaw", channel: "feishu", source_type: "openclaw-api", status: "completed", scanned: 10, fetched: 8, enveloped: 8, imported: 6, rejected: 1, human_required: 1, warnings: [] },
+          { name: "claude-repair", agent: "claude-code", channel: "log-system", source_type: "http", status: "completed", scanned: 5, fetched: 5, enveloped: 5, imported: 4, rejected: 0, human_required: 1, warnings: [] },
+        ],
+        proposal_candidates: 3,
+        quality_findings: 0,
+        site_pages: 7,
+        changed_stable_knowledge: false,
+        outputs: [],
+        warnings: [],
+        created_at: "2026-05-21T12:00:00.000Z",
+      }),
+    );
+
+    await buildWikiSite(root);
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Latest Daily Experience"));
+    assert.ok(index.includes("2026-05-21"));
+    assert.ok(index.includes("team-git"));
+    assert.ok(index.includes("Sources"));
+    assert.match(index, /<strong>2<\/strong>/);
+    assert.match(index, /<strong>10<\/strong>/);
+    assert.match(index, /<strong>1<\/strong>/);
+    assert.match(index, /<strong>2<\/strong>/);
+    assert.match(index, /<strong>3<\/strong>/);
+    assert.match(index, /<strong>7<\/strong>/);
+    const issues = await readFile(join(root, "dist/issues.html"), "utf8");
+    assert.ok(issues.includes("Daily Privacy Findings"));
+    assert.ok(issues.includes("Rejected"));
+    assert.ok(issues.includes("Human required"));
+    await assert.rejects(stat(join(root, "dist/experience.html")));
+  });
+
+  it("homepage works when no daily report exists", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-nodaily-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(join(root, "kb/notes/a.md"), `---
+id: a
+type: note
+scope: team
+maturity: draft
+---
+# Note A
+
+Body.
+`);
+
+    const result = await buildWikiSite(root);
+    assert.ok(result.outputs.includes("dist/index.html"));
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Knowledge Health"));
+    assert.equal(index.includes("Latest Daily Experience"), false);
+    await assert.rejects(stat(join(root, "dist/experience.html")));
+  });
 });

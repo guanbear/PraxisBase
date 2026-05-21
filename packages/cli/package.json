@@ -95,6 +95,14 @@
       "types": "./src/commands/remote.ts",
       "default": "./dist/commands/remote.js"
     },
+    "./commands/source.js": {
+      "types": "./src/commands/source.ts",
+      "default": "./dist/commands/source.js"
+    },
+    "./commands/daily.js": {
+      "types": "./src/commands/daily.ts",
+      "default": "./dist/commands/daily.js"
+    },
     "./commands/harvest.js": {
       "types": "./src/commands/harvest.ts",
       "default": "./dist/commands/harvest.js"

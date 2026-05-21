@@ -119,6 +119,28 @@ Hermes already has agent-managed skills, persistent memory, and curator-style sk
 
 Hermes is an accelerator, not a dependency: Codex, Claude Code, OpenCode, OpenHuman, OpenClaw, and generic agents must still work through the same CLI/file protocol.
 
+## Daily Experience Loop
+
+PraxisBase supports a daily experience loop that collects agent experience from configured sources, normalizes it into redacted evidence, and merges it into the wiki flow.
+
+### Personal Daily Flow
+
+```bash
+praxisbase source add local-codex --agent codex --type local --path ~/.codex/archived_sessions --scope personal
+praxisbase source add local-openclaw --agent openclaw --type local --path ~/.openclaw/exports/latest.json --scope project
+praxisbase daily run --mode personal --build-site --json
+```
+
+### Team GitLab Daily Flow
+
+```bash
+praxisbase source add openclaw-bot --agent openclaw --channel feishu --type openclaw-api --remote bot-prod --scope team
+praxisbase source add claude-repair-log --agent claude-code --type http --url "$LOG_API" --scope team
+praxisbase daily run --mode team-git --branch harvest/daily --commit --push --build-site --json
+```
+
+Team mode enforces privacy: personal scope, private chat content, and raw credentials are rejected before proposal generation. Uncertain cases route to human review.
+
 ## Why This Exists
 
 Teams that operate many agent sandboxes have a different problem from ordinary documentation:

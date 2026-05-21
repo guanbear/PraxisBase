@@ -82,6 +82,28 @@ An MCP stdio bridge is available for agents that prefer MCP tool calls over CLI:
 praxisbase mcp serve --stdio --workspace <path>
 \`\`\`
 
+## Configure Sources
+
+\`\`\`bash
+praxisbase source add local-codex --agent codex --type local --path ~/.codex/archived_sessions --scope personal
+praxisbase source add openclaw-bot --agent openclaw --channel feishu --type openclaw-api --remote bot-prod --scope team
+praxisbase source list --json
+\`\`\`
+
+## Daily Personal
+
+\`\`\`bash
+praxisbase daily run --mode personal --build-site --json
+\`\`\`
+
+## Daily Team
+
+\`\`\`bash
+praxisbase daily run --mode team-git --branch harvest/daily --commit --push --build-site --json
+\`\`\`
+
+team mode rejects personal scope, private chat content, and raw credentials before proposal generation.
+
 Generated from manifest: ${manifest.id}
 Manifest path: ${protocolPaths.agentToolsManifest}
 `;

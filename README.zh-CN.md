@@ -121,6 +121,28 @@ Hermes 已经有 agent-managed skills、persistent memory 和 curator 式的 ski
 
 Hermes 是加速器，不是依赖；Codex、Claude Code、OpenCode、OpenHuman、OpenClaw 和 generic agent 仍然必须通过同一套 CLI/file protocol 接入。
 
+## 每日经验循环
+
+PraxisBase 支持每日经验循环：从配置的来源收集 agent 经验，归一化为脱敏证据，合并到 wiki 流程。
+
+### 个人每日流程
+
+```bash
+praxisbase source add local-codex --agent codex --type local --path ~/.codex/archived_sessions --scope personal
+praxisbase source add local-openclaw --agent openclaw --type local --path ~/.openclaw/exports/latest.json --scope project
+praxisbase daily run --mode personal --build-site --json
+```
+
+### 团队 GitLab 每日流程
+
+```bash
+praxisbase source add openclaw-bot --agent openclaw --channel feishu --type openclaw-api --remote bot-prod --scope team
+praxisbase source add claude-repair-log --agent claude-code --type http --url "$LOG_API" --scope team
+praxisbase daily run --mode team-git --branch harvest/daily --commit --push --build-site --json
+```
+
+Team 模式强制隐私保护：personal scope、私聊内容和原始凭据会在 proposal 生成前被拒绝。不确定的条目会路由到人工审核。
+
 ## 为什么需要它
 
 运行大量 agent 沙箱的团队，遇到的问题和普通文档系统不同：

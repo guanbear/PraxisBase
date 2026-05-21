@@ -7,6 +7,7 @@ import { protocolPaths } from "../protocol/paths.js";
 import {
   AgentMemoryCandidateSchema,
   AgentMemoryIngestReportSchema,
+  ExperienceEnvelopeSchema,
   OpenClawRemoteMemoryEnvelopeSchema,
   ExceptionRecordSchema,
   RealWikiSmokeReportSchema,
@@ -26,9 +27,10 @@ const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log"])
 const DEFAULT_LIMIT = 20;
 const DEFAULT_MAX_BYTES = 512 * 1024;
 const MAX_SUMMARY_LENGTH = 1200;
+type AgentMemoryAgent = "codex" | "openclaw" | "claude-code";
 
 export interface ScanAgentMemoryInput {
-  agent: "codex" | "openclaw";
+  agent: AgentMemoryAgent;
   sources?: string[];
   limit?: number;
   maxBytes?: number;
@@ -82,7 +84,7 @@ async function listFilesRecursively(dir: string, maxBytes: number): Promise<{ pa
   return results;
 }
 
-function extractSummaryHint(text: string, agent: "codex" | "openclaw"): string {
+function extractSummaryHint(text: string, agent: AgentMemoryAgent): string {
   if (agent === "openclaw") {
     return detectOpenClawProblemSignature(text);
   }
@@ -104,20 +106,26 @@ function extractSummaryHint(text: string, agent: "codex" | "openclaw"): string {
       ? joined.slice(0, MAX_SUMMARY_LENGTH) + "...[truncated]"
       : joined;
   }
-  return "codex session";
+  return agent === "claude-code" ? "claude-code repair log" : "codex session";
 }
 
-function makeSourceRef(agent: "codex" | "openclaw", filePath: string): string {
+function makeSourceRef(agent: AgentMemoryAgent, filePath: string): string {
   const base = basename(filePath, extname(filePath));
   if (agent === "codex") {
     return `raw-vault://codex/${base}`;
   }
+  if (agent === "claude-code") {
+    return `logs://claude-code/${base}`;
+  }
   return `log://openclaw/${basename(filePath)}`;
 }
 
-function makeKind(agent: "codex" | "openclaw", filePath: string): "codex_session" | "openclaw_log" | "openclaw_episode" {
+function makeKind(agent: AgentMemoryAgent, filePath: string): "codex_session" | "openclaw_log" | "openclaw_episode" | "claude_code_repair_log" {
   if (agent === "codex") {
     return "codex_session";
+  }
+  if (agent === "claude-code") {
+    return "claude_code_repair_log";
   }
   const ext = extname(filePath).toLowerCase();
   if (ext === ".json" || ext === ".jsonl") {
@@ -158,22 +166,61 @@ function parseStagedOpenClawEnvelope(content: string): {
   }
 }
 
+function parseExperienceEnvelope(content: string): {
+  agent: AgentMemoryAgent;
+  kind: "codex_session" | "openclaw_episode" | "claude_code_repair_log";
+  source_ref: string;
+  source_hash: string;
+  redacted_summary: string;
+  scope_hint: "personal" | "project" | "team" | "org";
+  privacy_verdict: "allow" | "reject" | "human_required";
+  warnings: string[];
+} | undefined {
+  try {
+    const parsed = ExperienceEnvelopeSchema.safeParse(JSON.parse(content));
+    if (!parsed.success) {
+      return undefined;
+    }
+    const kind = parsed.data.agent === "codex"
+      ? "codex_session"
+      : parsed.data.agent === "claude-code"
+        ? "claude_code_repair_log"
+        : "openclaw_episode";
+    return {
+      agent: parsed.data.agent,
+      kind,
+      source_ref: parsed.data.source_ref,
+      source_hash: parsed.data.source_hash,
+      redacted_summary: parsed.data.redacted_summary,
+      scope_hint: parsed.data.scope_hint,
+      privacy_verdict: parsed.data.privacy.verdict,
+      warnings: parsed.data.warnings,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 function makeCandidateFromSource(
   input: ScanAgentMemoryInput,
   filePath: string,
   sizeBytes: number,
   content: string,
   now: string
-): AgentMemoryCandidate {
-  const stagedEnvelope = input.agent === "openclaw"
+): AgentMemoryCandidate | undefined {
+  const experienceEnvelope = parseExperienceEnvelope(content);
+  if (experienceEnvelope && experienceEnvelope.agent !== input.agent) {
+    return undefined;
+  }
+  const stagedEnvelope = !experienceEnvelope && input.agent === "openclaw"
     ? parseStagedOpenClawEnvelope(content)
     : undefined;
-  const sourceHash = stagedEnvelope?.source_hash ?? computeHash(content);
-  const sourceRef = stagedEnvelope?.source_ref ?? makeSourceRef(input.agent, filePath);
-  const kind = input.agent === "openclaw" && stagedEnvelope
+  const sourceHash = experienceEnvelope?.source_hash ?? stagedEnvelope?.source_hash ?? computeHash(content);
+  const sourceRef = experienceEnvelope?.source_ref ?? stagedEnvelope?.source_ref ?? makeSourceRef(input.agent, filePath);
+  const kind = experienceEnvelope?.kind ?? (input.agent === "openclaw" && stagedEnvelope
     ? "openclaw_episode"
-    : makeKind(input.agent, filePath);
-  const summaryHint = stagedEnvelope?.redacted_summary ?? extractSummaryHint(content, input.agent);
+    : makeKind(input.agent, filePath));
+  const summaryHint = experienceEnvelope?.redacted_summary ?? stagedEnvelope?.redacted_summary ?? extractSummaryHint(content, input.agent);
 
   return AgentMemoryCandidateSchema.parse({
     id: makeId("agent-memory-candidate", `${input.agent}_${kind}_${sourceHash.slice(0, 16)}`),
@@ -185,7 +232,7 @@ function makeCandidateFromSource(
     size_bytes: sizeBytes,
     created_at: now,
     summary_hint: summaryHint,
-    warnings: stagedEnvelope?.warnings ?? [],
+    warnings: experienceEnvelope?.warnings ?? stagedEnvelope?.warnings ?? [],
   });
 }
 
@@ -231,7 +278,12 @@ export async function scanAgentMemory(
           continue;
         }
 
-        candidates.push(makeCandidateFromSource(input, file.path, file.size, content, now));
+        const candidate = makeCandidateFromSource(input, file.path, file.size, content, now);
+        if (candidate) {
+          candidates.push(candidate);
+        } else {
+          totalSkipped++;
+        }
       }
     } else if (s.isFile()) {
       const ext = extname(sourcePath).toLowerCase();
@@ -255,7 +307,12 @@ export async function scanAgentMemory(
         continue;
       }
 
-      candidates.push(makeCandidateFromSource(input, sourcePath, s.size, content, now));
+      const candidate = makeCandidateFromSource(input, sourcePath, s.size, content, now);
+      if (candidate) {
+        candidates.push(candidate);
+      } else {
+        totalSkipped++;
+      }
     }
   }
 
@@ -357,7 +414,34 @@ export async function ingestAgentMemory(
       continue;
     }
 
-    if (containsPrivateMaterial(rawContent)) {
+    const experienceEnvelope = parseExperienceEnvelope(rawContent);
+    if (experienceEnvelope && experienceEnvelope.privacy_verdict !== "allow") {
+      unsafe++;
+      if (mode === "write") {
+        const exceptionId = makeId("exception", `human-required-experience_${candidate.source_hash.slice(0, 16)}`);
+        const exception = ExceptionRecordSchema.parse({
+          id: exceptionId,
+          protocol_version: PROTOCOL_VERSION,
+          type: "exception_record",
+          category: "human_required",
+          source_id: candidate.id,
+          reason: `Experience envelope privacy verdict is ${experienceEnvelope.privacy_verdict}`,
+          details: {
+            agent: candidate.agent,
+            source_ref: candidate.source_ref,
+            source_hash: candidate.source_hash,
+          },
+          created_at: now,
+        });
+        const exceptionPath = `${protocolPaths.exceptionsHumanRequired}/${exceptionId}.json`;
+        await writeJson(root, exceptionPath, exception);
+        outputs.push(exceptionPath);
+      }
+      continue;
+    }
+
+    const privateScanText = experienceEnvelope?.redacted_summary ?? rawContent;
+    if (containsPrivateMaterial(privateScanText)) {
       unsafe++;
       if (mode === "write") {
         const exceptionId = makeId("exception", `human-required_${candidate.source_hash.slice(0, 16)}`);
@@ -383,7 +467,7 @@ export async function ingestAgentMemory(
     }
 
     // Security: redacted summary must never contain raw source body
-    const summary = generateRedactedSummary(rawContent, candidate.summary_hint);
+    const summary = experienceEnvelope?.redacted_summary ?? generateRedactedSummary(rawContent, candidate.summary_hint);
 
     if (containsPrivateMaterial(summary)) {
       unsafe++;
@@ -425,7 +509,7 @@ export async function ingestAgentMemory(
         source_ref: candidate.source_ref,
         source_hash: candidate.source_hash,
         redacted_summary: summary,
-        scope_hint: scope,
+        scope_hint: experienceEnvelope?.scope_hint ?? scope,
         created_at: now,
       });
       outputs.push(refPath);
@@ -438,7 +522,7 @@ export async function ingestAgentMemory(
         type: "capture_record",
         agent: candidate.agent,
         workspace: root,
-        scope_hint: scope,
+        scope_hint: experienceEnvelope?.scope_hint ?? scope,
         result: "unknown",
         triggers: ["agent-memory-ingest"],
         signals: [],

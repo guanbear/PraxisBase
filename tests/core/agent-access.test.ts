@@ -11,6 +11,7 @@ import {
   McpToolManifestSchema,
 } from "@praxisbase/core/protocol/schemas.js";
 import { buildAgentToolManifest, writeAgentToolManifest } from "@praxisbase/core/agent-access/manifest.js";
+import { generateSkill } from "@praxisbase/core/agent-access/skill.js";
 
 // ---------------------------------------------------------------------------
 // Task 1: Protocol paths and schemas
@@ -184,5 +185,20 @@ describe("writeAgentToolManifest", () => {
     assert.equal(written.type, "agent_tool_manifest");
     assert.equal(written.id, manifest.id);
     assert.deepEqual(written.tools, manifest.tools);
+  });
+});
+
+describe("generateSkill", () => {
+  it("mentions daily run, source add, context get, and team privacy rules", () => {
+    const manifest = buildAgentToolManifest("/tmp/test", { agent: "codex" });
+    const skill = generateSkill(manifest);
+
+    assert.ok(skill.includes("praxisbase source add"), "must mention praxisbase source add");
+    assert.ok(skill.includes("praxisbase daily run"), "must mention praxisbase daily run");
+    assert.ok(skill.includes("praxisbase context get"), "must mention praxisbase context get");
+    assert.ok(
+      skill.includes("team mode rejects personal scope"),
+      "must mention team mode rejects personal scope"
+    );
   });
 });

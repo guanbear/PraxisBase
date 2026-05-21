@@ -22,6 +22,8 @@ import { watchCommand } from "./commands/watch.js";
 import { wikiCommand } from "./commands/wiki.js";
 import { smokeCommand } from "./commands/smoke.js";
 import { remoteCommand } from "./commands/remote.js";
+import { sourceCommand } from "./commands/source.js";
+import { dailyCommand } from "./commands/daily.js";
 import { harvestCommand } from "./commands/harvest.js";
 import { agentToolsCommand } from "./commands/agent-tools.js";
 import { mcpCommand } from "./commands/mcp.js";
@@ -268,6 +270,75 @@ program
     }
   ) => {
     console.log(await remoteCommand(process.cwd(), sub, { ...options, name }));
+  });
+
+program
+  .command("source")
+  .argument("<sub>", "subcommand (add|list|remove|doctor)")
+  .argument("[name]")
+  .option("--agent <agent>")
+  .option("--type <type>")
+  .option("--channel <channel>")
+  .option("--parser <parser>")
+  .option("--scope <scope>")
+  .option("--repo <repo>")
+  .option("--ref <ref>")
+  .option("--path <path>")
+  .option("--host <host>")
+  .option("--url <url>")
+  .option("--remote <remote>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    name: string | undefined,
+    options: {
+      agent?: "codex" | "openclaw" | "claude-code";
+      type?: "local" | "file" | "git" | "ssh" | "http" | "openclaw-api";
+      channel?: "local" | "terminal" | "feishu" | "ci" | "gitlab" | "log-system" | "unknown";
+      parser?: "codex-session" | "openclaw-export" | "openclaw-log" | "claude-code-repair-log";
+      scope?: "personal" | "project" | "team" | "org";
+      repo?: string;
+      ref?: string;
+      path?: string;
+      host?: string;
+      url?: string;
+      remote?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await sourceCommand(process.cwd(), sub, { ...options, name }));
+  });
+
+program
+  .command("daily")
+  .argument("<sub>", "subcommand (init|run|doctor|schedule)")
+  .option("--mode <mode>", "personal or team-git", "personal")
+  .option("--runner <runner>", "cron, launchd, or gitlab")
+  .option("--limit <n>")
+  .option("--build-site")
+  .option("--branch <name>")
+  .option("--commit")
+  .option("--push")
+  .option("--pr")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      mode?: "personal" | "team-git";
+      runner?: "cron" | "launchd" | "gitlab";
+      limit?: string;
+      buildSite?: boolean;
+      branch?: string;
+      commit?: boolean;
+      push?: boolean;
+      pr?: boolean;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await dailyCommand(process.cwd(), sub, {
+      ...options,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
+    }));
   });
 
 program

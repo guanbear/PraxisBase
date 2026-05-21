@@ -1,9 +1,9 @@
-import { stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { posix } from "node:path";
 import matter from "gray-matter";
 import { escapeHtml, escapeJsonForHtml } from "../build/html.js";
 import { protocolPaths } from "../protocol/paths.js";
-import { readText, writeJson, writeText } from "../store/file-store.js";
+import { readJson, readText, writeJson, writeText } from "../store/file-store.js";
 import { collectWikiSources } from "./collect.js";
 import { inferWikiConfidence, inferWikiLifecycle, makeWikiSlug, type WikiSource } from "./model.js";
 import { runWikiLint } from "./lint.js";
@@ -229,7 +229,26 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 </html>`;
 }
 
-function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: string, stalePages: number, qualityFindings: number): string {
+function renderDailyUpdateSection(report: DailyReportSummary): string {
+  const dateLabel = report.created_at.slice(0, 10);
+  const dailyCards: [string, string][] = [
+    ["Sources", String(report.source_count)],
+    ["Imported", String(report.imported)],
+    ["Rejected", String(report.rejected)],
+    ["Human required", String(report.human_required)],
+    ["Proposals", String(report.proposal_candidates)],
+    ["Site pages", String(report.site_pages)],
+  ];
+  return `<section class="daily-update">
+  <h2>Latest Daily Experience</h2>
+  <p class="eyebrow">${escapeHtml(dateLabel)} &middot; ${escapeHtml(report.authority_mode)}</p>
+  <div class="metrics">
+    ${dailyCards.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`).join("\n")}
+  </div>
+</section>`;
+}
+
+function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: string, stalePages: number, qualityFindings: number, dailyReport: DailyReportSummary | null): string {
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
   const recent = [...pages]
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
@@ -260,6 +279,7 @@ function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: 
   <section class="metrics">
     ${cards.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`).join("\n")}
   </section>
+  ${dailyReport ? renderDailyUpdateSection(dailyReport) : ""}
   <section class="dashboard-grid">
     <div>
       <h2>Recent Sources</h2>
@@ -361,7 +381,8 @@ function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph): string {
 function renderIssuesPage(
   pages: WikiSitePage[],
   graph: WikiGraph,
-  qualityFindings: Array<{ rule: string; severity: string; path: string; message: string }>
+  qualityFindings: Array<{ rule: string; severity: string; path: string; message: string }>,
+  dailyReport: DailyReportSummary | null
 ): string {
   return renderLayout({
     title: "PraxisBase Quality Issues",
@@ -380,8 +401,22 @@ function renderIssuesPage(
       ${qualityFindings.length > 0 ? qualityFindings.map((finding) => `<li><strong>${escapeHtml(finding.rule)}</strong> <small>${escapeHtml(finding.severity)}</small><br>${escapeHtml(finding.message)}<br><small>${escapeHtml(finding.path)}</small></li>`).join("\n") : "<li>No quality issues found.</li>"}
     </ol>
   </section>
+  ${dailyReport ? renderDailyPrivacyFindings(dailyReport) : ""}
 </main>`,
   });
+}
+
+function renderDailyPrivacyFindings(report: DailyReportSummary): string {
+  if (report.rejected === 0 && report.human_required === 0) {
+    return "";
+  }
+  return `<section class="issues-panel">
+  <h2>Daily Privacy Findings</h2>
+  <dl>
+    <dt>Rejected</dt><dd>${escapeHtml(String(report.rejected))}</dd>
+    <dt>Human required</dt><dd>${escapeHtml(String(report.human_required))}</dd>
+  </dl>
+</section>`;
 }
 
 function renderLlms(pages: WikiSitePage[], full: boolean): string {
@@ -416,17 +451,76 @@ async function exists(root: string, path: string): Promise<boolean> {
   }
 }
 
+interface DailyReportSummary {
+  created_at: string;
+  authority_mode: string;
+  source_count: number;
+  imported: number;
+  rejected: number;
+  human_required: number;
+  proposal_candidates: number;
+  site_pages: number;
+}
+
+async function collectLatestDailyReport(root: string): Promise<DailyReportSummary | null> {
+  const dir = safePathForReaddir(root, protocolPaths.reportsDaily);
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return null;
+  }
+
+  const jsonFiles = entries.filter((name) => name.endsWith(".json"));
+  if (jsonFiles.length === 0) return null;
+
+  const candidates: Array<{ created_at: string; sources?: Array<{ imported?: number; rejected?: number; human_required?: number }>; authority_mode?: string; proposal_candidates?: number; site_pages?: number; type?: string }> = [];
+
+  for (const file of jsonFiles) {
+    try {
+      const report = await readJson<Record<string, unknown>>(root, `${protocolPaths.reportsDaily}/${file}`);
+      if (report && report.type === "daily_experience_report" && typeof report.created_at === "string") {
+        candidates.push(report as typeof candidates[number]);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const latest = candidates[0];
+  const sources = Array.isArray(latest.sources) ? latest.sources : [];
+
+  return {
+    created_at: latest.created_at,
+    authority_mode: latest.authority_mode ?? "unknown",
+    source_count: sources.length,
+    imported: sources.reduce((sum, s) => sum + (s.imported ?? 0), 0),
+    rejected: sources.reduce((sum, s) => sum + (s.rejected ?? 0), 0),
+    human_required: sources.reduce((sum, s) => sum + (s.human_required ?? 0), 0),
+    proposal_candidates: typeof latest.proposal_candidates === "number" ? latest.proposal_candidates : 0,
+    site_pages: typeof latest.site_pages === "number" ? latest.site_pages : 0,
+  };
+}
+
+function safePathForReaddir(root: string, relativePath: string): string {
+  return posix.resolve(root, relativePath);
+}
+
 export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> {
   const pages = await collectWikiPages(root);
   const graph = buildWikiGraph(pages);
   const lintReport = await runWikiLint(root, { pages });
   const qualityReport = await buildWikiQualityReport(root, { pages, graph });
   const outputs = [...SITE_OUTPUTS];
+  const dailyReport = await collectLatestDailyReport(root);
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
   const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: pages.map((page) => ({
@@ -441,7 +535,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   await writeJson(root, "dist/graph.json", graph);
   await writeJson(root, "dist/graph-slices/overview.json", buildWikiGraphSlice(graph, { mode: "overview", limit: 50 }));
   await writeText(root, "dist/graph.html", renderGraphPage(pages, graph));
-  await writeText(root, "dist/issues.html", renderIssuesPage(pages, graph, qualityReport.findings));
+  await writeText(root, "dist/issues.html", renderIssuesPage(pages, graph, qualityReport.findings, dailyReport));
   await writeJson(root, "dist/graph.jsonld", graphJsonLd(pages, graph));
   await writeText(root, "dist/llms.txt", renderLlms(pages, false));
   await writeText(root, "dist/llms-full.txt", renderLlms(pages, true));

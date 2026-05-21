@@ -173,6 +173,43 @@ describe("scanAgentMemory", () => {
     assert.equal(result.candidates[0].source_ref, envelope.source_ref);
     assert.equal(result.candidates[0].summary_hint, envelope.redacted_summary);
   });
+
+  it("scans staged daily experience envelopes for Claude Code repair logs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-claude-envelope-scan-"));
+    const staged = join(root, protocolPaths.stagingExperienceEnvelopes);
+    await mkdir(staged, { recursive: true });
+    const envelope = {
+      id: "experience_claude-repair-1",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "source_claude-repair-log",
+      agent: "claude-code",
+      channel: "log-system",
+      source_ref: "logs://claude-repair-log/repair-1",
+      source_hash: "sha256:claude-repair-1",
+      scope_hint: "team",
+      problem_signature: "openclaw:auth-expired",
+      outcome: "success",
+      redacted_summary: "Claude Code repaired OpenClaw auth expiry and verified the bot.",
+      fetched_at: "2026-05-21T00:00:00.000Z",
+      privacy: { mode: "team-git", verdict: "allow", reasons: [] },
+      warnings: [],
+    };
+    await writeFile(join(staged, "experience_claude-repair-1.json"), JSON.stringify(envelope), "utf8");
+
+    const result = await scanAgentMemory(root, {
+      agent: "claude-code",
+      sources: [staged],
+      limit: 10,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    assert.equal(result.candidates.length, 1);
+    assert.equal(result.candidates[0].agent, "claude-code");
+    assert.equal(result.candidates[0].kind, "claude_code_repair_log");
+    assert.equal(result.candidates[0].source_ref, envelope.source_ref);
+    assert.equal(result.candidates[0].summary_hint, envelope.redacted_summary);
+  });
 });
 
 describe("ingestAgentMemory", () => {
@@ -260,5 +297,41 @@ describe("ingestAgentMemory", () => {
     assert.equal(refRaw.includes("RAW REMOTE LOG SHOULD NOT BE WRITTEN"), false);
     assert.equal(refRaw.includes(envelope.redacted_summary), true);
     assert.equal(refRaw.includes(envelope.source_hash), true);
+  });
+
+  it("ingests staged daily experience envelopes using their scope hint", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-claude-envelope-ingest-"));
+    const staged = join(root, protocolPaths.stagingExperienceEnvelopes);
+    await mkdir(staged, { recursive: true });
+    const envelope = {
+      id: "experience_claude-repair-1",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "source_claude-repair-log",
+      agent: "claude-code",
+      channel: "log-system",
+      source_ref: "logs://claude-repair-log/repair-1",
+      source_hash: "sha256:claude-repair-1",
+      scope_hint: "team",
+      redacted_summary: "Claude Code repaired OpenClaw auth expiry and verified the bot.",
+      fetched_at: "2026-05-21T00:00:00.000Z",
+      privacy: { mode: "team-git", verdict: "allow", reasons: [] },
+      warnings: [],
+    };
+    await writeFile(join(staged, "experience_claude-repair-1.json"), JSON.stringify(envelope), "utf8");
+
+    const report = await ingestAgentMemory(root, {
+      agent: "claude-code",
+      sources: [staged],
+      mode: "write",
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    assert.equal(report.imported, 1);
+    const refs = await readdir(join(root, ".praxisbase/raw-vault/refs"));
+    const refRaw = await readFile(join(root, ".praxisbase/raw-vault/refs", refs[0]), "utf8");
+    assert.equal(refRaw.includes("\"agent\": \"claude-code\""), true);
+    assert.equal(refRaw.includes("\"scope_hint\": \"team\""), true);
+    assert.equal(refRaw.includes(envelope.redacted_summary), true);
   });
 });

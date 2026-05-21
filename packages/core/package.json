@@ -91,6 +91,22 @@
       "types": "./src/experience/remote-adapters.ts",
       "default": "./dist/experience/remote-adapters.js"
     },
+    "./experience/source-config.js": {
+      "types": "./src/experience/source-config.ts",
+      "default": "./dist/experience/source-config.js"
+    },
+    "./experience/privacy-policy.js": {
+      "types": "./src/experience/privacy-policy.ts",
+      "default": "./dist/experience/privacy-policy.js"
+    },
+    "./experience/source-adapters.js": {
+      "types": "./src/experience/source-adapters.ts",
+      "default": "./dist/experience/source-adapters.js"
+    },
+    "./experience/daily.js": {
+      "types": "./src/experience/daily.ts",
+      "default": "./dist/experience/daily.js"
+    },
     "./experience/harvest.js": {
       "types": "./src/experience/harvest.ts",
       "default": "./dist/experience/harvest.js"

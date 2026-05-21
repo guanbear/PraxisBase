@@ -5,6 +5,7 @@ variables:
   PRAXISBASE_WRITEBACK: "false"
 
 stages:
+  - harvest
   - review
   - promote
   - build
@@ -28,6 +29,17 @@ stages:
         git diff --cached --quiet || git commit -m "Update PraxisBase knowledge artifacts"
         git push "https://oauth2:${PRAXISBASE_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:${CI_COMMIT_BRANCH}
       fi
+
+praxisbase:daily-harvest:
+  extends:
+    - .praxisbase-knowledge
+    - .praxisbase-writeback
+  stage: harvest
+  resource_group: praxisbase-write
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "daily-harvest"
+  script:
+    - node /tmp/PraxisBase/packages/cli/dist/index.js daily run --mode team-git --branch "harvest/daily-${CI_PIPELINE_ID}" --commit --build-site --json
 
 praxisbase:review:
   extends:

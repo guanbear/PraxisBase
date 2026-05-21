@@ -319,8 +319,13 @@ export const NativeMemorySourceSchema = z.object({
   created_at: DateTimeSchema.optional(),
 });
 
-export const AgentMemoryAgentSchema = z.enum(["codex", "openclaw"]);
-export const AgentMemoryKindSchema = z.enum(["codex_session", "openclaw_log", "openclaw_episode"]);
+export const AgentMemoryAgentSchema = z.enum(["codex", "openclaw", "claude-code"]);
+export const AgentMemoryKindSchema = z.enum([
+  "codex_session",
+  "openclaw_log",
+  "openclaw_episode",
+  "claude_code_repair_log",
+]);
 
 export const AgentMemoryCandidateSchema = z.object({
   id: z.string().min(1),
@@ -432,6 +437,73 @@ export const OpenClawRemoteDoctorReportSchema = z.object({
 export const RemoteSourceTypeSchema = z.enum(["file", "git", "ssh", "http", "openclaw-api"]);
 export const HarvestAuthorityModeSchema = z.enum(["personal-local", "team-git"]);
 
+export const ExperienceSourceChannelSchema = z.enum([
+  "local",
+  "terminal",
+  "feishu",
+  "ci",
+  "gitlab",
+  "log-system",
+  "unknown",
+]);
+
+export const ExperienceSourceParserSchema = z.enum([
+  "codex-session",
+  "openclaw-export",
+  "openclaw-log",
+  "claude-code-repair-log",
+]);
+
+export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code"]);
+export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api"]);
+export const ExperienceScopeHintSchema = z.enum(["personal", "project", "team", "org"]);
+export const ExperiencePrivacyVerdictSchema = z.enum(["allow", "reject", "human_required"]);
+export const ExperienceOutcomeSchema = z.enum(["success", "failed", "partial", "unknown"]);
+
+export const ExperienceSourceConfigSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("experience_source_config"),
+  name: z.string().min(1),
+  agent: ExperienceSourceAgentSchema,
+  source_type: ExperienceSourceTypeSchema,
+  channel: ExperienceSourceChannelSchema.default("unknown"),
+  parser: ExperienceSourceParserSchema,
+  scope_default: ExperienceScopeHintSchema,
+  path: z.string().optional(),
+  repo: z.string().optional(),
+  ref: z.string().optional(),
+  host: z.string().optional(),
+  url: z.string().optional(),
+  remote: z.string().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const ExperienceEnvelopeSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("experience_envelope"),
+  source_id: z.string().min(1),
+  agent: ExperienceSourceAgentSchema,
+  channel: ExperienceSourceChannelSchema,
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1),
+  scope_hint: ExperienceScopeHintSchema,
+  signature: z.string().optional(),
+  problem_signature: z.string().optional(),
+  outcome: ExperienceOutcomeSchema.optional(),
+  redacted_summary: z.string().min(1),
+  created_at: z.string().optional(),
+  fetched_at: z.string(),
+  privacy: z.object({
+    mode: HarvestAuthorityModeSchema,
+    verdict: ExperiencePrivacyVerdictSchema,
+    reasons: z.array(z.string()).default([]),
+  }),
+  warnings: z.array(z.string()).default([]),
+});
+
 export const RemoteSourceConfigSchema = z.object({
   id: z.string().min(1),
   protocol_version: ProtocolVersionSchema,
@@ -484,6 +556,41 @@ export const HarvestReportSchema = z.object({
   outputs: z.array(z.string()),
   warnings: z.array(z.string()).default([]),
   changed_stable_knowledge: z.boolean(),
+  created_at: z.string(),
+});
+
+export const DailyExperienceReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("daily_experience_report"),
+  authority_mode: HarvestAuthorityModeSchema,
+  mode: z.enum(["dry-run", "write"]),
+  sources: z.array(z.object({
+    name: z.string().min(1),
+    agent: ExperienceSourceAgentSchema,
+    channel: ExperienceSourceChannelSchema,
+    source_type: ExperienceSourceTypeSchema,
+    status: z.enum(["completed", "partial", "failed"]),
+    scanned: z.number().int().nonnegative(),
+    fetched: z.number().int().nonnegative(),
+    enveloped: z.number().int().nonnegative(),
+    imported: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+    human_required: z.number().int().nonnegative(),
+    warnings: z.array(z.string()).default([]),
+  })),
+  proposal_candidates: z.number().int().nonnegative(),
+  quality_findings: z.number().int().nonnegative().default(0),
+  site_pages: z.number().int().nonnegative(),
+  changed_stable_knowledge: z.boolean(),
+  git: z.object({
+    branch: z.string().optional(),
+    committed: z.boolean(),
+    pushed: z.boolean(),
+    commit_sha: z.string().optional(),
+  }).optional(),
+  outputs: z.array(z.string()),
+  warnings: z.array(z.string()).default([]),
   created_at: z.string(),
 });
 
@@ -701,6 +808,16 @@ export type OpenClawRemoteDoctorReport = z.infer<typeof OpenClawRemoteDoctorRepo
 export type RemoteSourceType = z.infer<typeof RemoteSourceTypeSchema>;
 export type RemoteSourceConfig = z.infer<typeof RemoteSourceConfigSchema>;
 export type HarvestReport = z.infer<typeof HarvestReportSchema>;
+export type ExperienceSourceAgent = z.infer<typeof ExperienceSourceAgentSchema>;
+export type ExperienceSourceType = z.infer<typeof ExperienceSourceTypeSchema>;
+export type ExperienceSourceChannel = z.infer<typeof ExperienceSourceChannelSchema>;
+export type ExperienceSourceParser = z.infer<typeof ExperienceSourceParserSchema>;
+export type ExperienceScopeHint = z.infer<typeof ExperienceScopeHintSchema>;
+export type ExperiencePrivacyVerdict = z.infer<typeof ExperiencePrivacyVerdictSchema>;
+export type ExperienceOutcome = z.infer<typeof ExperienceOutcomeSchema>;
+export type ExperienceSourceConfig = z.infer<typeof ExperienceSourceConfigSchema>;
+export type ExperienceEnvelope = z.infer<typeof ExperienceEnvelopeSchema>;
+export type DailyExperienceReport = z.infer<typeof DailyExperienceReportSchema>;
 export type MemoryImportReport = z.infer<typeof MemoryImportReportSchema>;
 export type MemoryRefreshPlan = z.infer<typeof MemoryRefreshPlanSchema>;
 export type ContextStage = z.infer<typeof ContextStageSchema>;
