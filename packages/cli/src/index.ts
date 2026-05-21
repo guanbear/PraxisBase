@@ -321,6 +321,8 @@ program
   .option("--commit")
   .option("--push")
   .option("--pr")
+  .option("--degraded", "run deterministic fallback without production AI distill")
+  .option("--no-ai", "disable AI distill for this run")
   .option("--json")
   .action(async (
     sub: string,
@@ -333,6 +335,8 @@ program
       commit?: boolean;
       push?: boolean;
       pr?: boolean;
+      degraded?: boolean;
+      noAi?: boolean;
       json?: boolean;
     }
   ) => {

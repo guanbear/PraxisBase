@@ -69,6 +69,7 @@ export type DistillResult =
 export interface DistillExperienceOptions {
   client: AiJsonClient;
   maxOutputBytes?: number;
+  authorityMode?: "personal-local" | "team-git";
 }
 
 export function buildDistillPrompt(input: DistillInput): { system: string; user: string } {
@@ -152,7 +153,7 @@ export async function distillExperience(
   }
 
   const privacy = evaluatePostAiPrivacy({
-    mode: "personal-local",
+    mode: options.authorityMode ?? "personal-local",
     scopeHint: parsedExperience.data.scope_hint,
     text: allExperienceText(parsedExperience.data),
   });

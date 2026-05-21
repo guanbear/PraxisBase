@@ -23,6 +23,7 @@ describe("daily CLI command", () => {
 
     const output = await dailyCommand(root, "run", {
       mode: "personal",
+      degraded: true,
       json: true,
       now: "2026-05-21T01:00:00.000Z",
     });
@@ -31,6 +32,20 @@ describe("daily CLI command", () => {
     assert.equal(parsed.ok, true);
     assert.equal(parsed.report.type, "daily_experience_report");
     assert.equal(parsed.report.sources[0].imported, 1);
+    assert.equal(parsed.report.ai_distill.production_ready, false);
+  });
+
+  it("returns a JSON error when production AI is not configured", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-ai-required-"));
+    const output = await dailyCommand(root, "run", {
+      mode: "personal",
+      json: true,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.code, "AI_DISTILL_NOT_CONFIGURED");
   });
 
   it("prints a simple schedule hint", async () => {

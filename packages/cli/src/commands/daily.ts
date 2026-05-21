@@ -11,6 +11,8 @@ export interface DailyCommandOptions {
   pr?: boolean;
   json?: boolean;
   now?: string;
+  degraded?: boolean;
+  noAi?: boolean;
 }
 
 function authorityMode(mode?: "personal" | "team-git"): "personal-local" | "team-git" {
@@ -25,14 +27,14 @@ function errorCode(error: unknown): string {
 
 function initNext(mode?: "personal" | "team-git"): string {
   if (mode === "team-git") {
-    return "Configure team sources with `praxisbase source add ... --scope team`, then add a GitLab scheduled pipeline with PRAXISBASE_TASK=daily-harvest.";
+    return "Run `praxisbase ai init --provider openai-compatible --model <model>` and configure team sources with `praxisbase source add ... --scope team`, then add a GitLab scheduled pipeline with PRAXISBASE_TASK=daily-harvest.";
   }
-  return "Configure local sources with `praxisbase source add ...`, then run `praxisbase daily run --mode personal --build-site --json`.";
+  return "Run `praxisbase ai init --provider openai-compatible --model <model>`, configure local sources with `praxisbase source add ...`, then run `praxisbase daily run --mode personal --build-site --json`.";
 }
 
 function personalSchedule(runner?: "cron" | "launchd" | "gitlab"): string {
   if (runner === "launchd") {
-    return "launchd: run `praxisbase daily run --mode personal --build-site --json` from the PraxisBase workspace once per day.";
+    return "launchd: run `praxisbase daily run --mode personal --build-site --json` from the PraxisBase workspace once per day after `praxisbase ai doctor` passes.";
   }
   return "cron: 0 8 * * * cd /path/to/praxisbase && praxisbase daily run --mode personal --build-site --json";
 }
@@ -61,6 +63,8 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         push: options.push,
         pr: options.pr,
         now: options.now,
+        degraded: options.degraded,
+        noAi: options.noAi,
       });
       return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Daily experience run complete: ${report.id}`;
     }
