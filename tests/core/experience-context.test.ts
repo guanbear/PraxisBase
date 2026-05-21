@@ -110,4 +110,36 @@ Refresh credentials safely.
     assert.ok(output.items.some((item) => item.path === "skills/openclaw/auth-repair/SKILL.md"));
     assert.ok(output.citations.some((citation) => citation.path === "kb/known-fixes/openclaw-auth-expired.md"));
   });
+
+  it("returns daily ingested redacted experience refs before promotion", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-raw-ref-"));
+    await mkdir(join(root, ".praxisbase/raw-vault/refs"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/raw-vault/refs/raw_ref_openclaw-auth.json"), JSON.stringify({
+      id: "raw_ref_openclaw-auth",
+      type: "raw_vault_ref",
+      agent: "openclaw",
+      kind: "openclaw_episode",
+      source_ref: "openclaw-memory://openclaw://memory/auth#chunk-1",
+      source_hash: "sha256:openclaw-auth",
+      redacted_summary: "OpenClaw detected Claude authentication expired and asked for login again.",
+      scope_hint: "project",
+      created_at: "2026-05-21T00:00:00.000Z",
+    }), "utf8");
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "openclaw authentication expired",
+      maxBytes: 4000,
+    });
+
+    assert.equal(output.warnings.length, 0);
+    const item = output.items[0];
+    assert.ok(item);
+    assert.equal(item.kind, "raw_vault_ref");
+    assert.match(item.summary ?? "", /authentication expired/);
+    assert.ok(output.citations.some((citation) => citation.path === ".praxisbase/raw-vault/refs/raw_ref_openclaw-auth.json"));
+  });
 });

@@ -1,10 +1,14 @@
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
 import { resolveExperienceSource } from "@praxisbase/core/experience/source-adapters.js";
+
+const execFileAsync = promisify(execFile);
 
 describe("experience source adapters", () => {
   it("normalizes local Codex session files into experience envelopes", async () => {
@@ -101,5 +105,50 @@ describe("experience source adapters", () => {
     assert.equal(result.rejected, 1);
     assert.equal(result.envelopes[0].privacy.verdict, "reject");
     assert.ok(result.envelopes[0].privacy.reasons.includes("team_rejects_private_chat"));
+  });
+
+  it("reads local OpenClaw SQLite memory chunks as experience envelopes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-openclaw-sqlite-"));
+    const dbPath = join(root, "main.sqlite");
+    await execFileAsync("sqlite3", [dbPath, `
+      CREATE TABLE chunks (
+        id TEXT PRIMARY KEY,
+        path TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'memory',
+        start_line INTEGER NOT NULL,
+        end_line INTEGER NOT NULL,
+        hash TEXT NOT NULL,
+        model TEXT NOT NULL,
+        text TEXT NOT NULL,
+        embedding TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      INSERT INTO chunks (id, path, source, start_line, end_line, hash, model, text, embedding, updated_at)
+      VALUES
+        ('chunk-1', 'openclaw://memory/auth', 'memory', 1, 4, 'hash-1', 'text-embedding', 'OpenClaw detected Claude authentication expired. Please login again.', '[]', 1770000000),
+        ('chunk-2', 'openclaw://memory/slack', 'memory', 1, 3, 'hash-2', 'text-embedding', 'OpenClaw Slack delivery recovered after route flip and smoke verification passed.', '[]', 1770000001);
+    `]);
+    const source = await addExperienceSource(root, {
+      name: "local-openclaw-memory",
+      agent: "openclaw",
+      sourceType: "local",
+      scopeDefault: "project",
+      path: dbPath,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      maxBytes: 8,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(result.status, "completed");
+    assert.equal(result.fetched, 2);
+    assert.equal(result.envelopes.length, 2);
+    const authEnvelope = result.envelopes.find((envelope) => envelope.source_ref === "openclaw-memory://openclaw://memory/auth#chunk-1");
+    const slackEnvelope = result.envelopes.find((envelope) => envelope.source_ref === "openclaw-memory://openclaw://memory/slack#chunk-2");
+    assert.equal(authEnvelope?.problem_signature, "openclaw:claude-auth-expired");
+    assert.match(slackEnvelope?.redacted_summary ?? "", /Slack delivery recovered/);
   });
 });

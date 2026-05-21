@@ -20,6 +20,7 @@ const CONTEXT_ROOTS = [
   "skills",
   protocolPaths.indexes,
   protocolPaths.bundles,
+  protocolPaths.rawVaultRefs,
 ] as const;
 
 export interface BuildContextInput {
@@ -150,20 +151,25 @@ function jsonCandidate(path: string, raw: string): WikiContextCandidate | undefi
     const value = JSON.parse(raw) as unknown;
     if (!isRecord(value)) return undefined;
     const fallback = idFromPath(path);
-    const summary = stringValue(value.summary) ?? stringValue(value.title) ?? raw.slice(0, 240);
+    const redactedSummary = stringValue(value.redacted_summary);
+    const sourceHash = stringValue(value.source_hash);
+    const sourceRef = stringValue(value.source_ref);
+    const summary = redactedSummary ?? stringValue(value.summary) ?? stringValue(value.title) ?? raw.slice(0, 240);
     return {
       id: stringValue(value.id) ?? fallback,
       path,
       kind: stringValue(value.knowledge_type) ?? stringValue(value.type) ?? kindFromPath(path),
       title: stringValue(value.title) ?? stringValue(value.id) ?? fallback,
       summary,
-      body: stringValue(value.body) ?? raw,
+      body: stringValue(value.body) ?? redactedSummary ?? raw,
       maturity: stringValue(value.maturity),
-      scope: stringValue(value.scope),
+      scope: stringValue(value.scope) ?? stringValue(value.scope_hint),
       source_ids: [
         ...stringArrayValue(value.source_ids),
         ...sourceIdsValue(value.sources),
-      ].sort(),
+        sourceHash,
+        sourceRef,
+      ].filter((entry): entry is string => Boolean(entry)).sort(),
       outbound_links: stringArrayValue(value.outbound_links).sort(),
     };
   } catch {

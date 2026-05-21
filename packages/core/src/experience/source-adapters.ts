@@ -1,6 +1,8 @@
+import { execFile } from "node:child_process";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, extname, isAbsolute, join } from "node:path";
+import { promisify } from "node:util";
 import { computeHash, makeId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
@@ -15,7 +17,9 @@ import { detectOpenClawProblemSignature } from "../repair/signature.js";
 import { evaluateExperiencePrivacy, type EvaluateExperiencePrivacyInput } from "./privacy-policy.js";
 import type { GitCommandRunner } from "./git-workflow.js";
 
-const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log"]);
+const execFileAsync = promisify(execFile);
+
+const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log", ".sqlite"]);
 const DEFAULT_LIMIT = 20;
 const DEFAULT_MAX_BYTES = 512 * 1024;
 const MAX_SUMMARY_LENGTH = 1200;
@@ -58,6 +62,17 @@ interface RawExperienceItem {
   [key: string]: unknown;
 }
 
+interface OpenClawSqliteChunkRow {
+  id?: unknown;
+  path?: unknown;
+  source?: unknown;
+  start_line?: unknown;
+  end_line?: unknown;
+  hash?: unknown;
+  text?: unknown;
+  updated_at?: unknown;
+}
+
 function expandSourcePath(path: string, root?: string): string {
   if (path === "~") return homedir();
   if (path.startsWith("~/")) return join(homedir(), path.slice(2));
@@ -88,7 +103,7 @@ async function listFilesRecursively(dir: string, maxBytes: number, warnings: str
       if (!SUPPORTED_EXTENSIONS.has(ext)) continue;
       try {
         const s = await stat(full);
-        if (s.size > maxBytes) {
+        if (ext !== ".sqlite" && s.size > maxBytes) {
           warnings.push(`oversize: ${full}`);
           continue;
         }
@@ -237,6 +252,9 @@ async function itemsFromFile(path: string, maxBytes: number, warnings: string[])
     warnings.push(`source_not_file: ${path}`);
     return [];
   }
+  if (extname(path).toLowerCase() === ".sqlite") {
+    return itemsFromOpenClawSqlite(path, warnings);
+  }
   if (s.size > maxBytes) {
     warnings.push(`oversize: ${path}`);
     return [];
@@ -247,6 +265,42 @@ async function itemsFromFile(path: string, maxBytes: number, warnings: string[])
     return parsed.map((item) => ({ item, rawText, filePath: path }));
   }
   return [{ item: { text: rawText }, rawText, filePath: path }];
+}
+
+async function itemsFromOpenClawSqlite(path: string, warnings: string[]): Promise<Array<{ item: RawExperienceItem; rawText: string; filePath: string }>> {
+  const query = [
+    "SELECT id, path, source, start_line, end_line, hash, text, updated_at",
+    "FROM chunks",
+    "WHERE text IS NOT NULL AND length(trim(text)) > 0",
+    "ORDER BY updated_at DESC, id ASC",
+    "LIMIT 200;",
+  ].join(" ");
+  try {
+    const { stdout } = await execFileAsync("sqlite3", ["-json", path, query], { maxBuffer: 16 * 1024 * 1024 });
+    const rows = JSON.parse(stdout || "[]") as OpenClawSqliteChunkRow[];
+    return rows
+      .filter((row) => typeof row.id === "string" && typeof row.path === "string" && typeof row.text === "string")
+      .map((row) => {
+        const text = row.text as string;
+        const chunkId = row.id as string;
+        const chunkPath = row.path as string;
+        const signature = detectOpenClawProblemSignature(text);
+        const item: RawExperienceItem = {
+          id: chunkId,
+          source_ref: `openclaw-memory://${chunkPath}#${chunkId}`,
+          summary: summarizeText(text, "openclaw memory chunk"),
+          text,
+          raw_log: text,
+          problem_signature: signature === "openclaw:unknown" ? undefined : signature,
+          signature: signature === "openclaw:unknown" ? undefined : signature,
+          created_at: typeof row.updated_at === "number" ? new Date(row.updated_at * 1000).toISOString() : undefined,
+        };
+        return { item, rawText: JSON.stringify({ ...row, text: item.summary }), filePath: path };
+      });
+  } catch (error) {
+    warnings.push(`sqlite_read_failed: ${path}: ${error instanceof Error ? error.message : String(error)}`);
+    return [];
+  }
 }
 
 async function itemsFromPath(sourcePath: string, maxBytes: number, warnings: string[], root?: string): Promise<Array<{ item: RawExperienceItem; rawText: string; filePath: string }>> {
