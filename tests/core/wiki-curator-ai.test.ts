@@ -210,4 +210,76 @@ describe("AI wiki curator", () => {
     const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", proposalFiles[0]), "utf8"));
     assert.equal(proposal.title, "AI curated OpenClaw auth recovery");
   });
+
+  it("continues past failed clusters until the proposal limit is filled", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-curator-limit-"));
+    await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
+    for (const [index, summary] of [
+      "Session initialization metadata without reusable repair detail.",
+      "Fixed OpenClaw auth expired memory sync by refreshing login. pnpm check passed.",
+    ].entries()) {
+      await writeFile(join(root, `.praxisbase/outbox/captures/capture_${index + 1}.json`), JSON.stringify({
+        id: `capture_${index + 1}`,
+        protocol_version: PROTOCOL_VERSION,
+        type: "capture_record",
+        agent: "codex",
+        workspace: root,
+        scope_hint: "personal",
+        result: "success",
+        triggers: ["task_finish"],
+        signals: [],
+        artifacts: [{
+          kind: "transcript",
+          source_ref: `raw-vault://codex/session-${index + 1}`,
+          source_hash: `sha256:session${index + 1}`,
+          redacted_summary: summary,
+        }],
+        created_at: "2026-05-21T00:00:00.000Z",
+      }));
+    }
+
+    let calls = 0;
+    const report = await curateWiki(root, {
+      mode: "review",
+      now: "2026-05-21T00:00:00.000Z",
+      limit: 1,
+      aiClient: {
+        async generateJson() {
+          calls++;
+          if (calls === 1) {
+            return {
+              ok: true,
+              json: {
+                title: "Bad first cluster",
+                summary: "Bad first cluster.",
+                page_kind: "note",
+                target_path: "../outside.md",
+                body_markdown: "# Bad\n\n## Problem\nUnsafe path.",
+                confidence: 0.7,
+                risk_notes: [],
+              },
+            };
+          }
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login before retrying memory sync.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nMemory sync failed after auth expiry.\n\n## Fix\nRefresh login and retry.\n\n## Verification\nRun pnpm check.",
+              confidence: 0.92,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(calls, 2);
+    assert.equal(report.output_counts.curated_proposals, 1);
+    assert.equal(report.output_counts.conflicts, 1);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.length, 1);
+  });
 });

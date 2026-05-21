@@ -229,6 +229,33 @@ export function clusterWikiEvidence(items: WikiEvidenceItem[]): WikiEvidenceClus
   return clusters.sort((a, b) => a.cluster_key.localeCompare(b.cluster_key));
 }
 
+function pageKindRank(kind: WikiEvidenceCluster["page_kind"]): number {
+  if (kind === "known_fix") return 7;
+  if (kind === "procedure") return 6;
+  if (kind === "pitfall") return 5;
+  if (kind === "decision") return 4;
+  if (kind === "skill") return 3;
+  if (kind === "preference") return 2;
+  if (kind === "incident") return 1;
+  return 0;
+}
+
+function clusterQualityRank(cluster: WikiEvidenceCluster): number {
+  const captureTextPenalty = cluster.cluster_key.startsWith("sig:text:capture-") ? 1 : 0;
+  return pageKindRank(cluster.page_kind) * 100
+    + Math.min(cluster.source_count, 5) * 10
+    + cluster.confidence_hint
+    - captureTextPenalty;
+}
+
+function sortProposalClusters(clusters: WikiEvidenceCluster[]): WikiEvidenceCluster[] {
+  return clusters.slice().sort((a, b) => {
+    const rankDiff = clusterQualityRank(b) - clusterQualityRank(a);
+    if (rankDiff !== 0) return rankDiff;
+    return a.cluster_key.localeCompare(b.cluster_key);
+  });
+}
+
 function titleFromCluster(cluster: WikiEvidenceCluster): string {
   if (cluster.signatures.includes("openclaw:auth-expired")) return "OpenClaw auth expired recovery";
   return cluster.normalized_title;
@@ -434,14 +461,16 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const pool = await buildWikiEvidencePoolFromRoot(root);
   const minSourceCount = options.minSourceCount ?? 1;
   const clusters = clusterWikiEvidence(pool.items);
-  const proposalClusters = clusters
-    .filter((cluster) => cluster.source_count >= minSourceCount)
-    .slice(0, typeof options.limit === "number" && Number.isFinite(options.limit) && options.limit >= 0 ? options.limit : undefined);
+  const limit = typeof options.limit === "number" && Number.isFinite(options.limit) && options.limit >= 0
+    ? options.limit
+    : undefined;
+  const proposalClusters = sortProposalClusters(clusters.filter((cluster) => cluster.source_count >= minSourceCount));
   const evidenceById = new Map(pool.items.map((item) => [item.id, item]));
   const proposals: CuratedWikiProposal[] = [];
   let conflicts = 0;
 
   for (const cluster of proposalClusters) {
+    if (limit !== undefined && proposals.length >= limit) break;
     const evidence = cluster.evidence_ids.map((id) => evidenceById.get(id)).filter((item): item is WikiEvidenceItem => Boolean(item));
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,
