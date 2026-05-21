@@ -7,12 +7,14 @@
     "build": "pnpm -r build",
     "pretest": "pnpm build && tsc -p tsconfig.tests.json",
     "test": "node --test dist-tests/tests/**/*.test.js",
+    "test:e2e": "pnpm build && playwright test",
     "typecheck": "pnpm -r typecheck",
     "check": "pnpm typecheck && pnpm test"
   },
   "devDependencies": {
-    "@praxisbase/core": "workspace:*",
+    "@playwright/test": "^1.60.0",
     "@praxisbase/cli": "workspace:*",
+    "@praxisbase/core": "workspace:*",
     "@types/node": "^20.17.10",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

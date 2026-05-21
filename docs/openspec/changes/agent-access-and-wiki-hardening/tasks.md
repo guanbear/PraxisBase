@@ -77,7 +77,7 @@ This change is planned as M13.
 - [x] Add quality report links and issue summaries.
 - [x] Ensure all HTML and script-embedded JSON is escaped.
 - [x] Ensure file URL usage works without an HTTP server.
-- [ ] Add static output tests and Playwright smoke for desktop and mobile widths.
+- [x] Add static output tests and Playwright smoke for desktop and mobile widths.
 
 ## M13.7 End-To-End Smoke
 
