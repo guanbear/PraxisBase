@@ -24,6 +24,7 @@ interface SourceMetadata {
   updated_at?: string;
   superseded_by?: string | null;
   signatures: string[];
+  provenance_refs: Array<{ uri: string; hash?: string }>;
 }
 
 function isStableSource(source: WikiSource): boolean {
@@ -43,9 +44,20 @@ function stringArrayValue(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string" && item.length > 0);
 }
 
+function provenanceRefsValue(value: unknown): Array<{ uri: string; hash?: string }> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    const uri = stringValue(record.uri);
+    if (!uri) return [];
+    return [{ uri, hash: stringValue(record.hash) }];
+  });
+}
+
 async function sourceMetadata(root: string, source: WikiSource): Promise<SourceMetadata> {
   if (!source.path?.endsWith(".md")) {
-    return { signatures: [] };
+    return { signatures: [], provenance_refs: [] };
   }
 
   try {
@@ -62,9 +74,10 @@ async function sourceMetadata(root: string, source: WikiSource): Promise<SourceM
       updated_at: stringValue(data.updated_at),
       superseded_by: stringValue(data.superseded_by) ?? null,
       signatures: stringArrayValue(data.signatures),
+      provenance_refs: provenanceRefsValue(data.sources),
     };
   } catch {
-    return { signatures: [] };
+    return { signatures: [], provenance_refs: [] };
   }
 }
 
@@ -105,6 +118,7 @@ export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
       summary: source.summary,
       body_text: body,
       signatures: metadata.signatures,
+      provenance_refs: metadata.provenance_refs,
       confidence: inferWikiConfidence({
         sourceCount: 1,
         maturity: metadata.maturity ?? source.maturity,
@@ -307,6 +321,9 @@ function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph)
   const relatedHtml = related.length > 0
     ? related.map((item) => `<li><a href="${escapeHtml(`${item.slug}.html`)}">${escapeHtml(item.title)}</a></li>`).join("\n")
     : "<li>No related pages yet</li>";
+  const provenanceHtml = page.provenance_refs && page.provenance_refs.length > 0
+    ? page.provenance_refs.map((ref) => `<li><code>${escapeHtml(ref.uri)}</code>${ref.hash ? `<br><code>${escapeHtml(ref.hash)}</code>` : ""}</li>`).join("")
+    : page.source_ids.map((sourceId) => `<li><code>${escapeHtml(sourceId)}</code></li>`).join("");
 
   return renderLayout({
     title: page.title,
@@ -321,7 +338,7 @@ function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph)
   <aside class="meta-rail">
     <section>
       <h2>Provenance</h2>
-      <ul>${page.source_ids.map((sourceId) => `<li><code>${escapeHtml(sourceId)}</code></li>`).join("")}</ul>
+      <ul>${provenanceHtml}</ul>
     </section>
     <section>
       <h2>Related</h2>
@@ -558,6 +575,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
       scope: page.scope,
       maturity: page.maturity,
       source_ids: page.source_ids,
+      provenance_refs: page.provenance_refs ?? [],
       signatures: page.signatures,
       body: page.body_text,
     });

@@ -59,6 +59,8 @@ Refresh login. <script>alert("x")</script>
 
     const page = await readFile(join(root, "dist/pages/openclaw-auth-expired.html"), "utf8");
     assert.ok(page.includes("Provenance"));
+    assert.ok(page.includes("raw-vault://codex/session-1"));
+    assert.ok(page.includes("sha256:s1"));
     assert.ok(page.includes("Related"));
     assert.ok(page.includes("href=\"../style.css\""));
     assert.equal(page.includes("href=\"/"), false);

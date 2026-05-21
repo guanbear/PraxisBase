@@ -64,7 +64,7 @@ This change is planned as M14.
 ## M14.6 Wiki Site Integration
 
 - [x] Add recent daily knowledge updates to `dist/index.html`.
-- [ ] Add provenance links from wiki pages to source refs and hashes where available.
+- [x] Add provenance links from wiki pages to source refs and hashes where available.
 - [x] Surface privacy and human-required daily findings in `dist/issues.html`.
 - [x] Do not generate `dist/experience.html`.
 - [x] Add site tests for recent updates and no separate experience page.
