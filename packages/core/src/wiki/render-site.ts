@@ -262,7 +262,42 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 </section>`;
 }
 
-function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: string, stalePages: number, qualityFindings: number, dailyReport: DailyReportSummary | null): string {
+interface ExperienceSummary {
+  id: string;
+  agent: string;
+  kind: string;
+  source_ref: string;
+  summary: string;
+  scope: string;
+  created_at: string;
+}
+
+function renderExperienceSummaries(summaries: ExperienceSummary[]): string {
+  if (summaries.length === 0) return "";
+  return `<section class="experience-summaries">
+  <h2>Latest Experience Summaries</h2>
+  <ol class="experience-list">
+    ${summaries.map((item) => `<li>
+      <p>${escapeHtml(item.summary)}</p>
+      <dl>
+        <dt>Agent</dt><dd>${escapeHtml(item.agent)}</dd>
+        <dt>Scope</dt><dd>${escapeHtml(item.scope)}</dd>
+        <dt>Source</dt><dd><code>${escapeHtml(item.source_ref)}</code></dd>
+      </dl>
+    </li>`).join("\n")}
+  </ol>
+</section>`;
+}
+
+function renderDashboard(
+  pages: WikiSitePage[],
+  graph: WikiGraph,
+  bundleStatus: string,
+  stalePages: number,
+  qualityFindings: number,
+  dailyReport: DailyReportSummary | null,
+  experienceSummaries: ExperienceSummary[]
+): string {
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
   const recent = [...pages]
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
@@ -294,6 +329,7 @@ function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: 
     ${cards.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`).join("\n")}
   </section>
   ${dailyReport ? renderDailyUpdateSection(dailyReport) : ""}
+  ${renderExperienceSummaries(experienceSummaries)}
   <section class="dashboard-grid">
     <div>
       <h2>Recent Sources</h2>
@@ -526,6 +562,41 @@ function safePathForReaddir(root: string, relativePath: string): string {
   return posix.resolve(root, relativePath);
 }
 
+async function collectLatestExperienceSummaries(root: string, limit = 8): Promise<ExperienceSummary[]> {
+  const dir = safePathForReaddir(root, protocolPaths.rawVaultRefs);
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return [];
+  }
+
+  const summaries: ExperienceSummary[] = [];
+  for (const file of entries.filter((name) => name.endsWith(".json")).sort()) {
+    try {
+      const value = await readJson<Record<string, unknown>>(root, `${protocolPaths.rawVaultRefs}/${file}`);
+      const summary = stringValue(value.redacted_summary);
+      const sourceRef = stringValue(value.source_ref);
+      if (!summary || !sourceRef) continue;
+      summaries.push({
+        id: stringValue(value.id) ?? file.replace(/\.json$/i, ""),
+        agent: stringValue(value.agent) ?? "unknown",
+        kind: stringValue(value.kind) ?? stringValue(value.type) ?? "experience",
+        source_ref: sourceRef,
+        summary,
+        scope: stringValue(value.scope_hint) ?? stringValue(value.scope) ?? "unknown",
+        created_at: stringValue(value.created_at) ?? "",
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return summaries
+    .sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id))
+    .slice(0, limit);
+}
+
 export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> {
   const pages = await collectWikiPages(root);
   const graph = buildWikiGraph(pages);
@@ -533,11 +604,12 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const qualityReport = await buildWikiQualityReport(root, { pages, graph });
   const outputs = [...SITE_OUTPUTS];
   const dailyReport = await collectLatestDailyReport(root);
+  const experienceSummaries = await collectLatestExperienceSummaries(root);
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
   const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: pages.map((page) => ({

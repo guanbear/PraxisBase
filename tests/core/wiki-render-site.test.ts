@@ -111,6 +111,7 @@ Body.
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-daily-"));
     await mkdir(join(root, "kb/notes"), { recursive: true });
     await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/raw-vault/refs"), { recursive: true });
     await writeFile(join(root, "kb/notes/a.md"), `---
 id: a
 type: note
@@ -142,6 +143,17 @@ Body.
         created_at: "2026-05-21T12:00:00.000Z",
       }),
     );
+    await writeFile(join(root, ".praxisbase/raw-vault/refs/raw_ref_openclaw-auth.json"), JSON.stringify({
+      id: "raw_ref_openclaw-auth",
+      type: "raw_vault_ref",
+      agent: "openclaw",
+      kind: "openclaw_episode",
+      source_ref: "openclaw-memory://openclaw://memory/auth#chunk-1",
+      source_hash: "sha256:openclaw-auth",
+      redacted_summary: "OpenClaw detected Claude authentication expired and asked for login again.",
+      scope_hint: "project",
+      created_at: "2026-05-21T13:00:00.000Z",
+    }), "utf8");
 
     await buildWikiSite(root);
     const index = await readFile(join(root, "dist/index.html"), "utf8");
@@ -155,6 +167,9 @@ Body.
     assert.match(index, /<strong>2<\/strong>/);
     assert.match(index, /<strong>3<\/strong>/);
     assert.match(index, /<strong>7<\/strong>/);
+    assert.ok(index.includes("Latest Experience Summaries"));
+    assert.ok(index.includes("OpenClaw detected Claude authentication expired"));
+    assert.ok(index.includes("openclaw-memory://openclaw://memory/auth#chunk-1"));
     const issues = await readFile(join(root, "dist/issues.html"), "utf8");
     assert.ok(issues.includes("Daily Privacy Findings"));
     assert.ok(issues.includes("Rejected"));

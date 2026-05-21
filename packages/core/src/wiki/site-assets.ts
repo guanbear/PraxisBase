@@ -54,6 +54,13 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .link-list li, .issue-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 0; border-bottom: 1px solid var(--line); }
 .issue-list li { display: block; }
 .link-list span, .link-list code, .issue-list small { color: var(--muted); }
+.experience-summaries { border-top: 3px solid var(--accent); margin: 1.5rem 0; padding-top: .85rem; }
+.experience-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; }
+.experience-list li { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .9rem; }
+.experience-list p { margin: 0 0 .65rem; }
+.experience-list dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: .25rem .7rem; margin: 0; font-size: .88rem; }
+.experience-list dt { color: var(--muted); }
+.experience-list dd { margin: 0; overflow-wrap: anywhere; }
 .page-shell { display: grid; grid-template-columns: 230px minmax(0, 760px) 260px; gap: 1.25rem; max-width: 1280px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
 .side-nav, .meta-rail { position: sticky; top: 68px; align-self: start; max-height: calc(100vh - 88px); overflow: auto; }
 .side-nav a { display: block; padding: .55rem .65rem; border-radius: 6px; color: var(--ink); }
