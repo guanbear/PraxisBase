@@ -28,6 +28,10 @@ function extractContent(json: unknown): string | undefined {
   return undefined;
 }
 
+function shouldDisableThinking(config: AiProviderConfig): boolean {
+  return /^glm-5\.1\b/i.test(config.model.trim());
+}
+
 export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonClientOptions): AiJsonClient {
   const env = options.env ?? process.env;
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -48,6 +52,7 @@ export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonCl
         body: JSON.stringify({
           model: options.config.model,
           temperature: options.config.default_temperature,
+          ...(shouldDisableThinking(options.config) ? { thinking: { type: "disabled" } } : {}),
           response_format: { type: "json_object" },
           max_tokens: Math.max(256, Math.ceil(input.maxOutputBytes / 4)),
           messages: [
