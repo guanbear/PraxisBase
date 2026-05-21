@@ -1,5 +1,6 @@
 export const SITE_OUTPUTS = [
   "dist/index.html",
+  "dist/review.html",
   "dist/graph.html",
   "dist/issues.html",
   "dist/search-index.json",
@@ -37,13 +38,15 @@ a:hover { text-decoration: underline; }
 .search input { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: 6px; padding: 0 .75rem; background: white; color: var(--ink); }
 .search-results { position: absolute; top: 42px; left: 0; right: 0; border: 1px solid var(--line); border-radius: 6px; background: white; box-shadow: 0 12px 28px rgba(23, 33, 27, .12); overflow: hidden; }
 .search-results a { display: block; padding: .7rem .8rem; border-bottom: 1px solid var(--line); }
-.dashboard, .graph-shell, .issues-shell { max-width: 1180px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.dashboard, .graph-shell, .issues-shell, .review-shell { max-width: 1180px; margin: 0 auto; padding: 2rem 1rem 4rem; }
 .hero { min-height: 220px; display: flex; align-items: end; padding: 2rem 0; border-bottom: 1px solid var(--line); }
 .eyebrow { margin: 0 0 .5rem; color: var(--accent-2); font-weight: 700; text-transform: uppercase; font-size: .78rem; }
 h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-spacing: 0; }
 .lede { max-width: 62ch; color: var(--muted); font-size: 1.05rem; }
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: .75rem; margin: 1.25rem 0; }
-.metrics article { border: 1px solid var(--line); border-radius: 8px; padding: .85rem; background: white; }
+.metrics article, .metric-link { border: 1px solid var(--line); border-radius: 8px; padding: .85rem; background: white; }
+.metric-link { display: block; color: var(--ink); }
+.metric-link:hover { text-decoration: none; border-color: var(--accent); }
 .metrics span { display: block; color: var(--muted); font-size: .78rem; }
 .metrics strong { display: block; margin-top: .3rem; font-size: 1.45rem; }
 .filters { display: flex; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
@@ -61,6 +64,18 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .experience-list dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: .25rem .7rem; margin: 0; font-size: .88rem; }
 .experience-list dt { color: var(--muted); }
 .experience-list dd { margin: 0; overflow-wrap: anywhere; }
+.pending-candidates, .review-section { border-top: 3px solid var(--warn); margin: 1.5rem 0; padding-top: .85rem; }
+.review-section[data-status="approved"], .review-section[data-status="promoted"] { border-top-color: var(--accent); }
+.section-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: start; margin-bottom: .8rem; }
+.section-heading h2 { margin: 0; }
+.section-heading p { margin: .25rem 0 0; color: var(--muted); }
+.section-heading strong { min-width: 42px; border: 1px solid var(--line); border-radius: 8px; background: white; padding: .35rem .6rem; text-align: center; font-size: 1.15rem; }
+.command-strip { display: flex; gap: .55rem; flex-wrap: wrap; margin-top: .9rem; }
+.command-strip code { border: 1px solid var(--line); border-radius: 6px; background: white; padding: .45rem .6rem; color: var(--ink); overflow-wrap: anywhere; }
+.status-pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: .15rem .5rem; color: var(--muted); font-size: .78rem; }
+.review-card pre { max-height: 320px; overflow: auto; border-radius: 6px; background: #18231d; color: #f2f7f2; padding: .85rem; white-space: pre-wrap; }
+.review-card details { margin-top: .7rem; }
+.review-card summary { cursor: pointer; color: var(--accent); font-weight: 650; }
 .page-shell { display: grid; grid-template-columns: 230px minmax(0, 760px) 260px; gap: 1.25rem; max-width: 1280px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
 .side-nav, .meta-rail { position: sticky; top: 68px; align-self: start; max-height: calc(100vh - 88px); overflow: auto; }
 .side-nav a { display: block; padding: .55rem .65rem; border-radius: 6px; color: var(--ink); }
@@ -92,7 +107,10 @@ export const SITE_JS = `(() => {
     const query = input.value.trim().toLowerCase();
     if (!query) { box.hidden = true; box.innerHTML = ""; return; }
     const matches = docs.filter((doc) => [doc.title, doc.path, doc.kind, doc.text].join("\\n").toLowerCase().includes(query)).slice(0, 8);
-    box.innerHTML = matches.map((doc) => \`<a href="\${base}pages/\${doc.slug}.html"><strong>\${escapeText(doc.title)}</strong><br><small>\${escapeText(doc.path)}</small></a>\`).join("");
+    box.innerHTML = matches.map((doc) => {
+      const href = doc.href || \`\${base}pages/\${doc.slug}.html\`;
+      return \`<a href="\${escapeText(href)}"><strong>\${escapeText(doc.title)}</strong><br><small>\${escapeText(doc.path)}</small></a>\`;
+    }).join("");
     box.hidden = matches.length === 0;
   };
   const escapeText = (value) => String(value).replace(/[&<>"']/g, (char) => {

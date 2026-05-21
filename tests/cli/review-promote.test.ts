@@ -196,4 +196,53 @@ describe("review and promote commands", () => {
     const reviewFiles = await readdir(reviewDir);
     assert.ok(reviewFiles.length >= 1, "expected at least one review for the valid proposal");
   });
+
+  it("auto reviews and promotes wiki proposal candidates", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-review-wiki-candidate-"));
+    await initializeWorkspace(root);
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-proposal_auth.json"),
+      JSON.stringify({
+        id: "wiki-proposal_auth",
+        protocol_version: "0.1",
+        type: "wiki_proposal_candidate",
+        source_id: "capture:auth",
+        source_kind: "capture",
+        source_hash: "sha256:auth",
+        changed_stable_knowledge: false,
+        patch: {
+          path: "kb/notes/wiki-openclaw-auth.md",
+          content: `---
+id: wiki-openclaw-auth
+protocol_version: "0.1"
+type: note
+knowledge_type: note
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: "capture:auth"
+    hash: "sha256:auth"
+confidence: 0.5
+updated_at: "2026-05-21T10:00:00.000Z"
+---
+# OpenClaw Auth Refresh
+
+When OpenClaw auth expires, refresh the login before retrying agent repair.
+`,
+        },
+        created_at: "2026-05-21T10:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await reviewAuto(root);
+    const review = JSON.parse(await readFile(join(root, ".praxisbase/inbox/reviews/review_wiki-proposal_auth.json"), "utf8"));
+    assert.equal(review.decision, "approve");
+    assert.equal(review.proposal_id, "wiki-proposal_auth");
+
+    await promoteAuto(root);
+    const promoted = await readFile(join(root, "kb/notes/wiki-openclaw-auth.md"), "utf8");
+    assert.ok(promoted.includes("OpenClaw Auth Refresh"));
+  });
 });

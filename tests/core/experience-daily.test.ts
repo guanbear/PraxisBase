@@ -37,7 +37,13 @@ describe("runDailyExperience", () => {
     assert.equal(report.proposal_candidates, 1);
     assert.equal(report.changed_stable_knowledge, false);
     assert.ok(report.outputs.some((output) => output.startsWith(protocolPaths.reportsDaily)));
+    assert.ok(report.outputs.some((output) => output.startsWith(".praxisbase/reports/wiki-curation/")));
     assert.ok(report.outputs.some((output) => output.startsWith(protocolPaths.stagingExperienceEnvelopes)));
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    const proposals = await Promise.all(proposalFiles.map(async (file) => (
+      JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", file), "utf8"))
+    )));
+    assert.ok(proposals.some((proposal) => proposal.type === "wiki_curated_proposal"));
   });
 
   it("keeps personal material out of team daily ingestion", async () => {
@@ -111,6 +117,28 @@ describe("runDailyExperience", () => {
       aiClient: {
         async generateJson(input) {
           calls++;
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return {
+              ok: true,
+              json: {
+                title: "OpenClaw auth refresh repair",
+                summary: "Add retry guard coverage before retrying OpenClaw auth refresh.",
+                body_markdown: [
+                  "# OpenClaw auth refresh repair",
+                  "",
+                  "## Problem",
+                  "Auth refresh handling was incomplete.",
+                  "",
+                  "## Fix",
+                  "- Added retry guard.",
+                  "",
+                  "## Verification",
+                  "- pnpm test passed",
+                ].join("\n"),
+                confidence: 0.91,
+              },
+            };
+          }
           const prompt = JSON.parse(input.user) as {
             source: {
               source_ref: string;
@@ -146,12 +174,13 @@ describe("runDailyExperience", () => {
       },
     });
 
-    assert.equal(calls, 1);
+    assert.equal(calls, 2);
     assert.equal(report.ai_distill.mode, "production");
     assert.equal(report.ai_distill.production_ready, true);
     assert.equal(report.ai_distill.distilled, 1);
     assert.equal(report.sources[0].imported, 1);
     assert.equal(report.proposal_candidates, 1);
+    assert.ok(report.outputs.some((output) => output.startsWith(".praxisbase/reports/wiki-curation/")));
   });
 
   it("rejects team personal chunks before calling AI", async () => {

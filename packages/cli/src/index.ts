@@ -4,7 +4,7 @@ import { initializeWorkspace } from "./commands/init.js";
 import { repairContextCommand } from "./commands/repair-context.js";
 import { submitEpisode } from "./commands/episode.js";
 import { submitProposal } from "./commands/propose.js";
-import { reviewAuto } from "./commands/review.js";
+import { reviewAuto, reviewPolicyInit, reviewAutoWithPolicy } from "./commands/review.js";
 import { promoteAuto } from "./commands/promote.js";
 import { buildCommand } from "./commands/build.js";
 import { checkCommand } from "./commands/check.js";
@@ -84,6 +84,43 @@ program.command("review").option("--auto").action(async () => {
   await reviewAuto(process.cwd());
   console.log("Review complete.");
 });
+
+{
+  const reviewCmd = program.commands.find((c) => c.name() === "review")!;
+
+  reviewCmd
+    .command("policy")
+    .argument("<sub>", "subcommand (init)")
+    .requiredOption("--mode <mode>", "personal or team")
+    .option("--json")
+    .action(async (
+      sub: string,
+      options: { mode: "personal" | "team"; json?: boolean },
+    ) => {
+      if (sub !== "init") {
+        reviewCmd.error(`Unknown subcommand "review policy ${sub}". Use "review policy init".`, { exitCode: 1 });
+      }
+      const result = await reviewPolicyInit(process.cwd(), options.mode);
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(`Review policy initialized (${result.mode}).`);
+      }
+    });
+
+  reviewCmd
+    .command("auto")
+    .option("--promote-approved")
+    .option("--json")
+    .action(async (options: { promoteApproved?: boolean; json?: boolean }) => {
+      const result = await reviewAutoWithPolicy(process.cwd(), { promoteApproved: options.promoteApproved });
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(`Review auto complete: ${result.reviewed} reviewed, ${result.auto_promoted} promoted.`);
+      }
+    });
+}
 
 program.command("promote").option("--auto").action(async () => {
   await promoteAuto(process.cwd());
@@ -512,9 +549,11 @@ program
 
 program
   .command("wiki")
-  .argument("<sub>", "subcommand (compile|graph|build-site)")
+  .argument("<sub>", "subcommand (compile|curate|graph|build-site)")
   .option("--dry-run")
   .option("--review")
+  .option("--degraded")
+  .option("--min-source-count <n>", "minimum source count for wiki curate proposals")
   .option("--mode <mode>", "graph mode: full, overview, or ego")
   .option("--center <slug>", "center slug or id for ego graph")
   .option("--depth <n>", "ego graph BFS depth")
@@ -524,6 +563,8 @@ program
   .action(async (sub: string, options: {
     dryRun?: boolean;
     review?: boolean;
+    degraded?: boolean;
+    minSourceCount?: string;
     mode?: "full" | "overview" | "ego";
     center?: string;
     depth?: string;
@@ -533,6 +574,7 @@ program
   }) => {
     console.log(await wikiCommand(process.cwd(), sub, {
       ...options,
+      minSourceCount: options.minSourceCount ? parseInt(options.minSourceCount, 10) : undefined,
       depth: options.depth ? parseInt(options.depth, 10) : undefined,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
       types: options.type,

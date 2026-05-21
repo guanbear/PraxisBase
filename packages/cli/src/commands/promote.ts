@@ -2,8 +2,8 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { mkdir } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { ProposalSchema, ReviewSchema, PROTOCOL_VERSION } from "@praxisbase/core";
-import type { ExceptionRecord, RunRecord } from "@praxisbase/core";
+import { ProposalSchema, ReviewSchema, PROTOCOL_VERSION, wikiCandidateToKnowledgeProposal } from "@praxisbase/core";
+import type { ExceptionRecord, Proposal, RunRecord } from "@praxisbase/core";
 import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
 import { shouldAutoMergeReview } from "@praxisbase/core/review/risk.js";
 import { writeJson } from "@praxisbase/core/store/file-store.js";
@@ -16,9 +16,9 @@ export async function promoteAuto(root: string): Promise<void> {
   const proposalFiles = await readdir(proposalDir).catch(() => []);
   const reviewFiles = await readdir(reviewDir).catch(() => []);
 
-  const proposals = new Map<string, ReturnType<typeof ProposalSchema.parse>>();
+  const proposals = new Map<string, Proposal>();
   for (const file of proposalFiles.filter((name) => name.endsWith(".json"))) {
-    const proposal = ProposalSchema.parse(JSON.parse(await readFile(join(proposalDir, file), "utf8")));
+    const proposal = parsePromotableProposal(JSON.parse(await readFile(join(proposalDir, file), "utf8")));
     proposals.set(proposal.id, proposal);
   }
 
@@ -85,4 +85,14 @@ export async function promoteAuto(root: string): Promise<void> {
   await writeJson(root, `${protocolPaths.runsPromote}/${runRecord.id}.json`, runRecord);
 
   if (firstError) throw firstError;
+}
+
+function parsePromotableProposal(value: unknown): Proposal {
+  const proposal = ProposalSchema.safeParse(value);
+  if (proposal.success) return proposal.data;
+
+  const wikiCandidate = wikiCandidateToKnowledgeProposal(value);
+  if (wikiCandidate) return wikiCandidate;
+
+  return ProposalSchema.parse(value);
 }

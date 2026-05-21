@@ -1,4 +1,5 @@
 import { compileWiki } from "@praxisbase/core/wiki/compile.js";
+import { curateWiki } from "@praxisbase/core/wiki/curate.js";
 import { buildWikiGraphSlice } from "@praxisbase/core/wiki/graph-slices.js";
 import { runWikiLint } from "@praxisbase/core/wiki/lint.js";
 import { buildWikiGraph } from "@praxisbase/core/wiki/resolver.js";
@@ -14,6 +15,8 @@ export interface WikiCommandOptions {
   depth?: number;
   limit?: number;
   types?: string[];
+  degraded?: boolean;
+  minSourceCount?: number;
 }
 
 export async function wikiCommand(
@@ -28,6 +31,19 @@ export async function wikiCommand(
       return JSON.stringify({ ok: true, report }, null, 2);
     }
     return `Wiki compile report: ${report.id}`;
+  }
+
+  if (subcommand === "curate") {
+    const mode = options.dryRun ? "dry-run" as const : "review" as const;
+    const report = await curateWiki(root, {
+      mode,
+      degraded: options.degraded,
+      minSourceCount: options.minSourceCount,
+    });
+    if (options.json) {
+      return JSON.stringify({ ok: true, report }, null, 2);
+    }
+    return `Wiki curate report: ${report.id}`;
   }
 
   if (subcommand === "graph") {
@@ -71,6 +87,6 @@ export async function wikiCommand(
   }
 
   throw new Error(
-    `Unknown subcommand "wiki ${subcommand}". Use "wiki compile", "wiki graph", or "wiki build-site".`
+    `Unknown subcommand "wiki ${subcommand}". Use "wiki compile", "wiki curate", "wiki graph", or "wiki build-site".`
   );
 }

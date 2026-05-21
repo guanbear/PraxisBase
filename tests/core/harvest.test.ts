@@ -74,7 +74,7 @@ describe("runHarvest", () => {
   it("harvests local OpenClaw sources", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-harvest-openclaw-"));
     const source = join(root, "openclaw.log");
-    await writeFile(source, "OpenClaw repair failed because Claude auth expired. User logged in again.");
+    await writeFile(source, "Claude authentication expired. Please login again. Refreshing login fixed OpenClaw sync and pnpm check passed.");
     const report = await runHarvest(root, {
       openclawSources: [source],
       now: "2026-05-20T00:00:00.000Z",
@@ -82,6 +82,12 @@ describe("runHarvest", () => {
     assert.equal(report.sources[0].agent, "openclaw");
     assert.equal(report.sources[0].source_type, "local");
     assert.equal(report.sources[0].imported, 1);
+    assert.ok(report.outputs.some((output) => output.startsWith(".praxisbase/reports/wiki-curation/")));
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    const proposals = await Promise.all(proposalFiles.map(async (file) => (
+      JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", file), "utf8"))
+    )));
+    assert.ok(proposals.some((proposal) => proposal.type === "wiki_curated_proposal"));
   });
 
   it("harvests registered file remotes", async () => {
@@ -203,5 +209,39 @@ describe("runHarvest", () => {
     });
     await assert.doesNotReject(() => stat(join(root, "kb/known-fixes/harvest-known-fix.md")));
     assert.equal(promoted.changed_stable_knowledge, true);
+  });
+
+  it("reviews curated wiki proposals during harvest auto-review", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-harvest-curated-review-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/inbox/proposals/wiki_curated_openclaw_auth.json"), JSON.stringify({
+      id: "wiki_curated_openclaw_auth",
+      protocol_version: "0.1",
+      type: "wiki_curated_proposal",
+      target_path: "kb/known-fixes/openclaw-auth-expired.md",
+      action: "create",
+      page_kind: "known_fix",
+      scope: "personal",
+      title: "OpenClaw auth expired recovery",
+      summary: "Refresh login before retrying memory sync.",
+      body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nAuth expired.\n\n## Fix\n- Refresh login.\n\n## Verification\n- pnpm test passed\n",
+      source_refs: ["raw-vault://codex/session-1"],
+      source_hashes: ["sha256:session1"],
+      source_count: 1,
+      evidence_ids: ["ev1"],
+      confidence: 0.92,
+      maturity: "draft",
+      provenance: [{ source_ref: "raw-vault://codex/session-1", source_hash: "sha256:session1" }],
+      review_hint: { why_review: "curated repeated evidence", suggested_decision: "approve", risk_notes: [] },
+      guards: [{ id: "path", ok: true, message: "allowed" }],
+      created_at: "2026-05-20T00:00:00.000Z",
+    }));
+
+    await runHarvest(root, {
+      autoReview: true,
+      now: "2026-05-20T00:00:00.000Z",
+    });
+
+    await assert.doesNotReject(() => stat(join(root, ".praxisbase/inbox/reviews/review_wiki_curated_openclaw_auth.json")));
   });
 });

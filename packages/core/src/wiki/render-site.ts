@@ -10,6 +10,7 @@ import { runWikiLint } from "./lint.js";
 import { buildWikiQualityReport } from "./quality.js";
 import { buildWikiGraphSlice } from "./graph-slices.js";
 import { buildWikiGraph, type WikiGraph, type WikiPage } from "./resolver.js";
+import { collectPendingWikiProposalCandidates, type PendingWikiProposalCandidate } from "./proposal-candidates.js";
 import { SITE_CSS, SITE_JS, SITE_OUTPUTS } from "./site-assets.js";
 import { graphJsonLd, pageHref, renderSitemap } from "./site-html.js";
 import type { BuildWikiSiteResult, WikiSitePage } from "./site-model.js";
@@ -231,6 +232,7 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
       <div id="searchResults" class="search-results" hidden></div>
     </div>
     <nav class="topnav" aria-label="Wiki views">
+      <a href="${escapeHtml(prefix)}review.html">Review</a>
       <a href="${escapeHtml(prefix)}graph.html">Graph</a>
       <a href="${escapeHtml(prefix)}issues.html">Issues</a>
     </nav>
@@ -245,19 +247,21 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 
 function renderDailyUpdateSection(report: DailyReportSummary): string {
   const dateLabel = report.created_at.slice(0, 10);
-  const dailyCards: [string, string][] = [
-    ["Sources", String(report.source_count)],
-    ["Imported", String(report.imported)],
-    ["Rejected", String(report.rejected)],
-    ["Human required", String(report.human_required)],
-    ["Proposals", String(report.proposal_candidates)],
-    ["Site pages", String(report.site_pages)],
+  const dailyCards: Array<{ label: string; value: string; href?: string }> = [
+    { label: "Sources", value: String(report.source_count) },
+    { label: "Imported", value: String(report.imported) },
+    { label: "Rejected", value: String(report.rejected) },
+    { label: "Human required", value: String(report.human_required), href: "review.html#human-required" },
+    { label: "Proposals", value: String(report.proposal_candidates), href: "review.html#pending-candidates" },
+    { label: "Site pages", value: String(report.site_pages) },
   ];
   return `<section class="daily-update">
   <h2>Latest Daily Experience</h2>
   <p class="eyebrow">${escapeHtml(dateLabel)} &middot; ${escapeHtml(report.authority_mode)}</p>
   <div class="metrics">
-    ${dailyCards.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`).join("\n")}
+    ${dailyCards.map((card) => card.href
+      ? `<a class="metric-link" href="${escapeHtml(card.href)}"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></a>`
+      : `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`).join("\n")}
   </div>
 </section>`;
 }
@@ -289,6 +293,167 @@ function renderExperienceSummaries(summaries: ExperienceSummary[]): string {
 </section>`;
 }
 
+function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): string {
+  if (candidates.length === 0) return "";
+  return `<section class="pending-candidates">
+  <div class="section-heading">
+    <div>
+      <h2><a href="review.html#pending-candidates">Pending Experience Candidates</a></h2>
+      <p>AI-generated wiki drafts waiting for review. Stable <code>kb/</code> files are unchanged until promotion.</p>
+    </div>
+    <strong>${escapeHtml(String(candidates.length))}</strong>
+  </div>
+  <ol class="experience-list">
+    ${candidates.slice(0, 12).map((item) => `<li id="${escapeHtml(item.anchor)}">
+      <p><strong>${escapeHtml(item.title)}</strong></p>
+      <p>${escapeHtml(item.summary)}</p>
+      <dl>
+        <dt>Target</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
+        <dt>Kind</dt><dd>${escapeHtml(item.kind)}</dd>
+        <dt>Scope</dt><dd>${escapeHtml(item.scope)}</dd>
+        <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+      </dl>
+    </li>`).join("\n")}
+  </ol>
+  <div class="command-strip" aria-label="Confirm pending candidates">
+    <code>praxisbase review --auto</code>
+    <code>praxisbase promote --auto</code>
+    <code>praxisbase wiki build-site --json</code>
+  </div>
+</section>`;
+}
+
+type CandidateStatus = "pending" | "approved" | "needs_human" | "promoted";
+
+interface ReviewQueueCandidate extends PendingWikiProposalCandidate {
+  status: CandidateStatus;
+  review_decision?: string;
+}
+
+interface HumanRequiredRecord {
+  id: string;
+  path: string;
+  source_id: string;
+  reason: string;
+  agent?: string;
+  scope?: string;
+  source_ref?: string;
+  source_hash?: string;
+  created_at: string;
+}
+
+interface ReviewQueue {
+  candidates: ReviewQueueCandidate[];
+  human_required: HumanRequiredRecord[];
+}
+
+function statusLabel(status: CandidateStatus): string {
+  if (status === "pending") return "Pending";
+  if (status === "approved") return "Reviewed / Approved";
+  if (status === "promoted") return "Promoted";
+  return "Human required";
+}
+
+function renderCandidateCard(item: ReviewQueueCandidate): string {
+  return `<li id="${escapeHtml(item.anchor)}" class="review-card">
+    <p><strong>${escapeHtml(item.title)}</strong> <span class="status-pill">${escapeHtml(statusLabel(item.status))}</span></p>
+    <p>${escapeHtml(item.summary)}</p>
+    <dl>
+      <dt>Target</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
+      <dt>Kind</dt><dd>${escapeHtml(item.kind)}</dd>
+      <dt>Scope</dt><dd>${escapeHtml(item.scope)}</dd>
+      <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+      <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>${escapeHtml(item.patch_content)}</code></pre>
+    </details>
+  </li>`;
+}
+
+function renderCandidateSection(input: { id: string; title: string; status: CandidateStatus; candidates: ReviewQueueCandidate[]; empty: string }): string {
+  const candidates = input.candidates.filter((item) => item.status === input.status);
+  return `<section id="${escapeHtml(input.id)}" class="review-section" data-status="${escapeHtml(input.status)}">
+  <div class="section-heading">
+    <div>
+      <h2>${escapeHtml(input.title)}</h2>
+      <p>${escapeHtml(candidates.length === 0 ? input.empty : `${candidates.length} item(s)`)}</p>
+    </div>
+    <strong>${escapeHtml(String(candidates.length))}</strong>
+  </div>
+  ${candidates.length > 0 ? `<ol class="experience-list">${candidates.map(renderCandidateCard).join("\n")}</ol>` : ""}
+</section>`;
+}
+
+function renderHumanRequired(records: HumanRequiredRecord[]): string {
+  return `<section id="human-required" class="review-section" data-status="needs_human">
+  <div class="section-heading">
+    <div>
+      <h2>Human Required</h2>
+      <p>Items blocked by privacy, weak evidence, conflicts, or checks that should not be automated.</p>
+    </div>
+    <strong>${escapeHtml(String(records.length))}</strong>
+  </div>
+  ${records.length > 0 ? `<ol class="experience-list">
+    ${records.map((item) => `<li id="${escapeHtml(item.id)}" class="review-card">
+      <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">Human required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+        <dt>Agent</dt><dd>${escapeHtml(item.agent ?? "unknown")}</dd>
+        <dt>Scope</dt><dd>${escapeHtml(item.scope ?? "unknown")}</dd>
+        <dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>
+        <dt>File</dt><dd><code>${escapeHtml(item.path)}</code></dd>
+        <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
+      </dl>
+    </li>`).join("\n")}
+  </ol>` : "<p>No human-required records.</p>"}
+</section>`;
+}
+
+function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: ReviewQueue): string {
+  const counts = {
+    pending: queue.candidates.filter((item) => item.status === "pending").length,
+    approved: queue.candidates.filter((item) => item.status === "approved").length,
+    promoted: queue.candidates.filter((item) => item.status === "promoted").length,
+    human: queue.human_required.length + queue.candidates.filter((item) => item.status === "needs_human").length,
+  };
+
+  return renderLayout({
+    title: "PraxisBase Review Queue",
+    pages,
+    graph,
+    body: `<main class="review-shell">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Review center</p>
+      <h1>Review Queue</h1>
+      <p class="lede">Confirm AI-generated wiki candidates, inspect blocked records, and see what has reached stable knowledge.</p>
+    </div>
+  </section>
+  <section class="metrics">
+    <a class="metric-link" href="#pending-candidates"><span>Pending candidates</span><strong>${escapeHtml(String(counts.pending))}</strong></a>
+    <a class="metric-link" href="#approved-candidates"><span>Approved</span><strong>${escapeHtml(String(counts.approved))}</strong></a>
+    <a class="metric-link" href="#human-required"><span>Human required</span><strong>${escapeHtml(String(counts.human))}</strong></a>
+    <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
+  </section>
+  <section class="review-section" data-status="pending">
+    <h2>Confirm from Terminal</h2>
+    <p>This static site cannot execute local commands. Run these after inspecting candidates you want to accept.</p>
+    <div class="command-strip">
+      <code>praxisbase review --auto</code>
+      <code>praxisbase promote --auto</code>
+      <code>praxisbase wiki build-site --json</code>
+    </div>
+  </section>
+  ${renderCandidateSection({ id: "pending-candidates", title: "Pending Candidates", status: "pending", candidates: queue.candidates, empty: "No pending candidates." })}
+  ${renderCandidateSection({ id: "approved-candidates", title: "Reviewed / Approved", status: "approved", candidates: queue.candidates, empty: "No approved candidates waiting for promotion." })}
+  ${renderHumanRequired(queue.human_required)}
+  ${renderCandidateSection({ id: "promoted-candidates", title: "Promoted", status: "promoted", candidates: queue.candidates, empty: "No promoted candidates from the current inbox." })}
+</main>`,
+  });
+}
+
 function renderDashboard(
   pages: WikiSitePage[],
   graph: WikiGraph,
@@ -296,7 +461,8 @@ function renderDashboard(
   stalePages: number,
   qualityFindings: number,
   dailyReport: DailyReportSummary | null,
-  experienceSummaries: ExperienceSummary[]
+  experienceSummaries: ExperienceSummary[],
+  pendingCandidates: PendingWikiProposalCandidate[]
 ): string {
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
   const recent = [...pages]
@@ -330,6 +496,7 @@ function renderDashboard(
   </section>
   ${dailyReport ? renderDailyUpdateSection(dailyReport) : ""}
   ${renderExperienceSummaries(experienceSummaries)}
+  ${renderPendingCandidates(pendingCandidates)}
   <section class="dashboard-grid">
     <div>
       <h2>Recent Sources</h2>
@@ -597,8 +764,93 @@ async function collectLatestExperienceSummaries(root: string, limit = 8): Promis
     .slice(0, limit);
 }
 
+function detailsRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredRecord[]> {
+  const dir = safePathForReaddir(root, protocolPaths.exceptionsHumanRequired);
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return [];
+  }
+
+  const records: HumanRequiredRecord[] = [];
+  for (const file of entries.filter((name) => name.endsWith(".json")).sort()) {
+    const path = `${protocolPaths.exceptionsHumanRequired}/${file}`;
+    try {
+      const value = await readJson<Record<string, unknown>>(root, path);
+      const details = detailsRecord(value.details);
+      const privacy = detailsRecord(details.privacy);
+      records.push({
+        id: stringValue(value.id) ?? file.replace(/\.json$/i, ""),
+        path,
+        source_id: stringValue(value.source_id) ?? stringValue(details.source_id) ?? "unknown",
+        reason: stringValue(value.reason) ?? "Human review required",
+        agent: stringValue(details.agent),
+        scope: stringValue(details.scope_hint) ?? stringValue(details.scope) ?? stringValue(privacy.mode),
+        source_ref: stringValue(details.source_ref),
+        source_hash: stringValue(details.source_hash),
+        created_at: stringValue(value.created_at) ?? "",
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return records.sort((a, b) => b.created_at.localeCompare(a.created_at) || a.path.localeCompare(b.path));
+}
+
+async function collectReviewDecisions(root: string): Promise<Map<string, string>> {
+  const dir = safePathForReaddir(root, protocolPaths.inboxReviews);
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return new Map();
+  }
+
+  const decisions = new Map<string, string>();
+  for (const file of entries.filter((name) => name.endsWith(".json")).sort()) {
+    try {
+      const value = await readJson<Record<string, unknown>>(root, `${protocolPaths.inboxReviews}/${file}`);
+      const proposalId = stringValue(value.proposal_id);
+      const decision = stringValue(value.decision);
+      if (proposalId && decision) decisions.set(proposalId, decision);
+    } catch {
+      continue;
+    }
+  }
+  return decisions;
+}
+
+async function buildReviewQueue(root: string, candidates: PendingWikiProposalCandidate[]): Promise<ReviewQueue> {
+  const decisions = await collectReviewDecisions(root);
+  const humanRequired = await collectHumanRequiredRecords(root);
+  const reviewCandidates: ReviewQueueCandidate[] = [];
+
+  for (const candidate of candidates) {
+    const promoted = await exists(root, candidate.patch_path);
+    const decision = decisions.get(candidate.id);
+    const status: CandidateStatus = promoted
+      ? "promoted"
+      : decision === "approve"
+        ? "approved"
+        : decision
+          ? "needs_human"
+          : "pending";
+    reviewCandidates.push({ ...candidate, status, review_decision: decision });
+  }
+
+  return { candidates: reviewCandidates, human_required: humanRequired };
+}
+
 export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> {
   const pages = await collectWikiPages(root);
+  const pendingCandidates = await collectPendingWikiProposalCandidates(root);
+  const reviewQueue = await buildReviewQueue(root, pendingCandidates);
   const graph = buildWikiGraph(pages);
   const lintReport = await runWikiLint(root, { pages });
   const qualityReport = await buildWikiQualityReport(root, { pages, graph });
@@ -609,17 +861,29 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates));
+  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
-    documents: pages.map((page) => ({
+    documents: [
+      ...pages.map((page) => ({
       id: page.id,
       slug: page.slug,
       title: page.title,
       path: page.path,
       kind: page.page_kind,
       text: `${page.title}\n${page.summary}\n${page.body_text}`,
-    })),
+      })),
+      ...pendingCandidates.map((candidate) => ({
+        id: candidate.id,
+        slug: candidate.anchor,
+        title: candidate.title,
+        path: candidate.patch_path,
+        kind: `pending:${candidate.kind}`,
+        href: `review.html#${candidate.anchor}`,
+        text: `${candidate.title}\n${candidate.summary}\n${candidate.patch_path}\n${candidate.source_id}`,
+      })),
+    ],
   });
   await writeJson(root, "dist/graph.json", graph);
   await writeJson(root, "dist/graph-slices/overview.json", buildWikiGraphSlice(graph, { mode: "overview", limit: 50 }));

@@ -25,6 +25,8 @@ import { reviewProposal } from "../review/reviewer.js";
 import { shouldAutoMergeReview } from "../review/risk.js";
 import { promoteApprovedProposal } from "../promote/promote.js";
 import { compileWiki } from "../wiki/compile.js";
+import { curateWiki } from "../wiki/curate.js";
+import { wikiCandidateToKnowledgeProposal } from "../wiki/proposal-candidates.js";
 import { buildWikiGraph } from "../wiki/resolver.js";
 import { buildWikiSite, collectWikiPages } from "../wiki/render-site.js";
 
@@ -79,7 +81,18 @@ async function readProposalFiles(root: string): Promise<Proposal[]> {
   const proposals: Proposal[] = [];
   for (const file of files.sort()) {
     if (!file.endsWith(".json")) continue;
-    proposals.push(ProposalSchema.parse(await readJson(root, `${protocolPaths.inboxProposals}/${file}`)));
+    const raw = await readJson<unknown>(root, `${protocolPaths.inboxProposals}/${file}`);
+    const proposal = ProposalSchema.safeParse(raw);
+    if (proposal.success) {
+      proposals.push(proposal.data);
+      continue;
+    }
+    const wikiProposal = wikiCandidateToKnowledgeProposal(raw);
+    if (wikiProposal) {
+      proposals.push(wikiProposal);
+      continue;
+    }
+    proposals.push(ProposalSchema.parse(raw));
   }
   return proposals;
 }
@@ -313,7 +326,12 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
     }
   }
 
-  const compileReport = await compileWiki(root, { mode: "review", now });
+  const compileReport = await compileWiki(root, { mode: input.dryRun ? "dry-run" : "review", now });
+  const curationReport = await curateWiki(root, {
+    mode: input.dryRun ? "dry-run" : "review",
+    now,
+    degraded: true,
+  });
   const pages = await collectWikiPages(root);
   const graph = buildWikiGraph(pages);
   const site = input.buildSite ? await buildWikiSite(root) : {
@@ -330,7 +348,12 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
   }) : { items: [] };
   const reviewPromote = await runReviewAndPromote(root, input);
 
-  outputs.push(`${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`, ...site.outputs, ...reviewPromote.outputs);
+  outputs.push(
+    `${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`,
+    `.praxisbase/reports/wiki-curation/${curationReport.id}.json`,
+    ...site.outputs,
+    ...reviewPromote.outputs,
+  );
 
   let report = HarvestReportSchema.parse({
     id: harvestReportId(now),
@@ -339,7 +362,7 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
     authority_mode: gitPlan.authorityMode,
     mode: input.dryRun ? "dry-run" : "write",
     sources,
-    proposal_candidates: compileReport.candidate_ids.length,
+    proposal_candidates: curationReport.output_counts.curated_proposals,
     graph_nodes: graph.nodes.length,
     graph_broken_links: graph.broken_links.length,
     quality_findings: site.health.quality_findings,

@@ -63,6 +63,48 @@ describe("compileWiki", () => {
     assert.ok(proposal.patch.content.includes("Fixed OpenClaw auth expired"));
   });
 
+  it("curates repeated source evidence into one wiki proposal with multiple citations", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-compile-"));
+    await writeCapture(root, "Fixed OpenClaw auth expired by refreshing login.", "sha256:session1", "capture_1");
+    await writeCapture(root, "OpenClaw auth expired again; refreshing login fixed the repair.", "sha256:session2", "capture_2");
+
+    const report = await compileWiki(root, { mode: "review", now: "2026-05-20T00:00:00.000Z" });
+
+    assert.equal(report.candidate_ids.length, 1);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.length, 1);
+    const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", proposalFiles[0]), "utf8"));
+    assert.equal(proposal.patch.path, "kb/known-fixes/openclaw-auth-expired.md");
+    assert.match(proposal.patch.content, /source_count: 2/);
+    assert.match(proposal.patch.content, /raw-vault:\/\/codex\/session-1/);
+    assert.match(proposal.patch.content, /sha256:session1/);
+    assert.match(proposal.patch.content, /sha256:session2/);
+  });
+
+  it("does not turn raw session metadata JSON into wiki proposals", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-compile-"));
+    await writeCapture(
+      root,
+      JSON.stringify({
+        timestamp: "2026-04-25T04:12:35.711Z",
+        type: "session_meta",
+        payload: {
+          cwd: "/Users/example",
+          originator: "Codex Desktop",
+          base_instructions: { text: "You are Codex..." },
+        },
+      }),
+      "sha256:session-meta",
+      "capture_session_meta"
+    );
+
+    const report = await compileWiki(root, { mode: "review", now: "2026-05-20T00:00:00.000Z" });
+
+    assert.equal(report.candidate_ids.length, 0);
+    assert.equal(report.skipped_sources, 1);
+    await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
+  });
+
   it("writes human-required exceptions for privacy uncertainty", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-compile-"));
     await writeCapture(root, "Token appeared in the logs.", "sha256:secret");

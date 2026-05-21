@@ -15,6 +15,7 @@ import {
 } from "../protocol/schemas.js";
 import { writeJson } from "../store/file-store.js";
 import { compileWiki } from "../wiki/compile.js";
+import { curateWiki } from "../wiki/curate.js";
 import { buildWikiSite } from "../wiki/render-site.js";
 import { ingestAgentMemory } from "./agent-memory.js";
 import {
@@ -371,8 +372,18 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings.push(...sourceWarnings);
   }
 
-  const compileReport = await compileWiki(root, { mode: mode === "write" ? "review" : "dry-run", now });
+  const wikiMode = mode === "write" ? "review" as const : "dry-run" as const;
+  const compileReport = await compileWiki(root, { mode: wikiMode, now });
   outputs.push(`${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`);
+  const curationReport = await curateWiki(root, {
+    mode: wikiMode,
+    now,
+    degraded: Boolean(input.degraded || input.noAi),
+    aiClient: input.aiClient,
+    env: input.env,
+    fetchImpl: input.fetchImpl,
+  });
+  outputs.push(`.praxisbase/reports/wiki-curation/${curationReport.id}.json`);
 
   let sitePages = 0;
   let qualityFindings = 0;
@@ -404,7 +415,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     mode,
     ai_distill: finalAiDistill,
     sources: sourceReports,
-    proposal_candidates: compileReport.candidate_ids.length,
+    proposal_candidates: curationReport.output_counts.curated_proposals,
     quality_findings: qualityFindings,
     site_pages: sitePages,
     changed_stable_knowledge: false,

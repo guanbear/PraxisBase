@@ -171,14 +171,18 @@ async function collectCaptureSources(root: string): Promise<WikiSource[]> {
     const summaries = record.artifacts
       .map((a) => a.redacted_summary)
       .filter(Boolean);
+    const artifactRefs = record.artifacts
+      .map((a) => a.source_ref)
+      .filter(Boolean);
     const artifactHashes = record.artifacts
       .map((a) => a.source_hash)
-      .join(",");
+      .filter(Boolean);
 
     sources.push({
       id: `capture:${record.id}`,
       kind: "capture",
-      source_hash: computeWikiSourceHash(artifactHashes),
+      source_ref: artifactRefs[0],
+      source_hash: artifactHashes.length === 1 ? artifactHashes[0] : computeWikiSourceHash(artifactHashes.join(",")),
       title: record.id,
       summary: summaries.join(" "),
       scope: record.scope_hint,

@@ -35,6 +35,7 @@ Refresh login. <script>alert("x")</script>
 
     const result = await buildWikiSite(root);
     assert.ok(result.outputs.includes("dist/index.html"));
+    assert.ok(result.outputs.includes("dist/review.html"));
     assert.ok(result.outputs.includes("dist/graph.html"));
     assert.ok(result.outputs.includes("dist/issues.html"));
     assert.ok(result.outputs.includes("dist/pages/openclaw-auth-expired.html"));
@@ -52,6 +53,7 @@ Refresh login. <script>alert("x")</script>
     assert.ok(index.includes("searchInput"));
     assert.ok(index.includes("data-kind-filter"));
     assert.ok(index.includes("href=\"style.css\""));
+    assert.ok(index.includes("href=\"review.html\""));
     assert.ok(index.includes("href=\"graph.html\""));
     assert.ok(index.includes("href=\"issues.html\""));
     assert.equal(index.includes("href=\"/"), false);
@@ -167,6 +169,8 @@ Body.
     assert.match(index, /<strong>2<\/strong>/);
     assert.match(index, /<strong>3<\/strong>/);
     assert.match(index, /<strong>7<\/strong>/);
+    assert.ok(index.includes("href=\"review.html#human-required\""));
+    assert.ok(index.includes("href=\"review.html#pending-candidates\""));
     assert.ok(index.includes("Latest Experience Summaries"));
     assert.ok(index.includes("OpenClaw detected Claude authentication expired"));
     assert.ok(index.includes("openclaw-memory://openclaw://memory/auth#chunk-1"));
@@ -175,6 +179,143 @@ Body.
     assert.ok(issues.includes("Rejected"));
     assert.ok(issues.includes("Human required"));
     await assert.rejects(stat(join(root, "dist/experience.html")));
+  });
+
+  it("shows pending wiki proposal candidates with confirmation guidance", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-pending-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-proposal_auth.json"),
+      JSON.stringify({
+        id: "wiki-proposal_auth",
+        protocol_version: "0.1",
+        type: "wiki_proposal_candidate",
+        source_id: "capture:auth",
+        source_kind: "capture",
+        source_hash: "sha256:auth",
+        changed_stable_knowledge: false,
+        patch: {
+          path: "kb/notes/wiki-openclaw-auth.md",
+          content: `---
+id: wiki-openclaw-auth
+protocol_version: "0.1"
+type: note
+knowledge_type: note
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: "capture:auth"
+    hash: "sha256:auth"
+confidence: 0.5
+updated_at: "2026-05-21T10:00:00.000Z"
+---
+# OpenClaw Auth Refresh
+
+When OpenClaw auth expires, refresh the login before retrying agent repair.
+`,
+        },
+        created_at: "2026-05-21T10:00:00.000Z",
+      }),
+      "utf8",
+    );
+    await writeFile(
+      join(root, ".praxisbase/exceptions/human-required/exception_auth.json"),
+      JSON.stringify({
+        id: "exception_auth",
+        protocol_version: "0.1",
+        type: "exception_record",
+        category: "human_required",
+        source_id: "capture:private-auth",
+        reason: "Experience privacy verdict human_required: private_material_detected",
+        details: {
+          agent: "codex",
+          scope_hint: "personal",
+          source_ref: "raw-vault://codex/private-auth",
+          source_hash: "sha256:private-auth",
+        },
+        created_at: "2026-05-21T10:02:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Pending Experience Candidates"));
+    assert.ok(index.includes("href=\"review.html#pending-candidates\""));
+    assert.ok(index.includes("OpenClaw Auth Refresh"));
+    assert.ok(index.includes("kb/notes/wiki-openclaw-auth.md"));
+    assert.ok(index.includes("praxisbase review --auto"));
+    assert.ok(index.includes("praxisbase promote --auto"));
+
+    const searchIndex = JSON.parse(await readFile(join(root, "dist/search-index.json"), "utf8"));
+    assert.equal(searchIndex.documents.length, 1);
+    assert.equal(searchIndex.documents[0].kind, "pending:note");
+    assert.equal(searchIndex.documents[0].path, "kb/notes/wiki-openclaw-auth.md");
+    assert.equal(searchIndex.documents[0].href, "review.html#pending-wiki-proposal_auth");
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("Review Queue"));
+    assert.ok(review.includes("id=\"pending-candidates\""));
+    assert.ok(review.includes("OpenClaw Auth Refresh"));
+    assert.ok(review.includes("kb/notes/wiki-openclaw-auth.md"));
+    assert.ok(review.includes("praxisbase review --auto"));
+    assert.ok(review.includes("praxisbase promote --auto"));
+    assert.ok(review.includes("id=\"human-required\""));
+    assert.ok(review.includes("Experience privacy verdict human_required"));
+    assert.ok(review.includes(".praxisbase/exceptions/human-required/exception_auth.json"));
+  });
+
+  it("uses curated wiki proposals as the primary pending review queue", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curated-pending-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-curated_auth.json"),
+      JSON.stringify({
+        id: "wiki-curated_auth",
+        protocol_version: "0.1",
+        type: "wiki_curated_proposal",
+        target_path: "kb/known-fixes/openclaw-auth-expired.md",
+        action: "create",
+        page_kind: "known_fix",
+        scope: "personal",
+        title: "OpenClaw auth expired recovery",
+        summary: "Refresh OpenClaw login before retrying memory sync.",
+        body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nOpenClaw memory sync fails after auth expiry.\n\n## Verification\nRetry memory sync.",
+        source_refs: ["raw-vault://codex/session-1", "openclaw://memory/auth"],
+        source_hashes: ["sha256:s1", "sha256:s2"],
+        source_count: 2,
+        evidence_ids: ["capture_1", "memory_1"],
+        confidence: 0.91,
+        maturity: "draft",
+        provenance: [
+          { source_ref: "raw-vault://codex/session-1", source_hash: "sha256:s1" },
+          { source_ref: "openclaw://memory/auth", source_hash: "sha256:s2" },
+        ],
+        review_hint: { why_review: "Repeated successful repair", suggested_decision: "approve", risk_notes: [] },
+        guards: [{ id: "path", ok: true, message: "allowed" }],
+        created_at: "2026-05-21T10:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Pending Experience Candidates"));
+    assert.ok(index.includes("OpenClaw auth expired recovery"));
+    assert.ok(index.includes("kb/known-fixes/openclaw-auth-expired.md"));
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("id=\"pending-candidates\""));
+    assert.ok(review.includes("OpenClaw auth expired recovery"));
+    assert.ok(review.includes("raw-vault://codex/session-1"));
+
+    const searchIndex = JSON.parse(await readFile(join(root, "dist/search-index.json"), "utf8"));
+    assert.equal(searchIndex.documents[0].kind, "pending:known_fix");
+    assert.equal(searchIndex.documents[0].href, "review.html#pending-wiki-curated_auth");
   });
 
   it("homepage works when no daily report exists", async () => {

@@ -59,6 +59,10 @@
       "types": "./src/review/reviewer.ts",
       "default": "./dist/review/reviewer.js"
     },
+    "./review/policy.js": {
+      "types": "./src/review/policy.ts",
+      "default": "./dist/review/policy.js"
+    },
     "./promote/promote.js": {
       "types": "./src/promote/promote.ts",
       "default": "./dist/promote/promote.js"
@@ -155,6 +159,18 @@
       "types": "./src/wiki/compile.ts",
       "default": "./dist/wiki/compile.js"
     },
+    "./wiki/curation-model.js": {
+      "types": "./src/wiki/curation-model.ts",
+      "default": "./dist/wiki/curation-model.js"
+    },
+    "./wiki/curate.js": {
+      "types": "./src/wiki/curate.ts",
+      "default": "./dist/wiki/curate.js"
+    },
+    "./wiki/curator-prompt.js": {
+      "types": "./src/wiki/curator-prompt.ts",
+      "default": "./dist/wiki/curator-prompt.js"
+    },
     "./wiki/lint.js": {
       "types": "./src/wiki/lint.ts",
       "default": "./dist/wiki/lint.js"
@@ -186,6 +202,10 @@
     "./wiki/retrieval.js": {
       "types": "./src/wiki/retrieval.ts",
       "default": "./dist/wiki/retrieval.js"
+    },
+    "./wiki/proposal-candidates.js": {
+      "types": "./src/wiki/proposal-candidates.ts",
+      "default": "./dist/wiki/proposal-candidates.js"
     },
     "./wiki/render-site.js": {
       "types": "./src/wiki/render-site.ts",

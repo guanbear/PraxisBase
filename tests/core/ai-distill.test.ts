@@ -74,6 +74,48 @@ describe("AI experience distill", () => {
     }
   });
 
+  it("normalizes common GLM structured-output drift", async () => {
+    const client: AiJsonClient = {
+      async generateJson() {
+        return {
+          ok: true,
+          json: {
+            summary: "Captured a PraxisBase initialization procedure.",
+            problem: "The agent needed a first-run PraxisBase setup path.",
+            context: { workspace: "local personal setup" },
+            actions: "Configured AI provider and generated the bootstrap skill.",
+            failed_attempts: "",
+            outcome: "System successfully injected initialization context for the agent session.",
+            verification: "praxisbase ai doctor --json",
+            reusable_lessons: "Use the generated PraxisBase skill before daily runs.",
+            risks: "",
+            suggested_tags: "praxisbase,bootstrap",
+            suggested_wiki_kind: "configuration",
+            skill_candidate: false,
+            confidence: "0.74",
+          },
+        };
+      },
+    };
+
+    const result = await distillExperience(baseInput, { client });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.experience.source_ref, baseInput.source_ref);
+      assert.equal(result.experience.source_hash, baseInput.source_hash);
+      assert.deepEqual(result.experience.chunk_hashes, [baseInput.chunk_hash]);
+      assert.equal(result.experience.agent, "codex");
+      assert.equal(result.experience.scope_hint, "personal");
+      assert.deepEqual(result.experience.actions, ["Configured AI provider and generated the bootstrap skill."]);
+      assert.deepEqual(result.experience.verification, ["praxisbase ai doctor --json"]);
+      assert.equal(result.experience.outcome, "unknown");
+      assert.equal(result.experience.suggested_wiki_kind, "procedure");
+      assert.deepEqual(result.experience.skill_candidate, { should_create: false });
+      assert.equal(result.experience.confidence, 0.74);
+    }
+  });
+
   it("returns ai_error when the client fails", async () => {
     const client: AiJsonClient = {
       async generateJson() {

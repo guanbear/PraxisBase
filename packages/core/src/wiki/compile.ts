@@ -32,12 +32,37 @@ export interface WikiCompileReport {
 
 const CANDIDATE_KINDS = new Set<WikiSource["kind"]>(["capture", "native_memory", "episode", "stable_kb", "external_ref"]);
 
+interface CandidateGroupSource {
+  source: WikiSource;
+  analysis: WikiSourceAnalysis;
+}
+
+interface CandidateGroup {
+  candidateId: string;
+  patchPath: string;
+  sources: CandidateGroupSource[];
+}
+
 function isCandidateSource(source: WikiSource): boolean {
   if (!CANDIDATE_KINDS.has(source.kind)) return false;
   if (source.kind === "external_ref") {
     return hasDistilledSections([source.summary, source.body].filter(Boolean).join("\n"));
   }
   return true;
+}
+
+function isOperationalNoiseSource(source: WikiSource): boolean {
+  const text = [source.summary, source.body].filter(Boolean).join("\n").trim();
+  if (!text) return true;
+  if (/^\s*\{[\s\S]*"type"\s*:\s*"session_meta"/.test(text)) return true;
+  if (/^\s*\{[\s\S]*"base_instructions"\s*:/.test(text)) return true;
+  if (/^\s*openclaw:unknown\s*$/i.test(text)) return true;
+  if (/^#\s*Deep Sleep\b/i.test(text) && /\bPromoted\s+0\s+candidate\(s\)/i.test(text)) return true;
+  return false;
+}
+
+function nonSourceSpecificSignatures(analysis: WikiSourceAnalysis): string[] {
+  return analysis.signatures.filter((signature) => !/^(capture|native_memory|episode|stable_kb|external_ref|proposal|review|skill):/.test(signature));
 }
 
 export async function compileWiki(root: string, options: CompileWikiOptions): Promise<WikiCompileReport> {
@@ -65,12 +90,18 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
 
   let exceptions = 0;
   let skippedSources = 0;
-  const candidateByPath = new Map<string, { source: WikiSource; analysis: WikiSourceAnalysis; candidateId: string }>();
+  const candidateByPath = new Map<string, CandidateGroup>();
+  const candidateGroups: CandidateGroup[] = [];
 
   for (const source of sources) {
     if (!changedIds.has(source.id)) continue;
     const analysis = sourceAnalysisById.get(source.id) ?? analyzeWikiSource(source);
     if (!isCandidateSource(source)) {
+      skippedSources++;
+      continue;
+    }
+
+    if (isOperationalNoiseSource(source)) {
       skippedSources++;
       continue;
     }
@@ -88,7 +119,6 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
       continue;
     }
 
-    const candidateId = makeId("wiki-proposal", source.id + ":" + source.source_hash);
     const patchPath = source.kind === "stable_kb" && source.path
       ? source.path
       : analysis.candidate_path ?? `kb/notes/wiki-${makeWikiSlug(source.title)}.md`;
@@ -103,70 +133,73 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
 
     const existingCandidate = candidateByPath.get(patchPath);
     if (existingCandidate) {
-      const sharedSignatures = intersectStrings(existingCandidate.analysis.signatures, analysis.signatures);
+      const existingSignatures = existingCandidate.sources.flatMap((entry) => nonSourceSpecificSignatures(entry.analysis));
+      const sharedSignatures = intersectStrings(existingSignatures, nonSourceSpecificSignatures(analysis));
       if (sharedSignatures.length === 0) {
         exceptions++;
         if (mode === "review") {
           await writeConflictException(root, source, now, {
             candidate_path: patchPath,
-            prior_source_id: existingCandidate.source.id,
-            prior_signatures: existingCandidate.analysis.signatures,
+            prior_source_id: existingCandidate.sources[0].source.id,
+            prior_signatures: existingCandidate.sources.flatMap((entry) => entry.analysis.signatures),
             current_signatures: analysis.signatures,
           });
         }
         continue;
       }
 
-      if (mode === "review") {
-        compiledEntries.push({
-          id: source.id,
-          source_hash: source.source_hash,
-          candidate_ids: [existingCandidate.candidateId],
-          page_ids: [],
-        });
-      }
+      existingCandidate.sources.push({ source, analysis });
       continue;
     }
 
-    const patchContent = buildPatchContent(source, analysis, now);
-    const shrinkCheck = validateBodyShrink(source.body ?? "", patchContent, source.kind === "stable_kb" ? "patch" : "create");
+    const candidateId = makeId("wiki-proposal", `${patchPath}:${source.source_hash}`);
+    const group: CandidateGroup = { candidateId, patchPath, sources: [{ source, analysis }] };
+    candidateByPath.set(patchPath, group);
+    candidateGroups.push(group);
+  }
+
+  for (const group of candidateGroups) {
+    const primary = group.sources[0];
+    const patchContent = buildPatchContent(group, now);
+    const shrinkCheck = validateBodyShrink(primary.source.body ?? "", patchContent, primary.source.kind === "stable_kb" ? "patch" : "create");
     if (!shrinkCheck.ok) {
       exceptions++;
       if (mode === "review") {
-        await writeHumanRequiredException(root, source, now, "Wiki candidate body shrink exceeds safe threshold", shrinkCheck);
+        await writeHumanRequiredException(root, primary.source, now, "Wiki candidate body shrink exceeds safe threshold", shrinkCheck);
       }
       continue;
     }
 
-    candidateIds.push(candidateId);
-    candidateByPath.set(patchPath, { source, analysis, candidateId });
+    candidateIds.push(group.candidateId);
 
     if (mode === "review") {
       await writeJson(
         root,
-        `${protocolPaths.inboxProposals}/${candidateId}.json`,
+        `${protocolPaths.inboxProposals}/${group.candidateId}.json`,
         {
-          id: candidateId,
+          id: group.candidateId,
           protocol_version: PROTOCOL_VERSION,
           type: "wiki_proposal_candidate",
-          source_id: source.id,
-          source_kind: source.kind,
-          source_hash: source.source_hash,
+          source_id: primary.source.id,
+          source_kind: primary.source.kind,
+          source_hash: group.sources.map((entry) => entry.source.source_hash).join(","),
           changed_stable_knowledge: false,
           patch: {
-            path: patchPath,
+            path: group.patchPath,
             content: patchContent,
           },
           created_at: now,
         }
       );
 
-      compiledEntries.push({
-        id: source.id,
-        source_hash: source.source_hash,
-        candidate_ids: [candidateId],
-        page_ids: [],
-      });
+      for (const entry of group.sources) {
+        compiledEntries.push({
+          id: entry.source.id,
+          source_hash: entry.source.source_hash,
+          candidate_ids: [group.candidateId],
+          page_ids: [],
+        });
+      }
     }
   }
 
@@ -288,8 +321,12 @@ function distilledBody(source: WikiSource): string | undefined {
   return lines.join("\n").trim();
 }
 
-function buildPatchContent(source: WikiSource, analysis: WikiSourceAnalysis, now: string): string {
-  const slug = makeWikiSlug(source.title);
+function buildPatchContent(group: CandidateGroup, now: string): string {
+  const primary = group.sources[0];
+  const source = primary.source;
+  const analysis = primary.analysis;
+  const title = curatedTitle(group);
+  const slug = makeWikiSlug(title);
   const knowledgeType = analysis.suggested_page_kind === "skill_seed" ? "note" : analysis.suggested_page_kind;
   const frontmatter = [
     "---",
@@ -301,14 +338,56 @@ function buildPatchContent(source: WikiSource, analysis: WikiSourceAnalysis, now
     "status: draft",
     "maturity: draft",
     "sources:",
-    `  - uri: "${source.source_ref ?? source.id}"`,
-    `    hash: "${source.source_hash}"`,
-    "confidence: 0.5",
+    ...group.sources.flatMap((entry) => [
+      `  - uri: "${entry.source.source_ref ?? entry.source.id}"`,
+      `    hash: "${entry.source.source_hash}"`,
+    ]),
+    `source_count: ${group.sources.length}`,
+    `confidence: ${curatedConfidence(group)}`,
     `updated_at: "${now}"`,
     "---",
   ].join("\n");
 
-  const body = distilledBody(source) ?? (source.summary || source.title);
+  const body = curatedBody(group);
 
-  return `${frontmatter}\n# ${source.title}\n\n${body}\n`;
+  return `${frontmatter}\n# ${title}\n\n${body}\n`;
+}
+
+function curatedTitle(group: CandidateGroup): string {
+  const pathSlug = group.patchPath.split("/").pop()?.replace(/\.md$/, "");
+  const title = pathSlug ? pathSlug.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ") : group.sources[0].source.title;
+  return title || group.sources[0].source.title;
+}
+
+function curatedConfidence(group: CandidateGroup): number {
+  const max = Math.max(...group.sources.map((entry) => entry.analysis.confidence));
+  const evidenceBonus = Math.min(group.sources.length - 1, 3) * 0.04;
+  return Math.round(Math.min(0.98, max + evidenceBonus) * 100) / 100;
+}
+
+function sourceSummary(source: WikiSource): string {
+  return (distilledBody(source) ?? source.summary ?? source.title).trim();
+}
+
+function curatedBody(group: CandidateGroup): string {
+  if (group.sources.length === 1) return sourceSummary(group.sources[0].source);
+
+  const primaryBody = sourceSummary(group.sources[0].source);
+  const evidence = group.sources
+    .map((entry) => `- ${entry.source.source_ref ?? entry.source.id} (${entry.source.source_hash})`)
+    .join("\n");
+  const supporting = group.sources
+    .map((entry) => `- ${entry.source.summary || entry.source.title}`)
+    .join("\n");
+
+  return [
+    "## Synthesis",
+    primaryBody,
+    "",
+    "## Supporting Evidence",
+    supporting,
+    "",
+    "## Sources",
+    evidence,
+  ].join("\n");
 }
