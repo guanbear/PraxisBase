@@ -121,7 +121,21 @@ Hermes is an accelerator, not a dependency: Codex, Claude Code, OpenCode, OpenHu
 
 ## Daily Experience Loop
 
-PraxisBase supports a daily experience loop that collects agent experience from configured sources, normalizes it into redacted evidence, and merges it into the wiki flow.
+PraxisBase supports an AI-first daily experience loop that collects agent experience from configured sources, chunks it, runs deterministic privacy gates, asks an AI model to distill reusable experience, and merges only redacted summaries into the wiki flow. The deterministic path remains available as explicit degraded mode for bootstrap and offline smoke, but it is not production-ready.
+
+### AI-First Quickstart
+
+```bash
+praxisbase bootstrap personal --agent codex --install-skill --json
+praxisbase ai init --provider openai-compatible --model <model> --json
+export PRAXISBASE_LLM_API_KEY=...
+export PRAXISBASE_LLM_BASE_URL=https://api.openai.com/v1   # optional for OpenAI-compatible providers
+praxisbase ai doctor --json
+praxisbase daily run --mode personal --build-site --json
+open dist/index.html
+```
+
+`bootstrap personal` discovers only specific safe personal paths such as `~/.codex/sessions`, `~/.codex/archived_sessions`, `~/.codex-cli-cliproxyapi/sessions`, `~/.openclaw/memory/main.sqlite`, and `~/.openclaw/reports`. It does not scan the whole home directory.
 
 ### Personal Daily Flow
 
@@ -131,6 +145,14 @@ praxisbase source add local-openclaw --agent openclaw --type local --path ~/.ope
 praxisbase daily run --mode personal --build-site --json
 ```
 
+For offline bootstrap smoke only:
+
+```bash
+praxisbase daily run --mode personal --degraded --build-site --json
+```
+
+Degraded mode is visibly marked as `production_ready: false` in the daily report.
+
 ### Team GitLab Daily Flow
 
 ```bash
@@ -139,7 +161,7 @@ praxisbase source add claude-repair-log --agent claude-code --type http --url "$
 praxisbase daily run --mode team-git --branch harvest/daily --commit --push --build-site --json
 ```
 
-Team mode enforces privacy: personal scope, private chat content, and raw credentials are rejected before proposal generation. Uncertain cases route to human review.
+Team mode enforces privacy before AI distill: personal scope, private chat content, and raw credentials are rejected before model calls or proposal generation. Uncertain cases route to `.praxisbase/exceptions/human-required`. Teams should run this in GitLab with protected branches and scheduled pipelines so reviewed knowledge, reports, and HTML are auditable.
 
 ## Why This Exists
 
@@ -156,6 +178,7 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 ## Current Documents
 
 - [Deployment Guide](docs/deployment.md)
+- [AI-First Daily Usage](docs/ai-first-daily-usage.md)
 - [Agent Knowledge Substrate Design](docs/superpowers/specs/2026-05-17-agent-knowledge-substrate-design.md)
 - [Multi-Agent Experience Layer Design](docs/superpowers/specs/2026-05-19-multi-agent-experience-layer-design.md)
 - [Multi-Agent Experience Layer Implementation Plan](docs/superpowers/plans/2026-05-19-multi-agent-experience-layer-implementation-plan.md)
