@@ -19,18 +19,31 @@ function curatedProposal(overrides: Partial<CuratedWikiProposal> = {}): CuratedW
     title: "OpenClaw auth expired recovery",
     summary: "Refresh login before retrying memory sync.",
     body_markdown: "# OpenClaw auth expired recovery\n",
-    source_refs: ["codex:session:1"],
-    source_hashes: ["sha256:a"],
-    source_count: 1,
-    evidence_ids: ["ev_1"],
+    source_refs: ["codex:session:1", "openclaw:memory:2"],
+    source_hashes: ["sha256:a", "sha256:b"],
+    source_count: 2,
+    evidence_ids: ["ev_1", "ev_2"],
     confidence: 0.92,
     maturity: "draft",
-    provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+    provenance: [
+      { source_ref: "codex:session:1", source_hash: "sha256:a" },
+      { source_ref: "openclaw:memory:2", source_hash: "sha256:b" },
+    ],
     review_hint: { why_review: "Low risk personal fix", suggested_decision: "approve", risk_notes: [] },
     guards: [{ id: "path", ok: true, message: "allowed" }],
     created_at: "2026-05-21T00:00:00.000Z",
     ...overrides,
   };
+}
+
+function highSignalGuards(): CuratedWikiProposal["guards"] {
+  return [
+    { id: "path", ok: true, message: "allowed" },
+    { id: "experience_signal", ok: true, message: "durable experience signal present" },
+    { id: "actionability", ok: true, message: "agent actionability present" },
+    { id: "verification_or_lesson", ok: true, message: "verification or reusable lesson present" },
+    { id: "not_reference_only", ok: true, message: "not reference-only evidence" },
+  ];
 }
 
 describe("review policy", () => {
@@ -76,5 +89,42 @@ describe("review policy", () => {
     );
     assert.equal(decision.auto_promote, false);
     assert.equal(decision.human_required, true);
+  });
+
+  it("weak single-source proposals require human in personal mode", () => {
+    const decision = decideAutoReview(
+      curatedProposal({
+        source_refs: ["codex:session:1"],
+        source_hashes: ["sha256:a"],
+        source_count: 1,
+        evidence_ids: ["ev_1"],
+        provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+      }),
+      defaultReviewPolicy("personal"),
+    );
+
+    assert.equal(decision.auto_review, true);
+    assert.equal(decision.auto_promote, false);
+    assert.equal(decision.human_required, true);
+    assert.ok(decision.required_human_reasons.includes("weak_single_source"));
+  });
+
+  it("high-signal single-source personal proposals can follow auto-promote policy", () => {
+    const decision = decideAutoReview(
+      curatedProposal({
+        source_refs: ["codex:session:1"],
+        source_hashes: ["sha256:a"],
+        source_count: 1,
+        evidence_ids: ["ev_1"],
+        provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+        guards: highSignalGuards(),
+      }),
+      defaultReviewPolicy("personal"),
+    );
+
+    assert.equal(decision.auto_review, true);
+    assert.equal(decision.auto_promote, true);
+    assert.equal(decision.human_required, false);
+    assert.equal(decision.required_human_reasons.includes("weak_single_source"), false);
   });
 });

@@ -1,9 +1,9 @@
-import { readdir, stat } from "node:fs/promises";
+import { readdir, rm, stat } from "node:fs/promises";
 import { posix } from "node:path";
 import matter from "gray-matter";
 import { escapeHtml, escapeJsonForHtml } from "../build/html.js";
 import { protocolPaths } from "../protocol/paths.js";
-import { readJson, readText, writeJson, writeText } from "../store/file-store.js";
+import { readJson, readText, safePath, writeJson, writeText } from "../store/file-store.js";
 import { collectWikiSources } from "./collect.js";
 import { inferWikiConfidence, inferWikiLifecycle, makeWikiSlug, type WikiSource } from "./model.js";
 import { runWikiLint } from "./lint.js";
@@ -898,6 +898,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   await writeText(root, "dist/style.css", SITE_CSS);
   await writeText(root, "dist/site.js", SITE_JS);
 
+  await rm(safePath(root, "dist/pages"), { recursive: true, force: true });
   for (const page of pages) {
     const base = `dist/pages/${page.slug}`;
     await writeText(root, `${base}.html`, renderPage(page, pages, graph));

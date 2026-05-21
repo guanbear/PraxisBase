@@ -23,13 +23,16 @@ function curatedProposalFixture(
     summary: "Refresh OpenClaw login before retrying memory sync.",
     body_markdown:
       "# OpenClaw auth expired recovery\n\n## Problem\nOpenClaw memory sync fails after auth expiry.\n\n## Fix\nRefresh login and retry sync.\n\n## Verification\nRun memory sync again.",
-    source_refs: ["codex:session:1"],
-    source_hashes: ["sha256:a"],
-    source_count: 1,
-    evidence_ids: ["ev_1"],
+    source_refs: ["codex:session:1", "openclaw:memory:2"],
+    source_hashes: ["sha256:a", "sha256:b"],
+    source_count: 2,
+    evidence_ids: ["ev_1", "ev_2"],
     confidence: 0.9,
     maturity: "draft",
-    provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+    provenance: [
+      { source_ref: "codex:session:1", source_hash: "sha256:a" },
+      { source_ref: "openclaw:memory:2", source_hash: "sha256:b" },
+    ],
     review_hint: {
       why_review: "Low risk personal fix",
       suggested_decision: "approve",
@@ -39,6 +42,16 @@ function curatedProposalFixture(
     created_at: "2026-05-21T00:00:00.000Z",
     ...overrides,
   });
+}
+
+function highSignalGuards(): CuratedWikiProposal["guards"] {
+  return [
+    { id: "path", ok: true, message: "allowed" },
+    { id: "experience_signal", ok: true, message: "durable experience signal present" },
+    { id: "actionability", ok: true, message: "agent actionability present" },
+    { id: "verification_or_lesson", ok: true, message: "verification or reusable lesson present" },
+    { id: "not_reference_only", ok: true, message: "not reference-only evidence" },
+  ];
 }
 
 describe("review policy init", () => {
@@ -209,6 +222,30 @@ describe("review auto with policy", () => {
       "utf8",
     );
     assert.ok(promoted.includes("OpenClaw auth expired"));
+  });
+
+  it("promotes high-signal single-source personal proposals with promoteApproved", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-single-high-signal-"));
+    await initializeWorkspace(root);
+    await reviewPolicyInit(root, "personal");
+
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/curated-single-source-fix.json"),
+      JSON.stringify(curatedProposalFixture({
+        source_refs: ["codex:session:1"],
+        source_hashes: ["sha256:a"],
+        source_count: 1,
+        evidence_ids: ["ev_1"],
+        provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+        guards: highSignalGuards(),
+      })),
+    );
+
+    const result = await reviewAutoWithPolicy(root, { promoteApproved: true });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.auto_promoted, 1);
+    assert.equal(result.needs_human, 0);
   });
 
   it("does not auto-promote team proposal under personal policy", async () => {

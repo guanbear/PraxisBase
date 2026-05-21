@@ -32,6 +32,7 @@ const DEFAULT_HUMAN_REASONS = [
   "team_or_org_target",
   "updates_existing_stable_page",
   "low_confidence",
+  "weak_single_source",
   "conflicting_evidence",
   "skill_or_policy_target",
   "destructive_or_archive_action",
@@ -46,7 +47,7 @@ export function defaultReviewPolicy(mode: "personal" | "team"): ReviewPolicy {
     auto_promote: mode === "personal" ? "low_risk_personal_only" : "off",
     require_human_for: DEFAULT_HUMAN_REASONS,
     min_confidence: mode === "personal" ? 0.82 : 0.9,
-    min_source_count_for_auto_promote: 1,
+    min_source_count_for_auto_promote: mode === "personal" ? 2 : 1,
   });
 }
 
@@ -70,6 +71,20 @@ function isLowRiskPersonalKind(kind: CuratedWikiProposal["page_kind"]): boolean 
   return kind === "known_fix" || kind === "procedure" || kind === "pitfall" || kind === "note";
 }
 
+function hasPassingGuard(proposal: CuratedWikiProposal, guardId: string): boolean {
+  return proposal.guards.some((guard) => guard.id === guardId && guard.ok);
+}
+
+function isWeakSingleSource(proposal: CuratedWikiProposal, policy: ReviewPolicy): boolean {
+  if (proposal.source_count >= policy.min_source_count_for_auto_promote) return false;
+  return ![
+    "experience_signal",
+    "actionability",
+    "verification_or_lesson",
+    "not_reference_only",
+  ].every((guardId) => hasPassingGuard(proposal, guardId));
+}
+
 export function decideAutoReview(proposal: CuratedWikiProposal, policy: ReviewPolicy): AutoReviewDecision {
   const reasons: string[] = [];
   if (proposal.guards.some((guard) => !guard.ok)) reasons.push("secret_or_privacy_risk");
@@ -82,9 +97,9 @@ export function decideAutoReview(proposal: CuratedWikiProposal, policy: ReviewPo
   if (proposal.review_hint.suggested_decision === "split" || proposal.review_hint.suggested_decision === "merge") {
     reasons.push("conflicting_evidence");
   }
-  if (proposal.source_count < policy.min_source_count_for_auto_promote) reasons.push("low_source_count");
+  if (isWeakSingleSource(proposal, policy)) reasons.push("weak_single_source");
 
-  const humanRequired = reasons.some((reason) => policy.require_human_for.includes(reason) || reason === "low_source_count");
+  const humanRequired = reasons.some((reason) => policy.require_human_for.includes(reason) || reason === "weak_single_source");
   const autoReview = policy.auto_review;
   let autoPromote = false;
   let reason = humanRequired ? `Human review required: ${reasons.join(", ")}` : "Eligible for automated review.";

@@ -32,6 +32,31 @@ describe("AI provider config", () => {
     assert.deepEqual(await readAiProviderConfig(root), config);
   });
 
+  it("supports local OpenAI-compatible endpoint and custom API key env names", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-ai-config-custom-env-"));
+
+    const config = await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "glm-5.1",
+      apiKeyEnv: "ZAI_API_KEY",
+      baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4",
+    });
+
+    assert.equal(config.api_key_env, "ZAI_API_KEY");
+    assert.equal(config.base_url, "https://open.bigmodel.cn/api/coding/paas/v4");
+
+    const noKey = await doctorAiProvider(root, {});
+    assert.equal(noKey.ok, false);
+    assert.ok(noKey.checks.some((check) => check.id === "ai-api-key" && check.message === "ZAI_API_KEY is not set."));
+
+    const ready = await doctorAiProvider(root, {
+      ZAI_API_KEY: "secret-value",
+    });
+    assert.equal(ready.ok, true);
+    assert.ok(ready.checks.some((check) => check.id === "ai-base-url" && check.ok === true));
+    assert.doesNotMatch(JSON.stringify(ready), /secret-value/);
+  });
+
   it("rejects unsupported providers", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-ai-config-provider-"));
 

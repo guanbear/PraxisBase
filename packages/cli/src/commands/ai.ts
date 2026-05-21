@@ -7,6 +7,9 @@ import {
 export interface AiCommandOptions {
   provider?: "openai-compatible";
   model?: string;
+  baseUrl?: string;
+  baseUrlEnv?: string;
+  apiKeyEnv?: string;
   json?: boolean;
   env?: Record<string, string | undefined>;
 }
@@ -37,6 +40,9 @@ export async function aiCommand(root: string, subcommand: string, options: AiCom
     const config = await writeAiProviderConfig(root, {
       provider: options.provider,
       model: options.model,
+      baseUrl: options.baseUrl,
+      baseUrlEnv: options.baseUrlEnv,
+      apiKeyEnv: options.apiKeyEnv,
     });
     return formatInit(config, options.json ?? false);
   }

@@ -8,8 +8,9 @@ export const AiProviderConfigSchema = z.object({
   type: z.literal("ai_provider_config"),
   provider: z.literal("openai-compatible"),
   model: z.string().min(1),
-  base_url_env: z.literal("PRAXISBASE_LLM_BASE_URL"),
-  api_key_env: z.literal("PRAXISBASE_LLM_API_KEY"),
+  base_url: z.string().url().optional(),
+  base_url_env: z.string().min(1).default("PRAXISBASE_LLM_BASE_URL"),
+  api_key_env: z.string().min(1).default("PRAXISBASE_LLM_API_KEY"),
   default_temperature: z.number().min(0).max(2),
   max_input_bytes: z.number().int().positive(),
   max_output_bytes: z.number().int().positive(),
@@ -20,6 +21,9 @@ export type AiProviderConfig = z.infer<typeof AiProviderConfigSchema>;
 export interface WriteAiProviderConfigInput {
   provider: "openai-compatible";
   model: string;
+  baseUrl?: string;
+  baseUrlEnv?: string;
+  apiKeyEnv?: string;
 }
 
 export interface AiDoctorCheck {
@@ -45,8 +49,9 @@ export async function writeAiProviderConfig(root: string, input: WriteAiProvider
     type: "ai_provider_config",
     provider: input.provider,
     model: input.model,
-    base_url_env: "PRAXISBASE_LLM_BASE_URL",
-    api_key_env: "PRAXISBASE_LLM_API_KEY",
+    ...(input.baseUrl ? { base_url: input.baseUrl } : {}),
+    base_url_env: input.baseUrlEnv ?? "PRAXISBASE_LLM_BASE_URL",
+    api_key_env: input.apiKeyEnv ?? "PRAXISBASE_LLM_API_KEY",
     default_temperature: 0,
     max_input_bytes: 24576,
     max_output_bytes: 8192,
@@ -108,7 +113,7 @@ export async function doctorAiProvider(
       : `${config.api_key_env} is not set.`,
   });
 
-  const baseUrl = env[config.base_url_env];
+  const baseUrl = config.base_url ?? env[config.base_url_env];
   if (baseUrl) {
     const ok = validUrl(baseUrl);
     checks.push({
@@ -116,8 +121,8 @@ export async function doctorAiProvider(
       ok,
       severity: ok ? "info" : "error",
       message: ok
-        ? `${config.base_url_env} is a valid URL.`
-        : `${config.base_url_env} is not a valid URL.`,
+        ? `${config.base_url ? "base_url" : config.base_url_env} is a valid URL.`
+        : `${config.base_url ? "base_url" : config.base_url_env} is not a valid URL.`,
     });
   } else {
     checks.push({

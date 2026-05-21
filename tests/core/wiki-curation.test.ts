@@ -146,10 +146,63 @@ describe("wiki evidence curation", () => {
       source("instructions", "instructions", "{\"base_instructions\":\"never include\"}"),
       source("unknown", "unknown", "openclaw:unknown"),
       source("sleep", "Deep Sleep", "# Deep Sleep\nPromoted 0 candidate(s)"),
+      source("sleep-summary", "Deep Sleep Memory Consolidation Procedure", "The agent rewrites the recall store and promoted 0 candidates to MEMORY.md."),
+      {
+        ...source("official-doc", "OpenClaw Official API Reference", "Official documentation for OpenClaw memory APIs."),
+        kind: "external_ref",
+        source_ref: "https://docs.openclaw.example/memory-api",
+      },
+      source("boot-config", "Codex Desktop CLI v0.118.0 Session Boot Configuration", "Session initialization metadata with sandbox mode, model provider, approval policy, and skill registry. No task execution occurred."),
+      source("boot-policy", "Codex Desktop CLI Session Boot Policy", "Session boot metadata says agents must run verification and should use rg. This is startup policy, not task experience."),
+      source("codex-init", "Codex Desktop agent session initialization", "Suggested Wiki Kind: note\nSummary: Codex Desktop agent session initialization containing base instructions, personality configuration, engineering judgment guidelines, frontend design rules, editing constraints, sandbox mode, approval policy, and skill registry."),
+      source("reflection-theme", "OpenClaw Reflection Theme", "Candidate: Reflections: Theme: `assistant` kept surfacing across 959 memories; recalls: 0; note: reflection."),
+      source("promotion-bookkeeping", "Promoted From Short-Term Memory", "## Promoted From Short-Term Memory (2026-04-26) <!-- openclaw-memory-promotion:memory:memory/2026-04-20.md:238:241 -->"),
     ]);
 
     assert.deepEqual(pool.items.map((item) => item.id), ["good"]);
-    assert.equal(pool.filtered_noise, 4);
+    assert.equal(pool.filtered_noise, 11);
+  });
+
+  it("keeps only evidence with useful experience signals", () => {
+    const pool = buildWikiEvidencePool([
+      source("preference", "OpenClaw ACK timing", "User preference: for any dispatch or tool task taking more than a few seconds, send a short ACK first, then continue and verify final delivery."),
+      source("weak", "Codex startup", "The session loaded the model, sandbox mode, tools, and available skills."),
+    ]);
+
+    assert.deepEqual(pool.items.map((item) => item.id), ["preference"]);
+    assert.equal(pool.filtered_noise, 1);
+    assert.ok(pool.items[0].reusable_lessons.some((lesson) => /ACK/i.test(lesson)));
+  });
+
+  it("keeps doc-backed evidence when the user experience is concrete", () => {
+    const pool = buildWikiEvidencePool([
+      {
+        ...source("doc-backed", "OpenClaw docs mismatch workaround", "Official docs said retry memory sync, but the agent fixed the failure by refreshing login first. pnpm check passed. Lesson: use refreshed auth before retrying sync."),
+        kind: "external_ref",
+        source_ref: "https://docs.openclaw.example/memory-api",
+      },
+      {
+        ...source("reference-only", "OpenClaw Official API Reference", "Official documentation for OpenClaw memory APIs."),
+        kind: "external_ref",
+        source_ref: "https://docs.openclaw.example/memory-api",
+      },
+    ]);
+
+    assert.deepEqual(pool.items.map((item) => item.id), ["doc-backed"]);
+    assert.equal(pool.filtered_noise, 1);
+  });
+
+  it("keeps Codex initialization captures when they contain concrete user experience", () => {
+    const pool = buildWikiEvidencePool([
+      source(
+        "codex-init-experience",
+        "Codex Desktop agent session initialization",
+        "Codex Desktop agent session initialization mentioned base instructions and sandbox mode. User preference: send ACK before long OpenClaw work, then continue and verify delivery. This was verified in the Slack delegated work acceptance test.",
+      ),
+    ]);
+
+    assert.deepEqual(pool.items.map((item) => item.id), ["codex-init-experience"]);
+    assert.equal(pool.filtered_noise, 0);
   });
 
   it("clusters repeated source evidence into one proposal input", () => {
@@ -192,6 +245,15 @@ describe("wiki evidence curation", () => {
     assert.equal(proposal.type, "wiki_curated_proposal");
     assert.equal(proposal.source_count, 2);
     assert.equal(proposal.target_path, "kb/known-fixes/openclaw-auth-expired.md");
+    assert.deepEqual(proposal.guards.map((guard: { id: string }) => guard.id), [
+      "path",
+      "privacy",
+      "provenance",
+      "experience_signal",
+      "actionability",
+      "verification_or_lesson",
+      "not_reference_only",
+    ]);
     await assert.rejects(() => stat(join(root, "kb")), { code: "ENOENT" });
     await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
   });

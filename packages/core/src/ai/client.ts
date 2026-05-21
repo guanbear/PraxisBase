@@ -16,7 +16,7 @@ export interface OpenAiCompatibleJsonClientOptions {
 }
 
 function providerEndpoint(config: AiProviderConfig, env: Record<string, string | undefined>): string {
-  const baseUrl = env[config.base_url_env] ?? "https://api.openai.com/v1";
+  const baseUrl = config.base_url ?? env[config.base_url_env] ?? "https://api.openai.com/v1";
   return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 }
 

@@ -25,9 +25,37 @@
     并且 evidence 包含 base_instructions JSON
     并且 evidence 内容是 "openclaw:unknown"
     并且 evidence 是 "Deep Sleep" 且 "Promoted 0 candidate(s)"
+    并且 evidence 是 Codex 或 OpenClaw session boot/configuration metadata
+    并且 evidence 是 OpenClaw reflection theme 或 memory promotion bookkeeping
+    并且 evidence 是 official docs 或 API reference 且没有用户/agent 经验
     当 用户运行 "praxisbase wiki curate --review --degraded --json"
-    那么 curation report 的 filtered_noise 是 4
+    那么 curation report 的 filtered_noise 是 7
     并且 系统不为这些 evidence 生成 curated proposal
+
+  场景: 只有有用经验才能进入 curated proposal
+    假如 evidence 是单来源
+    并且 它包含一个明确的问题或用户偏好
+    并且 它包含 agent 下次应该采取的行动或决策
+    并且 它包含验证结果或可复用教训
+    当 用户运行 "praxisbase wiki curate --review --json"
+    那么 系统可以生成一个 "wiki_curated_proposal"
+    并且 proposal 的 guards 包含 "experience_signal"、"actionability" 和 "verification_or_lesson"
+
+  场景: 单来源弱证据不自动进入稳定 wiki
+    假如 一个 personal curated proposal 只有 1 个 source_ref
+    并且 它不是已验证修复、用户偏好、决策或明确 pitfall
+    当 用户运行 "praxisbase review auto --promote-approved --json"
+    那么 系统可以写入 review record
+    但是 系统不自动修改 "kb/" 或 "skills/"
+    并且 系统写入 human-required exception 说明 "weak_single_source"
+
+  场景: 单来源高信号个人经验可以按个人策略自动进入稳定 wiki
+    假如 一个 personal curated proposal 只有 1 个 source_ref
+    并且 它通过 experience_signal、actionability、verification_or_lesson 和 not_reference_only guards
+    并且 它是低风险 personal known_fix、procedure、pitfall 或 note
+    当 用户运行 "praxisbase review auto --promote-approved --json"
+    那么 系统可以自动写入 review record
+    并且 系统可以按 personal policy 自动 promote 到 "kb/"
 
   场景: curated proposal 是 wiki 页面候选而不是日志摘要
     假如 一个 evidence cluster 包含 problem、actions、failed_attempts、outcome、verification 和 reusable_lessons

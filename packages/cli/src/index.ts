@@ -389,12 +389,18 @@ program
   .argument("<sub>", "subcommand (init|doctor)")
   .option("--provider <provider>")
   .option("--model <model>")
+  .option("--base-url <url>")
+  .option("--base-url-env <name>")
+  .option("--api-key-env <name>")
   .option("--json")
   .action(async (
     sub: string,
     options: {
       provider?: "openai-compatible";
       model?: string;
+      baseUrl?: string;
+      baseUrlEnv?: string;
+      apiKeyEnv?: string;
       json?: boolean;
     }
   ) => {

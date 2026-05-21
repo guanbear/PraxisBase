@@ -13,6 +13,8 @@
 - [ ] Prefer `DistilledExperience` fields when present.
 - [ ] Preserve real `source_ref` and `source_hash`.
 - [ ] Filter `session_meta`, base instructions, `openclaw:unknown`, and empty promotion logs.
+- [x] Filter reference-only official docs/API references, Codex/OpenClaw boot metadata, OpenClaw reflection themes, and memory promotion bookkeeping.
+- [x] Require useful-experience signals before a source can become a curation input.
 - [ ] Route private material and weak provenance to exceptions.
 - [ ] Add tests for noise filtering and provenance retention.
 
@@ -28,6 +30,8 @@
 - [ ] Add curator prompt and strict JSON output schema.
 - [ ] Add mocked AI synthesis tests.
 - [x] Validate target paths, body safety, confidence, provenance, and team scope.
+- [x] Add deterministic proposal quality guards for experience signal, actionability, verification/reusable lesson, and reference-only rejection.
+- [x] Add repair-or-reject handling for AI bodies that miss required wiki headings.
 - [x] Add degraded deterministic synthesis for explicit degraded mode only.
 
 ## 5. CLI Command
@@ -47,6 +51,8 @@
 - [x] Add `praxisbase review auto --json`.
 - [x] Add `praxisbase review auto --promote-approved --json`.
 - [x] Add tests proving personal low-risk auto promotion and team no-auto-promotion defaults.
+- [x] Ensure weak single-source curated proposals are not auto-promoted by default.
+- [x] Allow high-signal single-source personal proposals to follow the low-risk personal auto-review policy.
 
 ## 7. Daily, Harvest, And Site Integration
 

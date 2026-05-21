@@ -125,6 +125,36 @@ describe("AI wiki curator", () => {
     if (!result.ok) assert.equal(result.category, "guard_error");
   });
 
+  it("repairs AI body that omits wiki headings when guards otherwise pass", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "Refresh login and retry memory sync.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(result.proposal.body_markdown, /^# OpenClaw auth expired recovery/m);
+      assert.match(result.proposal.body_markdown, /## Verification/);
+      assert.ok(result.proposal.guards.some((guard) => guard.id === "body" && guard.ok));
+    }
+  });
+
   it("rejects AI body containing private material", async () => {
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,
@@ -215,7 +245,7 @@ describe("AI wiki curator", () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-curator-limit-"));
     await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
     for (const [index, summary] of [
-      "Session initialization metadata without reusable repair detail.",
+      "Fixed unrelated OpenClaw dispatch failure by restarting the runner. pnpm check passed.",
       "Fixed OpenClaw auth expired memory sync by refreshing login. pnpm check passed.",
     ].entries()) {
       await writeFile(join(root, `.praxisbase/outbox/captures/capture_${index + 1}.json`), JSON.stringify({

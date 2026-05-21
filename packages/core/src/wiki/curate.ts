@@ -49,14 +49,29 @@ function textForSource(source: WikiSource): string {
   return [source.title, source.summary, source.body].filter(Boolean).join("\n").trim();
 }
 
+function hasConcreteExperienceTerms(text: string): boolean {
+  return /\b(user preference|preference|operating policy|fixed|resolved|passed|verified|validated|workaround|pitfall|decision|failed|avoid|lesson|ack)\b/i.test(text);
+}
+
 function isOperationalNoiseSource(source: WikiSource): boolean {
   const bodyText = [source.summary, source.body].filter(Boolean).join("\n").trim();
   const text = textForSource(source);
+  const ref = [source.source_ref, source.path].filter(Boolean).join("\n");
   if (!text) return true;
   if (/^\s*\{[\s\S]*"type"\s*:\s*"session_meta"/.test(bodyText)) return true;
   if (/^\s*\{[\s\S]*"base_instructions"\s*:/.test(bodyText)) return true;
   if (/^\s*openclaw:unknown\s*$/i.test(bodyText)) return true;
   if (/(^|\n)#\s*Deep Sleep\b/i.test(bodyText) && /\bPromoted\s+0\s+candidate\(s\)/i.test(bodyText)) return true;
+  if (/\bDeep Sleep\b/i.test(text) && /\b(recall store|promoted\s+0\s+candidate|MEMORY\.md)\b/i.test(text)) return true;
+  if (/\b(official documentation|official docs|api reference|reference documentation)\b/i.test(text) && !hasConcreteExperienceTerms(text)) return true;
+  if (/^https?:\/\/[^ \n]*(?:docs|documentation|reference|api)[^ \n]*/i.test(ref) && !hasConcreteExperienceTerms(text)) return true;
+  if (/\bCodex Desktop agent session initialization\b/i.test(text)
+    && /\b(base instructions|personality configuration|frontend design rules|editing constraints|sandbox mode|approval policy|skill registry)\b/i.test(text)
+    && !hasConcreteExperienceTerms(text)) return true;
+  if (/\b(session boot|session initialization|initialization metadata|boot configuration|startup configuration|skill registry|approval policy|sandbox mode)\b/i.test(text)
+    && !hasConcreteExperienceTerms(text)) return true;
+  if (/\bCandidate:\s*Reflections?:\s*Theme:\s*`?(assistant|user)`?\s+kept surfacing\b/i.test(text) && !hasConcreteExperienceTerms(text)) return true;
+  if ((/\bPromoted From Short-Term Memory\b/i.test(text) || /openclaw-memory-promotion:/i.test(text)) && !hasConcreteExperienceTerms(text)) return true;
   return false;
 }
 
@@ -77,13 +92,33 @@ function sentences(text: string): string[] {
 }
 
 function inferActions(text: string): string[] {
-  const matches = sentences(text).filter((line) => /\b(refresh|retry|restart|run|fix|update|promote|verify)\b/i.test(line));
+  const matches = sentences(text).filter((line) => /\b(refresh|retry|restart|run|fix|fixed|update|promote|verify|send|ack|continue)\b/i.test(line));
   return matches.length > 0 ? matches.slice(0, 4) : [];
 }
 
 function inferVerification(text: string): string[] {
   const matches = sentences(text).filter((line) => /\b(test|check|verify|passed|sync|build|pnpm|pytest)\b/i.test(line));
   return matches.length > 0 ? matches.slice(0, 3) : [];
+}
+
+function inferReusableLessons(text: string): string[] {
+  const matches = sentences(text).filter((line) => /\b(lesson|remember|prefer|preference|refresh|avoid|use|run|should|must|ack|before retrying)\b/i.test(line));
+  return matches.length > 0 ? matches.slice(0, 4) : [];
+}
+
+function hasUsefulExperienceSignal(input: {
+  text: string;
+  actions: string[];
+  verification: string[];
+  reusableLessons: string[];
+  suggestedKind: WikiEvidenceItem["suggested_wiki_kind"];
+}): boolean {
+  const knownOperationalSignature = /\bopenclaw:[a-z0-9-]+(?:auth|expired|failure|error|fix|sync)[a-z0-9-]*\b/i.test(input.text);
+  const durableLesson = hasConcreteExperienceTerms(input.text)
+    || knownOperationalSignature;
+  const actionable = input.actions.length > 0 || knownOperationalSignature || input.suggestedKind === "decision" || input.suggestedKind === "preference" || input.suggestedKind === "pitfall";
+  const grounded = input.verification.length > 0 || input.reusableLessons.length > 0 || knownOperationalSignature || hasConcreteExperienceTerms(input.text);
+  return durableLesson && actionable && grounded;
 }
 
 function curationKindFromAnalysis(kind: string): WikiEvidenceItem["suggested_wiki_kind"] {
@@ -120,6 +155,21 @@ export function buildWikiEvidencePool(sources: WikiSource[]): WikiEvidencePool {
     }
 
     const sourceRef = source.source_ref ?? source.path ?? source.id;
+    const actions = inferActions(text);
+    const verification = inferVerification(text);
+    const reusableLessons = inferReusableLessons(text);
+    const suggestedWikiKind = curationKindFromAnalysis(analysis.suggested_page_kind);
+    if (!hasUsefulExperienceSignal({
+      text,
+      actions,
+      verification,
+      reusableLessons,
+      suggestedKind: suggestedWikiKind,
+    })) {
+      filteredNoise++;
+      continue;
+    }
+
     items.push(WikiEvidenceItemSchema.parse({
       id: source.id,
       kind,
@@ -128,13 +178,13 @@ export function buildWikiEvidencePool(sources: WikiSource[]): WikiEvidencePool {
       scope: source.scope,
       title: source.title,
       summary: source.summary || source.title,
-      actions: inferActions(text),
+      actions,
       failed_attempts: sentences(text).filter((line) => /\b(failed|fail|did not work|retry loop)\b/i.test(line)).slice(0, 3),
       outcome: /\b(success|fixed|resolved|passed)\b/i.test(text) ? "success" : "unknown",
-      verification: inferVerification(text),
-      reusable_lessons: sentences(text).filter((line) => /\b(lesson|remember|prefer|refresh|avoid|use|run)\b/i.test(line)).slice(0, 4),
+      verification,
+      reusable_lessons: reusableLessons,
       signatures: analysis.signatures.filter((signature) => !signature.startsWith(`${source.kind}:`)),
-      suggested_wiki_kind: curationKindFromAnalysis(analysis.suggested_page_kind),
+      suggested_wiki_kind: suggestedWikiKind,
       privacy_verdict: source.scope === "personal" ? "personal_only" : "safe",
       created_at: source.updated_at ?? source.created_at,
     }));
@@ -306,6 +356,7 @@ function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: Wiki
     { id: "path", ok: isAllowedWikiPatchPath(targetPath), message: isAllowedWikiPatchPath(targetPath) ? "allowed stable knowledge path" : "unsafe target path" },
     { id: "privacy", ok: !containsPrivateMaterial(body), message: containsPrivateMaterial(body) ? "private material detected" : "no private material detected" },
     { id: "provenance", ok: cluster.source_refs.length > 0 && cluster.source_hashes.length > 0, message: "source provenance present" },
+    ...proposalQualityGuards(body, evidence),
   ];
   return CuratedWikiProposalSchema.parse({
     id: makeId("wiki-curated", `${targetPath}:${computeHash(cluster.source_hashes.join("|"))}`),
@@ -345,6 +396,34 @@ function parseAiPageKind(value: unknown, fallback: WikiEvidenceCluster["page_kin
     : fallback;
 }
 
+function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): CuratedWikiProposal["guards"] {
+  const evidenceText = evidence.map((item) => [item.title, item.summary, ...item.actions, ...item.verification, ...item.reusable_lessons].join("\n")).join("\n");
+  const experienceSignal = evidence.some((item) =>
+    item.actions.length > 0
+    || item.verification.length > 0
+    || item.reusable_lessons.length > 0
+    || item.outcome === "success"
+    || item.signatures.some((signature) => /^openclaw:/.test(signature) && signature !== "openclaw:unknown")
+    || item.suggested_wiki_kind === "preference"
+    || item.suggested_wiki_kind === "decision"
+    || item.suggested_wiki_kind === "pitfall"
+    || item.suggested_wiki_kind === "known_fix"
+  );
+  const actionability = /##\s+(Fix|Steps|Procedure|Decision|Applicability|Reusable Lessons)\b/i.test(body)
+    && /\b(use this|when|refresh|retry|run|send|avoid|verify|check|should|must|fix|decision)\b/i.test(body);
+  const verificationOrLesson = /##\s+(Verification|Reusable Lessons)\b/i.test(body)
+    && /\b(verify|test|passed|fixed|resolved|lesson|remember|prefer|should|must|avoid|run|check|sync|re-run)\b/i.test(body);
+  const referenceOnly = /\b(official documentation|official docs|api reference|reference documentation|session initialization metadata|session boot|boot configuration|skill registry|sandbox mode|approval policy)\b/i.test(evidenceText)
+    && !hasConcreteExperienceTerms(evidenceText);
+
+  return [
+    { id: "experience_signal", ok: experienceSignal, message: experienceSignal ? "durable experience signal present" : "missing durable experience signal" },
+    { id: "actionability", ok: actionability, message: actionability ? "agent actionability present" : "missing when-to-use or what-to-do guidance" },
+    { id: "verification_or_lesson", ok: verificationOrLesson, message: verificationOrLesson ? "verification or reusable lesson present" : "missing verification or reusable lesson" },
+    { id: "not_reference_only", ok: !referenceOnly, message: referenceOnly ? "reference-only or metadata-only evidence" : "not reference-only evidence" },
+  ];
+}
+
 function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], json: unknown, now: string): CuratedWikiProposal {
   const record = json && typeof json === "object" ? json as Record<string, unknown> : {};
   const title = typeof record.title === "string" && record.title.trim() ? record.title.trim() : titleFromCluster(cluster);
@@ -353,9 +432,14 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
   const targetPath = typeof record.target_path === "string" && record.target_path.trim()
     ? record.target_path.trim()
     : cluster.target_path_hint ?? targetPathForCluster(pageKind, title);
-  const body = typeof record.body_markdown === "string" && record.body_markdown.trim()
+  const rawBody = typeof record.body_markdown === "string" && record.body_markdown.trim()
     ? record.body_markdown.trim()
     : buildBody(cluster, evidence);
+  const body = /^#\s+.+/m.test(rawBody) && /##\s+/.test(rawBody)
+    ? rawBody
+    : containsPrivateMaterial(rawBody)
+      ? rawBody
+      : buildBody(cluster, evidence);
   const confidence = typeof record.confidence === "number" && Number.isFinite(record.confidence)
     ? Math.max(0, Math.min(1, record.confidence))
     : cluster.confidence_hint;
@@ -368,6 +452,7 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
     { id: "privacy", ok: !containsPrivateMaterial(body), message: containsPrivateMaterial(body) ? "private material detected" : "no private material detected" },
     { id: "provenance", ok: cluster.source_refs.length > 0 && cluster.source_hashes.length > 0, message: "source provenance present" },
     { id: "body", ok: /^#\s+.+/m.test(body) && /##\s+/.test(body), message: /^#\s+.+/m.test(body) && /##\s+/.test(body) ? "wiki-shaped body" : "body missing headings" },
+    ...proposalQualityGuards(body, evidence),
   ];
 
   return CuratedWikiProposalSchema.parse({

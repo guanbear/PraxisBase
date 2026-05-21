@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -77,6 +77,34 @@ Refresh login. <script>alert("x")</script>
 
     await assert.doesNotReject(stat(join(root, "dist/style.css")));
     await assert.doesNotReject(stat(join(root, "dist/site.js")));
+  });
+
+  it("removes stale generated page artifacts when stable wiki pages disappear", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-stale-pages-"));
+    const pagePath = join(root, "kb/notes/transient.md");
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(pagePath, `---
+id: transient
+type: note
+scope: personal
+maturity: draft
+---
+# Transient Page
+
+Temporary body.
+`);
+
+    await buildWikiSite(root);
+    await assert.doesNotReject(stat(join(root, "dist/pages/transient.html")));
+    await assert.doesNotReject(stat(join(root, "dist/pages/transient.json")));
+    await assert.doesNotReject(stat(join(root, "dist/pages/transient.txt")));
+
+    await rm(pagePath);
+    await buildWikiSite(root);
+
+    await assert.rejects(stat(join(root, "dist/pages/transient.html")));
+    await assert.rejects(stat(join(root, "dist/pages/transient.json")));
+    await assert.rejects(stat(join(root, "dist/pages/transient.txt")));
   });
 
   it("shows actionable health issues on the dashboard", async () => {

@@ -42,10 +42,28 @@ The pool must filter or route away:
 
 - `session_meta`;
 - base instructions or system prompts;
+- Codex/OpenClaw session boot or initialization metadata with no user-authored preference, repair action, decision, or verified outcome;
 - `openclaw:unknown`;
 - empty promotion logs;
+- OpenClaw reflection-theme artifacts such as "Theme: assistant/user kept surfacing" and memory promotion bookkeeping;
+- official documentation, API references, and vendor docs when they are only reference material rather than user or agent-authored experience;
 - material with secret or credential patterns;
 - team-mode personal/private material.
+
+Official docs may remain as provenance for a synthesized page, but they must not become stable wiki pages by themselves.
+
+## Useful Experience Gate
+
+An evidence item is useful enough for synthesis only when it has at least one durable lesson signal:
+
+- a concrete user preference or operating policy authored by the user;
+- a verified fix, workaround, or failed attempt with a reusable trigger;
+- a repeated agent behavior lesson that changes future execution;
+- a project-specific decision, procedure, or pitfall with provenance.
+
+The curator must not treat generic session configuration, tool availability, model metadata, raw memory promotion records, or official reference docs as useful experience. These records may increase `filtered_noise`, or they may be retained only as provenance if attached to a stronger user/agent experience item.
+
+Single-source evidence can become a review candidate only if it is high-signal: it must include a problem or preference, an action or decision, and either verification or a reusable lesson. Multi-source evidence is preferred and should rank higher. A proposal with weak single-source evidence must stay out of auto-promotion even in personal mode. A single-source proposal is not weak when it passes the deterministic `experience_signal`, `actionability`, `verification_or_lesson`, and `not_reference_only` guards; in personal mode it may then follow the same low-risk auto-review policy as multi-source proposals.
 
 ## Clustering
 
@@ -81,6 +99,15 @@ It must include:
 
 The body must be wiki-shaped: problem/context, applicability, steps or decision, failed attempts where useful, verification, risks, and provenance. It must not copy raw transcripts.
 
+Every curated proposal must pass deterministic quality guards:
+
+- `experience_signal`: evidence contains a durable lesson signal;
+- `actionability`: body explains when an agent should use the page and what to do differently;
+- `verification_or_lesson`: body includes verification evidence or a reusable lesson;
+- `not_reference_only`: proposal is not merely official docs, session boot/configuration, or bookkeeping.
+
+AI output that misses wiki structure should be repaired once using deterministic fallback shaping or rejected with a guard error. Rejected clusters must be counted separately from privacy/human-required items so the user can see whether the issue is source quality or model output quality.
+
 ## Command Behavior
 
 ```bash
@@ -106,7 +133,7 @@ Personal default:
 - `auto_review: true`;
 - `auto_promote: "low_risk_personal_only"`;
 - low-risk personal/project `known_fix`, `procedure`, `pitfall`, and `note` can be auto-promoted;
-- privacy risk, scope escalation, team/org/global target, low confidence, conflicting evidence, skill/policy target, update existing page, archive, and supersede require human.
+- privacy risk, scope escalation, team/org/global target, low confidence, weak single-source evidence, conflicting evidence, skill/policy target, update existing page, archive, and supersede require human.
 
 Team default:
 
