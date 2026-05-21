@@ -29,6 +29,18 @@ ${toolList}
 - **Never** mutate stable \`kb/\` or \`skills/\` directly. All changes go through proposal, review, and promote.
 - Always use \`--dry-run\` first for mutating commands.
 - Respect scope boundaries. Personal knowledge must not be auto-promoted to team/org scope.
+- Production daily synthesis requires AI distill. Use degraded mode only for bootstrap/offline smoke.
+
+## First Run
+
+\`\`\`bash
+praxisbase bootstrap personal --agent codex --install-skill --json
+praxisbase ai init --provider openai-compatible --model <model> --json
+praxisbase ai doctor --json
+praxisbase daily run --mode personal --build-site --json
+\`\`\`
+
+Open \`dist/index.html\` after the daily run to inspect generated experience pages.
 
 ## Local Harvest
 
@@ -74,6 +86,8 @@ praxisbase review --auto
 praxisbase promote --auto
 \`\`\`
 
+Check \`.praxisbase/exceptions/human-required\` after daily or compile runs. Anything there needs a human privacy or correctness decision before promotion.
+
 ## Optional MCP Bridge
 
 An MCP stdio bridge is available for agents that prefer MCP tool calls over CLI:
@@ -94,6 +108,12 @@ praxisbase source list --json
 
 \`\`\`bash
 praxisbase daily run --mode personal --build-site --json
+\`\`\`
+
+For offline smoke only:
+
+\`\`\`bash
+praxisbase daily run --mode personal --degraded --build-site --json
 \`\`\`
 
 ## Daily Team

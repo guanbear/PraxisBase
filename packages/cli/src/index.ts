@@ -25,6 +25,7 @@ import { remoteCommand } from "./commands/remote.js";
 import { sourceCommand } from "./commands/source.js";
 import { dailyCommand } from "./commands/daily.js";
 import { aiCommand } from "./commands/ai.js";
+import { bootstrapCommand } from "./commands/bootstrap.js";
 import { harvestCommand } from "./commands/harvest.js";
 import { agentToolsCommand } from "./commands/agent-tools.js";
 import { mcpCommand } from "./commands/mcp.js";
@@ -361,6 +362,23 @@ program
     }
   ) => {
     console.log(await aiCommand(process.cwd(), sub, options));
+  });
+
+program
+  .command("bootstrap")
+  .argument("<sub>", "subcommand (personal)")
+  .option("--agent <agent>", "agent profile", "codex")
+  .option("--install-skill")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      agent?: "codex" | "opencode" | "claude-code" | "openclaw" | "hermes" | "openhuman" | "generic";
+      installSkill?: boolean;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await bootstrapCommand(process.cwd(), sub, options));
   });
 
 program

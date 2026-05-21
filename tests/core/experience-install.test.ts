@@ -244,4 +244,17 @@ describe("planInstall", () => {
       "should include agent-tools generate command hint when Skill is missing"
     );
   });
+
+  it("generated Skill teaches first-run AI daily workflow", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-install-"));
+    const manifest = buildAgentToolManifest(root, { agent: "codex" });
+    const skillContent = generateSkill(manifest);
+
+    assert.match(skillContent, /praxisbase bootstrap personal/);
+    assert.match(skillContent, /praxisbase ai init/);
+    assert.match(skillContent, /praxisbase ai doctor/);
+    assert.match(skillContent, /praxisbase daily run --mode personal --build-site --json/);
+    assert.match(skillContent, /dist\/index.html/);
+    assert.match(skillContent, /degraded mode/i);
+  });
 });

@@ -107,6 +107,10 @@
       "types": "./src/commands/ai.ts",
       "default": "./dist/commands/ai.js"
     },
+    "./commands/bootstrap.js": {
+      "types": "./src/commands/bootstrap.ts",
+      "default": "./dist/commands/bootstrap.js"
+    },
     "./commands/harvest.js": {
       "types": "./src/commands/harvest.ts",
       "default": "./dist/commands/harvest.js"
