@@ -131,6 +131,9 @@ describe("wiki curation model", () => {
     assert.equal(knowledge.type, "knowledge_proposal");
     assert.equal(knowledge.target_type, "known_fix");
     assert.equal(knowledge.patch.path, "kb/known-fixes/openclaw-auth-expired.md");
+    assert.match(knowledge.patch.content, /^---\n/);
+    assert.match(knowledge.patch.content, /knowledge_type: known_fix/);
+    assert.match(knowledge.patch.content, /sources:\n  - uri: "codex:session:1"\n    hash: "sha256:a"/);
     assert.deepEqual(knowledge.evidence.source_refs, [{ uri: "codex:session:1", hash: "sha256:a" }]);
   });
 });

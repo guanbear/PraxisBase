@@ -163,8 +163,57 @@ function targetIdFromPath(path: string, title: string): string {
   return makeWikiSlug(withoutExtension || title);
 }
 
+function knowledgeTypeForPageKind(pageKind: CuratedWikiProposal["page_kind"]): string {
+  if (pageKind === "known_fix" || pageKind === "procedure" || pageKind === "decision" || pageKind === "pitfall" || pageKind === "skill") {
+    return pageKind;
+  }
+  return "note";
+}
+
+function riskForPageKind(pageKind: CuratedWikiProposal["page_kind"]): string {
+  if (pageKind === "decision") return "high";
+  if (pageKind === "known_fix" || pageKind === "procedure" || pageKind === "pitfall" || pageKind === "skill") return "medium";
+  return "low";
+}
+
+function yamlQuote(value: string): string {
+  return JSON.stringify(value);
+}
+
+function curatedMaturity(value: CuratedWikiProposal["maturity"]): string {
+  if (value === "proven") return "proven";
+  return "draft";
+}
+
+function withKnowledgeFrontmatter(proposal: CuratedWikiProposal, targetId: string): string {
+  if (/^---\n/.test(proposal.body_markdown)) return proposal.body_markdown;
+  const knowledgeType = knowledgeTypeForPageKind(proposal.page_kind);
+  const frontmatter = [
+    "---",
+    `id: ${targetId}`,
+    `protocol_version: ${yamlQuote(PROTOCOL_VERSION)}`,
+    `type: ${knowledgeType}`,
+    `knowledge_type: ${knowledgeType}`,
+    `scope: ${proposal.scope}`,
+    `risk: ${riskForPageKind(proposal.page_kind)}`,
+    "status: draft",
+    `maturity: ${curatedMaturity(proposal.maturity)}`,
+    "sources:",
+    ...proposal.provenance.flatMap((entry) => [
+      `  - uri: ${yamlQuote(entry.source_ref)}`,
+      `    hash: ${yamlQuote(entry.source_hash)}`,
+    ]),
+    `source_count: ${proposal.source_count}`,
+    `confidence: ${proposal.confidence}`,
+    `updated_at: ${yamlQuote(proposal.created_at)}`,
+    "---",
+  ].join("\n");
+  return `${frontmatter}\n${proposal.body_markdown.trim()}\n`;
+}
+
 export function curatedWikiProposalToKnowledgeProposal(value: unknown): Proposal {
   const proposal = CuratedWikiProposalSchema.parse(value);
+  const targetId = targetIdFromPath(proposal.target_path, proposal.title);
   return ProposalSchema.parse({
     id: proposal.id,
     protocol_version: PROTOCOL_VERSION,
@@ -172,7 +221,7 @@ export function curatedWikiProposalToKnowledgeProposal(value: unknown): Proposal
     scope: proposal.scope,
     action: proposalActionForCurated(proposal.action),
     target_type: targetTypeForPageKind(proposal.page_kind),
-    target_id: targetIdFromPath(proposal.target_path, proposal.title),
+    target_id: targetId,
     agent_id: "praxisbase-wiki-curator",
     agent_type: "curator",
     environment_id: "local",
@@ -189,7 +238,7 @@ export function curatedWikiProposalToKnowledgeProposal(value: unknown): Proposal
     },
     patch: {
       path: proposal.target_path,
-      content: proposal.body_markdown,
+      content: withKnowledgeFrontmatter(proposal, targetId),
     },
     created_at: proposal.created_at,
   });
