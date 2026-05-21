@@ -23,6 +23,8 @@ import { wikiCommand } from "./commands/wiki.js";
 import { smokeCommand } from "./commands/smoke.js";
 import { remoteCommand } from "./commands/remote.js";
 import { harvestCommand } from "./commands/harvest.js";
+import { agentToolsCommand } from "./commands/agent-tools.js";
+import { mcpCommand } from "./commands/mcp.js";
 
 const program = new Command();
 
@@ -314,6 +316,44 @@ program
   });
 
 program
+  .command("agent-tools")
+  .argument("<sub>", "subcommand (generate|manifest)")
+  .option("--agent <agent>", "agent profile (codex, opencode, claude-code, etc.)")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      agent?: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
+      json?: boolean;
+    }
+  ) => {
+    console.log(await agentToolsCommand(process.cwd(), sub, {
+      agent: options.agent,
+      json: options.json,
+    }));
+  });
+
+program
+  .command("mcp")
+  .argument("<sub>", "subcommand (manifest|serve)")
+  .option("--stdio")
+  .option("--workspace <path>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      stdio?: boolean;
+      workspace?: string;
+      json?: boolean;
+    }
+  ) => {
+    const output = await mcpCommand(process.cwd(), sub, options);
+    if (!(sub === "serve" && options.stdio)) {
+      console.log(output);
+    }
+  });
+
+program
   .command("context")
   .argument("<sub>", "subcommand (get)")
   .requiredOption("--agent <agent>")
@@ -364,9 +404,28 @@ program
   .argument("<sub>", "subcommand (compile|graph|build-site)")
   .option("--dry-run")
   .option("--review")
+  .option("--mode <mode>", "graph mode: full, overview, or ego")
+  .option("--center <slug>", "center slug or id for ego graph")
+  .option("--depth <n>", "ego graph BFS depth")
+  .option("--limit <n>", "graph slice node limit")
+  .option("--type <type>", "graph node kind filter", collectOptionValue, [])
   .option("--json")
-  .action(async (sub: string, options: { dryRun?: boolean; review?: boolean; json?: boolean }) => {
-    console.log(await wikiCommand(process.cwd(), sub, options));
+  .action(async (sub: string, options: {
+    dryRun?: boolean;
+    review?: boolean;
+    mode?: "full" | "overview" | "ego";
+    center?: string;
+    depth?: string;
+    limit?: string;
+    type?: string[];
+    json?: boolean;
+  }) => {
+    console.log(await wikiCommand(process.cwd(), sub, {
+      ...options,
+      depth: options.depth ? parseInt(options.depth, 10) : undefined,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      types: options.type,
+    }));
   });
 
 program

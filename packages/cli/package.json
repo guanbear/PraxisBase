@@ -98,6 +98,14 @@
     "./commands/harvest.js": {
       "types": "./src/commands/harvest.ts",
       "default": "./dist/commands/harvest.js"
+    },
+    "./commands/agent-tools.js": {
+      "types": "./src/commands/agent-tools.ts",
+      "default": "./dist/commands/agent-tools.js"
+    },
+    "./commands/mcp.js": {
+      "types": "./src/commands/mcp.ts",
+      "default": "./dist/commands/mcp.js"
     }
   },
   "bin": {

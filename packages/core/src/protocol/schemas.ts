@@ -365,6 +365,7 @@ export const RealWikiSmokeReportSchema = z.object({
   proposal_candidates: z.number().int().nonnegative(),
   graph_nodes: z.number().int().nonnegative(),
   graph_broken_links: z.number().int().nonnegative(),
+  quality_findings: z.number().int().nonnegative().default(0),
   graph_duplicates: z.number().int().nonnegative().default(0),
   graph_orphans: z.number().int().nonnegative().default(0),
   site_pages: z.number().int().nonnegative(),
@@ -470,6 +471,7 @@ export const HarvestReportSchema = z.object({
   proposal_candidates: z.number().int().nonnegative(),
   graph_nodes: z.number().int().nonnegative(),
   graph_broken_links: z.number().int().nonnegative(),
+  quality_findings: z.number().int().nonnegative().default(0),
   site_pages: z.number().int().nonnegative(),
   context_items: z.number().int().nonnegative(),
   git: z.object({
@@ -550,6 +552,125 @@ export const ContextResponseSchema = z.object({
   }),
 });
 
+export const ToolMutatesSchema = z.enum(["none", "reports", "inbox", "outbox", "staging", "proposals", "stable_knowledge"]);
+export const AgentToolDescriptorSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  command: z.array(z.string().min(1)),
+  input_schema: z.record(z.unknown()),
+  mutates: ToolMutatesSchema,
+  dry_run_supported: z.boolean(),
+  requires_human_review: z.boolean(),
+});
+
+export const AgentToolManifestSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("agent_tool_manifest"),
+  workspace: z.string().min(1),
+  generated_at: DateTimeSchema,
+  tools: z.array(AgentToolDescriptorSchema),
+});
+
+export const McpToolManifestSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("mcp_tool_manifest"),
+  transport: z.literal("stdio"),
+  command: z.string().min(1),
+  args: z.array(z.string()),
+  tools: z.array(z.string().min(1)),
+  generated_at: DateTimeSchema,
+});
+
+export const WikiSourceSuggestedPageKindSchema = z.enum([
+  "known_fix",
+  "procedure",
+  "decision",
+  "pitfall",
+  "skill_seed",
+  "preference",
+  "incident",
+  "note",
+]);
+
+export const WikiSourceAnalysisSchema = z.object({
+  source_id: z.string().min(1),
+  source_hash: z.string().min(1),
+  source_kind: z.string().min(1),
+  suggested_page_kind: WikiSourceSuggestedPageKindSchema,
+  signatures: z.array(z.string().min(1)),
+  aliases: z.array(z.string().min(1)),
+  scope: ScopeSchema,
+  confidence: z.number().min(0).max(1),
+  risks: z.array(z.string().min(1)),
+  candidate_path: z.string().min(1).optional(),
+});
+
+export const WikiQualityRuleSchema = z.enum([
+  "missing_source_hash",
+  "missing_citation",
+  "duplicate_signature",
+  "broken_link",
+  "orphan_page",
+  "stale_page",
+  "unsafe_path",
+  "private_material",
+]);
+
+export const WikiQualityFindingSchema = z.object({
+  rule: WikiQualityRuleSchema,
+  severity: z.enum(["error", "warning"]),
+  path: z.string().min(1),
+  message: z.string().min(1),
+  page_id: z.string().min(1).optional(),
+  signature: z.string().min(1).optional(),
+  details: z.record(z.unknown()).optional(),
+});
+
+export const WikiQualityReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("wiki_quality_report"),
+  findings: z.array(WikiQualityFindingSchema),
+  summary: z.object({
+    total: z.number().int().nonnegative(),
+    errors: z.number().int().nonnegative(),
+    warnings: z.number().int().nonnegative(),
+    by_rule: z.record(z.number().int().nonnegative()),
+  }),
+  changed_stable_knowledge: z.literal(false),
+  created_at: DateTimeSchema,
+});
+
+export const WikiGraphSliceModeSchema = z.enum(["overview", "ego"]);
+export const WikiGraphSliceSchema = z.object({
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("wiki_graph_slice"),
+  mode: WikiGraphSliceModeSchema,
+  center: z.string().min(1).optional(),
+  depth: z.number().int().nonnegative(),
+  limit: z.number().int().positive(),
+  types: z.array(z.string().min(1)).default([]),
+  truncated: z.boolean(),
+  truncated_node_count: z.number().int().nonnegative(),
+  nodes: z.array(z.object({
+    id: z.string().min(1),
+    slug: z.string().min(1),
+    title: z.string().min(1),
+    kind: z.string().min(1),
+    scope: z.string().min(1),
+    maturity: z.string().min(1),
+    source_ids: z.array(z.string()),
+  })),
+  links: z.array(z.object({
+    from: z.string().min(1),
+    to: z.string().min(1),
+    type: z.enum(["wikilink", "source_overlap", "related"]),
+    weight: z.number(),
+  })),
+});
+
 export const StructuredErrorSchema = z.object({
   ok: z.literal(false),
   code: z.string().min(1),
@@ -597,3 +718,14 @@ export type LintSeverity = z.infer<typeof LintSeveritySchema>;
 export type LintRule = z.infer<typeof LintRuleSchema>;
 export type LintFinding = z.infer<typeof LintFindingSchema>;
 export type LintReport = z.infer<typeof LintReportSchema>;
+export type AgentToolDescriptor = z.infer<typeof AgentToolDescriptorSchema>;
+export type AgentToolManifest = z.infer<typeof AgentToolManifestSchema>;
+export type McpToolManifest = z.infer<typeof McpToolManifestSchema>;
+export type ToolMutates = z.infer<typeof ToolMutatesSchema>;
+export type WikiSourceSuggestedPageKind = z.infer<typeof WikiSourceSuggestedPageKindSchema>;
+export type WikiSourceAnalysis = z.infer<typeof WikiSourceAnalysisSchema>;
+export type WikiQualityRule = z.infer<typeof WikiQualityRuleSchema>;
+export type WikiQualityFinding = z.infer<typeof WikiQualityFindingSchema>;
+export type WikiQualityReport = z.infer<typeof WikiQualityReportSchema>;
+export type WikiGraphSliceMode = z.infer<typeof WikiGraphSliceModeSchema>;
+export type WikiGraphSlice = z.infer<typeof WikiGraphSliceSchema>;

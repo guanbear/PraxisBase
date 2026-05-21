@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { writeJson, writeText, safePath } from "../store/file-store.js";
@@ -97,6 +97,18 @@ export async function planInstall(root: string, agent: AgentProfile, options: Pl
     `praxisbase context get --agent ${agent} --stage diagnosis --json`,
     `praxisbase capture finish --agent ${agent} --result success --json`,
   ];
+
+  const skillRelativePath = `${protocolPaths.agentToolsSkills}/praxisbase/SKILL.md`;
+  try {
+    const skillAbsolute = safePath(root, skillRelativePath);
+    await stat(skillAbsolute);
+    writes.push({
+      path: skillRelativePath,
+      description: `Generated PraxisBase Skill for ${agent}`,
+    });
+  } catch {
+    commands.unshift(`praxisbase agent-tools generate --agent ${agent}`);
+  }
 
   if (options.dryRun) {
     return { agent, dry_run: true, writes, commands };

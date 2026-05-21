@@ -6,10 +6,10 @@ import assert from "node:assert/strict";
 import { PROTOCOL_VERSION } from "@praxisbase/core";
 import { compileWiki } from "@praxisbase/core/wiki/compile.js";
 
-async function writeCapture(root: string, summary: string, sourceHash = "sha256:session1"): Promise<void> {
+async function writeCapture(root: string, summary: string, sourceHash = "sha256:session1", id = "capture_1"): Promise<void> {
   await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
-  await writeFile(join(root, ".praxisbase/outbox/captures/capture_1.json"), JSON.stringify({
-    id: "capture_1",
+  await writeFile(join(root, `.praxisbase/outbox/captures/${id}.json`), JSON.stringify({
+    id,
     protocol_version: PROTOCOL_VERSION,
     type: "capture_record",
     agent: "codex",
@@ -39,6 +39,7 @@ describe("compileWiki", () => {
     assert.equal(report.changed_stable_knowledge, false);
     assert.equal(report.sources_read, 1);
     assert.equal(report.candidate_ids.length, 1);
+    assert.equal(report.source_analysis[0].suggested_page_kind, "known_fix");
     await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
     await assert.rejects(() => stat(join(root, "kb")), { code: "ENOENT" });
     await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
@@ -58,7 +59,7 @@ describe("compileWiki", () => {
     const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", proposalFiles[0]), "utf8"));
     assert.equal(proposal.type, "wiki_proposal_candidate");
     assert.equal(proposal.changed_stable_knowledge, false);
-    assert.match(proposal.patch.path, /^kb\/notes\/wiki-/);
+    assert.equal(proposal.patch.path, "kb/known-fixes/openclaw-auth-expired.md");
     assert.ok(proposal.patch.content.includes("Fixed OpenClaw auth expired"));
   });
 
@@ -107,6 +108,7 @@ describe("compileWiki", () => {
 
     const report = await compileWiki(root, { mode: "review", now: "2026-05-20T00:00:00.000Z" });
     assert.equal(report.candidate_ids.length, 1);
+    assert.equal(report.source_analysis[0].scope, "personal");
     const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
     const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", proposalFiles[0]), "utf8"));
     assert.ok(proposal.patch.content.includes("scope: personal"));
@@ -130,6 +132,19 @@ The body contains user token abc.
     assert.equal(report.candidate_ids.length, 0);
     assert.equal(report.exceptions, 1);
     const files = await readdir(join(root, ".praxisbase/exceptions/human-required"));
+    assert.equal(files.length, 1);
+  });
+
+  it("routes duplicate candidate paths without shared signatures to conflict exceptions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-compile-"));
+    await writeCapture(root, "Procedure: restart worker service after deployment hangs.", "sha256:session1", "capture_1");
+    await writeCapture(root, "Procedure: restart worker service when queue stalls.", "sha256:session2", "capture_2");
+
+    const report = await compileWiki(root, { mode: "review", now: "2026-05-20T00:00:00.000Z" });
+
+    assert.equal(report.candidate_ids.length, 1);
+    assert.equal(report.exceptions, 1);
+    const files = await readdir(join(root, ".praxisbase/exceptions/conflicts"));
     assert.equal(files.length, 1);
   });
 });

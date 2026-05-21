@@ -73,9 +73,16 @@ Auth note.
     assert.equal(graphParsed.ok, true);
     assert.equal(graphParsed.graph.nodes.length, 1);
 
+    const sliceOutput = await wikiCommand(root, "graph", { json: true, mode: "overview", limit: 1 });
+    const sliceParsed = JSON.parse(sliceOutput);
+    assert.equal(sliceParsed.ok, true);
+    assert.equal(sliceParsed.slice.mode, "overview");
+    assert.equal(sliceParsed.slice.nodes.length, 1);
+
     const siteOutput = await wikiCommand(root, "build-site", { json: true });
     const siteParsed = JSON.parse(siteOutput);
     assert.equal(siteParsed.ok, true);
     assert.ok(siteParsed.result.outputs.includes("dist/index.html"));
+    assert.ok(siteParsed.result.outputs.includes("dist/graph-slices/overview.json"));
   });
 });

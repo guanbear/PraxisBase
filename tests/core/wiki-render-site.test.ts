@@ -35,22 +35,41 @@ Refresh login. <script>alert("x")</script>
 
     const result = await buildWikiSite(root);
     assert.ok(result.outputs.includes("dist/index.html"));
+    assert.ok(result.outputs.includes("dist/graph.html"));
+    assert.ok(result.outputs.includes("dist/issues.html"));
     assert.ok(result.outputs.includes("dist/pages/openclaw-auth-expired.html"));
     assert.ok(result.outputs.includes("dist/pages/openclaw-auth-expired.txt"));
     assert.ok(result.outputs.includes("dist/pages/openclaw-auth-expired.json"));
     assert.ok(result.outputs.includes("dist/llms-full.txt"));
     assert.ok(result.outputs.includes("dist/graph.jsonld"));
+    assert.ok(result.outputs.includes("dist/graph-slices/overview.json"));
     assert.ok(result.outputs.includes("dist/ai-readme.md"));
+    assert.ok(result.outputs.some((output) => output.startsWith(".praxisbase/reports/wiki-quality/")));
+    assert.equal(result.health.quality_findings, 0);
 
     const index = await readFile(join(root, "dist/index.html"), "utf8");
     assert.ok(index.includes("Knowledge Health"));
     assert.ok(index.includes("searchInput"));
+    assert.ok(index.includes("data-kind-filter"));
+    assert.ok(index.includes("href=\"style.css\""));
+    assert.ok(index.includes("href=\"graph.html\""));
+    assert.ok(index.includes("href=\"issues.html\""));
+    assert.equal(index.includes("href=\"/"), false);
     assert.equal(index.includes("<script>alert"), false);
 
     const page = await readFile(join(root, "dist/pages/openclaw-auth-expired.html"), "utf8");
     assert.ok(page.includes("Provenance"));
     assert.ok(page.includes("Related"));
+    assert.ok(page.includes("href=\"../style.css\""));
+    assert.equal(page.includes("href=\"/"), false);
     assert.equal(page.includes("<script>alert"), false);
+
+    const graphPage = await readFile(join(root, "dist/graph.html"), "utf8");
+    assert.ok(graphPage.includes("graph-shell"));
+    assert.ok(graphPage.includes("window.__WIKI_GRAPH__"));
+
+    const issuesPage = await readFile(join(root, "dist/issues.html"), "utf8");
+    assert.ok(issuesPage.includes("Quality Issues"));
 
     await assert.doesNotReject(stat(join(root, "dist/style.css")));
     await assert.doesNotReject(stat(join(root, "dist/site.js")));
@@ -83,5 +102,6 @@ Body.
     const index = await readFile(join(root, "dist/index.html"), "utf8");
     assert.ok(index.includes("Broken links"));
     assert.ok(index.includes("Duplicates"));
+    assert.ok(index.includes("Quality findings"));
   });
 });

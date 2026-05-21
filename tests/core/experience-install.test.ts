@@ -5,6 +5,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { getAdapterProfile } from "../../packages/core/src/experience/profiles.js";
 import { planInstall } from "../../packages/core/src/experience/install.js";
+import { buildAgentToolManifest, writeAgentToolManifest } from "@praxisbase/core/agent-access/manifest.js";
+import { generateSkill } from "@praxisbase/core/agent-access/skill.js";
+import { writeText } from "../../packages/core/src/store/file-store.js";
+import { protocolPaths } from "../../packages/core/src/protocol/paths.js";
 
 describe("getAdapterProfile", () => {
   const BUILT_IN_AGENTS = ["codex", "claude-code", "opencode", "openclaw", "hermes", "openhuman", "generic"] as const;
@@ -211,6 +215,33 @@ describe("planInstall", () => {
     await assert.rejects(
       () => planInstall(root, "unknown-agent" as any, { dryRun: true }),
       /UNKNOWN_ADAPTER_PROFILE|not found|unsupported/i
+    );
+  });
+
+  it("dry-run includes generated Skill path when Skill exists for local-skill agents", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-install-"));
+
+    const manifest = buildAgentToolManifest(root, { agent: "codex" });
+    await writeAgentToolManifest(root, manifest);
+    const skillContent = generateSkill(manifest);
+    await writeText(root, `${protocolPaths.agentToolsSkills}/praxisbase/SKILL.md`, skillContent);
+
+    const result = await planInstall(root, "codex", { dryRun: true });
+
+    const skillWrite = result.writes.find(
+      (w) => w.path.includes("agent-tools/skills/praxisbase/SKILL.md")
+    );
+    assert.ok(skillWrite, "dry-run should include Skill write for codex agent");
+  });
+
+  it("dry-run includes warning when Skill does not exist", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-install-"));
+
+    const result = await planInstall(root, "codex", { dryRun: true });
+
+    assert.ok(
+      result.commands.some((c) => c.includes("agent-tools generate")),
+      "should include agent-tools generate command hint when Skill is missing"
     );
   });
 });

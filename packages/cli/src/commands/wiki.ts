@@ -1,4 +1,5 @@
 import { compileWiki } from "@praxisbase/core/wiki/compile.js";
+import { buildWikiGraphSlice } from "@praxisbase/core/wiki/graph-slices.js";
 import { runWikiLint } from "@praxisbase/core/wiki/lint.js";
 import { buildWikiGraph } from "@praxisbase/core/wiki/resolver.js";
 import { buildWikiSite, collectWikiPages } from "@praxisbase/core/wiki/render-site.js";
@@ -8,6 +9,11 @@ export interface WikiCommandOptions {
   dryRun?: boolean;
   review?: boolean;
   json?: boolean;
+  mode?: "full" | "overview" | "ego";
+  center?: string;
+  depth?: number;
+  limit?: number;
+  types?: string[];
 }
 
 export async function wikiCommand(
@@ -37,10 +43,23 @@ export async function wikiCommand(
       findings: lint.findings.length,
     };
     await writeJson(root, "dist/graph.json", graph);
-    if (options.json) {
-      return JSON.stringify({ ok: true, graph, health }, null, 2);
+    const slice = options.mode && options.mode !== "full"
+      ? buildWikiGraphSlice(graph, {
+        mode: options.mode,
+        center: options.center,
+        depth: options.depth,
+        limit: options.limit,
+        types: options.types,
+      })
+      : undefined;
+    if (slice) {
+      const filename = slice.mode === "ego" ? `dist/graph-slices/ego-${slice.center}.json` : "dist/graph-slices/overview.json";
+      await writeJson(root, filename, slice);
     }
-    return `Wiki graph: ${graph.nodes.length} nodes`;
+    if (options.json) {
+      return JSON.stringify({ ok: true, graph, slice, health }, null, 2);
+    }
+    return slice ? `Wiki graph ${slice.mode}: ${slice.nodes.length} nodes` : `Wiki graph: ${graph.nodes.length} nodes`;
   }
 
   if (subcommand === "build-site") {

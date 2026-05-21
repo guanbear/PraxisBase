@@ -2,37 +2,17 @@ import { stat } from "node:fs/promises";
 import { posix } from "node:path";
 import matter from "gray-matter";
 import { escapeHtml, escapeJsonForHtml } from "../build/html.js";
+import { protocolPaths } from "../protocol/paths.js";
 import { readText, writeJson, writeText } from "../store/file-store.js";
 import { collectWikiSources } from "./collect.js";
 import { inferWikiConfidence, inferWikiLifecycle, makeWikiSlug, type WikiSource } from "./model.js";
 import { runWikiLint } from "./lint.js";
+import { buildWikiQualityReport } from "./quality.js";
+import { buildWikiGraphSlice } from "./graph-slices.js";
 import { buildWikiGraph, type WikiGraph, type WikiPage } from "./resolver.js";
-
-export interface BuildWikiSiteResult {
-  outputs: string[];
-  pages: number;
-  health: {
-    sources: number;
-    pages: number;
-    broken_links: number;
-    duplicates: number;
-    orphans: number;
-    stale: number;
-    findings: number;
-  };
-}
-
-interface WikiSitePage extends WikiPage {
-  path: string;
-  source_ids: string[];
-  summary: string;
-  body_text: string;
-  signatures: string[];
-  confidence?: number;
-  reference_count?: number;
-  updated_at?: string;
-  superseded_by?: string | null;
-}
+import { SITE_CSS, SITE_JS, SITE_OUTPUTS } from "./site-assets.js";
+import { graphJsonLd, pageHref, renderSitemap } from "./site-html.js";
+import type { BuildWikiSiteResult, WikiSitePage } from "./site-model.js";
 
 interface SourceMetadata {
   id?: string;
@@ -45,20 +25,6 @@ interface SourceMetadata {
   superseded_by?: string | null;
   signatures: string[];
 }
-
-const SITE_OUTPUTS = [
-  "dist/index.html",
-  "dist/search-index.json",
-  "dist/graph.json",
-  "dist/graph.jsonld",
-  "dist/llms.txt",
-  "dist/llms-full.txt",
-  "dist/ai-readme.md",
-  "dist/sitemap.xml",
-  "dist/robots.txt",
-  "dist/style.css",
-  "dist/site.js",
-];
 
 function isStableSource(source: WikiSource): boolean {
   return Boolean(source.path) && (source.kind === "stable_kb" || source.kind === "skill");
@@ -233,35 +199,37 @@ function markdownToHtml(markdown: string): string {
   return html.join("\n");
 }
 
-function pageHref(page: WikiSitePage): string {
-  return `pages/${page.slug}.html`;
-}
-
-function renderLayout(input: { title: string; body: string; graph?: WikiGraph; pages: WikiSitePage[] }): string {
+function renderLayout(input: { title: string; body: string; graph?: WikiGraph; pages: WikiSitePage[]; assetPrefix?: string }): string {
+  const prefix = input.assetPrefix ?? "";
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(input.title)}</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="${escapeHtml(prefix)}style.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/index.html">PraxisBase Wiki</a>
+    <a class="brand" href="${escapeHtml(prefix)}index.html">PraxisBase Wiki</a>
     <div class="search">
       <input id="searchInput" type="search" placeholder="Search knowledge" autocomplete="off">
       <div id="searchResults" class="search-results" hidden></div>
     </div>
+    <nav class="topnav" aria-label="Wiki views">
+      <a href="${escapeHtml(prefix)}graph.html">Graph</a>
+      <a href="${escapeHtml(prefix)}issues.html">Issues</a>
+    </nav>
   </header>
   ${input.body}
+  <script>window.__WIKI_BASE__=${escapeJsonForHtml(prefix)};</script>
   <script>window.__WIKI_GRAPH__=${escapeJsonForHtml(input.graph ?? null)};</script>
-  <script src="/site.js"></script>
+  <script src="${escapeHtml(prefix)}site.js"></script>
 </body>
 </html>`;
 }
 
-function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: string, stalePages: number): string {
+function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: string, stalePages: number, qualityFindings: number): string {
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
   const recent = [...pages]
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
@@ -273,6 +241,7 @@ function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: 
     ["Duplicates", String(graph.duplicates.length)],
     ["Orphans", String(graph.orphans.length)],
     ["Stale", String(stalePages)],
+    ["Quality findings", String(qualityFindings)],
     ["Bundle status", bundleStatus],
   ];
 
@@ -295,7 +264,7 @@ function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: 
     <div>
       <h2>Recent Sources</h2>
       <ol class="link-list">
-        ${recent.map((page) => `<li><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
+        ${recent.map((page) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
       </ol>
     </div>
     <div>
@@ -305,21 +274,25 @@ function renderDashboard(pages: WikiSitePage[], graph: WikiGraph, bundleStatus: 
       </ol>
     </div>
   </section>
+  <section class="filters" aria-label="Knowledge type filters">
+    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}">${escapeHtml(kind === "all" ? "All" : kind)}</button>`).join("\n")}
+  </section>
 </main>`,
   });
 }
 
 function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph): string {
   const related = relatedPages(page, pages, graph);
-  const nav = pages.map((item) => `<a href="/${escapeHtml(pageHref(item))}"${item.id === page.id ? " aria-current=\"page\"" : ""}>${escapeHtml(item.title)}</a>`).join("\n");
+  const nav = pages.map((item) => `<a href="${escapeHtml(`${item.slug}.html`)}"${item.id === page.id ? " aria-current=\"page\"" : ""}>${escapeHtml(item.title)}</a>`).join("\n");
   const relatedHtml = related.length > 0
-    ? related.map((item) => `<li><a href="/${escapeHtml(pageHref(item))}">${escapeHtml(item.title)}</a></li>`).join("\n")
+    ? related.map((item) => `<li><a href="${escapeHtml(`${item.slug}.html`)}">${escapeHtml(item.title)}</a></li>`).join("\n")
     : "<li>No related pages yet</li>";
 
   return renderLayout({
     title: page.title,
     pages,
     graph,
+    assetPrefix: "../",
     body: `<main class="page-shell">
   <nav class="side-nav" aria-label="Knowledge pages">${nav}</nav>
   <article class="content">
@@ -347,18 +320,68 @@ function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph)
   });
 }
 
-function graphJsonLd(pages: WikiSitePage[], graph: WikiGraph): unknown {
-  return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    itemListElement: pages.map((page, index) => ({
-      "@type": "TechArticle",
-      position: index + 1,
-      name: page.title,
-      url: `pages/${page.slug}.html`,
-      about: graph.links.filter((link) => link.from === page.id).map((link) => link.to),
-    })),
-  };
+function kindFilters(pages: WikiSitePage[]): string[] {
+  return ["all", ...Array.from(new Set(pages.map((page) => page.page_kind ?? "note"))).sort()];
+}
+
+function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph): string {
+  return renderLayout({
+    title: "PraxisBase Wiki Graph",
+    pages,
+    graph,
+    body: `<main class="graph-shell">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Knowledge graph</p>
+      <h1>Graph</h1>
+      <p class="lede">Backlinks, source overlap, and related repair knowledge for agent context.</p>
+    </div>
+  </section>
+  <section class="filters" aria-label="Knowledge type filters">
+    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}">${escapeHtml(kind === "all" ? "All" : kind)}</button>`).join("\n")}
+  </section>
+  <section class="graph-grid">
+    <div class="graph-panel">
+      <h2>Nodes</h2>
+      <ol class="link-list">
+        ${pages.map((page) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
+      </ol>
+    </div>
+    <div class="graph-panel">
+      <h2>Links</h2>
+      <ol class="link-list">
+        ${graph.links.slice(0, 80).map((link) => `<li><code>${escapeHtml(link.from)} -> ${escapeHtml(link.to)}</code><span>${escapeHtml(link.type)}</span></li>`).join("\n")}
+      </ol>
+    </div>
+  </section>
+</main>`,
+  });
+}
+
+function renderIssuesPage(
+  pages: WikiSitePage[],
+  graph: WikiGraph,
+  qualityFindings: Array<{ rule: string; severity: string; path: string; message: string }>
+): string {
+  return renderLayout({
+    title: "PraxisBase Quality Issues",
+    pages,
+    graph,
+    body: `<main class="issues-shell">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Wiki quality</p>
+      <h1>Quality Issues</h1>
+      <p class="lede">Findings that should be reviewed before agents rely on this knowledge.</p>
+    </div>
+  </section>
+  <section class="issues-panel">
+    <ol class="issue-list">
+      ${qualityFindings.length > 0 ? qualityFindings.map((finding) => `<li><strong>${escapeHtml(finding.rule)}</strong> <small>${escapeHtml(finding.severity)}</small><br>${escapeHtml(finding.message)}<br><small>${escapeHtml(finding.path)}</small></li>`).join("\n") : "<li>No quality issues found.</li>"}
+    </ol>
+  </section>
+</main>`,
+  });
 }
 
 function renderLlms(pages: WikiSitePage[], full: boolean): string {
@@ -397,11 +420,13 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const pages = await collectWikiPages(root);
   const graph = buildWikiGraph(pages);
   const lintReport = await runWikiLint(root, { pages });
+  const qualityReport = await buildWikiQualityReport(root, { pages, graph });
   const outputs = [...SITE_OUTPUTS];
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
   const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
+  outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: pages.map((page) => ({
@@ -414,6 +439,9 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
     })),
   });
   await writeJson(root, "dist/graph.json", graph);
+  await writeJson(root, "dist/graph-slices/overview.json", buildWikiGraphSlice(graph, { mode: "overview", limit: 50 }));
+  await writeText(root, "dist/graph.html", renderGraphPage(pages, graph));
+  await writeText(root, "dist/issues.html", renderIssuesPage(pages, graph, qualityReport.findings));
   await writeJson(root, "dist/graph.jsonld", graphJsonLd(pages, graph));
   await writeText(root, "dist/llms.txt", renderLlms(pages, false));
   await writeText(root, "dist/llms-full.txt", renderLlms(pages, true));
@@ -454,98 +482,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
       orphans: graph.orphans.length,
       stale: stalePages,
       findings: lintReport.findings.length,
+      quality_findings: qualityReport.summary.total,
     },
   };
 }
-
-function renderSitemap(pages: WikiSitePage[]): string {
-  const urls = ["index.html", ...pages.map(pageHref)];
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((url) => `  <url><loc>/${escapeHtml(url)}</loc></url>`).join("\n")}
-</urlset>
-`;
-}
-
-const SITE_CSS = `:root {
-  color-scheme: light;
-  --ink: #17211b;
-  --muted: #5f6d66;
-  --line: #d8e0da;
-  --panel: #f7f8f5;
-  --accent: #146c5c;
-  --accent-2: #8b2f58;
-  --warn: #9a5a00;
-}
-* { box-sizing: border-box; }
-body { margin: 0; color: var(--ink); background: #fbfcf8; font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
-.topbar { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: 220px minmax(220px, 560px); gap: 1rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--line); background: rgba(251, 252, 248, .96); }
-.brand { color: var(--ink); font-weight: 750; }
-.search { position: relative; }
-.search input { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: 6px; padding: 0 .75rem; background: white; color: var(--ink); }
-.search-results { position: absolute; top: 42px; left: 0; right: 0; border: 1px solid var(--line); border-radius: 6px; background: white; box-shadow: 0 12px 28px rgba(23, 33, 27, .12); overflow: hidden; }
-.search-results a { display: block; padding: .7rem .8rem; border-bottom: 1px solid var(--line); }
-.dashboard { max-width: 1180px; margin: 0 auto; padding: 2rem 1rem 4rem; }
-.hero { min-height: 240px; display: flex; align-items: end; padding: 2rem 0; border-bottom: 1px solid var(--line); }
-.eyebrow { margin: 0 0 .5rem; color: var(--accent-2); font-weight: 700; text-transform: uppercase; font-size: .78rem; }
-h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-spacing: 0; }
-.lede { max-width: 62ch; color: var(--muted); font-size: 1.05rem; }
-.metrics { display: grid; grid-template-columns: repeat(6, minmax(120px, 1fr)); gap: .75rem; margin: 1.25rem 0; }
-.metrics article { border: 1px solid var(--line); border-radius: 8px; padding: .85rem; background: white; }
-.metrics span { display: block; color: var(--muted); font-size: .78rem; }
-.metrics strong { display: block; margin-top: .3rem; font-size: 1.45rem; }
-.dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-.dashboard-grid > div { border-top: 3px solid var(--accent); padding-top: .8rem; }
-.link-list { list-style: none; margin: 0; padding: 0; }
-.link-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 0; border-bottom: 1px solid var(--line); }
-.link-list span, .link-list code { color: var(--muted); }
-.page-shell { display: grid; grid-template-columns: 230px minmax(0, 760px) 260px; gap: 1.25rem; max-width: 1280px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
-.side-nav, .meta-rail { position: sticky; top: 68px; align-self: start; max-height: calc(100vh - 88px); overflow: auto; }
-.side-nav a { display: block; padding: .55rem .65rem; border-radius: 6px; color: var(--ink); }
-.side-nav a[aria-current="page"] { background: #e8f2ed; color: var(--accent); font-weight: 700; }
-.content { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 1.25rem; }
-.content h1 { font-size: 2rem; line-height: 1.1; margin-bottom: 1rem; }
-.content h2 { margin-top: 1.8rem; border-top: 1px solid var(--line); padding-top: 1rem; }
-.content pre { overflow: auto; background: #18231d; color: #f2f7f2; border-radius: 6px; padding: 1rem; }
-.meta-rail section { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: .9rem; margin-bottom: .85rem; }
-.meta-rail h2 { margin: 0 0 .55rem; font-size: .92rem; }
-.meta-rail ul { margin: 0; padding-left: 1.1rem; }
-.meta-rail code { overflow-wrap: anywhere; }
-.meta-rail dl { display: grid; grid-template-columns: 90px 1fr; gap: .35rem .6rem; margin: 0; }
-.meta-rail dt { color: var(--muted); }
-@media (max-width: 900px) {
-  .topbar { grid-template-columns: 1fr; }
-  .metrics, .dashboard-grid, .page-shell { grid-template-columns: 1fr; }
-  .side-nav, .meta-rail { position: static; max-height: none; }
-}`;
-
-const SITE_JS = `(() => {
-  const input = document.getElementById("searchInput");
-  const box = document.getElementById("searchResults");
-  if (!input || !box) return;
-  let docs = [];
-  fetch("/search-index.json").then((res) => res.json()).then((data) => { docs = data.documents || []; }).catch(() => {});
-  const render = () => {
-    const query = input.value.trim().toLowerCase();
-    if (!query) { box.hidden = true; box.innerHTML = ""; return; }
-    const matches = docs.filter((doc) => [doc.title, doc.path, doc.text].join("\\n").toLowerCase().includes(query)).slice(0, 8);
-    box.innerHTML = matches.map((doc) => \`<a href="/pages/\${doc.slug}.html"><strong>\${escapeText(doc.title)}</strong><br><small>\${escapeText(doc.path)}</small></a>\`).join("");
-    box.hidden = matches.length === 0;
-  };
-  const escapeText = (value) => String(value).replace(/[&<>"']/g, (char) => {
-    if (char === "&") return "&amp;";
-    if (char === "<") return "&lt;";
-    if (char === ">") return "&gt;";
-    if (char === '"') return "&quot;";
-    return "&#39;";
-  });
-  input.addEventListener("input", render);
-  window.addEventListener("keydown", (event) => {
-    if ((event.key === "/" && document.activeElement !== input) || ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k")) {
-      event.preventDefault();
-      input.focus();
-    }
-  });
-})();`;

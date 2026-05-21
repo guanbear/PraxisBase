@@ -20,6 +20,8 @@ describe("harvest CLI command", () => {
     const parsed = JSON.parse(output);
     assert.equal(parsed.ok, true);
     assert.equal(parsed.report.changed_stable_knowledge, false);
+    assert.ok(parsed.report.quality_findings >= 0);
+    assert.ok(parsed.report.outputs.some((output: string) => output.startsWith(".praxisbase/reports/wiki-quality/")));
     await assert.doesNotReject(() => stat(join(root, "dist/index.html")));
   });
 

@@ -115,6 +115,10 @@
       "types": "./src/wiki/collect.ts",
       "default": "./dist/wiki/collect.js"
     },
+    "./wiki/analyze.js": {
+      "types": "./src/wiki/analyze.ts",
+      "default": "./dist/wiki/analyze.js"
+    },
     "./wiki/compile.js": {
       "types": "./src/wiki/compile.ts",
       "default": "./dist/wiki/compile.js"
@@ -123,9 +127,29 @@
       "types": "./src/wiki/lint.ts",
       "default": "./dist/wiki/lint.js"
     },
+    "./wiki/quality.js": {
+      "types": "./src/wiki/quality.ts",
+      "default": "./dist/wiki/quality.js"
+    },
     "./wiki/resolver.js": {
       "types": "./src/wiki/resolver.ts",
       "default": "./dist/wiki/resolver.js"
+    },
+    "./wiki/graph-slices.js": {
+      "types": "./src/wiki/graph-slices.ts",
+      "default": "./dist/wiki/graph-slices.js"
+    },
+    "./wiki/site-model.js": {
+      "types": "./src/wiki/site-model.ts",
+      "default": "./dist/wiki/site-model.js"
+    },
+    "./wiki/site-html.js": {
+      "types": "./src/wiki/site-html.ts",
+      "default": "./dist/wiki/site-html.js"
+    },
+    "./wiki/site-assets.js": {
+      "types": "./src/wiki/site-assets.ts",
+      "default": "./dist/wiki/site-assets.js"
     },
     "./wiki/retrieval.js": {
       "types": "./src/wiki/retrieval.ts",
@@ -134,6 +158,18 @@
     "./wiki/render-site.js": {
       "types": "./src/wiki/render-site.ts",
       "default": "./dist/wiki/render-site.js"
+    },
+    "./agent-access/manifest.js": {
+      "types": "./src/agent-access/manifest.ts",
+      "default": "./dist/agent-access/manifest.js"
+    },
+    "./agent-access/skill.js": {
+      "types": "./src/agent-access/skill.ts",
+      "default": "./dist/agent-access/skill.js"
+    },
+    "./agent-access/mcp.js": {
+      "types": "./src/agent-access/mcp.ts",
+      "default": "./dist/agent-access/mcp.js"
     }
   },
   "scripts": {

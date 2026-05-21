@@ -533,6 +533,7 @@ export async function runRealWikiSmoke(root: string, input: RunRealWikiSmokeInpu
     graph_broken_links: graph.broken_links.length,
     graph_duplicates: graph.duplicates.length,
     graph_orphans: graph.orphans.length,
+    quality_findings: site.health.quality_findings,
     site_pages: site.pages,
     context_items: context.items.length,
     outputs: uniqueSorted([

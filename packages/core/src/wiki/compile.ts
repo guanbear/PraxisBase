@@ -7,6 +7,8 @@ import type { WikiSource } from "./model.js";
 import { collectWikiSources } from "./collect.js";
 import { readWikiState, getChangedWikiSources, writeWikiState, markWikiSourcesCompiled } from "./state.js";
 import { isAllowedWikiPatchPath, containsPrivateMaterial, validateBodyShrink } from "./lint.js";
+import { analyzeWikiSource } from "./analyze.js";
+import type { WikiSourceAnalysis } from "../protocol/schemas.js";
 
 export interface CompileWikiOptions {
   mode: "dry-run" | "review";
@@ -21,6 +23,7 @@ export interface WikiCompileReport {
   sources_read: number;
   changed_sources: number;
   candidate_ids: string[];
+  source_analysis: WikiSourceAnalysis[];
   exceptions: number;
   skipped_sources: number;
   changed_stable_knowledge: false;
@@ -35,6 +38,8 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
 
   const sources = await collectWikiSources(root);
   const sourcesRead = sources.length;
+  const sourceAnalysis = sources.map((source) => analyzeWikiSource(source));
+  const sourceAnalysisById = new Map(sourceAnalysis.map((analysis) => [analysis.source_id, analysis]));
 
   const state = await readWikiState(root);
 
@@ -52,16 +57,22 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
 
   let exceptions = 0;
   let skippedSources = 0;
+  const candidateByPath = new Map<string, { source: WikiSource; analysis: WikiSourceAnalysis; candidateId: string }>();
 
   for (const source of sources) {
     if (!changedIds.has(source.id)) continue;
+    const analysis = sourceAnalysisById.get(source.id) ?? analyzeWikiSource(source);
     if (!CANDIDATE_KINDS.has(source.kind)) {
       skippedSources++;
       continue;
     }
 
     const privateScanText = [source.summary, source.body].filter(Boolean).join("\n");
-    if (privateScanText && containsPrivateMaterial(privateScanText)) {
+    if (
+      (privateScanText && containsPrivateMaterial(privateScanText))
+      || analysis.risks.includes("private_material")
+      || analysis.risks.includes("weak_provenance")
+    ) {
       exceptions++;
       if (mode === "review") {
         await writeHumanRequiredException(root, source, now);
@@ -70,13 +81,42 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
     }
 
     const candidateId = makeId("wiki-proposal", source.id + ":" + source.source_hash);
-    const slug = makeWikiSlug(source.title);
     const patchPath = source.kind === "stable_kb" && source.path
       ? source.path
-      : `kb/notes/wiki-${slug}.md`;
+      : analysis.candidate_path ?? `kb/notes/wiki-${makeWikiSlug(source.title)}.md`;
 
     if (!isAllowedWikiPatchPath(patchPath)) {
-      skippedSources++;
+      exceptions++;
+      if (mode === "review") {
+        await writeHumanRequiredException(root, source, now, "Unsafe wiki candidate path", { candidate_path: patchPath });
+      }
+      continue;
+    }
+
+    const existingCandidate = candidateByPath.get(patchPath);
+    if (existingCandidate) {
+      const sharedSignatures = intersectStrings(existingCandidate.analysis.signatures, analysis.signatures);
+      if (sharedSignatures.length === 0) {
+        exceptions++;
+        if (mode === "review") {
+          await writeConflictException(root, source, now, {
+            candidate_path: patchPath,
+            prior_source_id: existingCandidate.source.id,
+            prior_signatures: existingCandidate.analysis.signatures,
+            current_signatures: analysis.signatures,
+          });
+        }
+        continue;
+      }
+
+      if (mode === "review") {
+        compiledEntries.push({
+          id: source.id,
+          source_hash: source.source_hash,
+          candidate_ids: [existingCandidate.candidateId],
+          page_ids: [],
+        });
+      }
       continue;
     }
 
@@ -91,6 +131,7 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
     }
 
     candidateIds.push(candidateId);
+    candidateByPath.set(patchPath, { source, analysis, candidateId });
 
     if (mode === "review") {
       await writeJson(
@@ -130,6 +171,7 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
     sources_read: sourcesRead,
     changed_sources: changedIds.size,
     candidate_ids: candidateIds,
+    source_analysis: sourceAnalysis,
     exceptions,
     skipped_sources: skippedSources,
     changed_stable_knowledge: false,
@@ -150,6 +192,11 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
   return report;
 }
 
+function intersectStrings(left: string[], right: string[]): string[] {
+  const rightSet = new Set(right);
+  return left.filter((item) => rightSet.has(item));
+}
+
 async function writeHumanRequiredException(
   root: string,
   source: WikiSource,
@@ -168,6 +215,29 @@ async function writeHumanRequiredException(
       category: "human_required",
       source_id: source.id,
       reason,
+      details: { source_kind: source.kind, source_title: source.title, ...details },
+      created_at: now,
+    }
+  );
+}
+
+async function writeConflictException(
+  root: string,
+  source: WikiSource,
+  now: string,
+  details: Record<string, unknown>
+): Promise<void> {
+  const id = makeId("wiki-conflict", source.id);
+  await writeJson(
+    root,
+    `${protocolPaths.exceptionsConflicts}/${id}.json`,
+    {
+      id,
+      protocol_version: PROTOCOL_VERSION,
+      type: "exception_record",
+      category: "conflict",
+      source_id: source.id,
+      reason: "Duplicate wiki candidate path without shared signatures",
       details: { source_kind: source.kind, source_title: source.title, ...details },
       created_at: now,
     }

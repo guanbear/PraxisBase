@@ -53,6 +53,12 @@ export const protocolPaths = {
   distRepairBundles: "dist/repair-bundles",
   wikiRoot: ".praxisbase/wiki",
   wikiState: ".praxisbase/wiki/state.json",
+  agentTools: ".praxisbase/agent-tools",
+  agentToolsSkills: ".praxisbase/agent-tools/skills",
+  agentToolsManifest: ".praxisbase/agent-tools/manifest.json",
+  mcpManifest: ".praxisbase/agent-tools/mcp.json",
+  reportsWikiQuality: ".praxisbase/reports/wiki-quality",
+  runsWiki: ".praxisbase/runs/wiki",
   reportsWikiCompile: ".praxisbase/reports/wiki-compile",
   reportsWikiLint: ".praxisbase/reports/wiki-lint"
 } as const;

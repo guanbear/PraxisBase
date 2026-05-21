@@ -316,7 +316,11 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
   const compileReport = await compileWiki(root, { mode: "review", now });
   const pages = await collectWikiPages(root);
   const graph = buildWikiGraph(pages);
-  const site = input.buildSite ? await buildWikiSite(root) : { pages: 0, outputs: [] as string[] };
+  const site = input.buildSite ? await buildWikiSite(root) : {
+    pages: 0,
+    outputs: [] as string[],
+    health: { quality_findings: 0 },
+  };
   const context = input.contextQuery ? await buildContext({
     root,
     workspace: root,
@@ -338,6 +342,7 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
     proposal_candidates: compileReport.candidate_ids.length,
     graph_nodes: graph.nodes.length,
     graph_broken_links: graph.broken_links.length,
+    quality_findings: site.health.quality_findings,
     site_pages: site.pages,
     context_items: context.items.length,
     outputs,
