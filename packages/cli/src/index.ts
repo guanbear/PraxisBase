@@ -24,6 +24,7 @@ import { smokeCommand } from "./commands/smoke.js";
 import { remoteCommand } from "./commands/remote.js";
 import { sourceCommand } from "./commands/source.js";
 import { dailyCommand } from "./commands/daily.js";
+import { aiCommand } from "./commands/ai.js";
 import { harvestCommand } from "./commands/harvest.js";
 import { agentToolsCommand } from "./commands/agent-tools.js";
 import { mcpCommand } from "./commands/mcp.js";
@@ -339,6 +340,23 @@ program
       ...options,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
     }));
+  });
+
+program
+  .command("ai")
+  .argument("<sub>", "subcommand (init|doctor)")
+  .option("--provider <provider>")
+  .option("--model <model>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      provider?: "openai-compatible";
+      model?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await aiCommand(process.cwd(), sub, options));
   });
 
 program

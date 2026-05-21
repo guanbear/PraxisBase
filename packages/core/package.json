@@ -23,6 +23,18 @@
       "types": "./src/protocol/id.ts",
       "default": "./dist/protocol/id.js"
     },
+    "./ai/config.js": {
+      "types": "./src/ai/config.ts",
+      "default": "./dist/ai/config.js"
+    },
+    "./ai/client.js": {
+      "types": "./src/ai/client.ts",
+      "default": "./dist/ai/client.js"
+    },
+    "./ai/distill.js": {
+      "types": "./src/ai/distill.ts",
+      "default": "./dist/ai/distill.js"
+    },
     "./store/file-store.js": {
       "types": "./src/store/file-store.ts",
       "default": "./dist/store/file-store.js"

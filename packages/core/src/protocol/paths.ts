@@ -35,6 +35,8 @@ export const protocolPaths = {
   reportsMemoryFetch: ".praxisbase/reports/memory-fetch",
   reportsHarvest: ".praxisbase/reports/harvest",
   reportsDaily: ".praxisbase/reports/daily",
+  aiConfig: ".praxisbase/ai/config.json",
+  reportsAiDistill: ".praxisbase/reports/ai-distill",
   memoryRefresh: ".praxisbase/memory-refresh",
   experienceSources: ".praxisbase/sources",
   remotes: ".praxisbase/remotes",
@@ -64,5 +66,6 @@ export const protocolPaths = {
   reportsWikiQuality: ".praxisbase/reports/wiki-quality",
   runsWiki: ".praxisbase/runs/wiki",
   reportsWikiCompile: ".praxisbase/reports/wiki-compile",
-  reportsWikiLint: ".praxisbase/reports/wiki-lint"
+  reportsWikiLint: ".praxisbase/reports/wiki-lint",
+  configAi: ".praxisbase/ai/config.json"
 } as const;

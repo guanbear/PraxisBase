@@ -103,6 +103,10 @@
       "types": "./src/commands/daily.ts",
       "default": "./dist/commands/daily.js"
     },
+    "./commands/ai.js": {
+      "types": "./src/commands/ai.ts",
+      "default": "./dist/commands/ai.js"
+    },
     "./commands/harvest.js": {
       "types": "./src/commands/harvest.ts",
       "default": "./dist/commands/harvest.js"
