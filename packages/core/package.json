@@ -99,6 +99,10 @@
       "types": "./src/experience/privacy-policy.ts",
       "default": "./dist/experience/privacy-policy.js"
     },
+    "./experience/chunking.js": {
+      "types": "./src/experience/chunking.ts",
+      "default": "./dist/experience/chunking.js"
+    },
     "./experience/source-adapters.js": {
       "types": "./src/experience/source-adapters.ts",
       "default": "./dist/experience/source-adapters.js"
