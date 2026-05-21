@@ -65,6 +65,41 @@ function clippedSummary(text: string): string {
   return value.length > 1200 ? `${value.slice(0, 1200)}...[truncated]` : value;
 }
 
+function distilledSummary(experience: DistilledExperience): string {
+  const lines: string[] = [
+    `Suggested Wiki Kind: ${experience.suggested_wiki_kind}`,
+    `Confidence: ${experience.confidence}`,
+    `Summary: ${experience.summary}`,
+  ];
+
+  const sections: Array<[string, string[]]> = [
+    ["Problem", experience.problem ? [experience.problem] : []],
+    ["Context", experience.context ? [experience.context] : []],
+    ["Actions", experience.actions],
+    ["Failed Attempts", experience.failed_attempts],
+    ["Verification", experience.verification],
+    ["Reusable Lessons", experience.reusable_lessons],
+    ["Risks", experience.risks],
+  ];
+
+  for (const [title, values] of sections) {
+    if (values.length === 0) continue;
+    lines.push("", `## ${title}`, ...values.map((value) => `- ${value}`));
+  }
+
+  if (experience.skill_candidate.should_create) {
+    lines.push("", "## Skill Candidate");
+    if (experience.skill_candidate.title) lines.push(`Title: ${experience.skill_candidate.title}`);
+    if (experience.skill_candidate.trigger) lines.push(`Trigger: ${experience.skill_candidate.trigger}`);
+    for (const step of experience.skill_candidate.procedure ?? []) {
+      lines.push(`- ${step}`);
+    }
+  }
+
+  lines.push("", "## Sources", `- ${experience.source_ref}`, `- ${experience.source_hash}`);
+  return lines.join("\n");
+}
+
 function makeEnvelopeFromChunk(
   chunk: ExperienceChunk,
   now: string,
@@ -72,12 +107,7 @@ function makeEnvelopeFromChunk(
   privacy: { verdict: ExperiencePrivacyVerdict; reasons: string[] },
   experience?: DistilledExperience,
 ): ExperienceEnvelope {
-  const summary = experience
-    ? [
-      experience.summary,
-      ...experience.reusable_lessons.map((lesson) => `Lesson: ${lesson}`),
-    ].join("\n")
-    : clippedSummary(chunk.text);
+  const summary = experience ? distilledSummary(experience) : clippedSummary(chunk.text);
   const sourceHash = experience?.source_hash ?? chunk.source_hash;
   const signature = experience?.suggested_tags.find((tag) => tag.length > 0);
 
@@ -94,7 +124,7 @@ function makeEnvelopeFromChunk(
     signature,
     problem_signature: experience?.problem ?? signature,
     outcome: experience?.outcome,
-    redacted_summary: clippedSummary(summary),
+    redacted_summary: summary,
     created_at: chunk.created_at,
     fetched_at: now,
     privacy: {

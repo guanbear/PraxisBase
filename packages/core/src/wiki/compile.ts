@@ -30,7 +30,15 @@ export interface WikiCompileReport {
   created_at: string;
 }
 
-const CANDIDATE_KINDS = new Set<WikiSource["kind"]>(["capture", "native_memory", "episode", "stable_kb"]);
+const CANDIDATE_KINDS = new Set<WikiSource["kind"]>(["capture", "native_memory", "episode", "stable_kb", "external_ref"]);
+
+function isCandidateSource(source: WikiSource): boolean {
+  if (!CANDIDATE_KINDS.has(source.kind)) return false;
+  if (source.kind === "external_ref") {
+    return hasDistilledSections([source.summary, source.body].filter(Boolean).join("\n"));
+  }
+  return true;
+}
 
 export async function compileWiki(root: string, options: CompileWikiOptions): Promise<WikiCompileReport> {
   const now = options.now ?? new Date().toISOString();
@@ -62,7 +70,7 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
   for (const source of sources) {
     if (!changedIds.has(source.id)) continue;
     const analysis = sourceAnalysisById.get(source.id) ?? analyzeWikiSource(source);
-    if (!CANDIDATE_KINDS.has(source.kind)) {
+    if (!isCandidateSource(source)) {
       skippedSources++;
       continue;
     }
@@ -120,7 +128,7 @@ export async function compileWiki(root: string, options: CompileWikiOptions): Pr
       continue;
     }
 
-    const patchContent = buildPatchContent(source, now);
+    const patchContent = buildPatchContent(source, analysis, now);
     const shrinkCheck = validateBodyShrink(source.body ?? "", patchContent, source.kind === "stable_kb" ? "patch" : "create");
     if (!shrinkCheck.ok) {
       exceptions++;
@@ -244,14 +252,51 @@ async function writeConflictException(
   );
 }
 
-function buildPatchContent(source: WikiSource, now: string): string {
+function hasDistilledSections(text: string): boolean {
+  return /^Suggested Wiki Kind:\s*/im.test(text) || /^##\s+(Problem|Actions|Verification|Reusable Lessons|Sources)\s*$/im.test(text);
+}
+
+function extractDistilledSummary(text: string): string | undefined {
+  const match = text.match(/^Summary:\s*(.+)$/im);
+  return match?.[1]?.trim();
+}
+
+function distilledBody(source: WikiSource): string | undefined {
+  const text = [source.summary, source.body].filter(Boolean).join("\n").trim();
+  if (!hasDistilledSections(text)) return undefined;
+
+  const lines: string[] = [];
+  const summary = extractDistilledSummary(text);
+  if (summary) lines.push(summary, "");
+
+  const sectionNames = ["Problem", "Context", "Actions", "Failed Attempts", "Verification", "Reusable Lessons", "Risks", "Sources"];
+  const escaped = sectionNames.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const pattern = new RegExp(`^##\\s+(${escaped})\\s*$([\\s\\S]*?)(?=^##\\s+(?:${escaped}|Skill Candidate)\\s*$|(?![\\s\\S]))`, "gim");
+
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const title = match[1].trim();
+    const body = match[2].trim();
+    if (!body) continue;
+    lines.push(`## ${title}`, body, "");
+  }
+
+  if (!lines.some((line) => line === "## Sources")) {
+    lines.push("## Sources", `- ${source.source_ref ?? source.id}`, `- ${source.source_hash}`, "");
+  }
+
+  return lines.join("\n").trim();
+}
+
+function buildPatchContent(source: WikiSource, analysis: WikiSourceAnalysis, now: string): string {
   const slug = makeWikiSlug(source.title);
+  const knowledgeType = analysis.suggested_page_kind === "skill_seed" ? "note" : analysis.suggested_page_kind;
   const frontmatter = [
     "---",
     `id: wiki-${slug}`,
     `protocol_version: "${PROTOCOL_VERSION}"`,
-    "type: note",
-    "knowledge_type: note",
+    `type: ${knowledgeType}`,
+    `knowledge_type: ${knowledgeType}`,
     `scope: ${source.scope}`,
     "status: draft",
     "maturity: draft",
@@ -263,7 +308,7 @@ function buildPatchContent(source: WikiSource, now: string): string {
     "---",
   ].join("\n");
 
-  const body = source.summary || source.title;
+  const body = distilledBody(source) ?? (source.summary || source.title);
 
   return `${frontmatter}\n# ${source.title}\n\n${body}\n`;
 }

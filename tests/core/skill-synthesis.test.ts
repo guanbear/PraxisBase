@@ -1,7 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { generateSkillDraft } from "@praxisbase/core/synthesis/skill.js";
+import { generateSkillDraft, generateSkillDraftsFromDistilledExperiences } from "@praxisbase/core/synthesis/skill.js";
 import { ProposalSchema } from "@praxisbase/core/protocol/schemas.js";
+import type { DistilledExperience } from "@praxisbase/core/ai/distill.js";
 
 const confirmedEpisodes = [
   {
@@ -97,5 +98,50 @@ describe("Skill synthesis", () => {
 
     const content = proposal.patch.content.toLowerCase();
     assert.ok(content.includes("recommendation-only") || content.includes("reviewed and promoted"));
+  });
+
+  it("groups repeated distilled skill candidates by trigger and procedure", () => {
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "project",
+      summary: "OpenClaw auth refresh repair.",
+      problem: "Auth refresh failed.",
+      actions: ["Added retry guard."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["pnpm test passed"],
+      reusable_lessons: ["Add retry guards around auth refresh repair paths."],
+      risks: [],
+      suggested_tags: ["openclaw", "auth"],
+      suggested_wiki_kind: "known_fix",
+      skill_candidate: {
+        should_create: true,
+        title: "OpenClaw auth refresh repair",
+        trigger: "OpenClaw auth refresh failures",
+        procedure: ["Check auth state.", "Run the retry guarded repair path."],
+      },
+      confidence: 0.91,
+    };
+
+    const proposals = generateSkillDraftsFromDistilledExperiences({
+      minEvidence: 2,
+      now: "2026-05-21T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+        { ...base, outcome: "failed", source_ref: "raw-vault://codex/session-3", source_hash: "sha256:distilled3", chunk_hashes: ["sha256:chunk3"] },
+      ],
+    });
+
+    assert.equal(proposals.length, 1);
+    const validated = ProposalSchema.parse(proposals[0]);
+    assert.equal(validated.target_type, "skill");
+    assert.match(validated.patch.path, /skills\/synthesized\/openclaw-auth-refresh-repair\/SKILL.md/);
+    assert.match(validated.patch.content, /OpenClaw auth refresh failures/);
+    assert.match(validated.patch.content, /Based on 2 distilled successful experiences/);
+    assert.ok(!validated.patch.content.includes("session-3"));
   });
 });

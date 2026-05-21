@@ -22,7 +22,16 @@ function normalizedText(source: WikiSource): string {
   return [source.title, source.summary, source.body].filter(Boolean).join("\n");
 }
 
+function distilledField(text: string, field: string): string | undefined {
+  const match = text.match(new RegExp(`^${field}:\\s*(.+)$`, "im"));
+  return match?.[1]?.trim();
+}
+
 function inferKind(source: WikiSource, text: string): WikiSourceSuggestedPageKind {
+  const distilledKind = distilledField(text, "Suggested Wiki Kind");
+  if (distilledKind && PAGE_KIND_BY_KNOWLEDGE_TYPE.has(distilledKind as WikiSourceSuggestedPageKind)) {
+    return distilledKind as WikiSourceSuggestedPageKind;
+  }
   if (source.knowledge_type && PAGE_KIND_BY_KNOWLEDGE_TYPE.has(source.knowledge_type as WikiSourceSuggestedPageKind)) {
     return source.knowledge_type as WikiSourceSuggestedPageKind;
   }
@@ -69,7 +78,8 @@ function aliasFromSource(source: WikiSource, text: string): string[] {
 }
 
 function candidateSlug(kind: WikiSourceSuggestedPageKind, text: string, source: WikiSource): string {
-  const lower = text.toLowerCase();
+  const titleText = distilledField(text, "Summary") ?? distilledField(text, "Title") ?? text;
+  const lower = titleText.toLowerCase();
   if (lower.includes("openclaw") && lower.includes("auth") && lower.includes("expired")) {
     return "openclaw-auth-expired";
   }
@@ -117,7 +127,10 @@ export function analyzeWikiSource(source: WikiSource): WikiSourceAnalysis {
     `${source.kind}:${makeWikiSlug(source.id)}`,
   ].filter((item): item is string => Boolean(item)))).sort();
   const risks = risksFor(source, text, path);
-  const confidence = Math.max(0.2, Math.min(0.9, 0.45 + (semantic ? 0.2 : 0) + (risks.length === 0 ? 0.15 : 0)));
+  const explicitConfidence = Number(distilledField(text, "Confidence"));
+  const confidence = Number.isFinite(explicitConfidence)
+    ? Math.max(0.2, Math.min(0.98, explicitConfidence))
+    : Math.max(0.2, Math.min(0.9, 0.45 + (semantic ? 0.2 : 0) + (risks.length === 0 ? 0.15 : 0)));
 
   return WikiSourceAnalysisSchema.parse({
     source_id: source.id,
