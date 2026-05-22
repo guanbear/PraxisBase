@@ -350,6 +350,14 @@ describe("WikiCurationReportSchema compiler_counts", () => {
     assert.equal(result.compiler_counts.page_plans_by_action.create, 2);
     assert.equal(result.compiler_counts.hard_blocks, 0);
     assert.equal(result.compiler_counts.human_required_quality, 0);
+    assert.deepEqual(result.compiler_counts.relationship_counts, {
+      required_links: 0,
+      suggested_links: 0,
+      merge_plans: 0,
+      ambiguous_merge_targets: 0,
+      isolated_topics: 0,
+      orphan_risk_after_plan: 0,
+    });
   });
 
   it("defaults compiler_counts inner fields", () => {
@@ -364,6 +372,14 @@ describe("WikiCurationReportSchema compiler_counts", () => {
       create: 0, update: 0, merge: 0, supersede: 0, archive: 0,
     });
     assert.equal(result.compiler_counts.duplicate_source_hash_groups, 0);
+    assert.deepEqual(result.compiler_counts.relationship_counts, {
+      required_links: 0,
+      suggested_links: 0,
+      merge_plans: 0,
+      ambiguous_merge_targets: 0,
+      isolated_topics: 0,
+      orphan_risk_after_plan: 0,
+    });
   });
 });
 

@@ -54,6 +54,26 @@ async function writeSecondCapture(root: string): Promise<void> {
   }));
 }
 
+async function writeDuplicateStablePages(root: string): Promise<void> {
+  await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+  const page = (id: string, title: string) => `---
+id: ${id}
+title: "${title}"
+knowledge_type: known_fix
+scope: personal
+maturity: draft
+sources:
+  - uri: raw-vault://codex/session-1
+    hash: sha256:session1
+---
+# ${title}
+
+Existing OpenClaw auth repair page.
+`;
+  await writeFile(join(root, "kb/known-fixes/openclaw-auth-expired.md"), page("openclaw-auth-expired", "OpenClaw auth expired"), "utf8");
+  await writeFile(join(root, "kb/known-fixes/openclaw-auth-refresh.md"), page("openclaw-auth-refresh", "OpenClaw auth refresh"), "utf8");
+}
+
 describe("wiki curate CLI", () => {
   it("dry-run writes report only", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-curate-"));
@@ -115,5 +135,23 @@ describe("wiki curate CLI", () => {
     assert.equal(parsed.report.output_counts.written_proposals, 1);
     const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
     assert.equal(proposalFiles.length, 1);
+  });
+
+  it("report includes relationship_counts when evidence produces relationships", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-curate-relationships-"));
+    await writeCapture(root);
+    await writeDuplicateStablePages(root);
+
+    const output = await wikiCommand(root, "curate", { dryRun: true, degraded: true, json: true });
+    const parsed = JSON.parse(output);
+    const counts = parsed.report.compiler_counts.relationship_counts;
+
+    assert.equal(parsed.ok, true);
+    assert.equal(counts.required_links, 0);
+    assert.equal(counts.suggested_links, 0);
+    assert.equal(counts.merge_plans, 1);
+    assert.equal(counts.ambiguous_merge_targets, 1);
+    assert.equal(counts.isolated_topics, 0);
+    assert.equal(counts.orphan_risk_after_plan, 0);
   });
 });

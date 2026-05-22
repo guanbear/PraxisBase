@@ -146,6 +146,22 @@ export const CuratedWikiProposalSchema = z.object({
 
 export type CuratedWikiProposal = z.infer<typeof CuratedWikiProposalSchema>;
 
+const WikiRelationshipCountsSchema = z.object({
+  required_links: z.number().int().min(0).default(0),
+  suggested_links: z.number().int().min(0).default(0),
+  merge_plans: z.number().int().min(0).default(0),
+  ambiguous_merge_targets: z.number().int().min(0).default(0),
+  isolated_topics: z.number().int().min(0).default(0),
+  orphan_risk_after_plan: z.number().int().min(0).default(0),
+}).default({
+  required_links: 0,
+  suggested_links: 0,
+  merge_plans: 0,
+  ambiguous_merge_targets: 0,
+  isolated_topics: 0,
+  orphan_risk_after_plan: 0,
+});
+
 export const WikiCurationReportSchema = z.object({
   id: z.string().min(1),
   protocol_version: z.literal(PROTOCOL_VERSION),
@@ -182,6 +198,7 @@ export const WikiCurationReportSchema = z.object({
     duplicate_source_hash_groups: z.number().int().min(0).default(0),
     hard_blocks: z.number().int().min(0).default(0),
     human_required_quality: z.number().int().min(0).default(0),
+    relationship_counts: WikiRelationshipCountsSchema,
   }).default(() => ({
     observations: 0,
     topics: 0,
@@ -189,6 +206,14 @@ export const WikiCurationReportSchema = z.object({
     duplicate_source_hash_groups: 0,
     hard_blocks: 0,
     human_required_quality: 0,
+    relationship_counts: {
+      required_links: 0,
+      suggested_links: 0,
+      merge_plans: 0,
+      ambiguous_merge_targets: 0,
+      isolated_topics: 0,
+      orphan_risk_after_plan: 0,
+    },
   })).optional(),
   proposals: z.array(z.object({
     id: z.string().min(1),

@@ -300,6 +300,29 @@ function renderMetricCard(card: { label: string; value: string; href?: string })
   return `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`;
 }
 
+function renderRelationshipDetails(item: PendingWikiProposalCandidate): string {
+  const rows: string[] = [];
+  if (item.required_links && item.required_links.length > 0) {
+    rows.push(`<dt>Required links</dt><dd>${item.required_links.map((link) =>
+      `<code>${escapeHtml(link.slug)}</code> ${escapeHtml(link.label)} <small>${escapeHtml(link.reason)}</small>`
+    ).join("<br>")}</dd>`);
+  }
+  if (item.suggested_links && item.suggested_links.length > 0) {
+    rows.push(`<dt>Suggested links</dt><dd>${item.suggested_links.map((link) =>
+      `<code>${escapeHtml(link.slug)}</code> ${escapeHtml(link.label)} <small>${escapeHtml(link.reason)}</small>`
+    ).join("<br>")}</dd>`);
+  }
+  if (item.merge_candidates && item.merge_candidates.length > 0) {
+    rows.push(`<dt>Merge candidates</dt><dd>${item.merge_candidates.map((candidate) =>
+      `${escapeHtml(candidate.title)} <code>${escapeHtml(candidate.path)}</code> <small>${escapeHtml(candidate.reason)}</small>`
+    ).join("<br>")}</dd>`);
+  }
+  if (item.relationship_reasons && item.relationship_reasons.length > 0) {
+    rows.push(`<dt>Relationship reasons</dt><dd>${escapeHtml(item.relationship_reasons.join(", "))}</dd>`);
+  }
+  return rows.join("\n");
+}
+
 function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): string {
   if (candidates.length === 0) return "";
   return `<section class="pending-candidates">
@@ -324,6 +347,7 @@ function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): st
         ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
         ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
         ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
+        ${renderRelationshipDetails(item)}
       </dl>
     </li>`).join("\n")}
   </ol>
@@ -388,6 +412,7 @@ function renderCandidateCard(item: ReviewQueueCandidate): string {
       ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
       ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
       ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
+      ${renderRelationshipDetails(item)}
     </dl>
     <details>
       <summary>Preview generated markdown</summary>
@@ -680,6 +705,15 @@ function renderWikiCompilerSection(report: WikiCurationReportSummary): string {
     { label: "Supersede", value: String(report.compiler_page_plans_supersede) },
     { label: "Archive", value: String(report.compiler_page_plans_archive) },
   ];
+  const relationshipCards = [
+    { label: "Required links", value: report.relationship_required_links },
+    { label: "Suggested links", value: report.relationship_suggested_links },
+    { label: "Merge plans", value: report.relationship_merge_plans },
+    { label: "Ambiguous merges", value: report.relationship_ambiguous_merge_targets },
+    { label: "Isolated topics", value: report.relationship_isolated_topics },
+    { label: "Orphan risk after plan", value: report.relationship_orphan_risk_after_plan },
+  ];
+  const hasRelationshipCounts = relationshipCards.some((card) => card.value > 0);
   const aiLabel = report.ai_configured ? `AI ${report.ai_mode}` : "Deterministic";
   return `<section class="wiki-compiler-status">
   <h2>Wiki Compiler</h2>
@@ -693,6 +727,9 @@ function renderWikiCompilerSection(report: WikiCurationReportSummary): string {
     <article><span>Quality review needed</span><strong>${escapeHtml(String(report.compiler_human_required_quality))}</strong></article>
     <article><span>Written proposals</span><strong>${escapeHtml(String(report.output_written_proposals))}</strong></article>
     ${report.input_human_required > 0 ? `<article><span>Input/privacy triage</span><strong>${escapeHtml(String(report.input_human_required))}</strong></article>` : ""}
+    ${hasRelationshipCounts ? relationshipCards.map((card) =>
+      `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(String(card.value))}</strong></article>`
+    ).join("\n") : ""}
   </div>
 </section>`;
 }
@@ -764,6 +801,12 @@ interface WikiCurationReportSummary {
   compiler_duplicate_source_hash_groups: number;
   compiler_hard_blocks: number;
   compiler_human_required_quality: number;
+  relationship_required_links: number;
+  relationship_suggested_links: number;
+  relationship_merge_plans: number;
+  relationship_ambiguous_merge_targets: number;
+  relationship_isolated_topics: number;
+  relationship_orphan_risk_after_plan: number;
 }
 
 async function collectLatestDailyReport(root: string): Promise<DailyReportSummary | null> {
@@ -847,6 +890,7 @@ async function collectLatestWikiCurationReport(root: string): Promise<WikiCurati
   const outputCounts = detailsRecord(latest.output_counts);
   const compilerCounts = detailsRecord(latest.compiler_counts);
   const pagePlans = detailsRecord(compilerCounts.page_plans_by_action);
+  const relationshipCounts = detailsRecord(compilerCounts.relationship_counts);
 
   return {
     created_at: String(latest.created_at),
@@ -872,6 +916,12 @@ async function collectLatestWikiCurationReport(root: string): Promise<WikiCurati
     compiler_duplicate_source_hash_groups: numberValue(compilerCounts.duplicate_source_hash_groups) ?? 0,
     compiler_hard_blocks: numberValue(compilerCounts.hard_blocks) ?? 0,
     compiler_human_required_quality: numberValue(compilerCounts.human_required_quality) ?? 0,
+    relationship_required_links: numberValue(relationshipCounts.required_links) ?? 0,
+    relationship_suggested_links: numberValue(relationshipCounts.suggested_links) ?? 0,
+    relationship_merge_plans: numberValue(relationshipCounts.merge_plans) ?? 0,
+    relationship_ambiguous_merge_targets: numberValue(relationshipCounts.ambiguous_merge_targets) ?? 0,
+    relationship_isolated_topics: numberValue(relationshipCounts.isolated_topics) ?? 0,
+    relationship_orphan_risk_after_plan: numberValue(relationshipCounts.orphan_risk_after_plan) ?? 0,
   };
 }
 

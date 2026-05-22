@@ -23,6 +23,11 @@ export interface PendingWikiProposalCandidate {
     risk_notes: string[];
   };
   guard_messages?: string[];
+  related_pages?: Array<{ slug: string; path: string; title: string }>;
+  required_links?: Array<{ slug: string; label: string; path: string; reason: string }>;
+  suggested_links?: Array<{ slug: string; label: string; path: string; reason: string }>;
+  merge_candidates?: Array<{ title: string; path: string; reason: string }>;
+  relationship_reasons?: string[];
   patch_path: string;
   patch_content: string;
   source_id: string;
@@ -163,6 +168,11 @@ function curatedCandidateMetadata(record: CuratedWikiProposal): PendingWikiPropo
       risk_notes: record.review_hint.risk_notes,
     },
     guard_messages: failedGuards.length > 0 ? failedGuards : undefined,
+    related_pages: record.related_pages,
+    required_links: record.required_links,
+    suggested_links: record.suggested_links,
+    merge_candidates: record.merge_candidates,
+    relationship_reasons: record.relationship_reasons,
     patch_path: record.target_path,
     patch_content: record.body_markdown,
     source_id: record.source_refs.join(", "),

@@ -500,6 +500,91 @@ Body.
     assert.match(review, /<strong>42<\/strong>/);
   });
 
+  it("shows relationship counts and link explanations in wiki compiler section and review cards", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-relationships-"));
+    await mkdir(join(root, ".praxisbase/reports/wiki-curation"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/reports/wiki-curation/wiki-curation-report_rel.json"),
+      JSON.stringify({
+        id: "wiki-curation-report_rel",
+        protocol_version: "0.1",
+        type: "wiki_curation_report",
+        created_at: "2026-05-22T13:00:00.000Z",
+        mode: "review",
+        ai: { configured: true, mode: "production", model: "glm-4.7" },
+        input_counts: { evidence_items: 6, filtered_noise: 0, human_required: 0, rejected: 0, clusters: 2 },
+        output_counts: { curated_proposals: 2, written_proposals: 2, conflicts: 0 },
+        compiler_counts: {
+          observations: 6,
+          topics: 2,
+          page_plans_by_action: { create: 1, update: 0, merge: 1, supersede: 0, archive: 0 },
+          duplicate_source_hash_groups: 1,
+          hard_blocks: 0,
+          human_required_quality: 1,
+          relationship_counts: {
+            required_links: 2,
+            suggested_links: 1,
+            merge_plans: 1,
+            ambiguous_merge_targets: 1,
+            isolated_topics: 0,
+            orphan_risk_after_plan: 0,
+          },
+        },
+        proposals: [],
+        warnings: [],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-curated_rel.json"),
+      JSON.stringify({
+        id: "wiki-curated_rel",
+        protocol_version: "0.1",
+        type: "wiki_curated_proposal",
+        target_path: "kb/known-fixes/openclaw-ack-timing.md",
+        action: "update",
+        page_kind: "known_fix",
+        scope: "personal",
+        title: "OpenClaw ACK timing",
+        summary: "Merge ACK timing lessons with existing pages.",
+        body_markdown: "# OpenClaw ACK timing\n\n## Problem\nACK timing regressed.\n\n## Fix\nSee [[openclaw-ack-timing|OpenClaw ACK timing]].",
+        source_refs: ["raw-vault://codex/ack"],
+        source_hashes: ["sha256:ack"],
+        source_count: 2,
+        evidence_ids: ["capture_ack_1"],
+        confidence: 0.91,
+        maturity: "draft",
+        provenance: [{ source_ref: "raw-vault://codex/ack", source_hash: "sha256:ack" }],
+        review_hint: { why_review: "ambiguous merge target", suggested_decision: "edit", risk_notes: [] },
+        guards: [],
+        related_pages: [{ slug: "openclaw-ack-timing", path: "kb/known-fixes/openclaw-ack-timing.md", title: "OpenClaw ACK timing" }],
+        required_links: [{ slug: "openclaw-ack-timing", label: "OpenClaw ACK timing", path: "kb/known-fixes/openclaw-ack-timing.md", reason: "shared_source_hash" }],
+        suggested_links: [{ slug: "openclaw-stdin-closed", label: "OpenClaw stdin closed", path: "kb/known-fixes/openclaw-stdin-closed.md", reason: "entity_overlap" }],
+        merge_candidates: [{ title: "OpenClaw ACK timing", path: "kb/known-fixes/openclaw-ack-timing.md", reason: "shared_source_hash" }],
+        relationship_reasons: ["shared_source_hash", "entity_overlap"],
+        created_at: "2026-05-22T13:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Required links"));
+    assert.ok(index.includes("Orphan risk after plan"));
+    assert.match(index, /<strong>2<\/strong>/);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("Required links"));
+    assert.ok(review.includes("Suggested links"));
+    assert.ok(review.includes("Merge candidates"));
+    assert.ok(review.includes("Relationship reasons"));
+    assert.ok(review.includes("shared_source_hash"));
+    assert.ok(review.includes("openclaw-ack-timing"));
+  });
+
   it("Review metric Human required stays 0 when latest curation report has input_counts.human_required=57 but no exception records and no needs_human candidates", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curation-human-required-"));
     await mkdir(join(root, ".praxisbase/reports/wiki-curation"), { recursive: true });

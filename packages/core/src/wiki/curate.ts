@@ -45,6 +45,10 @@ function countDuplicateSourceHashGroups(plans: WikiPagePlan[]): number {
   return plans.filter((p) => p.action === "merge").length;
 }
 
+function zeroFloor(value: number): number {
+  return Math.max(0, value);
+}
+
 export interface WikiEvidencePool {
   items: WikiEvidenceItem[];
   filtered_noise: number;
@@ -825,6 +829,15 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const pagePlans = planWikiPages(topics, existingPages, { relationships: relationshipPlans });
   const pagePlansByAction = countPagePlansByAction(pagePlans);
   const duplicateSourceHashGroups = countDuplicateSourceHashGroups(pagePlans);
+  const topicsWithRelationships = new Set(relationshipPlans.map((plan) => plan.topic_id));
+  const relationshipCounts = {
+    required_links: pagePlans.reduce((sum, plan) => sum + plan.required_links.length, 0),
+    suggested_links: pagePlans.reduce((sum, plan) => sum + plan.related_paths.length, 0),
+    merge_plans: pagePlans.filter((plan) => plan.action === "merge").length,
+    ambiguous_merge_targets: pagePlans.filter((plan) => plan.reasons.includes("ambiguous_merge_target")).length,
+    isolated_topics: zeroFloor(topics.length - topicsWithRelationships.size),
+    orphan_risk_after_plan: zeroFloor(topics.length - topicsWithRelationships.size),
+  };
 
   const limit = typeof options.limit === "number" && Number.isFinite(options.limit) && options.limit >= 0
     ? options.limit
@@ -858,14 +871,19 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
 
     const topicRelPlans = relationshipPlans.filter((rp) => rp.topic_id === topic.id);
     const structuredRequiredLinks: StructuredLink[] = topicRelPlans
-      .filter((rp) => rp.required_link)
+      .filter((rp) => plan.required_links.includes(rp.target_slug))
       .map((rp) => ({ slug: rp.target_slug, label: rp.suggested_label, path: rp.target_path, reason: rp.reasons.join(", ") }));
     const structuredSuggestedLinks: StructuredLink[] = topicRelPlans
-      .filter((rp) => !rp.required_link && rp.strength !== "weak")
+      .filter((rp) => plan.related_paths.includes(rp.target_path))
       .map((rp) => ({ slug: rp.target_slug, label: rp.suggested_label, path: rp.target_path, reason: rp.reasons.join(", ") }));
     const mergeCandidates: MergeCandidate[] = topicRelPlans
       .filter((rp) => rp.merge_candidate)
       .map((rp) => ({ title: rp.target_title, path: rp.target_path, reason: rp.reasons.join(", ") }));
+    const relatedPages = topicRelPlans.map((rp) => ({
+      slug: rp.target_slug,
+      path: rp.target_path,
+      title: rp.target_title,
+    }));
     const allRelationshipReasons = topicRelPlans.flatMap((rp) => rp.reasons);
     const uniqueRelationshipReasons = Array.from(new Set(allRelationshipReasons)).sort();
 
@@ -924,7 +942,14 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       planAction: plan.action,
     });
     if (result.ok) {
-      synthesizedProposals.push(result.proposal);
+      synthesizedProposals.push(CuratedWikiProposalSchema.parse({
+        ...result.proposal,
+        ...(relatedPages.length > 0 ? { related_pages: relatedPages } : {}),
+        ...(structuredRequiredLinks.length > 0 ? { required_links: structuredRequiredLinks } : {}),
+        ...(structuredSuggestedLinks.length > 0 ? { suggested_links: structuredSuggestedLinks } : {}),
+        ...(mergeCandidates.length > 0 ? { merge_candidates: mergeCandidates } : {}),
+        ...(uniqueRelationshipReasons.length > 0 ? { relationship_reasons: uniqueRelationshipReasons } : {}),
+      }));
     } else {
       conflicts++;
     }
@@ -945,6 +970,10 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
         && planForTarget.action !== "create",
       ),
       relatedPaths: planForTarget?.related_paths ?? [],
+      relatedPages: proposal.related_pages,
+      requiredLinks: proposal.required_links,
+      mergeCandidates: proposal.merge_candidates,
+      relationshipReasons: proposal.relationship_reasons,
       minSourceCount,
     });
     if (assessment.hard_blocks.length > 0) {
@@ -1004,6 +1033,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       duplicate_source_hash_groups: duplicateSourceHashGroups,
       hard_blocks: qualityHardBlockCount,
       human_required_quality: qualityHumanRequiredCount,
+      relationship_counts: relationshipCounts,
     },
     proposals: proposals.map((proposal) => ({
       id: proposal.id,
