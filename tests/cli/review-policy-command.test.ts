@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -222,6 +222,10 @@ describe("review auto with policy", () => {
       "utf8",
     );
     assert.ok(promoted.includes("OpenClaw auth expired"));
+    await assert.rejects(
+      () => stat(join(root, ".praxisbase/inbox/proposals/curated-fix.json")),
+      { code: "ENOENT" },
+    );
   });
 
   it("promotes high-signal single-source personal proposals with promoteApproved", async () => {
@@ -246,6 +250,10 @@ describe("review auto with policy", () => {
     assert.equal(result.ok, true);
     assert.equal(result.auto_promoted, 1);
     assert.equal(result.needs_human, 0);
+    await assert.rejects(
+      () => stat(join(root, ".praxisbase/inbox/proposals/curated-single-source-fix.json")),
+      { code: "ENOENT" },
+    );
   });
 
   it("does not auto-promote team proposal under personal policy", async () => {

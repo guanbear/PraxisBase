@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { mkdir } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -147,6 +147,7 @@ export async function reviewAutoWithPolicy(
         } else if (decision.auto_promote && options?.promoteApproved) {
           try {
             await promoteApprovedProposal(root, { proposal, review });
+            await unlink(join(proposalDir, file));
             autoPromoted++;
             approvedByPolicy++;
           } catch (err) {

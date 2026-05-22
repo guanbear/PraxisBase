@@ -155,6 +155,100 @@ describe("AI wiki curator", () => {
     }
   });
 
+  it("repairs AI body that uses a machine-generated hash heading", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "# capture_openclaw-sha256-0641118511b3cb45\n\n## Problem\nMemory sync failed.\n\n## Fix\nRefresh login.\n\n## Verification\nMemory sync passed.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(result.proposal.body_markdown, /^# OpenClaw auth expired recovery/m);
+      assert.doesNotMatch(result.proposal.body_markdown, /^# capture_openclaw/m);
+    }
+  });
+
+  it("replaces machine-generated AI target paths with title-derived wiki paths", async () => {
+    const result = await synthesizeCuratedWikiProposal(
+      {
+        ...cluster,
+        target_path_hint: "kb/notes/wiki-capture-openclaw-sha256-0641118511b3cb45.md",
+        page_kind: "note",
+      },
+      {
+        evidence,
+        now: "2026-05-21T00:00:00.000Z",
+        client: {
+          async generateJson() {
+            return {
+              ok: true,
+              json: {
+                title: "OpenClaw Slack Delegated Work Acceptance Test",
+                summary: "Delegated work acceptance passed.",
+                page_kind: "note",
+                target_path: "kb/notes/wiki-capture-openclaw-sha256-0641118511b3cb45.md",
+                body_markdown: "# OpenClaw Slack Delegated Work Acceptance Test\n\n## Problem\nSlack delegated work needed ACK/final validation.\n\n## Fix\nRun the delegated work replay and verify ACK plus final message delivery.\n\n## Verification\nReplay gate passed.\n\n## Reusable Lessons\nUse a long enough final assertion timeout for delegated Slack work.",
+                confidence: 0.91,
+                risk_notes: [],
+              },
+            };
+          },
+        },
+      },
+    );
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.proposal.target_path, "kb/notes/wiki-openclaw-slack-delegated-work-acceptance-test.md");
+    }
+  });
+
+  it("repairs AI body that leaks curation metadata and duplicate sections", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nSuggested Wiki Kind: note\nConfidence: 0.95\nSummary: Refresh login.\n\n## Problem\nMemory sync failed.\n\n## Verification\nMemory sync passed.\n\n## Verification\nRun sync again.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.doesNotMatch(result.proposal.body_markdown, /Suggested Wiki Kind|Confidence:/);
+      assert.equal((result.proposal.body_markdown.match(/^## Problem$/gm) ?? []).length, 1);
+      assert.equal((result.proposal.body_markdown.match(/^## Verification$/gm) ?? []).length, 1);
+    }
+  });
+
   it("rejects AI body containing private material", async () => {
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,

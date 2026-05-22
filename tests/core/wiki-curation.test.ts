@@ -132,6 +132,7 @@ describe("wiki curation model", () => {
     assert.equal(knowledge.target_type, "known_fix");
     assert.equal(knowledge.patch.path, "kb/known-fixes/openclaw-auth-expired.md");
     assert.match(knowledge.patch.content, /^---\n/);
+    assert.match(knowledge.patch.content, /title: "OpenClaw auth expired recovery"/);
     assert.match(knowledge.patch.content, /knowledge_type: known_fix/);
     assert.match(knowledge.patch.content, /sources:\n  - uri: "codex:session:1"\n    hash: "sha256:a"/);
     assert.deepEqual(knowledge.evidence.source_refs, [{ uri: "codex:session:1", hash: "sha256:a" }]);
@@ -172,6 +173,42 @@ describe("wiki evidence curation", () => {
     assert.deepEqual(pool.items.map((item) => item.id), ["preference"]);
     assert.equal(pool.filtered_noise, 1);
     assert.ok(pool.items[0].reusable_lessons.some((lesson) => /ACK/i.test(lesson)));
+  });
+
+  it("strips curation headings from evidence summaries before building wiki bodies", () => {
+    const pool = buildWikiEvidencePool([
+      source(
+        "distilled-summary",
+        "OpenClaw Slack delegated work acceptance",
+        [
+          "Summary: Delegated work acceptance passed after polling the final assertion.",
+          "## Problem",
+          "- Slack delegated work must emit ACK and final assertion messages.",
+          "## Verification",
+          "- Replay gate passed after 34 matching events.",
+          "Confidence: 0.9",
+        ].join("\n"),
+      ),
+    ]);
+
+    assert.equal(pool.items.length, 1);
+    assert.doesNotMatch(pool.items[0].summary, /^##/m);
+    assert.doesNotMatch(pool.items[0].summary, /^Confidence:/m);
+    assert.match(pool.items[0].summary, /Delegated work acceptance passed/);
+  });
+
+  it("normalizes OpenClaw promotion bookkeeping out of memory summaries", () => {
+    const pool = buildWikiEvidencePool([
+      source(
+        "openclaw-memory",
+        "OpenClaw ACK timing",
+        "- - 17:30 guanbear 提醒：文档更新，新增 QF-5 ACK timing 调整。 [score=0.817 recalls=0 avg=0.620 source=memory/2026-04-29.md:2-2] ## Promoted From Short-Term Memory (2026-05-06) <!-- openclaw-memory-promotion:memory:memory/2026-04-30.md:2:2 --> - - 06:27 guanbear 反馈：OpenClaw 查询类任务回复慢，且没有先 ACK；以后需要工具、联网或超过几秒的任务应先发 ACK，再补结果。 [score=0.817 recalls=0 avg=0.620 source=memory/2026-04-30.md:2-2]",
+      ),
+    ]);
+
+    assert.equal(pool.items.length, 1);
+    assert.doesNotMatch(pool.items[0].summary, /score=|Promoted From Short-Term Memory|openclaw-memory-promotion/);
+    assert.match(pool.items[0].summary, /先发 ACK/);
   });
 
   it("keeps doc-backed evidence when the user experience is concrete", () => {

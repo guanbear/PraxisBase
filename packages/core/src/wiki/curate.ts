@@ -84,11 +84,47 @@ function evidenceKindForSource(source: WikiSource): WikiEvidenceItem["kind"] | u
   return undefined;
 }
 
-function sentences(text: string): string[] {
+function normalizeEvidenceText(text: string): string {
   return text
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/\[score=[^\]]+\]/gi, " ")
+    .replace(/##\s+Promoted From Short-Term Memory\s*\([^)]+\)/gi, "\n")
+    .replace(/\s+-\s+-\s+/g, "\n")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+function cleanEvidenceLine(line: string): string {
+  return line
+    .trim()
+    .replace(/^[-*]\s+/, "")
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/^Summary:\s*/i, "")
+    .replace(/\[score=[^\]]+\]/gi, "")
+    .trim();
+}
+
+function sentences(text: string): string[] {
+  return normalizeEvidenceText(text)
     .split(/(?:\r?\n|[.;]\s+)/)
-    .map((part) => part.trim())
+    .map(cleanEvidenceLine)
+    .filter((part) => !/^(Suggested Wiki Kind|Confidence):\s*/i.test(part))
     .filter((part) => part.length > 0);
+}
+
+function cleanEvidenceSummary(summary: string): string {
+  const normalized = normalizeEvidenceText(summary);
+  const explicitSummary = normalized.match(/(?:^|\n)Summary:\s*([\s\S]*?)(?=\n#{1,6}\s+|\n(?:Suggested Wiki Kind|Confidence):|$)/i)?.[1];
+  const source = explicitSummary?.trim() ? explicitSummary : normalized;
+  const lines = source
+    .split(/\r?\n/)
+    .map(cleanEvidenceLine)
+    .filter((line) => line.length > 0)
+    .filter((line) => !/^(Suggested Wiki Kind|Confidence):\s*/i.test(line))
+    .filter((line) => !/^#{1,6}\s+/.test(line))
+    .filter((line) => line.length > 0);
+  return lines.slice(0, 3).join("\n") || normalizeEvidenceText(summary);
 }
 
 function inferActions(text: string): string[] {
@@ -177,7 +213,7 @@ export function buildWikiEvidencePool(sources: WikiSource[]): WikiEvidencePool {
       source_hash: source.source_hash,
       scope: source.scope,
       title: source.title,
-      summary: source.summary || source.title,
+      summary: cleanEvidenceSummary(source.summary || source.title),
       actions,
       failed_attempts: sentences(text).filter((line) => /\b(failed|fail|did not work|retry loop)\b/i.test(line)).slice(0, 3),
       outcome: /\b(success|fixed|resolved|passed)\b/i.test(text) ? "success" : "unknown",
@@ -311,13 +347,16 @@ function titleFromCluster(cluster: WikiEvidenceCluster): string {
   return cluster.normalized_title;
 }
 
-function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[]): string {
-  const title = titleFromCluster(cluster);
+function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], titleOverride?: string): string {
+  const title = titleOverride ?? titleFromCluster(cluster);
   const actions = uniq(evidence.flatMap((item) => item.actions)).slice(0, 5);
   const failed = uniq(evidence.flatMap((item) => item.failed_attempts)).slice(0, 4);
   const verification = uniq(evidence.flatMap((item) => item.verification)).slice(0, 4);
   const lessons = uniq(evidence.flatMap((item) => item.reusable_lessons)).slice(0, 5);
-  const problem = evidence.find((item) => item.problem)?.problem ?? evidence[0].summary;
+  const summaryLines = evidence.flatMap((item) => (item.problem ?? item.summary).split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
+  const problem = summaryLines.find((line) => /\b(failed|failure|error|slow|reported|missing|timeout|stuck)\b|反馈|没有|不能|失败|超时|慢/i.test(line))
+    ?? summaryLines[0]
+    ?? evidence[0].title;
 
   return [
     `# ${title}`,
@@ -396,6 +435,48 @@ function parseAiPageKind(value: unknown, fallback: WikiEvidenceCluster["page_kin
     : fallback;
 }
 
+function extractH1(body: string): string | undefined {
+  const match = body.match(/^#\s+(.+)$/m);
+  return match?.[1]?.trim();
+}
+
+function looksMachineGeneratedTitle(title: string | undefined): boolean {
+  if (!title) return true;
+  return /\bsha256\b/i.test(title)
+    || /^wiki[-_]capture[-_]/i.test(title)
+    || /^capture[-_]/i.test(title)
+    || /^[a-f0-9]{16,}$/i.test(title);
+}
+
+function looksMachineGeneratedPath(path: string): boolean {
+  const normalized = path.replace(/\\/g, "/");
+  const slug = normalized.endsWith("/SKILL.md")
+    ? normalized.split("/").slice(-2, -1)[0]
+    : normalized.split("/").pop()?.replace(/\.md$/i, "");
+  return looksMachineGeneratedTitle(slug);
+}
+
+function hasDuplicateCoreHeading(body: string): boolean {
+  const counts = new Map<string, number>();
+  for (const match of body.matchAll(/^##\s+(.+)$/gm)) {
+    const normalized = match[1].trim().toLowerCase();
+    counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+  }
+  return ["problem", "verification", "reusable lessons", "provenance", "sources"].some((heading) => (counts.get(heading) ?? 0) > 1);
+}
+
+function containsCurationMetadata(body: string): boolean {
+  return /^(Suggested Wiki Kind|Confidence|Summary):\s*/im.test(body);
+}
+
+function isAcceptableAiBody(body: string): boolean {
+  return /^#\s+.+/m.test(body)
+    && /##\s+/.test(body)
+    && !looksMachineGeneratedTitle(extractH1(body))
+    && !hasDuplicateCoreHeading(body)
+    && !containsCurationMetadata(body);
+}
+
 function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): CuratedWikiProposal["guards"] {
   const evidenceText = evidence.map((item) => [item.title, item.summary, ...item.actions, ...item.verification, ...item.reusable_lessons].join("\n")).join("\n");
   const experienceSignal = evidence.some((item) =>
@@ -429,17 +510,25 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
   const title = typeof record.title === "string" && record.title.trim() ? record.title.trim() : titleFromCluster(cluster);
   const summary = typeof record.summary === "string" && record.summary.trim() ? record.summary.trim() : evidence[0]?.summary ?? title;
   const pageKind = parseAiPageKind(record.page_kind, cluster.page_kind);
-  const targetPath = typeof record.target_path === "string" && record.target_path.trim()
+  const aiTargetPath = typeof record.target_path === "string" && record.target_path.trim()
     ? record.target_path.trim()
-    : cluster.target_path_hint ?? targetPathForCluster(pageKind, title);
+    : undefined;
+  const hintedTargetPath = cluster.target_path_hint && !looksMachineGeneratedPath(cluster.target_path_hint)
+    ? cluster.target_path_hint
+    : undefined;
+  const targetPath = aiTargetPath
+    ? isAllowedWikiPatchPath(aiTargetPath) && looksMachineGeneratedPath(aiTargetPath)
+      ? hintedTargetPath ?? targetPathForCluster(pageKind, title)
+      : aiTargetPath
+    : hintedTargetPath ?? targetPathForCluster(pageKind, title);
   const rawBody = typeof record.body_markdown === "string" && record.body_markdown.trim()
     ? record.body_markdown.trim()
     : buildBody(cluster, evidence);
-  const body = /^#\s+.+/m.test(rawBody) && /##\s+/.test(rawBody)
+  const body = isAcceptableAiBody(rawBody)
     ? rawBody
     : containsPrivateMaterial(rawBody)
       ? rawBody
-      : buildBody(cluster, evidence);
+      : buildBody(cluster, evidence, title);
   const confidence = typeof record.confidence === "number" && Number.isFinite(record.confidence)
     ? Math.max(0, Math.min(1, record.confidence))
     : cluster.confidence_hint;

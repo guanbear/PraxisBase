@@ -191,6 +191,7 @@ function withKnowledgeFrontmatter(proposal: CuratedWikiProposal, targetId: strin
   const frontmatter = [
     "---",
     `id: ${targetId}`,
+    `title: ${yamlQuote(proposal.title)}`,
     `protocol_version: ${yamlQuote(PROTOCOL_VERSION)}`,
     `type: ${knowledgeType}`,
     `knowledge_type: ${knowledgeType}`,
