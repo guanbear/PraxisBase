@@ -23,6 +23,8 @@ export interface ExistingWikiPage {
   slug: string;
   source_hashes: string[];
   entities: string[];
+  signatures?: string[];
+  body_text?: string;
   scope: Scope;
   frontmatter_sources: string[];
 }
@@ -158,22 +160,31 @@ function parseFrontmatter(content: string): {
   source_hashes: string[];
   scope: Scope;
   frontmatter_sources: string[];
+  signatures: string[];
 } {
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
   if (!fmMatch) {
     const h1 = content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? "";
-    return { title: h1, source_hashes: [], scope: "project", frontmatter_sources: [] };
+    return { title: h1, source_hashes: [], scope: "project", frontmatter_sources: [], signatures: [] };
   }
   const fm = fmMatch[1];
   const titleMatch = fm.match(/^title:\s*(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim().replace(/^["']|["']$/g, "") : "";
   const hashes: string[] = [];
   const sources: string[] = [];
+  const signatures: string[] = [];
   let inSources = false;
+  let inSignatures = false;
   for (const line of fm.split("\n")) {
     const trimmed = line.trim();
     if (/^sources:/.test(trimmed)) {
       inSources = true;
+      inSignatures = false;
+      continue;
+    }
+    if (/^signatures:/.test(trimmed)) {
+      inSignatures = true;
+      inSources = false;
       continue;
     }
     if (inSources && (/^\s+-\s+/.test(line) || /^\s+uri:/.test(line) || /^\s+hash:/.test(line))) {
@@ -186,10 +197,39 @@ function parseFrontmatter(content: string): {
     if (inSources && /^\S/.test(line)) {
       inSources = false;
     }
+    if (inSignatures && /^\s+-\s+/.test(line)) {
+      signatures.push(trimmed.replace(/^-\s+/, "").replace(/^["']|["']$/g, ""));
+      continue;
+    }
+    if (inSignatures && /^\S/.test(line)) {
+      inSignatures = false;
+    }
   }
   const scopeMatch = fm.match(/^scope:\s*(.+)/m);
   const scope = (scopeMatch?.[1]?.trim() ?? "project") as Scope;
-  return { title, source_hashes: hashes, scope, frontmatter_sources: sources };
+  return { title, source_hashes: hashes, scope, frontmatter_sources: sources, signatures };
+}
+
+function stripFrontmatter(content: string): string {
+  return content.replace(/^---\n[\s\S]*?\n---\n?/, "");
+}
+
+function extractExistingPageEntities(input: { title: string; body: string; signatures: string[] }): string[] {
+  const entities = new Set<string>();
+  for (const signature of input.signatures) {
+    const colonIndex = signature.indexOf(":");
+    if (colonIndex > 0) {
+      entities.add(signature.slice(0, colonIndex).toLowerCase());
+    }
+  }
+  const text = `${input.title}\n${input.body}`;
+  if (/\bopenclaw\b/i.test(text)) entities.add("openclaw");
+  if (/\bcodex\b/i.test(text)) entities.add("codex");
+  if (/\back\b/i.test(text)) entities.add("ack");
+  if (/\bstdin\b/i.test(text)) entities.add("stdin");
+  if (/\bauth\b/i.test(text)) entities.add("auth");
+  if (/\bdelegat(?:ion|ed|ing)\b/i.test(text)) entities.add("delegation");
+  return Array.from(entities).sort();
 }
 
 async function collectMdFiles(dir: string, root: string): Promise<string[]> {
@@ -226,12 +266,15 @@ export async function loadExistingWikiPages(root: string): Promise<ExistingWikiP
         continue;
       }
       const fm = parseFrontmatter(content);
+      const bodyText = stripFrontmatter(content);
       pages.push({
         path: file,
         title: fm.title,
         slug: makeWikiSlug(fm.title || file.replace(/\.md$/i, "")),
         source_hashes: fm.source_hashes,
-        entities: [],
+        entities: extractExistingPageEntities({ title: fm.title, body: bodyText, signatures: fm.signatures }),
+        signatures: fm.signatures,
+        body_text: bodyText,
         scope: fm.scope,
         frontmatter_sources: fm.frontmatter_sources,
       });

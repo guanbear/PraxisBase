@@ -171,6 +171,8 @@ describe("loadExistingWikiPages", () => {
         "---",
         "title: OpenClaw auth expired",
         "scope: project",
+        "signatures:",
+        "  - openclaw:auth-expired",
         "sources:",
         "  - uri: \"raw-vault://codex/s1\"",
         "    hash: \"sha256:abc\"",
@@ -198,6 +200,10 @@ describe("loadExistingWikiPages", () => {
     assert.ok(authPage);
     assert.equal(authPage.scope, "project");
     assert.deepEqual(authPage.source_hashes, ["sha256:abc"]);
+    assert.deepEqual(authPage.signatures, ["openclaw:auth-expired"]);
+    assert.ok(authPage.entities.includes("openclaw"));
+    assert.ok(authPage.entities.includes("auth"));
+    assert.ok(authPage.body_text?.includes("# OpenClaw auth expired"));
     assert.equal(authPage.path, "kb/known-fixes/auth-expired.md");
 
     const skillPage = pages.find((p) => p.title === "My skill");
