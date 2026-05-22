@@ -516,6 +516,84 @@ describe("AI wiki curator", () => {
     assert.equal(requestedModel, "GLM-5.1");
   });
 
+  it("curate passes existing page context and writes update proposals for existing page plans", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-curator-update-plan-"));
+    await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/openclaw-auth-expired.md"), [
+      "---",
+      "title: \"OpenClaw auth expired\"",
+      "scope: personal",
+      "sources:",
+      "  - uri: \"raw-vault://codex/session-1\"",
+      "    hash: \"sha256:session1\"",
+      "---",
+      "# OpenClaw auth expired",
+      "",
+      "## Existing Fix",
+      "Refresh login before retrying sync.",
+      "",
+    ].join("\n"));
+    await writeFile(join(root, ".praxisbase/outbox/captures/capture_1.json"), JSON.stringify({
+      id: "capture_1",
+      protocol_version: PROTOCOL_VERSION,
+      type: "capture_record",
+      agent: "codex",
+      workspace: root,
+      scope_hint: "personal",
+      result: "success",
+      triggers: ["task_finish"],
+      signals: [],
+      artifacts: [{
+        kind: "transcript",
+        source_ref: "raw-vault://codex/session-1",
+        source_hash: "sha256:session1",
+        redacted_summary: "Fixed OpenClaw auth expired by refreshing login. Verification passed after memory sync. Reusable lesson: refresh login before retrying OpenClaw sync.",
+      }],
+      created_at: "2026-05-21T00:00:00.000Z",
+    }));
+
+    let sawExistingPageContext = false;
+    const report = await curateWiki(root, {
+      mode: "review",
+      now: "2026-05-21T00:00:00.000Z",
+      aiClient: {
+        async generateJson(request) {
+          const user = JSON.parse(request.user) as {
+            compiler_context?: {
+              page_plan_action?: string;
+              existing_page_content?: string;
+              update_instruction?: string;
+            };
+          };
+          sawExistingPageContext = user.compiler_context?.page_plan_action === "update"
+            && Boolean(user.compiler_context.existing_page_content?.includes("Existing Fix"))
+            && Boolean(user.compiler_context.update_instruction?.includes("UPDATE or MERGE"));
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login before retrying memory sync.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/wrong-new-page.md",
+              body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nOpenClaw auth expired.\n\n## Fix\nRefresh login before retrying sync.\n\n## Verification\nMemory sync passed.\n\n## Reusable Lessons\nKeep auth fresh before retrying OpenClaw sync.",
+              confidence: 0.93,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(sawExistingPageContext, true);
+    assert.equal(report.compiler_counts?.page_plans_by_action.update, 1);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.length, 1);
+    const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", proposalFiles[0]), "utf8"));
+    assert.equal(proposal.action, "update");
+    assert.equal(proposal.target_path, "kb/known-fixes/openclaw-auth-expired.md");
+  });
+
   it("continues past failed clusters until the proposal limit is filled", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-curator-limit-"));
     await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });

@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { makeId, computeHash } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
@@ -24,6 +26,7 @@ import {
   type WikiEvidenceItem,
   type WikiObservation,
   type WikiPagePlan,
+  type WikiPagePlanAction,
 } from "./curation-model.js";
 import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-planner.js";
 
@@ -421,6 +424,12 @@ function normalizedTitleForItems(items: WikiEvidenceItem[]): string {
   return items[0].title;
 }
 
+function titleForPagePlan(topic: { title: string }, evidence: WikiEvidenceItem[]): string {
+  const signatures = evidence.flatMap((item) => item.signatures);
+  if (signatures.includes("openclaw:auth-expired")) return "OpenClaw auth expired";
+  return topic.title;
+}
+
 function uniq(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean))).sort();
 }
@@ -529,11 +538,15 @@ function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], t
   ].join("\n");
 }
 
-function proposalAction(pageKind: WikiEvidenceCluster["page_kind"]): CuratedWikiProposal["action"] {
+function proposalAction(pageKind: WikiEvidenceCluster["page_kind"], planAction?: WikiPagePlanAction): CuratedWikiProposal["action"] {
+  if (planAction === "update") return pageKind === "skill" ? "skill_update" : "update";
+  if (planAction === "merge") return "update";
+  if (planAction === "supersede") return "supersede";
+  if (planAction === "archive") return "archive";
   return pageKind === "skill" ? "skill_create" : "create";
 }
 
-function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], now: string): CuratedWikiProposal {
+function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], now: string, planAction?: WikiPagePlanAction): CuratedWikiProposal {
   const title = titleFromCluster(cluster);
   const targetPath = cluster.target_path_hint ?? targetPathForCluster(cluster.page_kind, title);
   const body = buildBody(cluster, evidence);
@@ -548,7 +561,7 @@ function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: Wiki
     protocol_version: PROTOCOL_VERSION,
     type: "wiki_curated_proposal",
     target_path: targetPath,
-    action: proposalAction(cluster.page_kind),
+    action: proposalAction(cluster.page_kind, planAction),
     page_kind: cluster.page_kind,
     scope: cluster.scope,
     title,
@@ -656,7 +669,7 @@ function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): Cura
   ];
 }
 
-function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], json: unknown, now: string): CuratedWikiProposal {
+function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], json: unknown, now: string, planAction?: WikiPagePlanAction): CuratedWikiProposal {
   const record = json && typeof json === "object" ? json as Record<string, unknown> : {};
   const rawBody = typeof record.body_markdown === "string" && record.body_markdown.trim()
     ? record.body_markdown.trim()
@@ -678,7 +691,9 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
   const hintedTargetPath = cluster.target_path_hint && !looksMachineGeneratedPath(cluster.target_path_hint)
     ? cluster.target_path_hint
     : undefined;
-  const targetPath = aiTargetPath && !isAllowedWikiPatchPath(aiTargetPath)
+  const targetPath = planAction === "update" && hintedTargetPath
+    ? hintedTargetPath
+    : aiTargetPath && !isAllowedWikiPatchPath(aiTargetPath)
     ? aiTargetPath
     : aiTargetPath && !looksMachineGeneratedPath(aiTargetPath)
       ? aiTargetPath
@@ -709,7 +724,7 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
     protocol_version: PROTOCOL_VERSION,
     type: "wiki_curated_proposal",
     target_path: targetPath,
-    action: proposalAction(pageKind),
+    action: proposalAction(pageKind, planAction),
     page_kind: pageKind,
     scope: cluster.scope,
     title,
@@ -738,9 +753,10 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
 
 export async function synthesizeCuratedWikiProposal(
   cluster: WikiEvidenceCluster,
-  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient; synthesisContext?: SynthesisContext },
+  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient; synthesisContext?: SynthesisContext; planAction?: WikiPagePlanAction },
 ): Promise<CuratedProposalResult> {
   const now = options.now ?? new Date().toISOString();
+  const planAction = options.planAction ?? options.synthesisContext?.pagePlanAction;
   try {
     let proposal: CuratedWikiProposal;
     if (options.client) {
@@ -752,9 +768,9 @@ export async function synthesizeCuratedWikiProposal(
         maxOutputBytes: 8192,
       });
       if (!response.ok) return { ok: false, category: "ai_error", error: response.error };
-      proposal = proposalFromAiJson(cluster, options.evidence, response.json, now);
+      proposal = proposalFromAiJson(cluster, options.evidence, response.json, now, planAction);
     } else {
-      proposal = synthesizeDegradedProposal(cluster, options.evidence, now);
+      proposal = synthesizeDegradedProposal(cluster, options.evidence, now, planAction);
     }
 
     const failedGuard = proposal.guards.find((guard) => !guard.ok);
@@ -808,22 +824,84 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const pagePlansByAction = countPagePlansByAction(pagePlans);
   const duplicateSourceHashGroups = countDuplicateSourceHashGroups(pagePlans);
 
-  const clusters = clusterWikiEvidence(pool.items);
   const limit = typeof options.limit === "number" && Number.isFinite(options.limit) && options.limit >= 0
     ? options.limit
     : undefined;
-  const proposalClusters = sortProposalClusters(clusters.filter((cluster) => cluster.source_count >= minSourceCount));
+  const topicByKey = new Map(topics.map((topic) => [topic.topic_key, topic]));
+  const observationById = new Map(observations.map((observation) => [observation.id, observation]));
   const evidenceById = new Map(pool.items.map((item) => [item.id, item]));
+  const sortedPlans = pagePlans.slice().sort((a, b) => a.topic_key.localeCompare(b.topic_key));
   const synthesizedProposals: CuratedWikiProposal[] = [];
   let conflicts = 0;
 
-  for (const cluster of proposalClusters) {
+  for (const plan of sortedPlans) {
     if (limit !== undefined && synthesizedProposals.length >= limit) break;
-    const evidence = cluster.evidence_ids.map((id) => evidenceById.get(id)).filter((item): item is WikiEvidenceItem => Boolean(item));
+
+    const topic = topicByKey.get(plan.topic_key);
+    if (!topic) continue;
+
+    const planObservations = topic.observation_ids
+      .map((id) => observationById.get(id))
+      .filter((observation): observation is WikiObservation => Boolean(observation));
+    const planEvidence = planObservations
+      .map((observation) => evidenceById.get(observation.evidence_id))
+      .filter((item): item is WikiEvidenceItem => Boolean(item));
+
+    if (topic.source_count < minSourceCount) continue;
+
+    const canonicalTitle = titleForPagePlan(topic, planEvidence);
+    const plannedTargetPath = (plan.action === "update" || plan.action === "merge") && plan.existing_path
+      ? plan.existing_path
+      : targetPathForCluster(topic.page_kind, canonicalTitle);
+
+    const synthesisContext: SynthesisContext = {
+      topicTitle: canonicalTitle,
+      pageKind: topic.page_kind,
+      observations: planObservations.map((observation) => ({
+        summary: [
+          observation.problem,
+          observation.action ? `Action: ${observation.action}` : undefined,
+          observation.verification ? `Verification: ${observation.verification}` : undefined,
+          observation.reusable_lesson ? `Lesson: ${observation.reusable_lesson}` : undefined,
+        ].filter(Boolean).join(" "),
+        raw_excerpt: observation.raw_excerpt,
+      })),
+      relatedPages: (plan.related_paths ?? []).map((path) => ({ title: path, path })),
+      requiredLinks: plan.required_links ?? [],
+      pagePlanAction: plan.action,
+    };
+
+    if ((plan.action === "update" || plan.action === "merge") && plan.existing_path) {
+      try {
+        synthesisContext.existingPageContent = await readFile(join(root, plan.existing_path), "utf-8");
+      } catch {
+        // Existing page may have moved or been deleted between planning and synthesis.
+      }
+    }
+
+    const cluster = WikiEvidenceClusterSchema.parse({
+      id: makeId("wiki-cluster", plan.topic_key),
+      cluster_key: plan.topic_key,
+      target_path_hint: plannedTargetPath,
+      normalized_title: canonicalTitle,
+      page_kind: topic.page_kind,
+      scope: topic.scope,
+      evidence_ids: planEvidence.map((item) => item.id).sort(),
+      source_refs: topic.source_refs,
+      source_hashes: topic.source_hashes,
+      source_count: topic.source_count,
+      signatures: uniq(planEvidence.flatMap((item) => item.signatures)),
+      confidence_hint: topic.confidence,
+      reasons: plan.reasons,
+      conflicts: [],
+    });
+
     const result = await synthesizeCuratedWikiProposal(cluster, {
-      evidence,
+      evidence: planEvidence,
       now,
       client: aiClient,
+      synthesisContext,
+      planAction: plan.action,
     });
     if (result.ok) {
       synthesizedProposals.push(result.proposal);
@@ -841,7 +919,11 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     );
     const assessment = assessWikiPromotionQuality(proposal, {
       otherProposals: synthesizedProposals,
-      existingPageFound: proposal.action === "create" && planForTarget?.action === "update",
+      existingPageFound: Boolean(
+        (proposal.action === "create" || proposal.action === "skill_create")
+        && planForTarget
+        && planForTarget.action !== "create",
+      ),
       relatedPaths: planForTarget?.related_paths ?? [],
       minSourceCount,
     });
@@ -888,7 +970,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       filtered_noise: pool.filtered_noise,
       human_required: pool.human_required,
       rejected: pool.rejected,
-      clusters: clusters.length,
+      clusters: topics.length,
     },
     output_counts: {
       curated_proposals: proposals.length,
