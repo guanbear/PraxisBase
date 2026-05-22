@@ -70,3 +70,13 @@
 - [ ] Run `pnpm check`.
 - [ ] Run a mocked AI daily smoke in tests.
 - [ ] Manually verify local personal daily does not produce excessive human-required for safe Codex sessions.
+
+## 10. Bounded Production Operations
+
+- [x] Add per-provider AI request timeout configuration.
+- [x] Add CLI support for `daily run --max-ai-chunks <n>`.
+- [x] Add CLI support for `ai init --ai-timeout-ms <n>` and `daily run --ai-timeout-ms <n>`.
+- [x] Stop production AI distill when the run-level chunk budget is reached.
+- [x] Write live daily progress snapshots under `.praxisbase/runs/live/`.
+- [x] Add tests for timeout behavior and chunk-budget enforcement.
+- [x] Document workspace wiki filter rules and bounded daily controls.

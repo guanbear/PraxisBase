@@ -32,6 +32,10 @@ function shouldDisableThinking(config: AiProviderConfig): boolean {
   return /^glm-5\.1\b/i.test(config.model.trim());
 }
 
+function providerTimeoutError(timeoutMs: number): Error {
+  return new Error(`AI provider request timed out after ${timeoutMs}ms`);
+}
+
 export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonClientOptions): AiJsonClient {
   const env = options.env ?? process.env;
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -43,34 +47,66 @@ export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonCl
         return { ok: false, error: `${options.config.api_key_env} is not set` };
       }
 
-      const response = await fetchImpl(providerEndpoint(options.config, env), {
-        method: "POST",
-        headers: {
-          "authorization": `Bearer ${apiKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: options.config.model,
-          temperature: options.config.default_temperature,
-          ...(shouldDisableThinking(options.config) ? { thinking: { type: "disabled" } } : {}),
-          response_format: { type: "json_object" },
-          max_tokens: Math.max(256, Math.ceil(input.maxOutputBytes / 4)),
-          messages: [
-            { role: "system", content: input.system },
-            { role: "user", content: input.user },
-          ],
-        }),
+      const timeoutMs = options.config.ai_timeout_ms;
+      const controller = new AbortController();
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      const timeoutPromise = new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(() => {
+          controller.abort();
+          reject(providerTimeoutError(timeoutMs));
+        }, timeoutMs);
       });
-
-      if (!response.ok) {
-        return { ok: false, error: `AI provider request failed with HTTP ${response.status}` };
-      }
-
       let raw: unknown;
       try {
-        raw = await response.json();
-      } catch {
-        return { ok: false, error: "AI provider returned non-JSON response" };
+        raw = await Promise.race([
+          (async () => {
+            const response = await fetchImpl(providerEndpoint(options.config, env), {
+              method: "POST",
+              signal: controller.signal,
+              headers: {
+                "authorization": `Bearer ${apiKey}`,
+                "content-type": "application/json",
+              },
+              body: JSON.stringify({
+                model: options.config.model,
+                temperature: options.config.default_temperature,
+                ...(shouldDisableThinking(options.config) ? { thinking: { type: "disabled" } } : {}),
+                response_format: { type: "json_object" },
+                max_tokens: Math.max(256, Math.ceil(input.maxOutputBytes / 4)),
+                messages: [
+                  { role: "system", content: input.system },
+                  { role: "user", content: input.user },
+                ],
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP_STATUS:${response.status}`);
+            }
+
+            try {
+              return await response.json();
+            } catch {
+              throw new Error("NON_JSON_RESPONSE");
+            }
+          })(),
+          timeoutPromise,
+        ]);
+      } catch (error) {
+        const name = error instanceof Error ? error.name : "";
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.startsWith("AI provider request timed out") || name === "AbortError" || controller.signal.aborted) {
+          return { ok: false, error: `AI provider request timed out after ${timeoutMs}ms` };
+        }
+        if (message.startsWith("HTTP_STATUS:")) {
+          return { ok: false, error: `AI provider request failed with HTTP ${message.replace("HTTP_STATUS:", "")}` };
+        }
+        if (message === "NON_JSON_RESPONSE") {
+          return { ok: false, error: "AI provider returned non-JSON response" };
+        }
+        return { ok: false, error: `AI provider request failed: ${message}` };
+      } finally {
+        if (timeout) clearTimeout(timeout);
       }
 
       const content = extractContent(raw);

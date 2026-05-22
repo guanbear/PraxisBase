@@ -13,6 +13,8 @@ export interface DailyCommandOptions {
   now?: string;
   degraded?: boolean;
   noAi?: boolean;
+  maxAiChunks?: number;
+  aiTimeoutMs?: number;
 }
 
 function authorityMode(mode?: "personal" | "team-git"): "personal-local" | "team-git" {
@@ -65,6 +67,8 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         now: options.now,
         degraded: options.degraded,
         noAi: options.noAi,
+        maxAiChunks: options.maxAiChunks,
+        aiTimeoutMs: options.aiTimeoutMs,
       });
       return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Daily experience run complete: ${report.id}`;
     }

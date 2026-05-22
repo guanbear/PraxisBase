@@ -14,6 +14,7 @@ function config(model: string): AiProviderConfig {
     default_temperature: 0,
     max_input_bytes: 24576,
     max_output_bytes: 8192,
+    ai_timeout_ms: 90_000,
   };
 }
 
@@ -43,5 +44,56 @@ describe("OpenAI-compatible AI client", () => {
 
     assert.deepEqual(result, { ok: true, json: { ok: true } });
     assert.deepEqual((requestBody as { thinking?: unknown }).thinking, { type: "disabled" });
+  });
+
+  it("aborts slow provider requests with a bounded timeout", async () => {
+    const client = createOpenAiCompatibleJsonClient({
+      config: { ...config("GLM-5.1"), ai_timeout_ms: 5 },
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      fetchImpl: async (_url: string | URL | Request, init?: RequestInit) => {
+        const signal = init?.signal;
+        return await new Promise<Response>((_resolve, reject) => {
+          signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+        });
+      },
+    });
+
+    const result = await client.generateJson({
+      system: "Return JSON only.",
+      user: "Return ok.",
+      schemaName: "Probe",
+      maxOutputBytes: 256,
+    });
+
+    assert.equal(result.ok, false);
+    assert.match(result.error, /timed out/i);
+  });
+
+  it("aborts slow provider response bodies with the same timeout", async () => {
+    const client = createOpenAiCompatibleJsonClient({
+      config: { ...config("GLM-5.1"), ai_timeout_ms: 5 },
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        json: async () => await new Promise<unknown>(() => undefined),
+      } as Response),
+    });
+
+    const result = await client.generateJson({
+      system: "Return JSON only.",
+      user: "Return ok.",
+      schemaName: "Probe",
+      maxOutputBytes: 256,
+    });
+
+    assert.equal(result.ok, false);
+    assert.match(result.error, /timed out/i);
   });
 });

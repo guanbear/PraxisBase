@@ -32,6 +32,7 @@
     当 用户运行 "praxisbase ai init --provider openai-compatible --model configured-by-user --json"
     那么 系统写入 ".praxisbase/ai/config.json"
     并且 config 中包含 api_key_env
+    并且 config 中包含 ai_timeout_ms
     并且 config 中不包含真实 API key、token、cookie 或 auth header
 
   场景: AI doctor 不打印密钥值
@@ -53,6 +54,19 @@
     那么 系统在 ".praxisbase/reports/ai-distill/" 写入失败计数
     并且 该 item 不生成 experience envelope
     并且 该 item 不生成 wiki proposal
+
+  场景: AI provider 超时不会卡住 daily run
+    假如 AI provider 在 ai_timeout_ms 内没有返回
+    当 daily run 执行 AI distill 或读取 provider response body
+    那么 当前 AI item 失败并记录 timeout diagnostic
+    并且 命令不会无限等待 provider 响应
+
+  场景: 用户可以限制 daily run 的 AI chunk 总量
+    假如 AI provider 已配置
+    当 用户运行 "praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --build-site --json"
+    那么 系统最多向 AI distill 发送 20 个 chunk
+    并且 daily report 的 ai_distill.warnings 包含 "max_ai_chunks_reached:20"
+    并且 系统写入 ".praxisbase/runs/live/<run-id>.json" 进度文件
 
   场景: personal mode 对安全本地 transcript 不应大量 human-required
     假如 Codex 本地 session 不包含 token、cookie、auth header、private key 或 credential dump

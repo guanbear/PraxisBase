@@ -37,6 +37,7 @@ export * from "./wiki/compile.js";
 export * from "./wiki/curation-model.js";
 export * from "./wiki/curate.js";
 export * from "./wiki/curator-prompt.js";
+export * from "./wiki/filter-rules.js";
 export * from "./wiki/lint.js";
 export * from "./wiki/quality.js";
 export * from "./wiki/resolver.js";

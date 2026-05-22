@@ -311,4 +311,25 @@ describe("wiki evidence curation", () => {
     assert.equal(report.output_counts.written_proposals, 0);
     await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
   });
+
+  it("applies local filter rules before curation", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-filter-rules-"));
+    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login.");
+    await mkdir(join(root, ".praxisbase"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/filter-rules.yaml"), [
+      "rules:",
+      "  - id: exclude-auth-refresh",
+      "    action: exclude",
+      "    when:",
+      "      agent: codex",
+      "      contains_any:",
+      "        - auth expired",
+    ].join("\n"), "utf8");
+
+    const report = await curateWiki(root, { mode: "dry-run", degraded: true, now: "2026-05-21T00:00:00.000Z" });
+
+    assert.equal(report.input_counts.evidence_items, 0);
+    assert.equal(report.input_counts.filtered_noise, 1);
+    assert.equal(report.output_counts.curated_proposals, 0);
+  });
 });

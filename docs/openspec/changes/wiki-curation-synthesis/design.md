@@ -65,6 +65,49 @@ The curator must not treat generic session configuration, tool availability, mod
 
 Single-source evidence can become a review candidate only if it is high-signal: it must include a problem or preference, an action or decision, and either verification or a reusable lesson. Multi-source evidence is preferred and should rank higher. A proposal with weak single-source evidence must stay out of auto-promotion even in personal mode. A single-source proposal is not weak when it passes the deterministic `experience_signal`, `actionability`, `verification_or_lesson`, and `not_reference_only` guards; in personal mode it may then follow the same low-risk auto-review policy as multi-source proposals.
 
+## Workspace Filter Rules
+
+The built-in useful-experience gate is intentionally conservative, but it must not be the only way to express local judgment. A workspace may define `.praxisbase/filter-rules.yaml` to exclude known local noise, route risky material to human review, or explicitly include high-signal local evidence before clustering.
+
+Supported actions:
+
+- `exclude`: remove the evidence before synthesis;
+- `human_required`: keep the evidence out of automatic synthesis and surface it for manual inspection;
+- `include`: allow the evidence to bypass the useful-signal gate while still applying deterministic privacy, scope, and path guards.
+
+Rules are evaluated in file order. Matching supports structural fields and inferred experience signals, not only raw keyword contains:
+
+```yaml
+rules:
+  - id: codex-startup-noise
+    action: exclude
+    when:
+      agent: codex
+      contains_structural_key: base_instructions
+
+  - id: possible-secret
+    action: human_required
+    when:
+      contains_any:
+        - api_key
+        - token
+        - password
+
+  - id: reusable-codex-experience
+    action: include
+    when:
+      agent: codex
+      signal_any:
+        - verified_fix
+        - durable_user_preference
+        - failed_attempt
+        - project_decision
+```
+
+Supported `when` fields are `agent`, `kind`, `json_type`, `contains_any`, `contains_all`, `contains_structural_key`, `signal_any`, `source_ref_contains`, and `path_contains`.
+
+`signal_any` uses deterministic signal inference such as `verified_fix`, `durable_user_preference`, `failed_attempt`, `project_decision`, `pitfall`, and `workflow_result`. These labels are coarse gates for curation. The AI curator still owns semantic synthesis into wiki-shaped proposals.
+
 ## Clustering
 
 `WikiEvidenceCluster` groups evidence before synthesis.
@@ -114,6 +157,7 @@ AI output that misses wiki structure should be repaired once using deterministic
 praxisbase wiki curate --dry-run --json
 praxisbase wiki curate --review --json
 praxisbase wiki curate --review --degraded --json
+praxisbase wiki curate --review --ai-timeout-ms 30000 --json
 ```
 
 Rules:
@@ -123,6 +167,7 @@ Rules:
 - Neither mode writes `kb/`, `skills/`, or `dist/`.
 - Production mode requires configured AI.
 - Degraded mode must mark output as not production-ready.
+- `--ai-timeout-ms` overrides the provider timeout for curation synthesis in the same way as `daily run`.
 
 ## Auto Review Policy
 

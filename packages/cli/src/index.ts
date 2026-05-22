@@ -361,6 +361,8 @@ program
   .option("--pr")
   .option("--degraded", "run deterministic fallback without production AI distill")
   .option("--no-ai", "disable AI distill for this run")
+  .option("--max-ai-chunks <n>", "maximum production AI distill chunks for the whole run")
+  .option("--ai-timeout-ms <n>", "override AI provider timeout for this daily run")
   .option("--json")
   .action(async (
     sub: string,
@@ -375,12 +377,16 @@ program
       pr?: boolean;
       degraded?: boolean;
       noAi?: boolean;
+      maxAiChunks?: string;
+      aiTimeoutMs?: string;
       json?: boolean;
     }
   ) => {
     console.log(await dailyCommand(process.cwd(), sub, {
       ...options,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      maxAiChunks: options.maxAiChunks ? parseInt(options.maxAiChunks, 10) : undefined,
+      aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
     }));
   });
 
@@ -392,6 +398,7 @@ program
   .option("--base-url <url>")
   .option("--base-url-env <name>")
   .option("--api-key-env <name>")
+  .option("--ai-timeout-ms <n>")
   .option("--json")
   .action(async (
     sub: string,
@@ -401,10 +408,14 @@ program
       baseUrl?: string;
       baseUrlEnv?: string;
       apiKeyEnv?: string;
+      aiTimeoutMs?: string;
       json?: boolean;
     }
   ) => {
-    console.log(await aiCommand(process.cwd(), sub, options));
+    console.log(await aiCommand(process.cwd(), sub, {
+      ...options,
+      aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
+    }));
   });
 
 program
@@ -559,6 +570,7 @@ program
   .option("--dry-run")
   .option("--review")
   .option("--degraded")
+  .option("--ai-timeout-ms <n>", "override AI provider timeout for wiki curate")
   .option("--min-source-count <n>", "minimum source count for wiki curate proposals")
   .option("--mode <mode>", "graph mode: full, overview, or ego")
   .option("--center <slug>", "center slug or id for ego graph")
@@ -570,6 +582,7 @@ program
     dryRun?: boolean;
     review?: boolean;
     degraded?: boolean;
+    aiTimeoutMs?: string;
     minSourceCount?: string;
     mode?: "full" | "overview" | "ego";
     center?: string;
@@ -580,6 +593,7 @@ program
   }) => {
     console.log(await wikiCommand(process.cwd(), sub, {
       ...options,
+      aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
       minSourceCount: options.minSourceCount ? parseInt(options.minSourceCount, 10) : undefined,
       depth: options.depth ? parseInt(options.depth, 10) : undefined,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,

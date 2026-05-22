@@ -10,6 +10,7 @@ export interface AiCommandOptions {
   baseUrl?: string;
   baseUrlEnv?: string;
   apiKeyEnv?: string;
+  aiTimeoutMs?: number;
   json?: boolean;
   env?: Record<string, string | undefined>;
 }
@@ -43,6 +44,7 @@ export async function aiCommand(root: string, subcommand: string, options: AiCom
       baseUrl: options.baseUrl,
       baseUrlEnv: options.baseUrlEnv,
       apiKeyEnv: options.apiKeyEnv,
+      aiTimeoutMs: options.aiTimeoutMs,
     });
     return formatInit(config, options.json ?? false);
   }

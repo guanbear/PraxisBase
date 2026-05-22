@@ -25,6 +25,7 @@ describe("AI provider config", () => {
     assert.equal(config.default_temperature, 0);
     assert.equal(config.max_input_bytes, 24576);
     assert.equal(config.max_output_bytes, 8192);
+    assert.equal(config.ai_timeout_ms, 90_000);
 
     const raw = await readFile(join(root, ".praxisbase/ai/config.json"), "utf8");
     assert.doesNotMatch(raw, /secret-value/);

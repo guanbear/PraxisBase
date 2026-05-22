@@ -14,6 +14,7 @@ export const AiProviderConfigSchema = z.object({
   default_temperature: z.number().min(0).max(2),
   max_input_bytes: z.number().int().positive(),
   max_output_bytes: z.number().int().positive(),
+  ai_timeout_ms: z.number().int().positive().default(90_000),
 });
 
 export type AiProviderConfig = z.infer<typeof AiProviderConfigSchema>;
@@ -24,6 +25,7 @@ export interface WriteAiProviderConfigInput {
   baseUrl?: string;
   baseUrlEnv?: string;
   apiKeyEnv?: string;
+  aiTimeoutMs?: number;
 }
 
 export interface AiDoctorCheck {
@@ -55,6 +57,7 @@ export async function writeAiProviderConfig(root: string, input: WriteAiProvider
     default_temperature: 0,
     max_input_bytes: 24576,
     max_output_bytes: 8192,
+    ai_timeout_ms: input.aiTimeoutMs ?? 90_000,
   });
   await writeJson(root, protocolPaths.aiConfig, config);
   return config;

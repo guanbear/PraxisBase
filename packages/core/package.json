@@ -167,6 +167,10 @@
       "types": "./src/wiki/curate.ts",
       "default": "./dist/wiki/curate.js"
     },
+    "./wiki/filter-rules.js": {
+      "types": "./src/wiki/filter-rules.ts",
+      "default": "./dist/wiki/filter-rules.js"
+    },
     "./wiki/curator-prompt.js": {
       "types": "./src/wiki/curator-prompt.ts",
       "default": "./dist/wiki/curator-prompt.js"

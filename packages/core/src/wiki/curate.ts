@@ -10,6 +10,7 @@ import { analyzeWikiSource } from "./analyze.js";
 import { containsPrivateMaterial, isAllowedWikiPatchPath } from "./lint.js";
 import { makeWikiSlug, type WikiSource } from "./model.js";
 import { buildWikiCuratorPrompt } from "./curator-prompt.js";
+import { decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
 import {
   CuratedWikiProposalSchema,
   WikiCurationReportSchema,
@@ -39,6 +40,7 @@ export interface CurateWikiOptions {
   aiClient?: AiJsonClient;
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
+  aiTimeoutMs?: number;
 }
 
 export type CuratedProposalResult =
@@ -165,7 +167,7 @@ function curationKindFromAnalysis(kind: string): WikiEvidenceItem["suggested_wik
   return "note";
 }
 
-export function buildWikiEvidencePool(sources: WikiSource[]): WikiEvidencePool {
+export function buildWikiEvidencePool(sources: WikiSource[], rules: WikiFilterRule[] = []): WikiEvidencePool {
   const items: WikiEvidenceItem[] = [];
   let filteredNoise = 0;
   let humanRequired = 0;
@@ -174,6 +176,15 @@ export function buildWikiEvidencePool(sources: WikiSource[]): WikiEvidencePool {
   for (const source of sources) {
     const kind = evidenceKindForSource(source);
     if (!kind) continue;
+    const filter = decideWikiFilter(source, rules);
+    if (filter.action === "exclude") {
+      filteredNoise++;
+      continue;
+    }
+    if (filter.action === "human_required") {
+      humanRequired++;
+      continue;
+    }
     if (isOperationalNoiseSource(source)) {
       filteredNoise++;
       continue;
@@ -195,7 +206,7 @@ export function buildWikiEvidencePool(sources: WikiSource[]): WikiEvidencePool {
     const verification = inferVerification(text);
     const reusableLessons = inferReusableLessons(text);
     const suggestedWikiKind = curationKindFromAnalysis(analysis.suggested_page_kind);
-    if (!hasUsefulExperienceSignal({
+    if (filter.action !== "include" && !hasUsefulExperienceSignal({
       text,
       actions,
       verification,
@@ -241,7 +252,7 @@ export function buildWikiEvidencePool(sources: WikiSource[]): WikiEvidencePool {
 }
 
 export async function buildWikiEvidencePoolFromRoot(root: string): Promise<WikiEvidencePool> {
-  return buildWikiEvidencePool(await collectWikiSources(root));
+  return buildWikiEvidencePool(await collectWikiSources(root), await readWikiFilterRules(root));
 }
 
 function firstSignature(item: WikiEvidenceItem): string | undefined {
@@ -624,9 +635,12 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     (error as Error & { code?: string }).code = "AI_CURATOR_NOT_CONFIGURED";
     throw error;
   }
-  const aiClient = options.aiClient ?? (!degraded && aiConfig
+  const runtimeAiConfig = aiConfig && typeof options.aiTimeoutMs === "number" && Number.isFinite(options.aiTimeoutMs) && options.aiTimeoutMs > 0
+    ? { ...aiConfig, ai_timeout_ms: options.aiTimeoutMs }
+    : aiConfig;
+  const aiClient = options.aiClient ?? (!degraded && runtimeAiConfig
     ? createOpenAiCompatibleJsonClient({
-      config: aiConfig,
+      config: runtimeAiConfig,
       env: options.env,
       fetchImpl: options.fetchImpl,
     })

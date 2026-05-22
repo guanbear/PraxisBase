@@ -17,6 +17,7 @@ export interface WikiCommandOptions {
   types?: string[];
   degraded?: boolean;
   minSourceCount?: number;
+  aiTimeoutMs?: number;
 }
 
 export async function wikiCommand(
@@ -40,6 +41,7 @@ export async function wikiCommand(
       degraded: options.degraded,
       minSourceCount: options.minSourceCount,
       limit: options.limit,
+      aiTimeoutMs: options.aiTimeoutMs,
     });
     if (options.json) {
       return JSON.stringify({ ok: true, report }, null, 2);

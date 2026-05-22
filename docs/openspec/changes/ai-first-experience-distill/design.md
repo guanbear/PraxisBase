@@ -71,7 +71,8 @@ The config stores non-secret provider metadata:
   "api_key_env": "PRAXISBASE_LLM_API_KEY",
   "default_temperature": 0,
   "max_input_bytes": 24576,
-  "max_output_bytes": 8192
+  "max_output_bytes": 8192,
+  "ai_timeout_ms": 90000
 }
 ```
 
@@ -81,6 +82,7 @@ Commands:
 
 ```bash
 praxisbase ai init --provider openai-compatible --model <model> --json
+praxisbase ai init --provider openai-compatible --model <model> --ai-timeout-ms 30000 --json
 praxisbase ai doctor --json
 praxisbase ai distill --source <path> --agent codex --json
 ```
@@ -94,9 +96,21 @@ praxisbase ai distill --source <path> --agent codex --json
 
 Doctor must not print secret values.
 
+`ai_timeout_ms` bounds each provider call. A timeout is an item-level AI failure with a clear diagnostic, not an unbounded process hang.
+
 ## Distill Contract
 
 AI distill consumes bounded chunks. It never receives an unbounded transcript.
+
+Daily runs may also bound total AI work with:
+
+```bash
+praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --build-site --json
+```
+
+`--max-ai-chunks` caps production AI distill across all configured sources for that run. When the cap is reached, the daily report records `max_ai_chunks_reached:<n>` in `ai_distill.warnings`. This is an operational budget, not a quality gate; later runs can raise the cap or narrow sources.
+
+`--ai-timeout-ms` overrides the provider config for one daily run. It is useful for smoke tests and scheduled jobs where stale provider calls must fail quickly.
 
 Input object:
 
@@ -271,6 +285,16 @@ Distill reports are written under:
 ```
 
 They store source refs, hashes, counts, schema errors, and redacted summaries only.
+
+`daily run` also writes live progress snapshots under:
+
+```text
+.praxisbase/runs/live/
+```
+
+The live progress file records the run id, current status, processed source count, AI chunk counts, distilled count, failed count, human-required count, warnings, and the latest source id. Operators can inspect this file while a long run is still executing.
+
+After source distill finishes, daily progress sets `current_source` to `wiki-curate` while the wiki proposal synthesis stage is running. The same `--ai-timeout-ms` override applies to this curation AI call path.
 
 ## Error Handling
 

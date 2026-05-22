@@ -50,6 +50,8 @@ export interface RunDailyExperienceInput {
   degraded?: boolean;
   noAi?: boolean;
   aiClient?: AiJsonClient;
+  maxAiChunks?: number;
+  aiTimeoutMs?: number;
 }
 
 function statusFromCounts(input: { warnings: string[]; rejected: number; humanRequired: number; enveloped: number }): "completed" | "partial" | "failed" {
@@ -180,6 +182,39 @@ async function writePrivacyException(
   return path;
 }
 
+function runSuffix(now: string): string {
+  return now.replace(/[^a-z0-9]/gi, "-");
+}
+
+function liveDailyProgressPath(now: string): string {
+  return `${protocolPaths.runsLive}/${makeId("run", `daily-experience_${runSuffix(now)}`)}.json`;
+}
+
+async function writeDailyProgress(
+  root: string,
+  path: string,
+  input: {
+    now: string;
+    status: "running" | "completed" | "partial" | "failed";
+    current_source?: string;
+    sources: DailyExperienceReport["sources"];
+    ai_distill: DailyAiDistill;
+    warnings: string[];
+  },
+): Promise<void> {
+  await writeJson(root, path, {
+    id: path.split("/").pop()?.replace(/\.json$/, "") ?? "daily-progress",
+    protocol_version: PROTOCOL_VERSION,
+    type: "daily_experience_progress",
+    status: input.status,
+    current_source: input.current_source,
+    sources: input.sources,
+    ai_distill: input.ai_distill,
+    warnings: Array.from(new Set(input.warnings)).sort(),
+    updated_at: input.now,
+  });
+}
+
 export async function runDailyExperience(root: string, input: RunDailyExperienceInput): Promise<DailyExperienceReport> {
   const mode = input.mode ?? "write";
   const now = input.now ?? new Date().toISOString();
@@ -187,6 +222,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const outputs: string[] = [];
   const warnings: string[] = [];
   const sourceReports: DailyExperienceReport["sources"] = [];
+  const progressPath = liveDailyProgressPath(now);
   const aiMode: DailyAiDistill["mode"] = input.noAi ? "disabled" : input.degraded ? "degraded" : "production";
   const aiConfig = await readAiProviderConfig(root);
   const aiDistill: DailyAiDistill = {
@@ -201,9 +237,27 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     human_required: 0,
     warnings: [],
   };
-  const aiClient = input.aiClient ?? (aiConfig
-    ? createOpenAiCompatibleJsonClient({ config: aiConfig, env: input.env, fetchImpl: input.fetchImpl })
+  const runtimeAiConfig = aiConfig && typeof input.aiTimeoutMs === "number" && Number.isFinite(input.aiTimeoutMs) && input.aiTimeoutMs > 0
+    ? { ...aiConfig, ai_timeout_ms: input.aiTimeoutMs }
+    : aiConfig;
+  const aiClient = input.aiClient ?? (runtimeAiConfig
+    ? createOpenAiCompatibleJsonClient({ config: runtimeAiConfig, env: input.env, fetchImpl: input.fetchImpl })
     : undefined);
+  const maxAiChunks = typeof input.maxAiChunks === "number" && Number.isFinite(input.maxAiChunks) && input.maxAiChunks >= 0
+    ? input.maxAiChunks
+    : Number.POSITIVE_INFINITY;
+  let maxAiChunksWarned = false;
+
+  if (mode === "write") {
+    outputs.push(progressPath);
+    await writeDailyProgress(root, progressPath, {
+      now,
+      status: "running",
+      sources: sourceReports,
+      ai_distill: aiDistill,
+      warnings,
+    });
+  }
 
   if (aiMode === "production") {
     if (!aiConfig) {
@@ -261,7 +315,6 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       scanned = chunks.length + blocked.length;
       fetched = chunks.length + blocked.length;
       for (const chunk of chunks) {
-        aiDistill.chunks++;
         const prePrivacy = evaluatePreAiPrivacy({
           mode: input.authorityMode,
           scopeHint: chunk.scope_hint,
@@ -282,6 +335,17 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           continue;
         }
 
+        if (aiDistill.chunks >= maxAiChunks) {
+          if (!maxAiChunksWarned) {
+            const warning = `max_ai_chunks_reached:${maxAiChunks}`;
+            warnings.push(warning);
+            aiDistill.warnings.push(warning);
+            maxAiChunksWarned = true;
+          }
+          break;
+        }
+
+        aiDistill.chunks++;
         const distilled = await distillExperience({
           ...chunk,
           prior_context: [],
@@ -370,11 +434,31 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       warnings: sourceWarnings,
     });
     warnings.push(...sourceWarnings);
+    if (mode === "write") {
+      await writeDailyProgress(root, progressPath, {
+        now,
+        status: "running",
+        current_source: source.name,
+        sources: sourceReports,
+        ai_distill: aiDistill,
+        warnings,
+      });
+    }
   }
 
   const wikiMode = mode === "write" ? "review" as const : "dry-run" as const;
   const compileReport = await compileWiki(root, { mode: wikiMode, now });
   outputs.push(`${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`);
+  if (mode === "write") {
+    await writeDailyProgress(root, progressPath, {
+      now,
+      status: "running",
+      current_source: "wiki-curate",
+      sources: sourceReports,
+      ai_distill: aiDistill,
+      warnings,
+    });
+  }
   const curationReport = await curateWiki(root, {
     mode: wikiMode,
     now,
@@ -383,6 +467,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     aiClient: input.aiClient,
     env: input.env,
     fetchImpl: input.fetchImpl,
+    aiTimeoutMs: input.aiTimeoutMs,
   });
   outputs.push(`.praxisbase/reports/wiki-curation/${curationReport.id}.json`);
 
@@ -396,11 +481,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   }
 
   let git: ExecutedTeamGitAction | undefined;
-  const reportId = makeId("daily-experience", now.replace(/[^a-z0-9]/gi, "-"));
-  const aiReportPath = `${protocolPaths.reportsAiDistill}/${makeId("ai-distill", now.replace(/[^a-z0-9]/gi, "-"))}.json`;
+  const reportId = makeId("daily-experience", runSuffix(now));
+  const aiReportPath = `${protocolPaths.reportsAiDistill}/${makeId("ai-distill", runSuffix(now))}.json`;
   if (mode === "write") outputs.push(aiReportPath);
   const reportPath = `${protocolPaths.reportsDaily}/${reportId}.json`;
-  const runPath = `${protocolPaths.runsDaily}/${makeId("run", `daily-experience_${now.replace(/[^a-z0-9]/gi, "-")}`)}.json`;
+  const runPath = `${protocolPaths.runsDaily}/${makeId("run", `daily-experience_${runSuffix(now)}`)}.json`;
   const reportOutputs = mode === "write" ? Array.from(new Set([...outputs, reportPath, runPath])).sort() : outputs.sort();
   const finalAiDistill: DailyAiDistill = {
     ...aiDistill,
@@ -427,7 +512,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 
   if (mode === "write") {
     await writeJson(root, aiReportPath, {
-      id: makeId("ai-distill", now.replace(/[^a-z0-9]/gi, "-")),
+      id: makeId("ai-distill", runSuffix(now)),
       protocol_version: PROTOCOL_VERSION,
       type: "ai_distill_report",
       ...report.ai_distill,
@@ -435,7 +520,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     });
     await writeJson(root, reportPath, report);
     await writeJson(root, runPath, {
-      id: makeId("run", `daily-experience_${now.replace(/[^a-z0-9]/gi, "-")}`),
+      id: makeId("run", `daily-experience_${runSuffix(now)}`),
       protocol_version: PROTOCOL_VERSION,
       command: "daily-experience",
       status: report.sources.some((source) => source.status !== "completed") ? "partial" : "completed",
@@ -449,6 +534,13 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         human_required: report.sources.reduce((sum, source) => sum + source.human_required, 0),
       },
       errors: [],
+    });
+    await writeDailyProgress(root, progressPath, {
+      now,
+      status: report.sources.some((source) => source.status !== "completed") ? "partial" : "completed",
+      sources: report.sources,
+      ai_distill: report.ai_distill,
+      warnings: report.warnings,
     });
 
     if (input.authorityMode === "team-git" && (input.commit || input.push || input.pr)) {

@@ -30,6 +30,7 @@ describe("ai CLI command", () => {
       model: "glm-5.1",
       apiKeyEnv: "ZAI_API_KEY",
       baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4",
+      aiTimeoutMs: 15_000,
       json: true,
     });
     const parsed = JSON.parse(output);
@@ -37,6 +38,7 @@ describe("ai CLI command", () => {
     assert.equal(parsed.ok, true);
     assert.equal(parsed.config.api_key_env, "ZAI_API_KEY");
     assert.equal(parsed.config.base_url, "https://open.bigmodel.cn/api/coding/paas/v4");
+    assert.equal(parsed.config.ai_timeout_ms, 15_000);
   });
 
   it("doctor reports readiness without leaking secret env values", async () => {

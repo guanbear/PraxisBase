@@ -32,6 +32,20 @@
     那么 curation report 的 filtered_noise 是 7
     并且 系统不为这些 evidence 生成 curated proposal
 
+  场景: workspace 可以配置本地过滤规则
+    假如 ".praxisbase/filter-rules.yaml" 包含一条 action 为 "exclude" 的规则
+    并且 该规则通过 agent、json_type 或 contains_structural_key 匹配 Codex 启动噪声
+    当 用户运行 "praxisbase wiki curate --review --json"
+    那么 匹配的 evidence 不进入 evidence cluster
+    并且 系统不为该 evidence 生成 curated proposal
+
+  场景: workspace include 规则不能绕过隐私 gate
+    假如 ".praxisbase/filter-rules.yaml" 包含一条 action 为 "include" 的规则
+    并且 匹配的 evidence 同时包含 token、cookie 或 private key 模式
+    当 用户运行 "praxisbase wiki curate --review --json"
+    那么 系统仍然把该 evidence 路由到 human-required 或 reject
+    并且 该 evidence 不进入 stable wiki
+
   场景: 只有有用经验才能进入 curated proposal
     假如 evidence 是单来源
     并且 它包含一个明确的问题或用户偏好

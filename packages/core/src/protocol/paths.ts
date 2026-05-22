@@ -25,6 +25,7 @@ export const protocolPaths = {
   runsMemoryFetch: ".praxisbase/runs/memory-fetch",
   runsHarvest: ".praxisbase/runs/harvest",
   runsDaily: ".praxisbase/runs/daily",
+  runsLive: ".praxisbase/runs/live",
   reportsLint: ".praxisbase/reports/lint",
   reportsReferences: ".praxisbase/reports/references",
   reportsDecay: ".praxisbase/reports/decay",
