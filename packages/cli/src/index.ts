@@ -364,6 +364,7 @@ program
   .option("--max-ai-chunks <n>", "maximum production AI distill chunks for the whole run")
   .option("--ai-timeout-ms <n>", "override AI provider timeout for this daily run")
   .option("--ai-concurrency <n>", "maximum concurrent AI distill calls")
+  .option("--retry-failed-distill-only", "retry only chunks with cached AI distill failures")
   .option("--max-curation-proposals <n>", "maximum AI wiki curation proposals for this daily run")
   .option("--json")
   .action(async (
@@ -382,6 +383,7 @@ program
       maxAiChunks?: string;
       aiTimeoutMs?: string;
       aiConcurrency?: string;
+      retryFailedDistillOnly?: boolean;
       maxCurationProposals?: string;
       json?: boolean;
     }

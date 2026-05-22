@@ -150,6 +150,39 @@ describe("AI experience distill", () => {
     }
   });
 
+  it("repairs GLM output that merges risks and suggested_tags into an invalid key", async () => {
+    const client: AiJsonClient = {
+      async generateJson() {
+        return {
+          ok: true,
+          json: {
+            summary: "Fixed OpenClaw Slack delegated work delivery and verified the replay.",
+            actions: ["Adjusted the delegated work acceptance flow."],
+            failed_attempts: [],
+            outcome: "success",
+            verification: ["Replay gate passed"],
+            reusable_lessons: ["Verify delegated work with ACK and final assertion checks."],
+            "risks [\n    \"Blocking the release pipeline if strict gating is enabled on the slack_delivery lane.\",\n    \"Potential undetected issues in Slack-integrated features if the error is a false positive.\"\n  ],\n  \"suggested_tags": ["openclaw", "slack"],
+            suggested_wiki_kind: "known_fix",
+            skill_candidate: { should_create: false },
+            confidence: 0.88,
+          },
+        };
+      },
+    };
+
+    const result = await distillExperience(baseInput, { client });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.deepEqual(result.experience.risks, [
+        "Blocking the release pipeline if strict gating is enabled on the slack_delivery lane.",
+        "Potential undetected issues in Slack-integrated features if the error is a false positive.",
+      ]);
+      assert.deepEqual(result.experience.suggested_tags, ["openclaw", "slack"]);
+    }
+  });
+
   it("returns ai_error when the client fails", async () => {
     const client: AiJsonClient = {
       async generateJson() {

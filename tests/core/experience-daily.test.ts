@@ -347,6 +347,139 @@ describe("runDailyExperience", () => {
     assert.equal(cacheFiles.length, 1);
   });
 
+  it("can retry only chunks with cached AI distill failures", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-retry-failed-distill-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw ACK timing and pnpm test passed.", "utf8");
+    await writeFile(join(sessions, "session-2.txt"), "Fixed OpenClaw Slack replay and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "GLM-4.7",
+    });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    let firstCalls = 0;
+    const first = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          firstCalls++;
+          const prompt = JSON.parse(input.user) as {
+            text: string;
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: "codex";
+              scope_hint: "personal";
+            };
+          };
+          if (prompt.text.includes("Slack replay")) {
+            return { ok: false, error: "timeout" };
+          }
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw ACK timing fix was verified.",
+              actions: ["Adjusted ACK timing."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Verify ACK timing fixes before reuse."],
+              risks: [],
+              suggested_tags: ["openclaw", "ack"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(firstCalls, 2);
+    assert.equal(first.ai_distill.distilled, 1);
+    assert.equal(first.ai_distill.failed, 1);
+
+    await writeFile(join(sessions, "session-3.txt"), "Fixed OpenClaw docs indexing and pnpm test passed.", "utf8");
+
+    let retryCalls = 0;
+    const second = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T02:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      retryFailedDistillOnly: true,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          retryCalls++;
+          const prompt = JSON.parse(input.user) as {
+            text: string;
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: "codex";
+              scope_hint: "personal";
+            };
+          };
+          assert.match(prompt.text, /Slack replay/);
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw Slack replay fix was verified.",
+              actions: ["Adjusted Slack replay handling."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Retry failed distill chunks without rerunning warm or new chunks."],
+              risks: [],
+              suggested_tags: ["openclaw", "slack"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(retryCalls, 1);
+    assert.equal(second.ai_distill.distilled, 2);
+    assert.equal(second.ai_distill.failed, 0);
+    assert.equal(second.ai_distill.cache_hits, 1);
+    assert.match(second.warnings.join("\n"), /retry_failed_distill_skipped_uncached:1/);
+  });
+
   it("limits production AI distill across all sources and writes live progress", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-budget-"));
     const sessions = join(root, "sessions");

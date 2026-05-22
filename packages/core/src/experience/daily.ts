@@ -53,6 +53,7 @@ export interface RunDailyExperienceInput {
   maxAiChunks?: number;
   aiTimeoutMs?: number;
   aiConcurrency?: number;
+  retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
 }
 
@@ -366,6 +367,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     ? Math.max(1, Math.min(16, Math.floor(input.aiConcurrency)))
     : 2;
   let uncachedAiChunks = 0;
+  let retryFailedDistillSkippedUncached = 0;
   let maxAiChunksWarned = false;
   const recordMaxAiChunksWarning = () => {
     if (!Number.isFinite(maxAiChunks) || maxAiChunksWarned) return;
@@ -507,6 +509,10 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           aiDistill.chunks++;
           aiDistill.human_required++;
           aiDistill.cache_hits++;
+          continue;
+        }
+        if (input.retryFailedDistillOnly && cached?.status !== "failed") {
+          retryFailedDistillSkippedUncached++;
           continue;
         }
 
@@ -718,6 +724,12 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         warnings,
       });
     }
+  }
+
+  if (input.retryFailedDistillOnly && retryFailedDistillSkippedUncached > 0) {
+    const warning = `retry_failed_distill_skipped_uncached:${retryFailedDistillSkippedUncached}`;
+    warnings.push(warning);
+    aiDistill.warnings.push(warning);
   }
 
   const wikiMode = mode === "write" ? "review" as const : "dry-run" as const;

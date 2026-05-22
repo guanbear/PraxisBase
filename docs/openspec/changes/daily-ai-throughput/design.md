@@ -56,7 +56,9 @@ Cache entry:
 }
 ```
 
-`status` may be `distilled`, `human_required`, or `failed`. Only `distilled` and `human_required` are replayed as cache hits. Failed entries are observability records; future runs may retry them.
+`status` may be `distilled`, `human_required`, or `failed`. Only `distilled` and `human_required` are replayed as cache hits during a normal run. Failed entries are observability records and retry eligibility markers.
+
+`--retry-failed-distill-only` changes miss handling: cached successes and human-required entries are replayed, cached failures are retried, and uncached chunks are skipped. The skip count is reported as `retry_failed_distill_skipped_uncached:N`.
 
 ## Reporting
 
@@ -80,6 +82,10 @@ Daily report and progress add:
 `--ai-concurrency` is clamped to `1..16`. The user may choose 12 for GLM-4.7. The default remains conservative.
 
 The provider client retries HTTP 429, 500, 502, 503, and 504. It honors `Retry-After` when present and otherwise uses a short exponential backoff. Repeated rate limits still surface as AI failures so the daily report remains honest.
+
+## Structured Output Repair
+
+Distill normalization may repair provider-specific field drift before strict schema validation. The allowed repairs are narrow and evidence-preserving, such as splitting a GLM key that merged `risks` and `suggested_tags`. Repairs must not invent verification, change source hashes, or bypass the post-AI privacy check.
 
 ## Risks
 

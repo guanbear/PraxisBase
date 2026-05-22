@@ -29,6 +29,19 @@ Feature: Daily AI throughput
     And ai_distill.cache_hits is 1
     And the rebuilt envelope keeps the original provenance
 
+  Scenario: Retry only failed distill cache entries
+    Given a local experience source with one cached success, one cached AI distill failure, and one uncached chunk
+    When I run daily with retry failed distill only enabled
+    Then daily replays the cached success without calling the model
+    And daily calls the model for the cached failed chunk
+    And daily skips the uncached chunk with a retry_failed_distill_skipped_uncached warning
+
+  Scenario: Repair GLM merged risk and tag fields
+    Given GLM returns a distill object that merges risks and suggested_tags into a malformed key
+    When daily validates the distilled experience
+    Then the malformed key is repaired into risks and suggested_tags
+    And strict schema validation still passes before privacy postcheck
+
   Scenario: High concurrency remains bounded
     Given a local experience source with at least twelve safe chunks
     When I run daily with ai concurrency 12

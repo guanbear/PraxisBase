@@ -203,6 +203,37 @@ function hasSufficientDistillShape(record: Record<string, unknown>): boolean {
   return semanticKeys.filter((key) => key in record).length >= 4;
 }
 
+function quotedStrings(value: string): string[] {
+  const values: string[] = [];
+  const pattern = /"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+  for (const match of value.matchAll(pattern)) {
+    try {
+      const parsed = JSON.parse(`"${match[1]}"`);
+      if (typeof parsed === "string" && parsed.trim()) values.push(parsed.trim());
+    } catch {
+      if (match[1].trim()) values.push(match[1].trim());
+    }
+  }
+  return values;
+}
+
+function repairGlmMergedRiskTagFields(record: Record<string, unknown>): { risks?: string[]; suggestedTags?: string[] } {
+  for (const [key, value] of Object.entries(record)) {
+    const normalizedKey = key.toLowerCase();
+    if (!normalizedKey.includes("risks") || !normalizedKey.includes("suggested_tags")) continue;
+
+    const suggestedIndex = normalizedKey.indexOf("suggested_tags");
+    const riskKeyFragment = key.slice(0, suggestedIndex);
+    const risks = quotedStrings(riskKeyFragment).filter((item) => item !== "risks");
+    const suggestedTags = stringArray(value, { splitComma: true });
+    return {
+      ...(risks.length > 0 ? { risks } : {}),
+      ...(suggestedTags.length > 0 ? { suggestedTags } : {}),
+    };
+  }
+  return {};
+}
+
 function normalizeDistilledExperience(raw: unknown, input: DistillInput): unknown {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
   const outerRecord = raw as Record<string, unknown>;
@@ -215,9 +246,9 @@ function normalizeDistilledExperience(raw: unknown, input: DistillInput): unknow
     ? answer as Record<string, unknown>
     : outerRecord;
   if (!hasSufficientDistillShape(record)) return raw;
+  const repaired = repairGlmMergedRiskTagFields(record);
 
   return {
-    ...record,
     source_ref: stringValue(record.source_ref) ?? input.source_ref,
     source_hash: stringValue(record.source_hash) ?? input.source_hash,
     chunk_hashes: stringArray(record.chunk_hashes).length > 0 ? stringArray(record.chunk_hashes) : [input.chunk_hash],
@@ -231,8 +262,10 @@ function normalizeDistilledExperience(raw: unknown, input: DistillInput): unknow
     outcome: normalizeOutcome(record.outcome),
     verification: stringArray(record.verification),
     reusable_lessons: stringArray(record.reusable_lessons),
-    risks: stringArray(record.risks),
-    suggested_tags: stringArray(record.suggested_tags, { splitComma: true }),
+    risks: stringArray(record.risks).length > 0 ? stringArray(record.risks) : repaired.risks ?? [],
+    suggested_tags: stringArray(record.suggested_tags, { splitComma: true }).length > 0
+      ? stringArray(record.suggested_tags, { splitComma: true })
+      : repaired.suggestedTags ?? [],
     suggested_wiki_kind: normalizeWikiKind(record.suggested_wiki_kind),
     skill_candidate: normalizeSkillCandidate(record.skill_candidate),
     confidence: normalizeConfidence(record.confidence),

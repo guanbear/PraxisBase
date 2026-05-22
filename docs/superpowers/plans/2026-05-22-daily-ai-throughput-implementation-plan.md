@@ -99,3 +99,25 @@ node packages/cli/dist/index.js daily run --mode personal --ai-concurrency 12 --
 - [ ] Run daily a second time with the same command and confirm `ai_distill.cache_hits` rises and repeated chunks avoid distill model calls.
 
 - [ ] Commit and push code/docs only, excluding generated `kb/` unless the user explicitly asks to publish local generated knowledge.
+
+### Task 6: Failed Tail Recovery And GLM Repair
+
+**Files:**
+- Modify: `packages/core/src/ai/distill.ts`
+- Modify: `packages/core/src/experience/daily.ts`
+- Modify: `packages/cli/src/commands/daily.ts`
+- Modify: `packages/cli/src/index.ts`
+- Test: `tests/core/ai-distill.test.ts`
+- Test: `tests/core/experience-daily.test.ts`
+
+- [ ] Add failing distill test for GLM output that merges `risks` and `suggested_tags` into a malformed object key.
+- [ ] Add failing daily test for `retryFailedDistillOnly`: replay cached success, retry cached failed, and skip uncached new chunks.
+- [ ] Repair recognizable merged risk/tag keys before strict `DistilledExperience` schema validation.
+- [ ] Add `--retry-failed-distill-only` CLI plumbing.
+- [ ] In retry-failed mode, replay cached successes and human-required entries, schedule only cached failures for AI distill, and report skipped uncached chunks.
+- [ ] Run focused tests and then `pnpm check`.
+- [ ] Run a real failed-tail recovery command with GLM-4.7:
+
+```bash
+node packages/cli/dist/index.js daily run --mode personal --retry-failed-distill-only --ai-concurrency 8 --ai-timeout-ms 60000 --max-curation-proposals 20 --build-site --json
+```

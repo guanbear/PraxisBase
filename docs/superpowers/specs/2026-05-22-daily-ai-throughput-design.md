@@ -52,6 +52,10 @@ The cache stores the full safe result needed to recreate the downstream envelope
 
 Only success and privacy blocks are replayed into the pipeline. Transient AI failures stay visible but are not treated as successful work. Reusing a cached success must still rebuild envelopes for the current run timestamp and current source report, but it must not call the model again.
 
+`praxisbase daily run --retry-failed-distill-only` is the explicit failed-tail recovery mode. It replays cached successes and cached human-required privacy outcomes, sends only cached `failed` distill entries back to the model, and skips uncached chunks. Skipped uncached chunks are reported as `retry_failed_distill_skipped_uncached:N` so operators can distinguish a tail retry from a new full run.
+
+The distill normalizer repairs known GLM structured-output drift before schema validation, including the observed case where `risks` and `suggested_tags` are merged into a malformed object key. Repairs must remain conservative: they can convert recognizable field drift into the existing schema, but they must not invent missing evidence or bypass privacy checks.
+
 ## Concurrency
 
 `--ai-concurrency` remains explicit and bounded. The upper clamp moves from 8 to 16 so high-concurrency providers can be used without opening unbounded requests.
@@ -74,6 +78,15 @@ praxisbase daily run \
   --mode personal \
   --ai-concurrency 8 \
   --ai-timeout-ms 45000 \
+  --max-curation-proposals 20 \
+  --build-site \
+  --json
+
+praxisbase daily run \
+  --mode personal \
+  --retry-failed-distill-only \
+  --ai-concurrency 8 \
+  --ai-timeout-ms 60000 \
   --max-curation-proposals 20 \
   --build-site \
   --json
@@ -102,5 +115,7 @@ Daily reports and live progress include:
 - Daily distill sends provider calls with the effective distill model.
 - Wiki curation sends provider calls with the effective curation model.
 - A second daily run over the same chunk reuses the distill cache without calling the distill model.
+- A failed-tail retry run calls the distill model only for chunks with cached failed distill entries.
+- GLM merged `risks`/`suggested_tags` output is repaired into valid schema fields.
 - Requested concurrency above 8 can run concurrently and remains capped at 16.
 - Reports expose cache hits.

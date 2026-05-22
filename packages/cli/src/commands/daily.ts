@@ -16,6 +16,7 @@ export interface DailyCommandOptions {
   maxAiChunks?: number;
   aiTimeoutMs?: number;
   aiConcurrency?: number;
+  retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
 }
 
@@ -72,6 +73,7 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         maxAiChunks: options.maxAiChunks,
         aiTimeoutMs: options.aiTimeoutMs,
         aiConcurrency: options.aiConcurrency,
+        retryFailedDistillOnly: options.retryFailedDistillOnly,
         maxCurationProposals: options.maxCurationProposals,
       });
       return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Daily experience run complete: ${report.id}`;
