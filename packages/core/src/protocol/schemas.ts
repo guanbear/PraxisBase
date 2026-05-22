@@ -575,6 +575,7 @@ export const DailyExperienceReportSchema = z.object({
     distilled: z.number().int().nonnegative(),
     failed: z.number().int().nonnegative(),
     human_required: z.number().int().nonnegative(),
+    cache_hits: z.number().int().nonnegative().default(0),
     warnings: z.array(z.string()).default([]),
   }).default({
     configured: false,
@@ -584,6 +585,7 @@ export const DailyExperienceReportSchema = z.object({
     distilled: 0,
     failed: 0,
     human_required: 0,
+    cache_hits: 0,
     warnings: [],
   }),
   sources: z.array(z.object({

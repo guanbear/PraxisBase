@@ -54,6 +54,7 @@ export const AiDistillReportSchema = z.object({
   distilled: z.number().int().nonnegative(),
   failed: z.number().int().nonnegative(),
   human_required: z.number().int().nonnegative(),
+  cache_hits: z.number().int().nonnegative().default(0),
   warnings: z.array(z.string()).default([]),
   created_at: z.string().datetime(),
 });

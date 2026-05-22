@@ -13,6 +13,7 @@ describe("daily experience protocol", () => {
     assert.equal(protocolPaths.stagingExperienceEnvelopes, ".praxisbase/staging/experience-envelopes");
     assert.equal(protocolPaths.reportsDaily, ".praxisbase/reports/daily");
     assert.equal(protocolPaths.runsDaily, ".praxisbase/runs/daily");
+    assert.equal(protocolPaths.cacheAiDistill, ".praxisbase/cache/ai-distill");
   });
 
   it("accepts an OpenClaw Feishu-channel source as OpenClaw memory", () => {
@@ -65,6 +66,18 @@ describe("daily experience protocol", () => {
       type: "daily_experience_report",
       authority_mode: "team-git",
       mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: true,
+        model: "GLM-4.7",
+        chunks: 1,
+        distilled: 1,
+        failed: 0,
+        human_required: 0,
+        cache_hits: 1,
+        warnings: [],
+      },
       sources: [{
         name: "openclaw-bot",
         agent: "openclaw",
@@ -89,5 +102,6 @@ describe("daily experience protocol", () => {
     });
 
     assert.equal(parsed.changed_stable_knowledge, false);
+    assert.equal(parsed.ai_distill.cache_hits, 1);
   });
 });

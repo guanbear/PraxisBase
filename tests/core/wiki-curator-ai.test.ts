@@ -455,6 +455,65 @@ describe("AI wiki curator", () => {
     assert.equal(proposal.title, "AI curated OpenClaw auth recovery");
   });
 
+  it("production curate uses the configured curation model override", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-curator-stage-model-"));
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "GLM-4.7",
+      curationModel: "GLM-5.1",
+    });
+    await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/outbox/captures/capture_1.json"), JSON.stringify({
+      id: "capture_1",
+      protocol_version: PROTOCOL_VERSION,
+      type: "capture_record",
+      agent: "codex",
+      workspace: root,
+      scope_hint: "personal",
+      result: "success",
+      triggers: ["task_finish"],
+      signals: [],
+      artifacts: [{
+        kind: "transcript",
+        source_ref: "raw-vault://codex/session-1",
+        source_hash: "sha256:session1",
+        redacted_summary: "Fixed OpenClaw auth expired by refreshing login. pnpm check passed.",
+      }],
+      created_at: "2026-05-21T00:00:00.000Z",
+    }));
+
+    let requestedModel = "";
+    await curateWiki(root, {
+      mode: "dry-run",
+      now: "2026-05-21T00:00:00.000Z",
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      fetchImpl: async (_url: string | URL | Request, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as { model: string };
+        requestedModel = body.model;
+        return new Response(JSON.stringify({
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                title: "AI curated OpenClaw auth recovery",
+                summary: "Refresh login before retrying OpenClaw sync.",
+                page_kind: "known_fix",
+                target_path: "kb/known-fixes/openclaw-auth-expired.md",
+                body_markdown: "# AI curated OpenClaw auth recovery\n\n## Problem\nOpenClaw auth expired.\n\n## Fix\nRefresh login and retry sync.\n\n## Verification\npnpm check passed.",
+                confidence: 0.93,
+                risk_notes: [],
+              }),
+            },
+          }],
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      },
+    });
+
+    assert.equal(requestedModel, "GLM-5.1");
+  });
+
   it("continues past failed clusters until the proposal limit is filled", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-curator-limit-"));
     await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });

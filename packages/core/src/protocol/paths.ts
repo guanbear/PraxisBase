@@ -47,6 +47,7 @@ export const protocolPaths = {
   indexes: ".praxisbase/indexes",
   bundles: ".praxisbase/bundles",
   cache: ".praxisbase/cache",
+  cacheAiDistill: ".praxisbase/cache/ai-distill",
   cacheRemotes: ".praxisbase/cache/remotes",
   knownFixes: "kb/known-fixes",
   pitfalls: "kb/pitfalls",

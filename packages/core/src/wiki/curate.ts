@@ -696,9 +696,12 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const runtimeAiConfig = aiConfig && typeof options.aiTimeoutMs === "number" && Number.isFinite(options.aiTimeoutMs) && options.aiTimeoutMs > 0
     ? { ...aiConfig, ai_timeout_ms: options.aiTimeoutMs }
     : aiConfig;
+  const curationAiConfig = runtimeAiConfig
+    ? { ...runtimeAiConfig, model: runtimeAiConfig.curation_model ?? runtimeAiConfig.model }
+    : undefined;
   const aiClient = options.aiClient ?? (!degraded && runtimeAiConfig
     ? createOpenAiCompatibleJsonClient({
-      config: runtimeAiConfig,
+      config: curationAiConfig!,
       env: options.env,
       fetchImpl: options.fetchImpl,
     })
@@ -747,7 +750,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     ai: {
       configured: Boolean(aiConfig || options.aiClient),
       mode: degraded ? "degraded" : "production",
-      model: aiConfig?.model,
+      model: curationAiConfig?.model ?? aiConfig?.model,
     },
     input_counts: {
       evidence_items: pool.items.length,

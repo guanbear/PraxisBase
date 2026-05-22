@@ -29,16 +29,49 @@ function extractContent(json: unknown): string | undefined {
 }
 
 function shouldDisableThinking(config: AiProviderConfig): boolean {
-  return /^glm-5\.1\b/i.test(config.model.trim());
+  return /^glm-(?:4\.7|5\.1)\b/i.test(config.model.trim());
 }
 
 function providerTimeoutError(timeoutMs: number): Error {
   return new Error(`AI provider request timed out after ${timeoutMs}ms`);
 }
 
+function isRetryableHttpStatus(status: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+function retryDelayMs(response: Response, attempt: number): number {
+  const retryAfter = response.headers.get("retry-after");
+  if (retryAfter) {
+    const seconds = Number.parseFloat(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) return Math.min(10_000, seconds * 1000);
+    const dateMs = Date.parse(retryAfter);
+    if (Number.isFinite(dateMs)) return Math.max(0, Math.min(10_000, dateMs - Date.now()));
+  }
+  return Math.min(2_000, 250 * (2 ** attempt));
+}
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  if (signal.aborted) return Promise.reject(providerTimeoutError(0));
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", onAbort);
+      reject(new DOMException("aborted", "AbortError"));
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
 export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonClientOptions): AiJsonClient {
   const env = options.env ?? process.env;
   const fetchImpl = options.fetchImpl ?? fetch;
+  const maxAttempts = 3;
 
   return {
     async generateJson(input) {
@@ -60,35 +93,42 @@ export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonCl
       try {
         raw = await Promise.race([
           (async () => {
-            const response = await fetchImpl(providerEndpoint(options.config, env), {
-              method: "POST",
-              signal: controller.signal,
-              headers: {
-                "authorization": `Bearer ${apiKey}`,
-                "content-type": "application/json",
-              },
-              body: JSON.stringify({
-                model: options.config.model,
-                temperature: options.config.default_temperature,
-                ...(shouldDisableThinking(options.config) ? { thinking: { type: "disabled" } } : {}),
-                response_format: { type: "json_object" },
-                max_tokens: Math.max(256, Math.ceil(input.maxOutputBytes / 4)),
-                messages: [
-                  { role: "system", content: input.system },
-                  { role: "user", content: input.user },
-                ],
-              }),
-            });
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+              const response = await fetchImpl(providerEndpoint(options.config, env), {
+                method: "POST",
+                signal: controller.signal,
+                headers: {
+                  "authorization": `Bearer ${apiKey}`,
+                  "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: options.config.model,
+                  temperature: options.config.default_temperature,
+                  ...(shouldDisableThinking(options.config) ? { thinking: { type: "disabled" } } : {}),
+                  response_format: { type: "json_object" },
+                  max_tokens: Math.max(256, Math.ceil(input.maxOutputBytes / 4)),
+                  messages: [
+                    { role: "system", content: input.system },
+                    { role: "user", content: input.user },
+                  ],
+                }),
+              });
 
-            if (!response.ok) {
-              throw new Error(`HTTP_STATUS:${response.status}`);
-            }
+              if (!response.ok) {
+                if (attempt < maxAttempts - 1 && isRetryableHttpStatus(response.status)) {
+                  await sleep(retryDelayMs(response, attempt), controller.signal);
+                  continue;
+                }
+                throw new Error(`HTTP_STATUS:${response.status}`);
+              }
 
-            try {
-              return await response.json();
-            } catch {
-              throw new Error("NON_JSON_RESPONSE");
+              try {
+                return await response.json();
+              } catch {
+                throw new Error("NON_JSON_RESPONSE");
+              }
             }
+            throw new Error("HTTP_STATUS:429");
           })(),
           timeoutPromise,
         ]);

@@ -2,9 +2,9 @@ import { join } from "node:path";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { computeHash, makeId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
-import { readAiProviderConfig } from "../ai/config.js";
+import { readAiProviderConfig, type AiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "../ai/client.js";
-import { distillExperience, type DistilledExperience } from "../ai/distill.js";
+import { distillExperience, DistilledExperienceSchema, type DistilledExperience } from "../ai/distill.js";
 import {
   DailyExperienceReportSchema,
   ExceptionRecordSchema,
@@ -13,7 +13,7 @@ import {
   type ExperienceEnvelope,
   type ExperiencePrivacyVerdict,
 } from "../protocol/schemas.js";
-import { writeJson } from "../store/file-store.js";
+import { readJson, writeJson } from "../store/file-store.js";
 import { compileWiki } from "../wiki/compile.js";
 import { curateWiki } from "../wiki/curate.js";
 import { buildWikiSite } from "../wiki/render-site.js";
@@ -63,6 +63,108 @@ function statusFromCounts(input: { warnings: string[]; rejected: number; humanRe
 }
 
 type DailyAiDistill = DailyExperienceReport["ai_distill"];
+const DISTILL_CACHE_VERSION = "ai-distill-v1";
+
+type DistillCacheEntry =
+  | {
+    type: "ai_distill_cache_entry";
+    version: typeof DISTILL_CACHE_VERSION;
+    status: "distilled";
+    model: string;
+    authority_mode: RunDailyExperienceInput["authorityMode"];
+    source_id: string;
+    source_hash: string;
+    chunk_hash: string;
+    experience: DistilledExperience;
+    created_at: string;
+  }
+  | {
+    type: "ai_distill_cache_entry";
+    version: typeof DISTILL_CACHE_VERSION;
+    status: "human_required" | "failed";
+    model: string;
+    authority_mode: RunDailyExperienceInput["authorityMode"];
+    source_id: string;
+    source_hash: string;
+    chunk_hash: string;
+    error: string;
+    created_at: string;
+  };
+
+function withDistillModel(config: AiProviderConfig): AiProviderConfig {
+  return { ...config, model: config.distill_model ?? config.model };
+}
+
+function distillCachePath(input: {
+  authorityMode: RunDailyExperienceInput["authorityMode"];
+  model: string;
+  chunk: ExperienceChunk;
+}): string {
+  const hash = computeHash(JSON.stringify({
+    version: DISTILL_CACHE_VERSION,
+    authority_mode: input.authorityMode,
+    model: input.model,
+    source_id: input.chunk.source_id,
+    source_hash: input.chunk.source_hash,
+    chunk_hash: input.chunk.chunk_hash,
+  })).replace(/^sha256:/, "");
+  return `${protocolPaths.cacheAiDistill}/${hash}.json`;
+}
+
+async function readDistillCache(
+  root: string,
+  path: string,
+): Promise<DistillCacheEntry | null> {
+  let raw: unknown;
+  try {
+    raw = await readJson(root, path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const record = raw as Record<string, unknown>;
+  if (record.type !== "ai_distill_cache_entry" || record.version !== DISTILL_CACHE_VERSION) return null;
+  if (record.status === "distilled") {
+    const experience = DistilledExperienceSchema.safeParse(record.experience);
+    if (!experience.success) return null;
+    return {
+      type: "ai_distill_cache_entry",
+      version: DISTILL_CACHE_VERSION,
+      status: "distilled",
+      model: String(record.model ?? ""),
+      authority_mode: record.authority_mode as RunDailyExperienceInput["authorityMode"],
+      source_id: String(record.source_id ?? ""),
+      source_hash: String(record.source_hash ?? ""),
+      chunk_hash: String(record.chunk_hash ?? ""),
+      experience: experience.data,
+      created_at: String(record.created_at ?? ""),
+    };
+  }
+  if (record.status === "human_required" || record.status === "failed") {
+    return {
+      type: "ai_distill_cache_entry",
+      version: DISTILL_CACHE_VERSION,
+      status: record.status,
+      model: String(record.model ?? ""),
+      authority_mode: record.authority_mode as RunDailyExperienceInput["authorityMode"],
+      source_id: String(record.source_id ?? ""),
+      source_hash: String(record.source_hash ?? ""),
+      chunk_hash: String(record.chunk_hash ?? ""),
+      error: String(record.error ?? "cached AI distill failure"),
+      created_at: String(record.created_at ?? ""),
+    };
+  }
+  return null;
+}
+
+async function writeDistillCache(
+  root: string,
+  path: string,
+  entry: DistillCacheEntry,
+): Promise<void> {
+  await writeJson(root, path, entry);
+}
 
 function clippedSummary(text: string): string {
   const summary = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 5).join(" ");
@@ -242,25 +344,28 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     mode: aiMode,
     production_ready: aiMode === "production",
     provider: aiConfig?.provider,
-    model: aiConfig?.model,
+    model: aiConfig ? withDistillModel(aiConfig).model : undefined,
     chunks: 0,
     distilled: 0,
     failed: 0,
     human_required: 0,
+    cache_hits: 0,
     warnings: [],
   };
   const runtimeAiConfig = aiConfig && typeof input.aiTimeoutMs === "number" && Number.isFinite(input.aiTimeoutMs) && input.aiTimeoutMs > 0
     ? { ...aiConfig, ai_timeout_ms: input.aiTimeoutMs }
     : aiConfig;
-  const aiClient = input.aiClient ?? (runtimeAiConfig
-    ? createOpenAiCompatibleJsonClient({ config: runtimeAiConfig, env: input.env, fetchImpl: input.fetchImpl })
+  const distillAiConfig = runtimeAiConfig ? withDistillModel(runtimeAiConfig) : undefined;
+  const aiClient = input.aiClient ?? (distillAiConfig
+    ? createOpenAiCompatibleJsonClient({ config: distillAiConfig, env: input.env, fetchImpl: input.fetchImpl })
     : undefined);
   const maxAiChunks = typeof input.maxAiChunks === "number" && Number.isFinite(input.maxAiChunks) && input.maxAiChunks >= 0
     ? input.maxAiChunks
     : Number.POSITIVE_INFINITY;
   const aiConcurrency = typeof input.aiConcurrency === "number" && Number.isFinite(input.aiConcurrency)
-    ? Math.max(1, Math.min(8, Math.floor(input.aiConcurrency)))
+    ? Math.max(1, Math.min(16, Math.floor(input.aiConcurrency)))
     : 2;
+  let uncachedAiChunks = 0;
   let maxAiChunksWarned = false;
   const recordMaxAiChunksWarning = () => {
     if (!Number.isFinite(maxAiChunks) || maxAiChunksWarned) return;
@@ -376,11 +481,41 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           continue;
         }
 
-        if (aiDistill.chunks >= maxAiChunks) {
+        const cachePath = distillCachePath({
+          authorityMode: input.authorityMode,
+          model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+          chunk,
+        });
+        const cached = await readDistillCache(root, cachePath);
+        if (cached?.status === "distilled") {
+          allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
+            verdict: "allow",
+            reasons: ["ai_distilled", "ai_distill_cache_hit"],
+          }, cached.experience));
+          aiDistill.chunks++;
+          aiDistill.distilled++;
+          aiDistill.cache_hits++;
+          continue;
+        }
+        if (cached?.status === "human_required") {
+          const envelope = makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
+            verdict: "human_required",
+            reasons: [cached.error, "ai_distill_cache_hit"],
+          });
+          blocked.push(envelope);
+          humanRequired++;
+          aiDistill.chunks++;
+          aiDistill.human_required++;
+          aiDistill.cache_hits++;
+          continue;
+        }
+
+        if (uncachedAiChunks >= maxAiChunks) {
           recordMaxAiChunksWarning();
           break;
         }
 
+        uncachedAiChunks++;
         aiDistill.chunks++;
         distillTasks.push(chunk);
       }
@@ -418,6 +553,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
             maxOutputBytes: aiConfig?.max_output_bytes,
             authorityMode: input.authorityMode,
           });
+          const cachePath = distillCachePath({
+            authorityMode: input.authorityMode,
+            model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+            chunk,
+          });
 
           if (distilled.ok) {
             allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
@@ -425,6 +565,20 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
               reasons: ["ai_distilled"],
             }, distilled.experience));
             aiDistill.distilled++;
+            if (mode === "write") {
+              await writeDistillCache(root, cachePath, {
+                type: "ai_distill_cache_entry",
+                version: DISTILL_CACHE_VERSION,
+                status: "distilled",
+                model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+                authority_mode: input.authorityMode,
+                source_id: chunk.source_id,
+                source_hash: chunk.source_hash,
+                chunk_hash: chunk.chunk_hash,
+                experience: distilled.experience,
+                created_at: now,
+              });
+            }
           } else {
             const warning = `ai_distill_${distilled.category}: ${distilled.error}`;
             sourceWarnings.push(warning);
@@ -437,8 +591,36 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
               blocked.push(envelope);
               humanRequired++;
               aiDistill.human_required++;
+              if (mode === "write") {
+                await writeDistillCache(root, cachePath, {
+                  type: "ai_distill_cache_entry",
+                  version: DISTILL_CACHE_VERSION,
+                  status: "human_required",
+                  model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+                  authority_mode: input.authorityMode,
+                  source_id: chunk.source_id,
+                  source_hash: chunk.source_hash,
+                  chunk_hash: chunk.chunk_hash,
+                  error: distilled.error,
+                  created_at: now,
+                });
+              }
             } else {
               aiDistill.failed++;
+              if (mode === "write") {
+                await writeDistillCache(root, cachePath, {
+                  type: "ai_distill_cache_entry",
+                  version: DISTILL_CACHE_VERSION,
+                  status: "failed",
+                  model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+                  authority_mode: input.authorityMode,
+                  source_id: chunk.source_id,
+                  source_hash: chunk.source_hash,
+                  chunk_hash: chunk.chunk_hash,
+                  error: distilled.error,
+                  created_at: now,
+                });
+              }
             }
           }
 
@@ -468,7 +650,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           { length: Math.min(aiConcurrency, distillTasks.length) },
           () => runDistillWorker(),
         ));
-        if (aiDistill.chunks >= maxAiChunks) recordMaxAiChunksWarning();
+        if (uncachedAiChunks >= maxAiChunks) recordMaxAiChunksWarning();
       }
       enveloped = allowed.length + blocked.length;
     } else {

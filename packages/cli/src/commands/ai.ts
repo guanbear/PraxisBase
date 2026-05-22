@@ -7,6 +7,8 @@ import {
 export interface AiCommandOptions {
   provider?: "openai-compatible";
   model?: string;
+  distillModel?: string;
+  curationModel?: string;
   baseUrl?: string;
   baseUrlEnv?: string;
   apiKeyEnv?: string;
@@ -41,6 +43,8 @@ export async function aiCommand(root: string, subcommand: string, options: AiCom
     const config = await writeAiProviderConfig(root, {
       provider: options.provider,
       model: options.model,
+      distillModel: options.distillModel,
+      curationModel: options.curationModel,
       baseUrl: options.baseUrl,
       baseUrlEnv: options.baseUrlEnv,
       apiKeyEnv: options.apiKeyEnv,

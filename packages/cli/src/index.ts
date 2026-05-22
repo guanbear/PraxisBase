@@ -401,6 +401,8 @@ program
   .argument("<sub>", "subcommand (init|doctor)")
   .option("--provider <provider>")
   .option("--model <model>")
+  .option("--distill-model <model>")
+  .option("--curation-model <model>")
   .option("--base-url <url>")
   .option("--base-url-env <name>")
   .option("--api-key-env <name>")
@@ -411,6 +413,8 @@ program
     options: {
       provider?: "openai-compatible";
       model?: string;
+      distillModel?: string;
+      curationModel?: string;
       baseUrl?: string;
       baseUrlEnv?: string;
       apiKeyEnv?: string;

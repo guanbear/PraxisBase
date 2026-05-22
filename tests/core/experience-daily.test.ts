@@ -183,6 +183,170 @@ describe("runDailyExperience", () => {
     assert.ok(report.outputs.some((output) => output.startsWith(".praxisbase/reports/wiki-curation/")));
   });
 
+  it("uses the configured distill model override for production provider calls", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-distill-stage-model-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "GLM-5.1",
+      distillModel: "GLM-4.7",
+    });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    let requestedModel = "";
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      maxCurationProposals: 0,
+      fetchImpl: async (_url: string | URL | Request, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as { model: string; messages: Array<{ content: string }> };
+        requestedModel = body.model;
+        const prompt = JSON.parse(body.messages[1].content) as {
+          source: {
+            source_ref: string;
+            source_hash: string;
+            chunk_hash: string;
+            agent: "codex";
+            scope_hint: "personal";
+          };
+        };
+        return new Response(JSON.stringify({
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                source_ref: prompt.source.source_ref,
+                source_hash: prompt.source.source_hash,
+                chunk_hashes: [prompt.source.chunk_hash],
+                agent: prompt.source.agent,
+                scope_hint: prompt.source.scope_hint,
+                summary: "OpenClaw auth refresh was fixed and verified.",
+                actions: ["Fixed auth refresh handling."],
+                failed_attempts: [],
+                outcome: "success",
+                verification: ["pnpm test passed"],
+                reusable_lessons: ["Verify OpenClaw auth refresh fixes with pnpm test."],
+                risks: [],
+                suggested_tags: ["openclaw", "auth"],
+                suggested_wiki_kind: "known_fix",
+                skill_candidate: { should_create: false },
+                confidence: 0.9,
+              }),
+            },
+          }],
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      },
+    });
+
+    assert.equal(requestedModel, "GLM-4.7");
+    assert.equal(report.ai_distill.model, "GLM-4.7");
+  });
+
+  it("reuses cached distill results on a later daily run", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-distill-cache-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw ACK timing and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "GLM-4.7",
+    });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    let distillCalls = 0;
+    const first = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          distillCalls++;
+          const prompt = JSON.parse(input.user) as {
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: "codex";
+              scope_hint: "personal";
+            };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw ACK timing fix was verified.",
+              actions: ["Adjusted ACK timing."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Verify ACK timing fixes before reuse."],
+              risks: [],
+              suggested_tags: ["openclaw", "ack"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(distillCalls, 1);
+    assert.equal((first.ai_distill as { cache_hits?: number }).cache_hits, 0);
+
+    const second = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T02:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          throw new Error("distill AI should not be called when cache is warm");
+        },
+      },
+    });
+
+    assert.equal(distillCalls, 1);
+    assert.equal(second.ai_distill.distilled, 1);
+    assert.equal((second.ai_distill as { cache_hits?: number }).cache_hits, 1);
+    assert.equal(second.sources[0].enveloped, 1);
+    const cacheFiles = await readdir(join(root, ".praxisbase/cache/ai-distill"));
+    assert.equal(cacheFiles.length, 1);
+  });
+
   it("limits production AI distill across all sources and writes live progress", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-budget-"));
     const sessions = join(root, "sessions");
@@ -413,6 +577,95 @@ describe("runDailyExperience", () => {
     assert.equal(report.ai_distill.chunks, 2);
     assert.equal(report.ai_distill.distilled, 2);
     assert.equal(maxInFlight, 2);
+  });
+
+  it("allows high AI concurrency above eight while keeping the configured bound", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-high-concurrency-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    for (let index = 1; index <= 12; index++) {
+      await writeFile(join(sessions, `session-${String(index).padStart(2, "0")}.txt`), `Fixed OpenClaw repair path ${index} and pnpm test passed.`, "utf8");
+    }
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    let distillCalls = 0;
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let releaseStarted: (() => void) | undefined;
+    const enoughStarted = new Promise<void>((resolve) => {
+      releaseStarted = resolve;
+    });
+    const waitForEnoughOrTimeout = async () => {
+      await Promise.race([
+        enoughStarted,
+        new Promise<void>((resolve) => setTimeout(resolve, 50)),
+      ]);
+    };
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxAiChunks: 12,
+      aiConcurrency: 12,
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          distillCalls++;
+          inFlight++;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          if (distillCalls === 12) releaseStarted?.();
+          await waitForEnoughOrTimeout();
+          inFlight--;
+          const prompt = JSON.parse(input.user) as {
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: "codex";
+              scope_hint: "personal";
+            };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw repair was verified.",
+              actions: ["Applied the repair."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Keep the repair bounded and verify it."],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.ai_distill.chunks, 12);
+    assert.equal(report.ai_distill.distilled, 12);
+    assert.equal(maxInFlight, 12);
   });
 
   it("rejects team personal chunks before calling AI", async () => {

@@ -41,6 +41,26 @@ describe("ai CLI command", () => {
     assert.equal(parsed.config.ai_timeout_ms, 15_000);
   });
 
+  it("initializes AI config with stage-specific models", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-ai-init-staged-"));
+
+    const output = await aiCommand(root, "init", {
+      provider: "openai-compatible",
+      model: "GLM-5.1",
+      distillModel: "GLM-4.7",
+      curationModel: "GLM-5.1",
+      apiKeyEnv: "ZAI_API_KEY",
+      json: true,
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.config.model, "GLM-5.1");
+    assert.equal(parsed.config.distill_model, "GLM-4.7");
+    assert.equal(parsed.config.curation_model, "GLM-5.1");
+    assert.equal(parsed.config.api_key_env, "ZAI_API_KEY");
+  });
+
   it("doctor reports readiness without leaking secret env values", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-ai-doctor-"));
     await aiCommand(root, "init", {

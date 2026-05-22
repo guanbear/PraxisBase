@@ -8,6 +8,8 @@ export const AiProviderConfigSchema = z.object({
   type: z.literal("ai_provider_config"),
   provider: z.literal("openai-compatible"),
   model: z.string().min(1),
+  distill_model: z.string().min(1).optional(),
+  curation_model: z.string().min(1).optional(),
   base_url: z.string().url().optional(),
   base_url_env: z.string().min(1).default("PRAXISBASE_LLM_BASE_URL"),
   api_key_env: z.string().min(1).default("PRAXISBASE_LLM_API_KEY"),
@@ -22,6 +24,8 @@ export type AiProviderConfig = z.infer<typeof AiProviderConfigSchema>;
 export interface WriteAiProviderConfigInput {
   provider: "openai-compatible";
   model: string;
+  distillModel?: string;
+  curationModel?: string;
   baseUrl?: string;
   baseUrlEnv?: string;
   apiKeyEnv?: string;
@@ -51,6 +55,8 @@ export async function writeAiProviderConfig(root: string, input: WriteAiProvider
     type: "ai_provider_config",
     provider: input.provider,
     model: input.model,
+    ...(input.distillModel ? { distill_model: input.distillModel } : {}),
+    ...(input.curationModel ? { curation_model: input.curationModel } : {}),
     ...(input.baseUrl ? { base_url: input.baseUrl } : {}),
     base_url_env: input.baseUrlEnv ?? "PRAXISBASE_LLM_BASE_URL",
     api_key_env: input.apiKeyEnv ?? "PRAXISBASE_LLM_API_KEY",

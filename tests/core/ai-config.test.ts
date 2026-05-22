@@ -58,6 +58,25 @@ describe("AI provider config", () => {
     assert.doesNotMatch(JSON.stringify(ready), /secret-value/);
   });
 
+  it("stores stage-specific models without duplicating provider secrets", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-ai-config-staged-"));
+
+    const config = await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "GLM-5.1",
+      distillModel: "GLM-4.7",
+      curationModel: "GLM-5.1",
+      apiKeyEnv: "ZAI_API_KEY",
+    });
+
+    assert.equal(config.model, "GLM-5.1");
+    assert.equal(config.distill_model, "GLM-4.7");
+    assert.equal(config.curation_model, "GLM-5.1");
+    assert.equal(config.api_key_env, "ZAI_API_KEY");
+    const raw = await readFile(join(root, ".praxisbase/ai/config.json"), "utf8");
+    assert.doesNotMatch(raw, /secret-value|sk-/);
+  });
+
   it("rejects unsupported providers", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-ai-config-provider-"));
 
