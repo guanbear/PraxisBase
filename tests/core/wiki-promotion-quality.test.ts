@@ -288,3 +288,94 @@ describe("promotionTimeGuard", () => {
     assert.equal(promotionTimeGuard(content), null);
   });
 });
+
+describe("assessWikiPromotionQuality - required links", () => {
+  it("records missing_wikilinks when requiredLinks exist and body lacks matching wikilink", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.",
+    }), {
+      requiredLinks: [
+        { slug: "openclaw-auth-expired", label: "OpenClaw auth expired", path: "kb/known-fixes/openclaw-auth-expired.md", reason: "shared_signature" },
+      ],
+    });
+    assert.ok(result.human_required.includes("missing_wikilinks"));
+    assert.equal(result.passed, false);
+  });
+
+  it("passes when body contains [[slug|label]] matching a required link", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test\n\n## Problem\nSee [[openclaw-auth-expired|OpenClaw Auth]] for context.\n\n## Fix\nApply.\n\n## Verification\nTests pass.",
+    }), {
+      requiredLinks: [
+        { slug: "openclaw-auth-expired", label: "OpenClaw auth expired", path: "kb/known-fixes/openclaw-auth-expired.md", reason: "shared_signature" },
+      ],
+    });
+    assert.equal(result.human_required.includes("missing_wikilinks"), false);
+  });
+
+  it("passes when body contains [[slug]] matching a required link", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test\n\n## Problem\nSee [[openclaw-auth-expired]] for context.\n\n## Fix\nApply.\n\n## Verification\nTests pass.",
+    }), {
+      requiredLinks: [
+        { slug: "openclaw-auth-expired", label: "OpenClaw auth expired", path: "kb/known-fixes/openclaw-auth-expired.md", reason: "shared_signature" },
+      ],
+    });
+    assert.equal(result.human_required.includes("missing_wikilinks"), false);
+  });
+
+  it("passes isolated page with no related or required links", () => {
+    const result = assessWikiPromotionQuality(goodProposal(), {
+      requiredLinks: [],
+      relatedPages: [],
+    });
+    assert.equal(result.human_required.includes("missing_wikilinks"), false);
+    assert.equal(result.passed, true);
+  });
+
+  it("still uses broad relatedPaths check when requiredLinks is absent", () => {
+    const result = assessWikiPromotionQuality(goodProposal(), {
+      relatedPaths: ["kb/known-fixes/related.md"],
+    });
+    assert.ok(result.human_required.includes("missing_wikilinks"));
+  });
+});
+
+describe("assessWikiPromotionQuality - ambiguous merge", () => {
+  it("records ambiguous_merge_target when mergeCandidates has multiple entries", () => {
+    const result = assessWikiPromotionQuality(goodProposal(), {
+      mergeCandidates: [
+        { title: "Page A", path: "kb/known-fixes/page-a.md", reason: "shared_source_hash" },
+        { title: "Page B", path: "kb/known-fixes/page-b.md", reason: "same_title_or_slug" },
+      ],
+    });
+    assert.ok(result.human_required.includes("ambiguous_merge_target"));
+    assert.equal(result.passed, false);
+  });
+
+  it("records ambiguous_merge_target from relationshipReasons", () => {
+    const result = assessWikiPromotionQuality(goodProposal(), {
+      relationshipReasons: ["ambiguous_merge_target", "shared_source_hash"],
+    });
+    assert.ok(result.human_required.includes("ambiguous_merge_target"));
+    assert.equal(result.passed, false);
+  });
+
+  it("records multiple_canonical_targets from relationshipReasons", () => {
+    const result = assessWikiPromotionQuality(goodProposal(), {
+      relationshipReasons: ["multiple_canonical_targets"],
+    });
+    assert.ok(result.human_required.includes("multiple_canonical_targets"));
+    assert.equal(result.passed, false);
+  });
+
+  it("does not record ambiguous merge when mergeCandidates has one entry", () => {
+    const result = assessWikiPromotionQuality(goodProposal(), {
+      mergeCandidates: [
+        { title: "Page A", path: "kb/known-fixes/page-a.md", reason: "shared_source_hash" },
+      ],
+    });
+    assert.equal(result.human_required.includes("ambiguous_merge_target"), false);
+    assert.equal(result.human_required.includes("multiple_canonical_targets"), false);
+  });
+});

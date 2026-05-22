@@ -9,6 +9,11 @@ import {
   WikiHardBlockReasonSchema,
   WikiHumanRequiredReasonSchema,
   WikiCurationReportSchema,
+  CuratedWikiProposalSchema,
+  WikiRequiredLinkSchema,
+  WikiSuggestedLinkSchema,
+  WikiMergeCandidateSchema,
+  RelatedWikiPageSchema,
 } from "@praxisbase/core";
 
 const validObservation = {
@@ -258,6 +263,8 @@ describe("WikiHumanRequiredReasonSchema", () => {
       "team_or_global_scope",
       "skill_or_policy_target",
       "destructive_action",
+      "ambiguous_merge_target",
+      "multiple_canonical_targets",
     ];
     for (const r of reasons) {
       assert.equal(WikiHumanRequiredReasonSchema.parse(r), r);
@@ -357,5 +364,113 @@ describe("WikiCurationReportSchema compiler_counts", () => {
       create: 0, update: 0, merge: 0, supersede: 0, archive: 0,
     });
     assert.equal(result.compiler_counts.duplicate_source_hash_groups, 0);
+  });
+});
+
+describe("WikiRequiredLinkSchema", () => {
+  it("parses a valid required link", () => {
+    const result = WikiRequiredLinkSchema.parse({
+      slug: "openclaw-auth-expired",
+      label: "OpenClaw auth expired",
+      path: "kb/known-fixes/openclaw-auth-expired.md",
+      reason: "shared_signature",
+    });
+    assert.equal(result.slug, "openclaw-auth-expired");
+    assert.equal(result.label, "OpenClaw auth expired");
+  });
+
+  it("rejects missing required fields", () => {
+    assert.throws(() => WikiRequiredLinkSchema.parse({ slug: "a" }), undefined);
+  });
+});
+
+describe("WikiMergeCandidateSchema", () => {
+  it("parses a valid merge candidate", () => {
+    const result = WikiMergeCandidateSchema.parse({
+      title: "OpenClaw ACK timing",
+      path: "kb/known-fixes/openclaw-ack-timing.md",
+      reason: "shared_source_hash",
+    });
+    assert.equal(result.title, "OpenClaw ACK timing");
+  });
+});
+
+describe("RelatedWikiPageSchema", () => {
+  it("parses a valid related page", () => {
+    const result = RelatedWikiPageSchema.parse({
+      slug: "openclaw-auth",
+      path: "kb/known-fixes/openclaw-auth.md",
+      title: "OpenClaw auth",
+    });
+    assert.equal(result.slug, "openclaw-auth");
+  });
+});
+
+describe("CuratedWikiProposalSchema relationship defaults", () => {
+  it("parses without relationship fields and they remain undefined", () => {
+    const base = {
+      id: "wiki-rel-defaults",
+      protocol_version: "0.1" as const,
+      type: "wiki_curated_proposal" as const,
+      target_path: "kb/known-fixes/test.md",
+      action: "create" as const,
+      page_kind: "known_fix" as const,
+      scope: "personal" as const,
+      title: "Test",
+      summary: "Test summary",
+      body_markdown: "# Test\n\n## Fix\nApply.",
+      source_refs: ["s://1"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      evidence_ids: ["e1"],
+      confidence: 0.9,
+      maturity: "draft" as const,
+      provenance: [{ source_ref: "s://1", source_hash: "sha256:a" }],
+      review_hint: { why_review: "Test", suggested_decision: "approve" as const, risk_notes: [] },
+      guards: [],
+      created_at: "2026-05-22T00:00:00.000Z",
+    };
+    const result = CuratedWikiProposalSchema.parse(base);
+    assert.equal(result.related_pages, undefined);
+    assert.equal(result.required_links, undefined);
+    assert.equal(result.suggested_links, undefined);
+    assert.equal(result.merge_candidates, undefined);
+    assert.equal(result.relationship_reasons, undefined);
+  });
+
+  it("parses with relationship fields populated", () => {
+    const base = {
+      id: "wiki-rel-populated",
+      protocol_version: "0.1" as const,
+      type: "wiki_curated_proposal" as const,
+      target_path: "kb/known-fixes/test.md",
+      action: "create" as const,
+      page_kind: "known_fix" as const,
+      scope: "personal" as const,
+      title: "Test",
+      summary: "Test summary",
+      body_markdown: "# Test\n\n## Fix\nApply.",
+      source_refs: ["s://1"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      evidence_ids: ["e1"],
+      confidence: 0.9,
+      maturity: "draft" as const,
+      provenance: [{ source_ref: "s://1", source_hash: "sha256:a" }],
+      review_hint: { why_review: "Test", suggested_decision: "approve" as const, risk_notes: [] },
+      guards: [],
+      created_at: "2026-05-22T00:00:00.000Z",
+      related_pages: [{ slug: "openclaw-auth", path: "kb/known-fixes/openclaw-auth.md", title: "OpenClaw auth" }],
+      required_links: [{ slug: "openclaw-auth-expired", label: "OpenClaw auth expired", path: "kb/known-fixes/openclaw-auth-expired.md", reason: "shared_signature" }],
+      suggested_links: [{ slug: "ack-timing", label: "ACK timing", path: "kb/known-fixes/ack-timing.md", reason: "entity_overlap" }],
+      merge_candidates: [{ title: "OpenClaw ACK timing", path: "kb/known-fixes/openclaw-ack-timing.md", reason: "shared_source_hash" }],
+      relationship_reasons: ["shared_signature", "entity_overlap"],
+    };
+    const result = CuratedWikiProposalSchema.parse(base);
+    assert.equal(result.related_pages!.length, 1);
+    assert.equal(result.required_links!.length, 1);
+    assert.equal(result.suggested_links!.length, 1);
+    assert.equal(result.merge_candidates!.length, 1);
+    assert.deepEqual(result.relationship_reasons, ["shared_signature", "entity_overlap"]);
   });
 });

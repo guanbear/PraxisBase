@@ -16,6 +16,14 @@ export interface PromotionQualityContext {
   existingPageFound?: boolean;
   /** Related stable page paths that exist in kb/ or skills/. */
   relatedPaths?: string[];
+  /** Related pages with slug/title/path detail. */
+  relatedPages?: Array<{ slug: string; path: string; title: string }>;
+  /** Required wikilinks that must appear in the proposal body. */
+  requiredLinks?: Array<{ slug: string; label: string; path: string; reason: string }>;
+  /** Merge candidate pages for ambiguous merge detection. */
+  mergeCandidates?: Array<{ title: string; path: string; reason: string }>;
+  /** Relationship reasons from the relationship planner. */
+  relationshipReasons?: string[];
   /** Conflicts detected during topic planning. */
   conflicts?: Array<{ claim: string; source_refs: string[]; reason: string }>;
   /** Minimum confidence threshold for auto-promote (default 0.82). */
@@ -105,6 +113,14 @@ function hasPromotableMarkdownShape(body: string): boolean {
 
 function hasWikilinksOrRelated(body: string): boolean {
   return /\[\[[^\]]+\]\]/.test(body) || /^related:/m.test(body);
+}
+
+function extractWikilinkSlugs(body: string): Set<string> {
+  const slugs = new Set<string>();
+  for (const match of body.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g)) {
+    slugs.add(match[1].trim().toLowerCase());
+  }
+  return slugs;
 }
 
 // Duplicate source hash across create proposals.
@@ -223,11 +239,16 @@ export function assessWikiPromotionQuality(
     humanRequired.push("unresolved_conflict");
   }
 
-  // 4. Missing wikilinks when related pages exist
-  if (
-    ctx.relatedPaths && ctx.relatedPaths.length > 0
-    && !hasWikilinksOrRelated(body)
-  ) {
+  // 4. Missing required wikilinks (precise check when requiredLinks is populated)
+  if (ctx.requiredLinks && ctx.requiredLinks.length > 0) {
+    const bodySlugs = extractWikilinkSlugs(body);
+    const missing = ctx.requiredLinks.filter(
+      (link) => !bodySlugs.has(link.slug.toLowerCase()),
+    );
+    if (missing.length > 0) {
+      humanRequired.push("missing_wikilinks");
+    }
+  } else if (ctx.relatedPaths && ctx.relatedPaths.length > 0 && !hasWikilinksOrRelated(body)) {
     humanRequired.push("missing_wikilinks");
   }
 
@@ -246,10 +267,23 @@ export function assessWikiPromotionQuality(
     humanRequired.push("destructive_action");
   }
 
+  // 8. Ambiguous merge target
+  if (ctx.mergeCandidates && ctx.mergeCandidates.length > 1) {
+    humanRequired.push("ambiguous_merge_target");
+  }
+  if (ctx.relationshipReasons) {
+    if (ctx.relationshipReasons.includes("ambiguous_merge_target")) {
+      humanRequired.push("ambiguous_merge_target");
+    }
+    if (ctx.relationshipReasons.includes("multiple_canonical_targets")) {
+      humanRequired.push("multiple_canonical_targets");
+    }
+  }
+
   return {
     topic_key: proposal.id,
     hard_blocks: hardBlocks,
-    human_required: humanRequired,
+    human_required: [...new Set(humanRequired)],
     passed: hardBlocks.length === 0 && humanRequired.length === 0,
   };
 }

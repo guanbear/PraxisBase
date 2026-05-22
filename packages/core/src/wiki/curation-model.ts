@@ -70,6 +70,40 @@ export const WikiEvidenceClusterSchema = z.object({
 
 export type WikiEvidenceCluster = z.infer<typeof WikiEvidenceClusterSchema>;
 
+export const WikiRequiredLinkSchema = z.object({
+  slug: z.string().min(1),
+  label: z.string().min(1),
+  path: z.string().min(1),
+  reason: z.string().min(1),
+});
+
+export type WikiRequiredLink = z.infer<typeof WikiRequiredLinkSchema>;
+
+export const WikiSuggestedLinkSchema = z.object({
+  slug: z.string().min(1),
+  label: z.string().min(1),
+  path: z.string().min(1),
+  reason: z.string().min(1),
+});
+
+export type WikiSuggestedLink = z.infer<typeof WikiSuggestedLinkSchema>;
+
+export const WikiMergeCandidateSchema = z.object({
+  title: z.string().min(1),
+  path: z.string().min(1),
+  reason: z.string().min(1),
+});
+
+export type WikiMergeCandidate = z.infer<typeof WikiMergeCandidateSchema>;
+
+export const RelatedWikiPageSchema = z.object({
+  slug: z.string().min(1),
+  path: z.string().min(1),
+  title: z.string().min(1),
+});
+
+export type RelatedWikiPage = z.infer<typeof RelatedWikiPageSchema>;
+
 export const CuratedWikiProposalSchema = z.object({
   id: z.string().min(1),
   protocol_version: z.literal(PROTOCOL_VERSION),
@@ -102,6 +136,11 @@ export const CuratedWikiProposalSchema = z.object({
     ok: z.boolean(),
     message: z.string().min(1),
   })).default([]),
+  related_pages: z.array(RelatedWikiPageSchema).optional(),
+  required_links: z.array(WikiRequiredLinkSchema).optional(),
+  suggested_links: z.array(WikiSuggestedLinkSchema).optional(),
+  merge_candidates: z.array(WikiMergeCandidateSchema).optional(),
+  relationship_reasons: z.array(z.string()).optional(),
   created_at: z.string().datetime(),
 });
 
@@ -275,6 +314,8 @@ export const WikiHumanRequiredReasonSchema = z.enum([
   "team_or_global_scope",
   "skill_or_policy_target",
   "destructive_action",
+  "ambiguous_merge_target",
+  "multiple_canonical_targets",
 ]);
 
 /** Promotion quality assessment result for a page plan. */
