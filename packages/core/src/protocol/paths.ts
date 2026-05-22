@@ -36,6 +36,7 @@ export const protocolPaths = {
   reportsMemoryFetch: ".praxisbase/reports/memory-fetch",
   reportsHarvest: ".praxisbase/reports/harvest",
   reportsDaily: ".praxisbase/reports/daily",
+  reportsPrivacyTriage: ".praxisbase/reports/privacy-triage",
   aiConfig: ".praxisbase/ai/config.json",
   reportsAiDistill: ".praxisbase/reports/ai-distill",
   memoryRefresh: ".praxisbase/memory-refresh",

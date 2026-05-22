@@ -4,6 +4,7 @@ import { basename, extname, join } from "node:path";
 import { computeHash, makeId } from "../protocol/id.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { protocolPaths } from "../protocol/paths.js";
+import { redactSensitiveValues } from "../protocol/redact.js";
 import {
   AgentMemoryCandidateSchema,
   AgentMemoryIngestReportSchema,
@@ -457,6 +458,7 @@ export async function ingestAgentMemory(
             agent: candidate.agent,
             source_ref: candidate.source_ref,
             source_hash: candidate.source_hash,
+            redacted_summary: redactSensitiveValues(experienceEnvelope.redacted_summary),
           },
           created_at: now,
         });
@@ -483,6 +485,7 @@ export async function ingestAgentMemory(
             agent: candidate.agent,
             source_ref: candidate.source_ref,
             source_hash: candidate.source_hash,
+            redacted_summary: redactSensitiveValues(generateRedactedSummary(rawContent, candidate.summary_hint)),
           },
           created_at: now,
         });
@@ -511,6 +514,7 @@ export async function ingestAgentMemory(
             agent: candidate.agent,
             source_ref: candidate.source_ref,
             source_hash: candidate.source_hash,
+            redacted_summary: redactSensitiveValues(summary),
           },
           created_at: now,
         });

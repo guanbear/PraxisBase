@@ -73,8 +73,38 @@ describe("runDailyExperience", () => {
     await assert.rejects(() => stat(join(root, ".praxisbase/raw-vault/refs")), { code: "ENOENT" });
     const exceptions = await readdir(join(root, ".praxisbase/exceptions/human-required"));
     assert.equal(exceptions.length, 1);
-    const exception = await readFile(join(root, ".praxisbase/exceptions/human-required", exceptions[0]), "utf8");
-    assert.match(exception, /team_rejects_personal_scope/);
+    const exception = JSON.parse(await readFile(join(root, ".praxisbase/exceptions/human-required", exceptions[0]), "utf8"));
+    assert.match(JSON.stringify(exception), /team_rejects_personal_scope/);
+    assert.match(exception.details.redacted_summary, /Implemented OpenClaw auth refresh/);
+  });
+
+  it("writes redacted review context to daily privacy exceptions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-privacy-context-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw auth after token=abc123456789 was printed.", "utf8");
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      degraded: true,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(report.sources[0].human_required, 1);
+    const exceptions = await readdir(join(root, ".praxisbase/exceptions/human-required"));
+    const exception = JSON.parse(await readFile(join(root, ".praxisbase/exceptions/human-required", exceptions[0]), "utf8"));
+    assert.match(exception.details.redacted_summary, /OpenClaw auth/);
+    assert.equal(exception.details.redacted_summary.includes("abc123456789"), false);
+    assert.match(exception.details.redacted_summary, /\[REDACTED\]/);
   });
 
   it("requires AI config for production daily by default", async () => {

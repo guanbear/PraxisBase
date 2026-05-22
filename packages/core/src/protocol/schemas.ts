@@ -196,6 +196,64 @@ export const ExceptionRecordSchema = z.object({
   created_at: DateTimeSchema,
 });
 
+export const PrivacyTriageClassificationSchema = z.enum([
+  "safe_personal_experience",
+  "needs_redaction",
+  "real_private_material",
+  "unclear",
+]);
+
+export const PrivacyTriageDecisionSchema = z.enum([
+  "auto_released",
+  "keep_human_required",
+  "team_review_only",
+]);
+
+export const PrivacyTriageAiDecisionSchema = z.object({
+  classification: PrivacyTriageClassificationSchema,
+  confidence: z.number().min(0).max(1),
+  rationale: z.string().min(1),
+  suggested_redactions: z.array(z.string().min(1)).default([]),
+});
+
+export const PrivacyTriageReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("privacy_triage_report"),
+  authority_mode: z.enum(["personal-local", "team-git"]),
+  mode: z.enum(["dry-run", "write"]),
+  ai: z.object({
+    configured: z.boolean(),
+    provider: z.string().optional(),
+    model: z.string().optional(),
+  }),
+  items: z.array(z.object({
+    exception_id: z.string().min(1),
+    exception_path: z.string().min(1),
+    source_id: z.string().min(1),
+    source_ref: z.string().optional(),
+    source_hash: z.string().optional(),
+    agent: z.string().optional(),
+    scope: z.string().optional(),
+    classification: PrivacyTriageClassificationSchema,
+    confidence: z.number().min(0).max(1),
+    rationale: z.string().min(1),
+    suggested_redactions: z.array(z.string().min(1)).default([]),
+    hard_block_reasons: z.array(z.string().min(1)).default([]),
+    decision: PrivacyTriageDecisionSchema,
+  })),
+  summary: z.object({
+    scanned: z.number().int().nonnegative(),
+    auto_released: z.number().int().nonnegative(),
+    keep_human_required: z.number().int().nonnegative(),
+    team_review_only: z.number().int().nonnegative(),
+  }),
+  changed_stable_knowledge: z.literal(false),
+  outputs: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+  created_at: DateTimeSchema,
+});
+
 export const RunCommandSchema = z.enum(["review", "promote", "build", "lint"]);
 export const RunStatusSchema = z.enum(["completed", "partial", "failed"]);
 
@@ -841,6 +899,10 @@ export type ExperienceOutcome = z.infer<typeof ExperienceOutcomeSchema>;
 export type ExperienceSourceConfig = z.infer<typeof ExperienceSourceConfigSchema>;
 export type ExperienceEnvelope = z.infer<typeof ExperienceEnvelopeSchema>;
 export type DailyExperienceReport = z.infer<typeof DailyExperienceReportSchema>;
+export type PrivacyTriageClassification = z.infer<typeof PrivacyTriageClassificationSchema>;
+export type PrivacyTriageDecision = z.infer<typeof PrivacyTriageDecisionSchema>;
+export type PrivacyTriageAiDecision = z.infer<typeof PrivacyTriageAiDecisionSchema>;
+export type PrivacyTriageReport = z.infer<typeof PrivacyTriageReportSchema>;
 export type MemoryImportReport = z.infer<typeof MemoryImportReportSchema>;
 export type MemoryRefreshPlan = z.infer<typeof MemoryRefreshPlanSchema>;
 export type ContextStage = z.infer<typeof ContextStageSchema>;

@@ -347,6 +347,13 @@ interface HumanRequiredRecord {
   source_ref?: string;
   source_hash?: string;
   created_at: string;
+  triage?: {
+    classification?: string;
+    decision?: string;
+    confidence?: string;
+    rationale?: string;
+    suggested_redactions: string[];
+  };
 }
 
 interface ReviewQueue {
@@ -412,6 +419,12 @@ function renderHumanRequired(records: HumanRequiredRecord[]): string {
         <dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>
         <dt>File</dt><dd><code>${escapeHtml(item.path)}</code></dd>
         <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
+        ${item.triage ? `
+        <dt>Triage</dt><dd>${escapeHtml(item.triage.classification ?? "unknown")} / ${escapeHtml(item.triage.decision ?? "unknown")}</dd>
+        <dt>Confidence</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
+        <dt>Rationale</dt><dd>${escapeHtml(item.triage.rationale ?? "n/a")}</dd>
+        ${item.triage.suggested_redactions.length > 0 ? `<dt>Suggested Redactions</dt><dd>${escapeHtml(item.triage.suggested_redactions.join(", "))}</dd>` : ""}
+        ` : ""}
       </dl>
     </li>`).join("\n")}
   </ol>` : "<p>No human-required records.</p>"}
@@ -790,6 +803,10 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
       const value = await readJson<Record<string, unknown>>(root, path);
       const details = detailsRecord(value.details);
       const privacy = detailsRecord(details.privacy);
+      const triage = detailsRecord(details.triage);
+      const suggestedRedactions = Array.isArray(triage.suggested_redactions)
+        ? triage.suggested_redactions.map(stringValue).filter((item): item is string => Boolean(item))
+        : [];
       records.push({
         id: stringValue(value.id) ?? file.replace(/\.json$/i, ""),
         path,
@@ -800,6 +817,13 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
         source_ref: stringValue(details.source_ref),
         source_hash: stringValue(details.source_hash),
         created_at: stringValue(value.created_at) ?? "",
+        triage: Object.keys(triage).length > 0 ? {
+          classification: stringValue(triage.classification),
+          decision: stringValue(triage.decision),
+          confidence: typeof triage.confidence === "number" ? String(triage.confidence) : stringValue(triage.confidence),
+          rationale: stringValue(triage.rationale),
+          suggested_redactions: suggestedRedactions,
+        } : undefined,
       });
     } catch {
       continue;

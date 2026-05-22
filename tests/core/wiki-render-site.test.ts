@@ -298,6 +298,45 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes(".praxisbase/exceptions/human-required/exception_auth.json"));
   });
 
+  it("shows privacy triage metadata for human-required records", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-privacy-triage-"));
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/exceptions/human-required/exception_triage.json"),
+      JSON.stringify({
+        id: "exception_triage",
+        protocol_version: "0.1",
+        type: "exception_record",
+        category: "human_required",
+        source_id: "capture:private-auth",
+        reason: "Experience privacy verdict human_required: private_material_detected",
+        details: {
+          agent: "codex",
+          scope_hint: "personal",
+          source_ref: "raw-vault://codex/private-auth",
+          source_hash: "sha256:private-auth",
+          triage: {
+            classification: "safe_personal_experience",
+            decision: "auto_released",
+            confidence: 0.91,
+            rationale: "The item describes project workflow without credentials.",
+            suggested_redactions: [],
+          },
+        },
+        created_at: "2026-05-21T10:02:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("safe_personal_experience"));
+    assert.ok(review.includes("auto_released"));
+    assert.ok(review.includes("0.91"));
+    assert.ok(review.includes("The item describes project workflow without credentials."));
+  });
+
   it("uses curated wiki proposals as the primary pending review queue", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curated-pending-"));
     await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { computeHash, makeId } from "../protocol/id.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { protocolPaths } from "../protocol/paths.js";
+import { redactSensitiveValues } from "../protocol/redact.js";
 import {
   OpenClawRemoteMemoryEnvelopeSchema,
   AgentMemoryFetchReportSchema,
@@ -380,6 +381,7 @@ export async function fetchOpenClawRemoteMemory(
           remote_id: remoteId,
           source_ref: sourceRef,
           source_hash: sourceHash,
+          redacted_summary: redactSensitiveValues(summary),
         },
         created_at: now,
       });

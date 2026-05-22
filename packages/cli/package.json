@@ -107,6 +107,10 @@
       "types": "./src/commands/ai.ts",
       "default": "./dist/commands/ai.js"
     },
+    "./commands/privacy.js": {
+      "types": "./src/commands/privacy.ts",
+      "default": "./dist/commands/privacy.js"
+    },
     "./commands/bootstrap.js": {
       "types": "./src/commands/bootstrap.ts",
       "default": "./dist/commands/bootstrap.js"

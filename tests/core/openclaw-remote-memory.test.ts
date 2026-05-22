@@ -161,6 +161,11 @@ describe("fetchOpenClawRemoteMemory exported-json", () => {
       assert.equal(report.staged, 0);
       const exceptionFiles = await readdir(join(root, ".praxisbase/exceptions/human-required"));
       assert.equal(exceptionFiles.length, 1);
+      const exception = JSON.parse(
+        await readFile(join(root, ".praxisbase/exceptions/human-required", exceptionFiles[0]), "utf8")
+      );
+      assert.match(exception.details.redacted_summary, /\[REDACTED\]/);
+      assert.equal(exception.details.redacted_summary.includes("hunter2"), false);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

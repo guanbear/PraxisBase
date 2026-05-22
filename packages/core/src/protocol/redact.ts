@@ -21,6 +21,13 @@ export function redactExcerpt(text: string, maxLength: number = 500): string {
   return result;
 }
 
+export function redactSensitiveValues(text: string, maxLength: number = 500): string {
+  let result = redactExcerpt(text, maxLength);
+  result = result.replace(/\b(token|cookie|secret|password|passwd|credential|authorization|auth(?:entication)? header|api[_-]?key|access[_-]?token|secret[_-]?key)s?\b\s*(?:[:=]|is|was|as)?\s*["'`]?[^\s"'`,;]{4,}/gi, "$1=[REDACTED]");
+  result = result.replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]");
+  return result;
+}
+
 /**
  * Check if content appears to contain raw logs that should not go into kb/.
  */

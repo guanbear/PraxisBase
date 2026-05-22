@@ -25,6 +25,7 @@ import { remoteCommand } from "./commands/remote.js";
 import { sourceCommand } from "./commands/source.js";
 import { dailyCommand } from "./commands/daily.js";
 import { aiCommand } from "./commands/ai.js";
+import { privacyCommand } from "./commands/privacy.js";
 import { bootstrapCommand } from "./commands/bootstrap.js";
 import { harvestCommand } from "./commands/harvest.js";
 import { agentToolsCommand } from "./commands/agent-tools.js";
@@ -426,6 +427,31 @@ program
   ) => {
     console.log(await aiCommand(process.cwd(), sub, {
       ...options,
+      aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
+    }));
+  });
+
+program
+  .command("privacy")
+  .argument("<sub>", "subcommand (triage)")
+  .option("--mode <mode>", "personal or team-git", "personal")
+  .option("--auto-release", "auto-release high-confidence safe personal triage items")
+  .option("--limit <n>")
+  .option("--ai-timeout-ms <n>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      mode?: "personal" | "team-git";
+      autoRelease?: boolean;
+      limit?: string;
+      aiTimeoutMs?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await privacyCommand(process.cwd(), sub, {
+      ...options,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
     }));
   });

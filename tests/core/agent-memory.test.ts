@@ -358,6 +358,10 @@ describe("ingestAgentMemory", () => {
     assert.equal(report.unsafe, 1);
     const exceptions = await readdir(join(root, ".praxisbase/exceptions/human-required"));
     assert.equal(exceptions.length, 1);
+    const exception = JSON.parse(await readFile(join(root, ".praxisbase/exceptions/human-required", exceptions[0]), "utf8"));
+    assert.equal(typeof exception.details.redacted_summary, "string");
+    assert.ok(exception.details.redacted_summary.length > 0);
+    assert.equal(exception.details.redacted_summary.includes("abc123"), false);
   });
 
   it("ingests staged OpenClaw remote envelopes without raw remote logs", async () => {

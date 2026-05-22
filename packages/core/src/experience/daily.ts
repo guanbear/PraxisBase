@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { computeHash, makeId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
+import { redactSensitiveValues } from "../protocol/redact.js";
 import { readAiProviderConfig, type AiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "../ai/client.js";
 import { distillExperience, DistilledExperienceSchema, type DistilledExperience } from "../ai/distill.js";
@@ -278,6 +279,7 @@ async function writePrivacyException(
       scope_hint: envelope.scope_hint,
       source_ref: envelope.source_ref,
       source_hash: envelope.source_hash,
+      redacted_summary: redactSensitiveValues(envelope.redacted_summary, 1200),
       privacy: envelope.privacy,
     },
     created_at: now,
