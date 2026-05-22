@@ -182,6 +182,16 @@ describe("AI privacy gates", () => {
     assert.equal(result.verdict, "allow_for_ai");
   });
 
+  it("allows personal transcript chunks that only discuss private-material policy terms", () => {
+    const result = evaluatePreAiPrivacy({
+      mode: "personal-local",
+      scopeHint: "personal",
+      text: "The agent was instructed not to include a secret, token, cookie, auth header, password, or credential in summaries.",
+    });
+
+    assert.equal(result.verdict, "allow_for_ai");
+  });
+
   it("routes personal chunks with secrets to human review before AI", () => {
     const result = evaluatePreAiPrivacy({
       mode: "personal-local",

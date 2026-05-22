@@ -55,11 +55,26 @@ function hasConcreteExperienceTerms(text: string): boolean {
   return /\b(user preference|preference|operating policy|fixed|resolved|passed|verified|validated|workaround|pitfall|decision|failed|avoid|lesson|ack)\b/i.test(text);
 }
 
+function hasExplicitUserExperienceMarker(text: string): boolean {
+  return /\b(user preference|user asked|user reported|feedback|acceptance test|bug fix|fixed|resolved|workaround|repair loop|delegated work|ack timing)\b|用户|反馈|修复|验证|失败/i.test(text);
+}
+
+function isAgentInstructionConfigNoise(text: string): boolean {
+  const instructionContext = /\b(base instructions|filesystem sandbox|sandbox mode|sandbox_mode|approval policy|approval_policy|approval policies|collaboration mode|collaboration_mode|tool usage policies|skill registry|personality configuration|frontend design rules|editing constraints|session metadata|system instructions|available skills|file system permissions)\b/i.test(text);
+  const agentConfigTopic = /\b(?:codex|agent|session|system).{0,80}\b(?:initialization|configuration|best practices|base instructions|session boot|session environment|session metadata)\b/i.test(text)
+    || /\bSystem configuration and base instructions for a Codex CLI agent session\b/i.test(text)
+    || /\bN\/A\s*-\s*Initializing agent session environment\b/i.test(text);
+  return agentConfigTopic
+    && instructionContext
+    && !hasExplicitUserExperienceMarker(text);
+}
+
 function isOperationalNoiseSource(source: WikiSource): boolean {
   const bodyText = [source.summary, source.body].filter(Boolean).join("\n").trim();
   const text = textForSource(source);
   const ref = [source.source_ref, source.path].filter(Boolean).join("\n");
   if (!text) return true;
+  if (isAgentInstructionConfigNoise(text)) return true;
   if (/^\s*\{[\s\S]*"type"\s*:\s*"session_meta"/.test(bodyText)) return true;
   if (/^\s*\{[\s\S]*"base_instructions"\s*:/.test(bodyText)) return true;
   if (/^\s*openclaw:unknown\s*$/i.test(bodyText)) return true;
@@ -105,6 +120,35 @@ function cleanEvidenceLine(line: string): string {
     .replace(/^Summary:\s*/i, "")
     .replace(/\[score=[^\]]+\]/gi, "")
     .trim();
+}
+
+function readableTitleCandidate(text: string): string | undefined {
+  const firstLine = cleanEvidenceLine(text).split(/\r?\n/)[0]?.trim();
+  if (!firstLine || looksMachineGeneratedTitle(firstLine) || /^(Suggested Wiki Kind|Confidence):\s*/i.test(firstLine)) return undefined;
+  const shortened = firstLine
+    .replace(/,\s+(?:focusing|specifically|identifying|where|with)\b[\s\S]*$/i, "")
+    .replace(/\s+and\s+verified\b[\s\S]*$/i, "")
+    .replace(/[.:;,\s]+$/g, "")
+    .trim();
+  if (shortened.length < 8 || looksMachineGeneratedTitle(shortened)) return undefined;
+  return shortened.length <= 96 ? shortened : shortened.slice(0, 96).replace(/\s+\S*$/, "").trim();
+}
+
+function readableTitleFromEvidence(evidence: WikiEvidenceItem[]): string | undefined {
+  for (const item of evidence) {
+    const candidates = [
+      item.title,
+      item.summary,
+      ...item.actions,
+      ...item.verification,
+      ...item.reusable_lessons,
+    ];
+    for (const candidate of candidates) {
+      const title = readableTitleCandidate(candidate);
+      if (title) return title;
+    }
+  }
+  return undefined;
 }
 
 function sentences(text: string): string[] {
@@ -476,6 +520,10 @@ function hasDuplicateCoreHeading(body: string): boolean {
   return ["problem", "verification", "reusable lessons", "provenance", "sources"].some((heading) => (counts.get(heading) ?? 0) > 1);
 }
 
+function hasDuplicateH1(body: string): boolean {
+  return (body.match(/^#\s+.+$/gm) ?? []).length > 1;
+}
+
 function containsCurationMetadata(body: string): boolean {
   return /^(Suggested Wiki Kind|Confidence|Summary):\s*/im.test(body);
 }
@@ -484,6 +532,7 @@ function isAcceptableAiBody(body: string): boolean {
   return /^#\s+.+/m.test(body)
     && /##\s+/.test(body)
     && !looksMachineGeneratedTitle(extractH1(body))
+    && !hasDuplicateH1(body)
     && !hasDuplicateCoreHeading(body)
     && !containsCurationMetadata(body);
 }
@@ -518,7 +567,18 @@ function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): Cura
 
 function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], json: unknown, now: string): CuratedWikiProposal {
   const record = json && typeof json === "object" ? json as Record<string, unknown> : {};
-  const title = typeof record.title === "string" && record.title.trim() ? record.title.trim() : titleFromCluster(cluster);
+  const rawBody = typeof record.body_markdown === "string" && record.body_markdown.trim()
+    ? record.body_markdown.trim()
+    : buildBody(cluster, evidence);
+  const aiTitle = typeof record.title === "string" && record.title.trim() ? record.title.trim() : undefined;
+  const bodyTitle = extractH1(rawBody);
+  const evidenceTitle = readableTitleFromEvidence(evidence);
+  const clusterTitle = titleFromCluster(cluster);
+  const title = !looksMachineGeneratedTitle(aiTitle)
+    ? aiTitle as string
+    : !looksMachineGeneratedTitle(bodyTitle)
+      ? bodyTitle as string
+      : evidenceTitle ?? (!looksMachineGeneratedTitle(clusterTitle) ? clusterTitle : "Unclear wiki candidate");
   const summary = typeof record.summary === "string" && record.summary.trim() ? record.summary.trim() : evidence[0]?.summary ?? title;
   const pageKind = parseAiPageKind(record.page_kind, cluster.page_kind);
   const aiTargetPath = typeof record.target_path === "string" && record.target_path.trim()
@@ -527,14 +587,11 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
   const hintedTargetPath = cluster.target_path_hint && !looksMachineGeneratedPath(cluster.target_path_hint)
     ? cluster.target_path_hint
     : undefined;
-  const targetPath = aiTargetPath
-    ? isAllowedWikiPatchPath(aiTargetPath) && looksMachineGeneratedPath(aiTargetPath)
-      ? hintedTargetPath ?? targetPathForCluster(pageKind, title)
-      : aiTargetPath
-    : hintedTargetPath ?? targetPathForCluster(pageKind, title);
-  const rawBody = typeof record.body_markdown === "string" && record.body_markdown.trim()
-    ? record.body_markdown.trim()
-    : buildBody(cluster, evidence);
+  const targetPath = aiTargetPath && !isAllowedWikiPatchPath(aiTargetPath)
+    ? aiTargetPath
+    : aiTargetPath && !looksMachineGeneratedPath(aiTargetPath)
+      ? aiTargetPath
+      : hintedTargetPath ?? targetPathForCluster(pageKind, title);
   const body = isAcceptableAiBody(rawBody)
     ? rawBody
     : containsPrivateMaterial(rawBody)
@@ -549,6 +606,7 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
 
   const guards = [
     { id: "path", ok: isAllowedWikiPatchPath(targetPath), message: isAllowedWikiPatchPath(targetPath) ? "allowed stable knowledge path" : "unsafe target path" },
+    { id: "title", ok: !looksMachineGeneratedTitle(title) && title !== "Unclear wiki candidate", message: !looksMachineGeneratedTitle(title) && title !== "Unclear wiki candidate" ? "readable title" : "machine-generated title" },
     { id: "privacy", ok: !containsPrivateMaterial(body), message: containsPrivateMaterial(body) ? "private material detected" : "no private material detected" },
     { id: "provenance", ok: cluster.source_refs.length > 0 && cluster.source_hashes.length > 0, message: "source provenance present" },
     { id: "body", ok: /^#\s+.+/m.test(body) && /##\s+/.test(body), message: /^#\s+.+/m.test(body) && /##\s+/.test(body) ? "wiki-shaped body" : "body missing headings" },

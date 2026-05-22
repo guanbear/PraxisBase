@@ -116,6 +116,40 @@ describe("AI experience distill", () => {
     }
   });
 
+  it("unwraps GLM answer objects before schema validation", async () => {
+    const client: AiJsonClient = {
+      async generateJson() {
+        return {
+          ok: true,
+          json: {
+            answer: {
+              summary: "Fixed OpenClaw Slack delegated work delivery and verified the replay.",
+              actions: ["Adjusted the delegated work acceptance flow."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["Replay gate passed"],
+              reusable_lessons: ["Verify delegated work with ACK and final assertion checks."],
+              risks: [],
+              suggested_tags: ["openclaw", "slack"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.88,
+            },
+          },
+        };
+      },
+    };
+
+    const result = await distillExperience(baseInput, { client });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.experience.source_ref, baseInput.source_ref);
+      assert.equal(result.experience.summary, "Fixed OpenClaw Slack delegated work delivery and verified the replay.");
+      assert.deepEqual(result.experience.chunk_hashes, [baseInput.chunk_hash]);
+    }
+  });
+
   it("returns ai_error when the client fails", async () => {
     const client: AiJsonClient = {
       async generateJson() {

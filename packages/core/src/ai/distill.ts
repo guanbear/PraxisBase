@@ -204,7 +204,15 @@ function hasSufficientDistillShape(record: Record<string, unknown>): boolean {
 
 function normalizeDistilledExperience(raw: unknown, input: DistillInput): unknown {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
-  const record = raw as Record<string, unknown>;
+  const outerRecord = raw as Record<string, unknown>;
+  const answer = outerRecord.answer;
+  const record = !hasSufficientDistillShape(outerRecord)
+    && answer
+    && typeof answer === "object"
+    && !Array.isArray(answer)
+    && hasSufficientDistillShape(answer as Record<string, unknown>)
+    ? answer as Record<string, unknown>
+    : outerRecord;
   if (!hasSufficientDistillShape(record)) return raw;
 
   return {

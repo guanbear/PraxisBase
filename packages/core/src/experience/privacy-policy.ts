@@ -1,4 +1,5 @@
 import { containsPrivateMaterial } from "../wiki/lint.js";
+import { appearsToBeRawLog } from "../protocol/redact.js";
 import type { ExperiencePrivacyVerdict, ExperienceScopeHint } from "../protocol/schemas.js";
 
 export interface EvaluateExperiencePrivacyInput {
@@ -22,6 +23,21 @@ export interface PreAiPrivacyResult {
 
 function hasPrivateChatHint(text: string): boolean {
   return /\b(?:private chat|direct message|dm|私聊|私人对话)\b/i.test(text);
+}
+
+function containsConcretePrivateValue(text: string): boolean {
+  return /BEGIN PRIVATE KEY/i.test(text)
+    || /\bAKIA[A-Z0-9]{12,}\b/.test(text)
+    || /\b(?:token|cookie|secret|password|passwd|credential|authorization|auth(?:entication)? header|api[_-]?key|access[_-]?token|secret[_-]?key)s?\b\s*(?:[:=]|is|was|as)\s*["'`]?[^\s"'`,;]{6,}/i.test(text)
+    || /\b(?:token|cookie|secret|password|passwd|credential)s?\b\s+["'`]?[A-Za-z0-9._~+/=-]{8,}/i.test(text)
+    || /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/i.test(text);
+}
+
+function shouldAllowPersonalPolicyMention(input: EvaluateExperiencePrivacyInput): boolean {
+  return input.mode === "personal-local"
+    && input.scopeHint === "personal"
+    && !appearsToBeRawLog(input.text)
+    && !containsConcretePrivateValue(input.text);
 }
 
 function collectPrivacyReasons(input: EvaluateExperiencePrivacyInput): string[] {
@@ -67,7 +83,7 @@ export function evaluatePreAiPrivacy(input: EvaluateExperiencePrivacyInput): Pre
     return { verdict: "reject", reasons: teamGate.reasons };
   }
 
-  if (containsPrivateMaterial(input.text)) {
+  if (containsPrivateMaterial(input.text) && !shouldAllowPersonalPolicyMention(input)) {
     return { verdict: "human_required", reasons: ["private_material_detected"] };
   }
 

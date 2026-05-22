@@ -219,6 +219,97 @@ describe("AI wiki curator", () => {
     }
   });
 
+  it("repairs machine-generated AI titles before deriving target paths", async () => {
+    const result = await synthesizeCuratedWikiProposal(
+      {
+        ...cluster,
+        target_path_hint: "kb/notes/wiki-capture-codex-sha256-8dd881b6e1635da3.md",
+        page_kind: "note",
+      },
+      {
+        evidence,
+        now: "2026-05-21T00:00:00.000Z",
+        client: {
+          async generateJson() {
+            return {
+              ok: true,
+              json: {
+                title: "capture_codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0",
+                summary: "Delegated work acceptance passed.",
+                page_kind: "note",
+                target_path: "kb/notes/wiki-capture-codex-sha256-8dd881b6e1635da3.md",
+                body_markdown: "# OpenClaw Slack Delegated Work Acceptance Test\n\n## Problem\nSlack delegated work needed ACK/final validation.\n\n## Fix\nRun the delegated work replay and verify ACK plus final message delivery.\n\n## Verification\nReplay gate passed.\n\n## Reusable Lessons\nUse a long enough final assertion timeout for delegated Slack work.",
+                confidence: 0.91,
+                risk_notes: [],
+              },
+            };
+          },
+        },
+      },
+    );
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.proposal.title, "OpenClaw Slack Delegated Work Acceptance Test");
+      assert.equal(result.proposal.target_path, "kb/notes/wiki-openclaw-slack-delegated-work-acceptance-test.md");
+      assert.doesNotMatch(result.proposal.title, /sha256|^capture_/i);
+    }
+  });
+
+  it("derives a readable title from evidence when AI and cluster titles are machine-generated", async () => {
+    const machineEvidence: WikiEvidenceItem[] = [{
+      ...evidence[0],
+      id: "ev_machine",
+      title: "capture_codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0",
+      summary: "Unit tests verifying the structure and behavior of task display rendering functions, focusing on lineage and OpenClaw taskflow bindings.",
+      actions: ["Mocked parent-child task states to verify lineage output"],
+      verification: ["Task display test suite passed"],
+      reusable_lessons: ["Translate task events into user-friendly event timelines"],
+      signatures: ["text:capture-codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0-suggested"],
+      suggested_wiki_kind: "note",
+    }];
+    const result = await synthesizeCuratedWikiProposal(
+      {
+        ...cluster,
+        cluster_key: "sig:text:capture-codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0-suggested",
+        target_path_hint: "kb/notes/wiki-capture-codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0.md",
+        normalized_title: "capture_codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0",
+        page_kind: "note",
+        evidence_ids: ["ev_machine"],
+        source_refs: ["codex:session:machine"],
+        source_hashes: ["sha256:machine"],
+        signatures: ["text:capture-codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0-suggested"],
+      },
+      {
+        evidence: machineEvidence,
+        now: "2026-05-21T00:00:00.000Z",
+        client: {
+          async generateJson() {
+            return {
+              ok: true,
+              json: {
+                title: "capture_codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0",
+                summary: "Task display rendering tests passed.",
+                page_kind: "note",
+                target_path: "kb/notes/wiki-capture-codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0.md",
+                body_markdown: "# capture_codex-sha256-8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0\n\n## Problem\nTask display rendering needed lineage verification.\n\n## Fix\nMock parent-child task states.\n\n## Verification\nTask display test suite passed.\n\n## Reusable Lessons\nTranslate task events into user-friendly event timelines.",
+                confidence: 0.91,
+                risk_notes: [],
+              },
+            };
+          },
+        },
+      },
+    );
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.proposal.title, "Unit tests verifying the structure and behavior of task display rendering functions");
+      assert.equal(result.proposal.target_path, "kb/notes/wiki-unit-tests-verifying-the-structure-and-behavior-of-task-display-rendering-functions.md");
+      assert.doesNotMatch(result.proposal.body_markdown, /^# capture_/m);
+    }
+  });
+
   it("repairs AI body that leaks curation metadata and duplicate sections", async () => {
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,
@@ -246,6 +337,35 @@ describe("AI wiki curator", () => {
       assert.doesNotMatch(result.proposal.body_markdown, /Suggested Wiki Kind|Confidence:/);
       assert.equal((result.proposal.body_markdown.match(/^## Problem$/gm) ?? []).length, 1);
       assert.equal((result.proposal.body_markdown.match(/^## Verification$/gm) ?? []).length, 1);
+    }
+  });
+
+  it("repairs AI body that repeats the H1 title", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "# OpenClaw auth expired recovery\n# OpenClaw auth expired recovery\n\n## Problem\nMemory sync failed.\n\n## Fix\nRefresh login.\n\n## Verification\nMemory sync passed.\n\n## Reusable Lessons\nRefresh auth before retrying sync.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal((result.proposal.body_markdown.match(/^#\s+/gm) ?? []).length, 1);
+      assert.match(result.proposal.body_markdown, /^# OpenClaw auth expired recovery/m);
     }
   });
 
