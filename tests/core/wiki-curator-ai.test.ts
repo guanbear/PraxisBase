@@ -7,8 +7,10 @@ import {
   PROTOCOL_VERSION,
   curateWiki,
   synthesizeCuratedWikiProposal,
+  buildWikiCuratorPrompt,
   type WikiEvidenceCluster,
   type WikiEvidenceItem,
+  type SynthesisContext,
 } from "@praxisbase/core";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
 
@@ -584,5 +586,176 @@ describe("AI wiki curator", () => {
     assert.equal(report.output_counts.conflicts, 1);
     const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
     assert.equal(proposalFiles.length, 1);
+  });
+});
+
+describe("AI wiki curator prompt with synthesis context", () => {
+  it("includes topic title, page kind, and observation summaries in prompt.user", () => {
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw ACK timing",
+      pageKind: "preference",
+      observations: [
+        { summary: "User prefers ACK before long tasks", raw_excerpt: "send a short ACK first, then continue" },
+        { summary: "ACK timing improved response perception" },
+      ],
+      relatedPages: [],
+      requiredLinks: [],
+    };
+    const prompt = buildWikiCuratorPrompt(cluster, evidence, context);
+    const user = prompt.user;
+
+    assert.ok(user.includes("OpenClaw ACK timing"), "prompt.user should contain topic title");
+    assert.ok(user.includes("preference"), "prompt.user should contain page kind");
+    assert.ok(user.includes("User prefers ACK before long tasks"), "prompt.user should contain first observation summary");
+    assert.ok(user.includes("send a short ACK first, then continue"), "prompt.user should contain raw_excerpt");
+    assert.ok(user.includes("ACK timing improved response perception"), "prompt.user should contain second observation summary");
+  });
+
+  it("includes existing page content when action is update", () => {
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw auth expired",
+      pageKind: "known_fix",
+      observations: [{ summary: "Auth expired again" }],
+      existingPageContent: "# OpenClaw auth expired\n\n## Fix\nRefresh login.",
+      relatedPages: [{ title: "OpenClaw ACK timing", path: "kb/memory/preferences-openclaw-ack-timing.md" }],
+      requiredLinks: ["kb/memory/preferences-openclaw-ack-timing.md"],
+      pagePlanAction: "update",
+    };
+    const prompt = buildWikiCuratorPrompt(cluster, evidence, context);
+    const user = prompt.user;
+
+    assert.ok(user.includes("Refresh login."), "prompt.user should contain existing page content");
+    assert.ok(user.includes("OpenClaw ACK timing"), "prompt.user should contain related page title");
+    assert.ok(user.includes("kb/memory/preferences-openclaw-ack-timing.md"), "prompt.user should contain related page path");
+    assert.ok(user.includes("kb/memory/preferences-openclaw-ack-timing.md"), "prompt.user should contain required links");
+    assert.ok(user.includes("update_instruction"), "prompt.user should contain update_instruction");
+    assert.ok(user.includes("UPDATE or MERGE"), "prompt.user should instruct update/merge instead of create");
+    assert.ok(user.includes("update"), "prompt.user should contain page_plan_action update");
+  });
+
+  it("includes existing page content when action is merge", () => {
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw auth expired",
+      pageKind: "known_fix",
+      observations: [{ summary: "Auth expired with different source" }],
+      existingPageContent: "# Existing page\n\n## Fix\nOriginal fix content.",
+      relatedPages: [],
+      requiredLinks: [],
+      pagePlanAction: "merge",
+    };
+    const prompt = buildWikiCuratorPrompt(cluster, evidence, context);
+    const user = prompt.user;
+
+    assert.ok(user.includes("Original fix content."), "prompt.user should contain existing page content for merge");
+    assert.ok(user.includes("UPDATE or MERGE"), "prompt.user should instruct update/merge for merge action");
+    assert.ok(user.includes("merge"), "prompt.user should contain page_plan_action merge");
+  });
+
+  it("does not include update_instruction when action is create", () => {
+    const context: SynthesisContext = {
+      topicTitle: "New topic",
+      pageKind: "note",
+      observations: [{ summary: "Brand new observation" }],
+      relatedPages: [],
+      requiredLinks: [],
+      pagePlanAction: "create",
+    };
+    const prompt = buildWikiCuratorPrompt(cluster, evidence, context);
+    const user = prompt.user;
+
+    assert.ok(!user.includes("update_instruction"), "prompt.user should NOT contain update_instruction for create");
+    assert.ok(!user.includes("UPDATE or MERGE"), "prompt.user should NOT instruct update/merge for create");
+    assert.ok(user.includes("create"), "prompt.user should contain page_plan_action create");
+  });
+
+  it("does not include existing_page_content when not provided", () => {
+    const context: SynthesisContext = {
+      topicTitle: "New topic",
+      pageKind: "note",
+      observations: [{ summary: "Some observation" }],
+      relatedPages: [],
+      requiredLinks: [],
+    };
+    const prompt = buildWikiCuratorPrompt(cluster, evidence, context);
+    const user = prompt.user;
+
+    assert.ok(!user.includes("existing_page_content"), "prompt.user should NOT contain existing_page_content when not provided");
+  });
+
+  it("passes synthesis context through synthesizeCuratedWikiProposal", async () => {
+    let capturedUser = "";
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw auth expired",
+      pageKind: "known_fix",
+      observations: [
+        { summary: "Auth expired; refresh fixed it", raw_excerpt: "refreshing login fixed memory sync" },
+      ],
+      existingPageContent: "# OpenClaw auth expired\n\n## Fix\nRefresh login.",
+      relatedPages: [{ title: "OpenClaw ACK timing", path: "kb/memory/preferences-openclaw-ack-timing.md" }],
+      requiredLinks: ["kb/memory/preferences-openclaw-ack-timing.md"],
+      pagePlanAction: "update",
+    };
+
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      synthesisContext: context,
+      client: {
+        async generateJson(args: { user: string }) {
+          capturedUser = args.user;
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login before retrying memory sync.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nMemory sync fails after auth expiry.\n\n## Fix\nRefresh login and retry sync.\n\n## Verification\nRun memory sync again.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    assert.ok(capturedUser.includes("OpenClaw auth expired"), "AI client should receive topic title");
+    assert.ok(capturedUser.includes("known_fix"), "AI client should receive page kind");
+    assert.ok(capturedUser.includes("Auth expired; refresh fixed it"), "AI client should receive observation summary");
+    assert.ok(capturedUser.includes("refreshing login fixed memory sync"), "AI client should receive raw_excerpt");
+    assert.ok(capturedUser.includes("Refresh login."), "AI client should receive existing page content");
+    assert.ok(capturedUser.includes("OpenClaw ACK timing"), "AI client should receive related page title");
+    assert.ok(capturedUser.includes("kb/memory/preferences-openclaw-ack-timing.md"), "AI client should receive related page path and required links");
+    assert.ok(capturedUser.includes("UPDATE or MERGE"), "AI client should receive update/merge instruction");
+  });
+
+  it("existing synthesizeCuratedWikiProposal callers work without context", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nMemory sync failed.\n\n## Fix\nRefresh login.\n\n## Verification\nSync passed.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.proposal.title, "OpenClaw auth expired recovery");
+      assert.equal(result.proposal.source_count, 2);
+    }
   });
 });

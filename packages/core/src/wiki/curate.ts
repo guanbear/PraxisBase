@@ -9,7 +9,7 @@ import { collectWikiSources } from "./collect.js";
 import { analyzeWikiSource } from "./analyze.js";
 import { containsPrivateMaterial, isAllowedWikiPatchPath } from "./lint.js";
 import { makeWikiSlug, type WikiSource } from "./model.js";
-import { buildWikiCuratorPrompt } from "./curator-prompt.js";
+import { buildWikiCuratorPrompt, type SynthesisContext } from "./curator-prompt.js";
 import { decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
 import {
   CuratedWikiProposalSchema,
@@ -737,13 +737,13 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
 
 export async function synthesizeCuratedWikiProposal(
   cluster: WikiEvidenceCluster,
-  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient },
+  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient; synthesisContext?: SynthesisContext },
 ): Promise<CuratedProposalResult> {
   const now = options.now ?? new Date().toISOString();
   try {
     let proposal: CuratedWikiProposal;
     if (options.client) {
-      const prompt = buildWikiCuratorPrompt(cluster, options.evidence);
+      const prompt = buildWikiCuratorPrompt(cluster, options.evidence, options.synthesisContext);
       const response = await options.client.generateJson({
         system: prompt.system,
         user: prompt.user,
