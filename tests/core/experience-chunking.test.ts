@@ -148,6 +148,27 @@ describe("experience chunking", () => {
     assert.equal(first[0].chunk_hash, second[0].chunk_hash);
     assert.equal(first[0].chunk_id, second[0].chunk_id);
   });
+
+  it("chunks long multibyte text without quadratic byte scanning", () => {
+    const text = `${"修复 OpenClaw ACK timing 并运行 pnpm check passed。\n".repeat(1500)}`;
+    const startedAt = Date.now();
+
+    const chunks = chunkTextExperience({
+      source_id: "source_1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "raw-vault://codex/session-large",
+      source_hash: "sha256:source-large",
+      scope_hint: "personal",
+      text,
+      maxChunkBytes: 1024,
+    });
+
+    const elapsedMs = Date.now() - startedAt;
+    assert.ok(chunks.length > 10);
+    assert.ok(chunks.every((chunk) => Buffer.byteLength(chunk.text, "utf8") <= 1024));
+    assert.ok(elapsedMs < 250, `chunking took ${elapsedMs}ms`);
+  });
 });
 
 describe("AI privacy gates", () => {

@@ -52,6 +52,8 @@ export interface RunDailyExperienceInput {
   aiClient?: AiJsonClient;
   maxAiChunks?: number;
   aiTimeoutMs?: number;
+  aiConcurrency?: number;
+  maxCurationProposals?: number;
 }
 
 function statusFromCounts(input: { warnings: string[]; rejected: number; humanRequired: number; enveloped: number }): "completed" | "partial" | "failed" {
@@ -196,7 +198,15 @@ async function writeDailyProgress(
   input: {
     now: string;
     status: "running" | "completed" | "partial" | "failed";
+    current_stage?: "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "site-build";
     current_source?: string;
+    current_chunk?: {
+      index: number;
+      total: number;
+      chunk_id: string;
+      ai_chunks: number;
+      max_ai_chunks?: number;
+    };
     sources: DailyExperienceReport["sources"];
     ai_distill: DailyAiDistill;
     warnings: string[];
@@ -207,11 +217,13 @@ async function writeDailyProgress(
     protocol_version: PROTOCOL_VERSION,
     type: "daily_experience_progress",
     status: input.status,
+    current_stage: input.current_stage,
     current_source: input.current_source,
+    current_chunk: input.current_chunk,
     sources: input.sources,
     ai_distill: input.ai_distill,
     warnings: Array.from(new Set(input.warnings)).sort(),
-    updated_at: input.now,
+    updated_at: new Date().toISOString(),
   });
 }
 
@@ -246,7 +258,17 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const maxAiChunks = typeof input.maxAiChunks === "number" && Number.isFinite(input.maxAiChunks) && input.maxAiChunks >= 0
     ? input.maxAiChunks
     : Number.POSITIVE_INFINITY;
+  const aiConcurrency = typeof input.aiConcurrency === "number" && Number.isFinite(input.aiConcurrency)
+    ? Math.max(1, Math.min(8, Math.floor(input.aiConcurrency)))
+    : 2;
   let maxAiChunksWarned = false;
+  const recordMaxAiChunksWarning = () => {
+    if (!Number.isFinite(maxAiChunks) || maxAiChunksWarned) return;
+    const warning = `max_ai_chunks_reached:${maxAiChunks}`;
+    warnings.push(warning);
+    aiDistill.warnings.push(warning);
+    maxAiChunksWarned = true;
+  };
 
   if (mode === "write") {
     outputs.push(progressPath);
@@ -275,6 +297,18 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   }
 
   for (const source of sources) {
+    if (mode === "write") {
+      await writeDailyProgress(root, progressPath, {
+        now,
+        status: "running",
+        current_stage: "source",
+        current_source: source.name,
+        sources: sourceReports,
+        ai_distill: aiDistill,
+        warnings,
+      });
+    }
+
     const resolveOptions: ResolveExperienceSourceOptions = {
       authorityMode: input.authorityMode,
       limit: input.limit,
@@ -298,7 +332,13 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       let chunks: ExperienceChunk[] = [];
       if (source.source_type === "local" || source.source_type === "file") {
         try {
-          chunks = await chunkExperienceSource(root, source, { limit: input.limit, now });
+          const remainingAiBudget = Number.isFinite(maxAiChunks)
+            ? Math.max(0, maxAiChunks - aiDistill.chunks)
+            : undefined;
+          chunks = await chunkExperienceSource(root, source, {
+            limit: input.limit ?? remainingAiBudget,
+            now,
+          });
         } catch (error) {
           sourceWarnings.push(`source_chunk_failed: ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -314,6 +354,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 
       scanned = chunks.length + blocked.length;
       fetched = chunks.length + blocked.length;
+      const distillTasks: ExperienceChunk[] = [];
       for (const chunk of chunks) {
         const prePrivacy = evaluatePreAiPrivacy({
           mode: input.authorityMode,
@@ -336,47 +377,98 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         }
 
         if (aiDistill.chunks >= maxAiChunks) {
-          if (!maxAiChunksWarned) {
-            const warning = `max_ai_chunks_reached:${maxAiChunks}`;
-            warnings.push(warning);
-            aiDistill.warnings.push(warning);
-            maxAiChunksWarned = true;
-          }
+          recordMaxAiChunksWarning();
           break;
         }
 
         aiDistill.chunks++;
-        const distilled = await distillExperience({
-          ...chunk,
-          prior_context: [],
-        }, {
-          client: aiClient as AiJsonClient,
-          maxOutputBytes: aiConfig?.max_output_bytes,
-          authorityMode: input.authorityMode,
-        });
+        distillTasks.push(chunk);
+      }
 
-        if (distilled.ok) {
-          allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
-            verdict: "allow",
-            reasons: ["ai_distilled"],
-          }, distilled.experience));
-          aiDistill.distilled++;
-        } else {
-          const warning = `ai_distill_${distilled.category}: ${distilled.error}`;
-          sourceWarnings.push(warning);
-          aiDistill.warnings.push(warning);
-          if (distilled.category === "privacy_error") {
-            const envelope = makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
-              verdict: "human_required",
-              reasons: [distilled.error],
+      let nextTaskIndex = 0;
+      const runDistillWorker = async (): Promise<void> => {
+        while (nextTaskIndex < distillTasks.length) {
+          const taskIndex = nextTaskIndex;
+          nextTaskIndex++;
+          const chunk = distillTasks[taskIndex];
+          if (mode === "write") {
+            await writeDailyProgress(root, progressPath, {
+              now,
+              status: "running",
+              current_stage: "ai_distill",
+              current_source: source.name,
+              current_chunk: {
+                index: taskIndex + 1,
+                total: distillTasks.length,
+                chunk_id: chunk.chunk_id,
+                ai_chunks: aiDistill.chunks,
+                max_ai_chunks: Number.isFinite(maxAiChunks) ? maxAiChunks : undefined,
+              },
+              sources: sourceReports,
+              ai_distill: aiDistill,
+              warnings,
             });
-            blocked.push(envelope);
-            humanRequired++;
-            aiDistill.human_required++;
+          }
+
+          const distilled = await distillExperience({
+            ...chunk,
+            prior_context: [],
+          }, {
+            client: aiClient as AiJsonClient,
+            maxOutputBytes: aiConfig?.max_output_bytes,
+            authorityMode: input.authorityMode,
+          });
+
+          if (distilled.ok) {
+            allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
+              verdict: "allow",
+              reasons: ["ai_distilled"],
+            }, distilled.experience));
+            aiDistill.distilled++;
           } else {
-            aiDistill.failed++;
+            const warning = `ai_distill_${distilled.category}: ${distilled.error}`;
+            sourceWarnings.push(warning);
+            aiDistill.warnings.push(warning);
+            if (distilled.category === "privacy_error") {
+              const envelope = makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
+                verdict: "human_required",
+                reasons: [distilled.error],
+              });
+              blocked.push(envelope);
+              humanRequired++;
+              aiDistill.human_required++;
+            } else {
+              aiDistill.failed++;
+            }
+          }
+
+          if (mode === "write") {
+            await writeDailyProgress(root, progressPath, {
+              now,
+              status: "running",
+              current_stage: "ai_distill",
+              current_source: source.name,
+              current_chunk: {
+                index: taskIndex + 1,
+                total: distillTasks.length,
+                chunk_id: chunk.chunk_id,
+                ai_chunks: aiDistill.chunks,
+                max_ai_chunks: Number.isFinite(maxAiChunks) ? maxAiChunks : undefined,
+              },
+              sources: sourceReports,
+              ai_distill: aiDistill,
+              warnings,
+            });
           }
         }
+      }
+
+      if (distillTasks.length > 0) {
+        await Promise.all(Array.from(
+          { length: Math.min(aiConcurrency, distillTasks.length) },
+          () => runDistillWorker(),
+        ));
+        if (aiDistill.chunks >= maxAiChunks) recordMaxAiChunksWarning();
       }
       enveloped = allowed.length + blocked.length;
     } else {
@@ -447,12 +539,23 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   }
 
   const wikiMode = mode === "write" ? "review" as const : "dry-run" as const;
+  if (mode === "write") {
+    await writeDailyProgress(root, progressPath, {
+      now,
+      status: "running",
+      current_stage: "wiki-compile",
+      sources: sourceReports,
+      ai_distill: aiDistill,
+      warnings,
+    });
+  }
   const compileReport = await compileWiki(root, { mode: wikiMode, now });
   outputs.push(`${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`);
   if (mode === "write") {
     await writeDailyProgress(root, progressPath, {
       now,
       status: "running",
+      current_stage: "wiki-curate",
       current_source: "wiki-curate",
       sources: sourceReports,
       ai_distill: aiDistill,
@@ -463,7 +566,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     mode: wikiMode,
     now,
     degraded: Boolean(input.degraded || input.noAi),
-    limit: input.limit,
+    limit: input.maxCurationProposals ?? input.limit,
     aiClient: input.aiClient,
     env: input.env,
     fetchImpl: input.fetchImpl,
@@ -474,6 +577,14 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   let sitePages = 0;
   let qualityFindings = 0;
   if (input.buildSite && mode === "write") {
+    await writeDailyProgress(root, progressPath, {
+      now,
+      status: "running",
+      current_stage: "site-build",
+      sources: sourceReports,
+      ai_distill: aiDistill,
+      warnings,
+    });
     const site = await buildWikiSite(root);
     sitePages = site.pages;
     qualityFindings = site.health.quality_findings;

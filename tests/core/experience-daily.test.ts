@@ -257,6 +257,164 @@ describe("runDailyExperience", () => {
     assert.equal(progress.ai_distill.chunks, 1);
   });
 
+  it("writes chunk-level live progress while AI distill is running", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-progress-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          const liveFiles = await readdir(join(root, ".praxisbase/runs/live"));
+          const progress = JSON.parse(await readFile(join(root, ".praxisbase/runs/live", liveFiles[0]), "utf8"));
+          assert.equal(progress.current_stage, "ai_distill");
+          assert.equal(progress.current_source, "local-codex");
+          assert.equal(progress.current_chunk.index, 1);
+          assert.equal(progress.current_chunk.total, 1);
+          assert.equal(progress.ai_distill.chunks, 1);
+
+          const prompt = JSON.parse(input.user) as {
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: "codex";
+              scope_hint: "personal";
+            };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw repair was verified.",
+              actions: ["Applied the repair."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Keep the repair bounded and verify it."],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.ai_distill.distilled, 1);
+  });
+
+  it("runs production AI distill with bounded concurrency", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-concurrency-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await writeFile(join(sessions, "session-2.txt"), "Fixed OpenClaw ACK timing and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    let distillCalls = 0;
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let releaseBoth: (() => void) | undefined;
+    const bothStarted = new Promise<void>((resolve) => {
+      releaseBoth = resolve;
+    });
+    const waitForBoth = async () => {
+      await Promise.race([
+        bothStarted,
+        new Promise<void>((resolve) => setTimeout(resolve, 20)),
+      ]);
+    };
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxAiChunks: 2,
+      aiConcurrency: 2,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          distillCalls++;
+          inFlight++;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          if (distillCalls === 2) releaseBoth?.();
+          await waitForBoth();
+          inFlight--;
+
+          const prompt = JSON.parse(input.user) as {
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: "codex";
+              scope_hint: "personal";
+            };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw repair was verified.",
+              actions: ["Applied the repair."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Keep the repair bounded and verify it."],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.ai_distill.chunks, 2);
+    assert.equal(report.ai_distill.distilled, 2);
+    assert.equal(maxInFlight, 2);
+  });
+
   it("rejects team personal chunks before calling AI", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-team-gate-"));
     const sessions = join(root, "sessions");

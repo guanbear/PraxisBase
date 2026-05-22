@@ -105,12 +105,18 @@ AI distill consumes bounded chunks. It never receives an unbounded transcript.
 Daily runs may also bound total AI work with:
 
 ```bash
-praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --build-site --json
+praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --ai-concurrency 2 --max-curation-proposals 5 --build-site --json
 ```
 
 `--max-ai-chunks` caps production AI distill across all configured sources for that run. When the cap is reached, the daily report records `max_ai_chunks_reached:<n>` in `ai_distill.warnings`. This is an operational budget, not a quality gate; later runs can raise the cap or narrow sources.
 
+Local transcript chunking uses the same budget as an upstream source scan bound when no explicit `--limit` is set. Candidate files are read newest-first, large files are skipped by the configured byte cap, and multibyte text is split with a linear byte-aware scanner. Full local Codex/OpenClaw history must not block before the AI stage starts.
+
 `--ai-timeout-ms` overrides the provider config for one daily run. It is useful for smoke tests and scheduled jobs where stale provider calls must fail quickly.
+
+`--ai-concurrency` controls concurrent AI distill calls. The runtime clamps this to a small bounded value so full local runs can make progress without opening unbounded provider requests.
+
+`--max-curation-proposals` caps the number of AI wiki curation proposals synthesized after source distill. This prevents a successful full harvest from being followed by an unbounded curation stage.
 
 Input object:
 
@@ -292,7 +298,7 @@ They store source refs, hashes, counts, schema errors, and redacted summaries on
 .praxisbase/runs/live/
 ```
 
-The live progress file records the run id, current status, processed source count, AI chunk counts, distilled count, failed count, human-required count, warnings, and the latest source id. Operators can inspect this file while a long run is still executing.
+The live progress file records the run id, current status, current stage, processed source count, current source, current AI chunk, AI chunk counts, distilled count, failed count, human-required count, warnings, and the latest source id. Operators can inspect this file while a long run is still executing.
 
 After source distill finishes, daily progress sets `current_source` to `wiki-curate` while the wiki proposal synthesis stage is running. The same `--ai-timeout-ms` override applies to this curation AI call path.
 

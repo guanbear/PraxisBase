@@ -61,12 +61,20 @@
     那么 当前 AI item 失败并记录 timeout diagnostic
     并且 命令不会无限等待 provider 响应
 
-  场景: 用户可以限制 daily run 的 AI chunk 总量
+  场景: 用户可以限制 daily run 的 AI chunk 总量并查看 chunk 级进度
     假如 AI provider 已配置
-    当 用户运行 "praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --build-site --json"
+    当 用户运行 "praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --ai-concurrency 2 --max-curation-proposals 5 --build-site --json"
     那么 系统最多向 AI distill 发送 20 个 chunk
     并且 daily report 的 ai_distill.warnings 包含 "max_ai_chunks_reached:20"
     并且 系统写入 ".praxisbase/runs/live/<run-id>.json" 进度文件
+    并且 进度文件包含 current_stage、current_source 和 current_chunk
+
+  场景: 本地 Codex 全量历史不会在 source 解析阶段卡死
+    假如 Codex session 目录包含长中文和英文混合 transcript
+    当 daily run 执行 source chunking
+    那么 系统按新文件优先和 AI chunk budget 限制候选读取
+    并且 多字节文本按字节上线性切分
+    并且 进度能进入 ai_distill 阶段
 
   场景: personal mode 对安全本地 transcript 不应大量 human-required
     假如 Codex 本地 session 不包含 token、cookie、auth header、private key 或 credential dump

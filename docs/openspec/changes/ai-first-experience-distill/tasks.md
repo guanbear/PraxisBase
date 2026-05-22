@@ -76,7 +76,9 @@
 - [x] Add per-provider AI request timeout configuration.
 - [x] Add CLI support for `daily run --max-ai-chunks <n>`.
 - [x] Add CLI support for `ai init --ai-timeout-ms <n>` and `daily run --ai-timeout-ms <n>`.
+- [x] Add CLI support for bounded AI concurrency and curation proposal budgets.
 - [x] Stop production AI distill when the run-level chunk budget is reached.
-- [x] Write live daily progress snapshots under `.praxisbase/runs/live/`.
+- [x] Bound local transcript source scanning by the run AI budget and use linear multibyte text chunking.
+- [x] Write chunk-level live daily progress snapshots under `.praxisbase/runs/live/`.
 - [x] Add tests for timeout behavior and chunk-budget enforcement.
 - [x] Document workspace wiki filter rules and bounded daily controls.

@@ -62,29 +62,48 @@ function expandSourcePath(path: string, root?: string): string {
   return path;
 }
 
-function truncateByBytes(text: string, maxBytes: number): string {
-  if (Buffer.byteLength(text, "utf8") <= maxBytes) return text;
-  let end = text.length;
-  while (end > 0 && Buffer.byteLength(text.slice(0, end), "utf8") > maxBytes) {
-    end--;
-  }
-  return text.slice(0, end);
-}
-
 function splitByBytes(text: string, maxBytes: number): string[] {
   const normalized = text.trim();
   if (!normalized) return [];
   if (Buffer.byteLength(normalized, "utf8") <= maxBytes) return [normalized];
 
   const chunks: string[] = [];
-  let remaining = normalized;
-  while (remaining.length > 0) {
-    const chunk = truncateByBytes(remaining, maxBytes).trim();
-    if (!chunk) break;
-    chunks.push(chunk);
-    remaining = remaining.slice(chunk.length).trim();
+  let currentParts: string[] = [];
+  let currentBytes = 0;
+  for (const char of normalized) {
+    const charBytes = Buffer.byteLength(char, "utf8");
+    if (currentBytes > 0 && currentBytes + charBytes > maxBytes) {
+      const chunk = currentParts.join("").trim();
+      if (chunk) chunks.push(chunk);
+      currentParts = [];
+      currentBytes = 0;
+    }
+    currentParts.push(char);
+    currentBytes += charBytes;
   }
+
+  const tail = currentParts.join("").trim();
+  if (tail) chunks.push(tail);
+
   return chunks;
+}
+
+function newestFilesFirst(files: string[]): string[] {
+  return [...files].sort((a, b) => b.localeCompare(a));
+}
+
+function effectiveChunkLimit(input?: number): number {
+  if (typeof input === "number" && Number.isFinite(input) && input >= 0) return input;
+  return 200;
+}
+
+function effectiveFileBudget(limit: number): number {
+  if (!Number.isFinite(limit) || limit <= 0) return Number.POSITIVE_INFINITY;
+  return Math.max(limit * 3, 50);
+}
+
+function sortCandidateFiles(files: string[]): string[] {
+  return newestFilesFirst(files);
 }
 
 function meaningfulText(rawText: string, agent: AgentProfile): string {
@@ -263,10 +282,11 @@ export async function chunkExperienceSource(
   if ((source.source_type !== "local" && source.source_type !== "file") || !source.path) return [];
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   const maxChunkBytes = options.maxChunkBytes ?? DEFAULT_MAX_CHUNK_BYTES;
-  const limit = options.limit ?? 200;
+  const limit = effectiveChunkLimit(options.limit);
   const expanded = expandSourcePath(source.path, root);
   const s = await stat(expanded);
-  const files = s.isDirectory() ? await listFilesRecursively(expanded, maxBytes) : [expanded];
+  const allFiles = s.isDirectory() ? await listFilesRecursively(expanded, maxBytes) : [expanded];
+  const files = sortCandidateFiles(allFiles).slice(0, effectiveFileBudget(limit));
   const chunks: ExperienceChunk[] = [];
   for (const file of files) {
     if (chunks.length >= limit) break;
