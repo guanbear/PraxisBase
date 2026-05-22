@@ -271,6 +271,44 @@ describe("wiki evidence curation", () => {
     assert.equal(reports.length, 1);
   });
 
+  it("dry-run report includes compiler_counts with nonzero observations, topics, and page plans", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-compiler-counts-"));
+    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login.");
+    await writeCapture(root, "capture_2", "OpenClaw auth expired again; refreshing login fixed sync.");
+
+    const report = await curateWiki(root, { mode: "dry-run", degraded: true, now: "2026-05-21T00:00:00.000Z" });
+
+    assert.ok(report.compiler_counts, "report should include compiler_counts");
+    assert.equal(report.compiler_counts.observations, 2, "observations should be nonzero");
+    assert.equal(report.compiler_counts.topics, 1, "topics should be nonzero (both evidence share same topic)");
+    const plans = report.compiler_counts.page_plans_by_action;
+    assert.ok(plans, "page_plans_by_action should be present");
+    const totalPlans = plans.create + plans.update + plans.merge + plans.supersede + plans.archive;
+    assert.ok(totalPlans > 0, "at least one page plan should exist");
+    assert.equal(report.compiler_counts.hard_blocks, 0, "hard_blocks should be 0 for this phase");
+    assert.equal(report.compiler_counts.human_required_quality, 0, "human_required_quality should be 0 for this phase");
+
+    assert.equal(report.output_counts.curated_proposals, 1, "existing proposal count should be unchanged");
+    assert.equal(report.output_counts.written_proposals, 0, "dry-run should write 0 proposals");
+  });
+
+  it("compiler_counts page_plans_by_action sums match page plan count", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-plan-actions-"));
+    await writeCapture(root, "capture_ack1", "ACK timing: send short ACK before long tasks.");
+    await writeCapture(root, "capture_ack2", "ACK timing: user preference to ACK first for long OpenClaw work.");
+    await writeCapture(root, "capture_auth", "Fixed OpenClaw auth expired by refreshing login.");
+
+    const report = await curateWiki(root, { mode: "dry-run", degraded: true, now: "2026-05-21T00:00:00.000Z" });
+
+    const cc = report.compiler_counts!;
+    assert.ok(cc.observations >= 3, "should have at least 3 observations");
+    assert.ok(cc.topics >= 1, "should have at least 1 topic");
+    const plans = cc.page_plans_by_action;
+    const totalActions = plans.create + plans.update + plans.merge + plans.supersede + plans.archive;
+    assert.equal(totalActions, cc.topics, "page plan action counts should sum to topic count");
+    assert.ok(plans.create > 0, "should have at least one create plan");
+  });
+
   it("curate review writes curated proposals without stable knowledge", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curate-"));
     await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login.");

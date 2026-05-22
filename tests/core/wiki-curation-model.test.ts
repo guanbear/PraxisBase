@@ -8,6 +8,7 @@ import {
   WikiPromotionQualityAssessmentSchema,
   WikiHardBlockReasonSchema,
   WikiHumanRequiredReasonSchema,
+  WikiCurationReportSchema,
 } from "@praxisbase/core";
 
 const validObservation = {
@@ -302,5 +303,59 @@ describe("WikiPromotionQualityAssessmentSchema", () => {
     const result = WikiPromotionQualityAssessmentSchema.parse(minimal);
     assert.deepEqual(result.hard_blocks, []);
     assert.deepEqual(result.human_required, []);
+  });
+});
+
+const validReportBase = {
+  id: "report-1",
+  protocol_version: "0.1" as const,
+  type: "wiki_curation_report" as const,
+  created_at: "2026-05-21T00:00:00.000Z",
+  mode: "dry-run" as const,
+  ai: { configured: true, mode: "production" as const },
+  input_counts: { evidence_items: 5, filtered_noise: 2, human_required: 0, rejected: 0, clusters: 1 },
+  output_counts: { curated_proposals: 1, written_proposals: 0, conflicts: 0 },
+  proposals: [],
+};
+
+describe("WikiCurationReportSchema compiler_counts", () => {
+  it("parses report without compiler_counts (backward compatible)", () => {
+    const result = WikiCurationReportSchema.parse(validReportBase);
+    assert.equal(result.compiler_counts, undefined);
+    assert.equal(result.output_counts.curated_proposals, 1);
+  });
+
+  it("parses report with full compiler_counts", () => {
+    const result = WikiCurationReportSchema.parse({
+      ...validReportBase,
+      compiler_counts: {
+        observations: 3,
+        topics: 2,
+        page_plans_by_action: { create: 2, update: 0, merge: 0, supersede: 0, archive: 0 },
+        duplicate_source_hash_groups: 0,
+        hard_blocks: 0,
+        human_required_quality: 0,
+      },
+    });
+    assert.ok(result.compiler_counts);
+    assert.equal(result.compiler_counts.observations, 3);
+    assert.equal(result.compiler_counts.topics, 2);
+    assert.equal(result.compiler_counts.page_plans_by_action.create, 2);
+    assert.equal(result.compiler_counts.hard_blocks, 0);
+    assert.equal(result.compiler_counts.human_required_quality, 0);
+  });
+
+  it("defaults compiler_counts inner fields", () => {
+    const result = WikiCurationReportSchema.parse({
+      ...validReportBase,
+      compiler_counts: {},
+    });
+    assert.ok(result.compiler_counts);
+    assert.equal(result.compiler_counts.observations, 0);
+    assert.equal(result.compiler_counts.topics, 0);
+    assert.deepEqual(result.compiler_counts.page_plans_by_action, {
+      create: 0, update: 0, merge: 0, supersede: 0, archive: 0,
+    });
+    assert.equal(result.compiler_counts.duplicate_source_hash_groups, 0);
   });
 });

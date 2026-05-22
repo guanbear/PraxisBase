@@ -130,6 +130,27 @@ export const WikiCurationReportSchema = z.object({
     written_proposals: z.number().int().min(0),
     conflicts: z.number().int().min(0),
   }),
+  compiler_counts: z.object({
+    observations: z.number().int().min(0).default(0),
+    topics: z.number().int().min(0).default(0),
+    page_plans_by_action: z.object({
+      create: z.number().int().min(0).default(0),
+      update: z.number().int().min(0).default(0),
+      merge: z.number().int().min(0).default(0),
+      supersede: z.number().int().min(0).default(0),
+      archive: z.number().int().min(0).default(0),
+    }).default({ create: 0, update: 0, merge: 0, supersede: 0, archive: 0 }),
+    duplicate_source_hash_groups: z.number().int().min(0).default(0),
+    hard_blocks: z.number().int().min(0).default(0),
+    human_required_quality: z.number().int().min(0).default(0),
+  }).default(() => ({
+    observations: 0,
+    topics: 0,
+    page_plans_by_action: { create: 0, update: 0, merge: 0, supersede: 0, archive: 0 },
+    duplicate_source_hash_groups: 0,
+    hard_blocks: 0,
+    human_required_quality: 0,
+  })).optional(),
   proposals: z.array(z.object({
     id: z.string().min(1),
     target_path: z.string().min(1),

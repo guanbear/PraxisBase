@@ -22,9 +22,23 @@ import {
   type WikiEvidenceCluster,
   type WikiEvidenceItem,
   type WikiObservation,
+  type WikiPagePlan,
 } from "./curation-model.js";
+import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-planner.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
+
+function countPagePlansByAction(plans: WikiPagePlan[]): { create: number; update: number; merge: number; supersede: number; archive: number } {
+  const byAction = { create: 0, update: 0, merge: 0, supersede: 0, archive: 0 };
+  for (const plan of plans) {
+    byAction[plan.action]++;
+  }
+  return byAction;
+}
+
+function countDuplicateSourceHashGroups(plans: WikiPagePlan[]): number {
+  return plans.filter((p) => p.action === "merge").length;
+}
 
 export interface WikiEvidencePool {
   items: WikiEvidenceItem[];
@@ -785,6 +799,14 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
 
   const pool = await buildWikiEvidencePoolFromRoot(root);
   const minSourceCount = options.minSourceCount ?? 1;
+
+  const observations = buildWikiObservationsFromEvidence(pool.items);
+  const topics = buildWikiTopics(observations);
+  const existingPages = await loadExistingWikiPages(root);
+  const pagePlans = planWikiPages(topics, existingPages);
+  const pagePlansByAction = countPagePlansByAction(pagePlans);
+  const duplicateSourceHashGroups = countDuplicateSourceHashGroups(pagePlans);
+
   const clusters = clusterWikiEvidence(pool.items);
   const limit = typeof options.limit === "number" && Number.isFinite(options.limit) && options.limit >= 0
     ? options.limit
@@ -839,6 +861,14 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       curated_proposals: proposals.length,
       written_proposals: written,
       conflicts,
+    },
+    compiler_counts: {
+      observations: observations.length,
+      topics: topics.length,
+      page_plans_by_action: pagePlansByAction,
+      duplicate_source_hash_groups: duplicateSourceHashGroups,
+      hard_blocks: 0,
+      human_required_quality: 0,
     },
     proposals: proposals.map((proposal) => ({
       id: proposal.id,
