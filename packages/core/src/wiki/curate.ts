@@ -16,10 +16,12 @@ import {
   WikiCurationReportSchema,
   WikiEvidenceClusterSchema,
   WikiEvidenceItemSchema,
+  WikiObservationSchema,
   type CuratedWikiProposal,
   type WikiCurationReport,
   type WikiEvidenceCluster,
   type WikiEvidenceItem,
+  type WikiObservation,
 } from "./curation-model.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
@@ -297,6 +299,80 @@ export function buildWikiEvidencePool(sources: WikiSource[], rules: WikiFilterRu
 
 export async function buildWikiEvidencePoolFromRoot(root: string): Promise<WikiEvidencePool> {
   return buildWikiEvidencePool(await collectWikiSources(root), await readWikiFilterRules(root));
+}
+
+const IGNORED_OBSERVATION_SIG_PREFIX = /^(capture|native_memory|episode|external_ref|proposal|review|skill):/;
+
+function observationKindFromSuggested(suggested: WikiEvidenceItem["suggested_wiki_kind"]): WikiObservation["kind"] {
+  if (suggested === "known_fix") return "fix";
+  if (suggested === "skill") return "procedure";
+  if (suggested === "procedure") return "procedure";
+  if (suggested === "decision") return "decision";
+  if (suggested === "pitfall") return "pitfall";
+  if (suggested === "preference") return "preference";
+  if (suggested === "incident") return "incident";
+  if (suggested === "note") return "note";
+  return "note";
+}
+
+function extractTopicsFromSignatures(signatures: string[]): string[] {
+  return signatures.filter((sig) => !IGNORED_OBSERVATION_SIG_PREFIX.test(sig));
+}
+
+function extractEntitiesFromEvidence(signatures: string[], item: WikiEvidenceItem): string[] {
+  const entities = new Set<string>();
+  for (const sig of signatures) {
+    if (!IGNORED_OBSERVATION_SIG_PREFIX.test(sig)) {
+      const colonIndex = sig.indexOf(":");
+      if (colonIndex > 0) {
+        entities.add(sig.slice(0, colonIndex).toLowerCase());
+      }
+    }
+  }
+  const text = [item.title, item.summary, ...item.actions, ...item.verification, ...item.reusable_lessons].join(" ");
+  if (/\bopenclaw\b/i.test(text)) entities.add("openclaw");
+  if (/\bcodex\b/i.test(text)) entities.add("codex");
+  if (/\back\b/i.test(text)) entities.add("ack");
+  if (/\bstdin\b/i.test(text)) entities.add("stdin");
+  if (/\bdelegat(?:ion|ed|ing)\b/i.test(text)) entities.add("delegation");
+  return Array.from(entities).sort();
+}
+
+function computeObservationConfidence(item: WikiEvidenceItem): number {
+  let confidence = 0.5;
+  if (item.outcome === "success") confidence += 0.15;
+  if (item.verification.length > 0) confidence += 0.15;
+  if (item.reusable_lessons.length > 0) confidence += 0.1;
+  return Math.min(1, Math.max(0, confidence));
+}
+
+export function buildWikiObservationsFromEvidence(items: WikiEvidenceItem[]): WikiObservation[] {
+  return items.map((item) => {
+    const topics = extractTopicsFromSignatures(item.signatures);
+    const entities = extractEntitiesFromEvidence(item.signatures, item);
+    const confidence = computeObservationConfidence(item);
+    return WikiObservationSchema.parse({
+      id: makeId("wiki-obs", item.id),
+      evidence_id: item.id,
+      source_ref: item.source_ref,
+      source_hash: item.source_hash,
+      agent: item.agent,
+      scope: item.scope,
+      kind: observationKindFromSuggested(item.suggested_wiki_kind),
+      problem: item.problem ?? item.summary,
+      action: item.actions[0],
+      outcome: item.outcome,
+      verification: item.verification[0],
+      reusable_lesson: item.reusable_lessons[0],
+      entities,
+      topics,
+      raw_excerpt: item.summary,
+      confidence,
+      privacy_verdict: item.privacy_verdict,
+      filtered_out: false,
+      created_at: item.created_at,
+    });
+  });
 }
 
 function firstSignature(item: WikiEvidenceItem): string | undefined {

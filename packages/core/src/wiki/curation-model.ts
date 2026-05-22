@@ -142,6 +142,130 @@ export const WikiCurationReportSchema = z.object({
 
 export type WikiCurationReport = z.infer<typeof WikiCurationReportSchema>;
 
+export const WikiObservationKindSchema = z.enum([
+  "fix",
+  "procedure",
+  "decision",
+  "pitfall",
+  "preference",
+  "incident",
+  "note",
+]);
+
+export type WikiObservationKind = z.infer<typeof WikiObservationKindSchema>;
+
+/** A reusable observation extracted from evidence by the new compiler pipeline. */
+export const WikiObservationSchema = z.object({
+  id: z.string().min(1),
+  evidence_id: z.string().min(1),
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1),
+  agent: z.enum(["codex", "openclaw", "claude-code", "opencode", "generic"]).optional(),
+  scope: ScopeSchema,
+  kind: WikiObservationKindSchema,
+  problem: z.string().optional(),
+  action: z.string().optional(),
+  outcome: z.enum(["success", "failed", "partial", "unknown"]).optional(),
+  verification: z.string().optional(),
+  reusable_lesson: z.string().optional(),
+  entities: z.array(z.string()).default([]),
+  topics: z.array(z.string()).default([]),
+  raw_excerpt: z.string().optional(),
+  confidence: z.number().min(0).max(1),
+  privacy_verdict: z.enum(["safe", "personal_only", "team_allowed", "human_required", "reject"]),
+  filtered_out: z.boolean().default(false),
+  filter_reason: z.string().optional(),
+  created_at: z.string().optional(),
+});
+
+export type WikiObservation = z.infer<typeof WikiObservationSchema>;
+
+/** A canonical topic that clusters related observations. */
+export const WikiTopicSchema = z.object({
+  id: z.string().min(1),
+  topic_key: z.string().min(1),
+  title: z.string().min(1),
+  observation_ids: z.array(z.string().min(1)).min(1),
+  page_kind: WikiCurationPageKindSchema,
+  target_path: z.string().min(1),
+  scope: ScopeSchema,
+  source_refs: z.array(z.string().min(1)).min(1),
+  source_hashes: z.array(z.string().min(1)).min(1),
+  source_count: z.number().int().min(1),
+  entities: z.array(z.string()).default([]),
+  related_topic_keys: z.array(z.string()).default([]),
+  confidence: z.number().min(0).max(1),
+  maturity: z.enum(["draft", "reviewed", "proven", "deprecated"]),
+  conflicts: z.array(z.object({
+    claim: z.string().min(1),
+    source_refs: z.array(z.string().min(1)).min(1),
+    reason: z.string().min(1),
+  })).default([]),
+});
+
+export type WikiTopic = z.infer<typeof WikiTopicSchema>;
+
+/** Action to take for a page in the plan. */
+export const WikiPagePlanActionSchema = z.enum([
+  "create",
+  "update",
+  "merge",
+  "supersede",
+  "archive",
+]);
+
+export type WikiPagePlanAction = z.infer<typeof WikiPagePlanActionSchema>;
+
+/** A planned action (create/update/merge/supersede/archive) for a wiki page. */
+export const WikiPagePlanSchema = z.object({
+  action: WikiPagePlanActionSchema,
+  target_path: z.string().min(1),
+  existing_path: z.string().optional(),
+  canonical_title: z.string().min(1),
+  topic_key: z.string().min(1),
+  reasons: z.array(z.string()).default([]),
+  related_paths: z.array(z.string()).default([]),
+  required_links: z.array(z.string()).default([]),
+  existing_source_hash: z.string().optional(),
+});
+
+export type WikiPagePlan = z.infer<typeof WikiPagePlanSchema>;
+
+/** Hard-block reason codes for the promotion quality gate. */
+export const WikiHardBlockReasonSchema = z.enum([
+  "unsafe_path",
+  "missing_provenance",
+  "private_material",
+  "raw_json",
+  "raw_transcript",
+  "template_fallback",
+  "reference_only",
+  "duplicate_source_hash",
+  "body_missing_wiki_structure",
+  "create_with_existing_page",
+]);
+
+/** Human-required reason codes for the promotion quality gate. */
+export const WikiHumanRequiredReasonSchema = z.enum([
+  "weak_single_source",
+  "low_confidence",
+  "unresolved_conflict",
+  "missing_wikilinks",
+  "team_or_global_scope",
+  "skill_or_policy_target",
+  "destructive_action",
+]);
+
+/** Promotion quality assessment result for a page plan. */
+export const WikiPromotionQualityAssessmentSchema = z.object({
+  topic_key: z.string().min(1),
+  hard_blocks: z.array(WikiHardBlockReasonSchema).default([]),
+  human_required: z.array(WikiHumanRequiredReasonSchema).default([]),
+  passed: z.boolean(),
+});
+
+export type WikiPromotionQualityAssessment = z.infer<typeof WikiPromotionQualityAssessmentSchema>;
+
 function targetTypeForPageKind(pageKind: CuratedWikiProposal["page_kind"]): Proposal["target_type"] {
   if (pageKind === "skill") return "skill";
   if (pageKind === "known_fix" || pageKind === "procedure" || pageKind === "decision" || pageKind === "pitfall") {

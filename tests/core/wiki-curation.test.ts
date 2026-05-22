@@ -11,8 +11,9 @@ import {
   curatedWikiProposalToKnowledgeProposal,
 } from "@praxisbase/core";
 import { curateWiki } from "@praxisbase/core/wiki/curate.js";
+import { buildWikiObservationsFromEvidence } from "@praxisbase/core/wiki/curate.js";
 import type { WikiSource } from "@praxisbase/core/wiki/model.js";
-import type { WikiEvidenceItem } from "@praxisbase/core/wiki/curation-model.js";
+import type { WikiEvidenceItem, WikiObservation } from "@praxisbase/core/wiki/curation-model.js";
 
 function source(id: string, title: string, summary: string): WikiSource {
   return {
@@ -333,5 +334,133 @@ describe("wiki evidence curation", () => {
     assert.equal(report.input_counts.evidence_items, 0);
     assert.equal(report.input_counts.filtered_noise, 1);
     assert.equal(report.output_counts.curated_proposals, 0);
+  });
+});
+
+describe("wiki observation extraction", () => {
+  it("yields no observations from noise-only evidence pool", () => {
+    const pool = buildWikiEvidencePool([
+      source("meta", "meta", "{\"type\":\"session_meta\"}"),
+      source("instructions", "instructions", "{\"base_instructions\":\"never include\"}"),
+      source("unknown", "unknown", "openclaw:unknown"),
+      source("sleep", "Deep Sleep", "# Deep Sleep\nPromoted 0 candidate(s)"),
+      source("sleep-summary", "Deep Sleep Memory Consolidation Procedure", "The agent rewrites the recall store and promoted 0 candidates to MEMORY.md."),
+      source("boot-config", "Codex Desktop CLI v0.118.0 Session Boot Configuration", "Session initialization metadata with sandbox mode, model provider, approval policy, and skill registry. No task execution occurred."),
+      source("reflection-theme", "OpenClaw Reflection Theme", "Candidate: Reflections: Theme: `assistant` kept surfacing across 959 memories; recalls: 0; note: reflection."),
+      source("promotion-bookkeeping", "Promoted From Short-Term Memory", "## Promoted From Short-Term Memory (2026-04-26) <!-- openclaw-memory-promotion:memory:memory/2026-04-20.md:238:241 -->"),
+    ]);
+
+    const observations = buildWikiObservationsFromEvidence(pool.items);
+    assert.equal(observations.length, 0);
+  });
+
+  it("maps useful evidence to observations with correct kind and provenance", () => {
+    const items: WikiEvidenceItem[] = [
+      evidence("ack-timing", {
+        title: "OpenClaw ACK timing",
+        summary: "User preference: for any dispatch or tool task taking more than a few seconds, send a short ACK first.",
+        actions: ["Send ACK before long tasks"],
+        verification: ["Delegated work acceptance test passed"],
+        reusable_lessons: ["Always ACK before long OpenClaw work"],
+        signatures: ["ack-timing"],
+        suggested_wiki_kind: "preference",
+        outcome: "success",
+      }),
+      evidence("openclaw-auth", {
+        title: "OpenClaw auth expired",
+        summary: "OpenClaw auth expired and refreshing login fixed memory sync.",
+        actions: ["Refresh OpenClaw login"],
+        verification: ["Memory sync succeeded after refresh"],
+        reusable_lessons: ["Refresh login before retrying OpenClaw memory sync"],
+        signatures: ["openclaw:auth-expired"],
+        suggested_wiki_kind: "known_fix",
+        outcome: "success",
+      }),
+      evidence("stdin-closed", {
+        title: "stdin closed during long operation",
+        summary: "stdin was closed while the agent was running a long operation, causing unexpected termination.",
+        actions: ["Handle stdin close gracefully"],
+        verification: [],
+        reusable_lessons: [],
+        signatures: ["stdin-closed"],
+        suggested_wiki_kind: "pitfall",
+        outcome: "failed",
+      }),
+      evidence("codex-pref", {
+        title: "Codex prefers rg over grep",
+        summary: "Codex agent preference: use rg instead of grep for code search.",
+        actions: ["Use rg for code search"],
+        verification: [],
+        reusable_lessons: [],
+        signatures: [],
+        suggested_wiki_kind: "preference",
+        agent: "codex",
+        outcome: "unknown",
+      }),
+      evidence("verified-fix", {
+        title: "OpenClaw sync fix verified",
+        summary: "Fixed OpenClaw memory sync by refreshing auth token. pnpm check passed.",
+        actions: ["Refresh auth token", "Run pnpm check"],
+        verification: ["pnpm check passed", "Memory sync working"],
+        reusable_lessons: ["Always refresh auth before sync operations"],
+        signatures: ["openclaw:auth-expired"],
+        suggested_wiki_kind: "known_fix",
+        outcome: "success",
+      }),
+    ];
+
+    const observations = buildWikiObservationsFromEvidence(items);
+    assert.equal(observations.length, 5);
+
+    // ACK timing → preference, provenance preserved
+    const ack = observations.find((o: WikiObservation) => o.evidence_id === "ack-timing")!;
+    assert.equal(ack.kind, "preference");
+    assert.equal(ack.source_ref, "source:ack-timing");
+    assert.equal(ack.source_hash, "sha256:ack-timing");
+    assert.equal(ack.agent, "codex");
+    assert.equal(ack.scope, "personal");
+    assert.deepEqual(ack.topics, ["ack-timing"]);
+    assert.ok(ack.entities.includes("ack"));
+    assert.ok(ack.entities.includes("openclaw"));
+    assert.ok(ack.entities.includes("delegation"));
+    assert.equal(ack.action, "Send ACK before long tasks");
+    assert.equal(ack.verification, "Delegated work acceptance test passed");
+    assert.equal(ack.reusable_lesson, "Always ACK before long OpenClaw work");
+    assert.ok(ack.raw_excerpt);
+    assert.ok(ack.id);
+    assert.equal(ack.filtered_out, false);
+
+    // OpenClaw auth expired → fix
+    const auth = observations.find((o: WikiObservation) => o.evidence_id === "openclaw-auth")!;
+    assert.equal(auth.kind, "fix");
+    assert.deepEqual(auth.topics, ["openclaw:auth-expired"]);
+    assert.ok(auth.entities.includes("openclaw"));
+    assert.equal(auth.problem, "OpenClaw auth expired and refreshing login fixed memory sync.");
+    assert.equal(auth.outcome, "success");
+
+    // stdin closed → pitfall
+    const stdin = observations.find((o: WikiObservation) => o.evidence_id === "stdin-closed")!;
+    assert.equal(stdin.kind, "pitfall");
+    assert.deepEqual(stdin.topics, ["stdin-closed"]);
+    assert.ok(stdin.entities.includes("stdin"));
+    assert.equal(stdin.outcome, "failed");
+    assert.equal(stdin.verification, undefined);
+    assert.equal(stdin.reusable_lesson, undefined);
+
+    // Codex preference → preference
+    const codex = observations.find((o: WikiObservation) => o.evidence_id === "codex-pref")!;
+    assert.equal(codex.kind, "preference");
+    assert.ok(codex.entities.includes("codex"));
+    assert.equal(codex.agent, "codex");
+    assert.equal(codex.confidence, 0.5);
+
+    // Verified fix → fix with higher confidence
+    const fix = observations.find((o: WikiObservation) => o.evidence_id === "verified-fix")!;
+    assert.equal(fix.kind, "fix");
+    assert.equal(fix.outcome, "success");
+    assert.ok(fix.verification);
+    assert.ok(fix.reusable_lesson);
+    assert.equal(fix.confidence, 0.9);
+    assert.ok(fix.confidence > codex.confidence);
   });
 });

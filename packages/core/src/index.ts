@@ -36,6 +36,7 @@ export * from "./wiki/collect.js";
 export * from "./wiki/analyze.js";
 export * from "./wiki/compile.js";
 export * from "./wiki/curation-model.js";
+export * from "./wiki/topic-planner.js";
 export * from "./wiki/curate.js";
 export * from "./wiki/curator-prompt.js";
 export * from "./wiki/filter-rules.js";
