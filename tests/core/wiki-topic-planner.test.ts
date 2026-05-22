@@ -10,6 +10,7 @@ import {
   planWikiPages,
 } from "@praxisbase/core";
 import type { WikiObservation, ExistingWikiPage } from "@praxisbase/core";
+import type { WikiRelationshipPlan } from "@praxisbase/core/wiki/relationship-planner.js";
 
 function obs(overrides: Partial<WikiObservation> = {}): WikiObservation {
   return {
@@ -320,5 +321,220 @@ describe("planWikiPages", () => {
     ];
     const plans = planWikiPages(topics, existing);
     assert.equal(plans[0].action, "update");
+  });
+});
+
+describe("planWikiPages with relationship plans", () => {
+  it("rewrites create to update when a canonical relationship exists", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "ACK timing slow",
+        action: "Refresh login",
+        entities: ["openclaw"],
+        source_hash: "sha256:ack",
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/openclaw-ack-timing.md",
+        title: "OpenClaw ACK timing",
+        slug: "openclaw-ack-timing",
+        source_hashes: ["sha256:ack"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/openclaw-ack-timing.md",
+        target_path: "kb/known-fixes/openclaw-ack-timing.md",
+        target_title: "OpenClaw ACK timing",
+        target_slug: "openclaw-ack-timing",
+        strength: "canonical",
+        reasons: ["shared_source_hash"],
+        required_link: true,
+        suggested_label: "OpenClaw ACK timing",
+        merge_candidate: true,
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing, { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, "kb/known-fixes/openclaw-ack-timing.md");
+    assert.ok(plans[0].reasons.includes("canonical_relationship"));
+    assert.equal(plans[0].existing_source_hash, "sha256:ack");
+  });
+
+  it("produces merge with ambiguous_merge_target when multiple canonical pages match", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "ACK timing slow",
+        action: "Refresh login",
+        entities: ["openclaw"],
+        source_hash: "sha256:shared",
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/openclaw-ack-v1.md",
+        title: "OpenClaw ACK v1",
+        slug: "openclaw-ack-v1",
+        source_hashes: ["sha256:shared"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+      {
+        path: "kb/known-fixes/openclaw-ack-v2.md",
+        title: "OpenClaw ACK v2",
+        slug: "openclaw-ack-v2",
+        source_hashes: ["sha256:shared"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/openclaw-ack-v1.md",
+        target_path: "kb/known-fixes/openclaw-ack-v1.md",
+        target_title: "OpenClaw ACK v1",
+        target_slug: "openclaw-ack-v1",
+        strength: "canonical",
+        reasons: ["shared_source_hash"],
+        required_link: true,
+        suggested_label: "OpenClaw ACK v1",
+        merge_candidate: true,
+      },
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/openclaw-ack-v2.md",
+        target_path: "kb/known-fixes/openclaw-ack-v2.md",
+        target_title: "OpenClaw ACK v2",
+        target_slug: "openclaw-ack-v2",
+        strength: "canonical",
+        reasons: ["shared_source_hash"],
+        required_link: true,
+        suggested_label: "OpenClaw ACK v2",
+        merge_candidate: true,
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing, { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "merge");
+    assert.ok(plans[0].reasons.includes("ambiguous_merge_target"));
+    assert.ok(plans[0].reasons.includes("multiple_canonical_targets"));
+    assert.equal(plans[0].existing_path, "kb/known-fixes/openclaw-ack-v1.md");
+  });
+
+  it("keeps create but adds required_links for strong relationships", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "New auth issue",
+        action: "Refresh token",
+        entities: ["openclaw", "auth"],
+        source_hash: "sha256:new-issue",
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/auth-expired.md",
+        title: "Auth expired fix",
+        slug: "auth-expired",
+        source_hashes: ["sha256:old"],
+        entities: ["auth"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/auth-expired.md",
+        target_path: "kb/known-fixes/auth-expired.md",
+        target_title: "Auth expired fix",
+        target_slug: "auth-expired",
+        strength: "strong",
+        reasons: ["shared_signature"],
+        required_link: true,
+        suggested_label: "Auth expired fix",
+        merge_candidate: false,
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing, { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "create");
+    assert.ok(plans[0].required_links.includes("auth-expired"));
+  });
+
+  it("keeps create but adds related_paths for related relationships", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "New networking issue",
+        action: "Restart proxy",
+        entities: ["network", "proxy"],
+        source_hash: "sha256:net-issue",
+      }),
+    ]);
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/notes/proxy-notes.md",
+        target_path: "kb/notes/proxy-notes.md",
+        target_title: "Proxy notes",
+        target_slug: "proxy-notes",
+        strength: "related",
+        reasons: ["entity_overlap"],
+        required_link: false,
+        suggested_label: "Proxy notes",
+        merge_candidate: false,
+      },
+    ];
+
+    const plans = planWikiPages(topics, [], { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "create");
+    assert.ok(plans[0].related_paths.includes("kb/notes/proxy-notes.md"));
+  });
+
+  it("falls back to existing matching when no relationships are provided", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "ACK timing slow",
+        action: "Refresh login",
+        source_hash: "sha256:same",
+        entities: ["openclaw"],
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/different-slug.md",
+        title: "Different title",
+        slug: "different-slug",
+        source_hashes: ["sha256:same"],
+        entities: [],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing);
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, "kb/known-fixes/different-slug.md");
   });
 });

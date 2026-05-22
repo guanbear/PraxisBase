@@ -29,6 +29,7 @@ import {
   type WikiPagePlanAction,
 } from "./curation-model.js";
 import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-planner.js";
+import { buildWikiRelationshipPlans } from "./relationship-planner.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
 
@@ -820,7 +821,8 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const observations = buildWikiObservationsFromEvidence(pool.items);
   const topics = buildWikiTopics(observations);
   const existingPages = await loadExistingWikiPages(root);
-  const pagePlans = planWikiPages(topics, existingPages);
+  const relationshipPlans = buildWikiRelationshipPlans({ topics, existingPages });
+  const pagePlans = planWikiPages(topics, existingPages, { relationships: relationshipPlans });
   const pagePlansByAction = countPagePlansByAction(pagePlans);
   const duplicateSourceHashGroups = countDuplicateSourceHashGroups(pagePlans);
 

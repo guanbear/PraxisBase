@@ -514,3 +514,40 @@ describe("wiki observation extraction", () => {
     assert.ok(fix.confidence > codex.confidence);
   });
 });
+
+describe("wiki curation with relationship plans", () => {
+  it("rewrites create to update when a stable page with matching source hash exists", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-rel-update-"));
+    await mkdir(join(root, "kb", "known-fixes"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
+
+    await writeFile(
+      join(root, "kb", "known-fixes", "openclaw-ack-timing.md"),
+      [
+        "---",
+        "title: OpenClaw ACK timing",
+        "scope: personal",
+        "sources:",
+        "  - uri: \"raw-vault://codex/legacy\"",
+        "    hash: \"sha256:capture_ack_new\"",
+        "---",
+        "# OpenClaw ACK timing",
+        "",
+        "Existing ACK page content.",
+      ].join("\n"),
+    );
+
+    await writeCapture(root, "capture_ack_new", "ACK timing was slow again. Fixed by sending accepted ack before async processing. Verification passed after retrying delegated work acceptance test. Reusable lesson: send ACK before long OpenClaw work.");
+
+    const report = await curateWiki(root, {
+      mode: "dry-run",
+      degraded: true,
+      now: "2026-05-23T00:00:00.000Z",
+    });
+
+    assert.equal(report.type, "wiki_curation_report");
+    const plans = report.compiler_counts!.page_plans_by_action;
+    assert.ok(plans.update >= 1, `expected at least 1 update plan, got ${plans.update}`);
+    assert.equal(report.output_counts.curated_proposals, 1);
+  });
+});

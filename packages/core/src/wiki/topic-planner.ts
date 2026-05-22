@@ -13,6 +13,7 @@ import {
   type WikiPagePlanAction,
 } from "./curation-model.js";
 import { ScopeSchema } from "../protocol/schemas.js";
+import type { WikiRelationshipPlan } from "./relationship-planner.js";
 
 type Scope = z.infer<typeof ScopeSchema>;
 
@@ -269,7 +270,9 @@ function findMatchingPage(
 export function planWikiPages(
   topics: WikiTopic[],
   existingPages: ExistingWikiPage[],
+  options?: { relationships?: WikiRelationshipPlan[] },
 ): WikiPagePlan[] {
+  const relationships = options?.relationships ?? [];
   const plans: WikiPagePlan[] = [];
   const usedTopics = new Set<string>();
   const seenCreateHashes = new Set<string>();
@@ -278,35 +281,67 @@ export function planWikiPages(
     if (usedTopics.has(topic.topic_key)) continue;
     usedTopics.add(topic.topic_key);
 
-    const match = findMatchingPage(topic, existingPages);
+    const topicRelPlans = relationships.filter((rp) => rp.topic_id === topic.id);
+    const canonical = topicRelPlans.filter((rp) => rp.strength === "canonical");
+    const strong = topicRelPlans.filter((rp) => rp.strength === "strong");
+    const related = topicRelPlans.filter((rp) => rp.strength === "related");
 
     let action: WikiPagePlanAction;
     let existingPagePath: string | undefined;
     let existingSourceHash: string | undefined;
     const reasons: string[] = [];
+    const requiredLinks: string[] = [];
+    const relatedPaths: string[] = [];
 
-    if (match) {
-      const sameSourceHash = topic.source_hashes.some((h) =>
-        match.source_hashes.includes(h),
-      );
-      if (sameSourceHash) {
-        action = "update";
-        existingSourceHash = topic.source_hashes.find((h) =>
+    if (canonical.length === 1) {
+      action = "update";
+      existingPagePath = canonical[0].target_path;
+      reasons.push("canonical_relationship");
+      const canonicalPage = existingPages.find((p) => p.path === canonical[0].target_path);
+      if (canonicalPage) {
+        const sharedHash = topic.source_hashes.find((h) => canonicalPage.source_hashes.includes(h));
+        if (sharedHash) {
+          existingSourceHash = sharedHash;
+          reasons.push("source_hash_overlap");
+        }
+      }
+    } else if (canonical.length >= 2) {
+      action = "merge";
+      existingPagePath = canonical[0].target_path;
+      reasons.push("ambiguous_merge_target");
+      reasons.push("multiple_canonical_targets");
+    } else {
+      const match = findMatchingPage(topic, existingPages);
+      if (match) {
+        const sameSourceHash = topic.source_hashes.some((h) =>
           match.source_hashes.includes(h),
         );
-        reasons.push("source_hash_overlap");
+        if (sameSourceHash) {
+          action = "update";
+          existingSourceHash = topic.source_hashes.find((h) =>
+            match.source_hashes.includes(h),
+          );
+          reasons.push("source_hash_overlap");
+        } else {
+          action = "update";
+          reasons.push("existing_page_match");
+        }
+        existingPagePath = match.path;
       } else {
-        action = "update";
-        reasons.push("existing_page_match");
+        action = "create";
+        reasons.push("new_canonical_topic");
+        if (topic.source_hashes.some((hash) => seenCreateHashes.has(hash))) {
+          action = "merge";
+          reasons.push("duplicate_source_hash");
+        }
       }
-      existingPagePath = match.path;
-    } else {
-      action = "create";
-      reasons.push("new_canonical_topic");
-      if (topic.source_hashes.some((hash) => seenCreateHashes.has(hash))) {
-        action = "merge";
-        reasons.push("duplicate_source_hash");
-      }
+    }
+
+    for (const rp of strong) {
+      requiredLinks.push(rp.target_slug);
+    }
+    for (const rp of related) {
+      relatedPaths.push(rp.target_path);
     }
 
     const plan = WikiPagePlanSchema.parse({
@@ -316,8 +351,8 @@ export function planWikiPages(
       canonical_title: topic.title,
       topic_key: topic.topic_key,
       reasons,
-      related_paths: [],
-      required_links: [],
+      related_paths: relatedPaths,
+      required_links: requiredLinks,
       existing_source_hash: existingSourceHash,
     });
     plans.push(plan);
