@@ -11,7 +11,7 @@ import { collectWikiSources } from "./collect.js";
 import { analyzeWikiSource } from "./analyze.js";
 import { containsPrivateMaterial, isAllowedWikiPatchPath } from "./lint.js";
 import { makeWikiSlug, type WikiSource } from "./model.js";
-import { buildWikiCuratorPrompt, type SynthesisContext } from "./curator-prompt.js";
+import { buildWikiCuratorPrompt, type SynthesisContext, type StructuredLink, type MergeCandidate } from "./curator-prompt.js";
 import { decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
 import { assessWikiPromotionQuality } from "./promotion-quality.js";
 import {
@@ -856,6 +856,19 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       ? plan.existing_path
       : targetPathForCluster(topic.page_kind, canonicalTitle);
 
+    const topicRelPlans = relationshipPlans.filter((rp) => rp.topic_id === topic.id);
+    const structuredRequiredLinks: StructuredLink[] = topicRelPlans
+      .filter((rp) => rp.required_link)
+      .map((rp) => ({ slug: rp.target_slug, label: rp.suggested_label, path: rp.target_path, reason: rp.reasons.join(", ") }));
+    const structuredSuggestedLinks: StructuredLink[] = topicRelPlans
+      .filter((rp) => !rp.required_link && rp.strength !== "weak")
+      .map((rp) => ({ slug: rp.target_slug, label: rp.suggested_label, path: rp.target_path, reason: rp.reasons.join(", ") }));
+    const mergeCandidates: MergeCandidate[] = topicRelPlans
+      .filter((rp) => rp.merge_candidate)
+      .map((rp) => ({ title: rp.target_title, path: rp.target_path, reason: rp.reasons.join(", ") }));
+    const allRelationshipReasons = topicRelPlans.flatMap((rp) => rp.reasons);
+    const uniqueRelationshipReasons = Array.from(new Set(allRelationshipReasons)).sort();
+
     const synthesisContext: SynthesisContext = {
       topicTitle: canonicalTitle,
       pageKind: topic.page_kind,
@@ -869,7 +882,12 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
         raw_excerpt: observation.raw_excerpt,
       })),
       relatedPages: (plan.related_paths ?? []).map((path) => ({ title: path, path })),
-      requiredLinks: plan.required_links ?? [],
+      requiredLinks: structuredRequiredLinks.length > 0
+        ? structuredRequiredLinks
+        : plan.required_links ?? [],
+      suggestedLinks: structuredSuggestedLinks.length > 0 ? structuredSuggestedLinks : undefined,
+      mergeCandidates: mergeCandidates.length > 0 ? mergeCandidates : undefined,
+      relationshipReasons: uniqueRelationshipReasons.length > 0 ? uniqueRelationshipReasons : undefined,
       pagePlanAction: plan.action,
     };
 

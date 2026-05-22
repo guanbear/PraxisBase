@@ -1,5 +1,20 @@
 import type { WikiEvidenceCluster, WikiEvidenceItem, WikiPagePlanAction } from "./curation-model.js";
 
+/** A structured wiki link with slug, label, path, and reason for inclusion. */
+export interface StructuredLink {
+  slug: string;
+  label: string;
+  path: string;
+  reason: string;
+}
+
+/** A merge candidate page identified by the relationship planner. */
+export interface MergeCandidate {
+  title: string;
+  path: string;
+  reason: string;
+}
+
 /** Compiler context passed to the AI curator so it can update/merge existing pages. */
 export interface SynthesisContext {
   /** Canonical topic title from the topic planner. */
@@ -18,10 +33,23 @@ export interface SynthesisContext {
     title: string;
     path: string;
   }>;
-  /** Wikilink targets the output must reference. */
-  requiredLinks: ReadonlyArray<string>;
+  /** Wikilink targets the output must reference. Accepts plain slugs/paths or structured link objects. */
+  requiredLinks: ReadonlyArray<string | StructuredLink>;
+  /** Suggested (not mandatory) links the curator may reference when relevant. */
+  suggestedLinks?: ReadonlyArray<StructuredLink>;
+  /** Pages identified as merge candidates by the relationship planner. */
+  mergeCandidates?: ReadonlyArray<MergeCandidate>;
+  /** Reasons for each relationship, derived from the relationship planner. */
+  relationshipReasons?: ReadonlyArray<string>;
   /** Planned action (create/update/merge/supersede/archive). */
   pagePlanAction?: WikiPagePlanAction;
+}
+
+/** Normalize a required link (string or StructuredLink) into a StructuredLink. */
+function normalizeRequiredLink(link: string | StructuredLink): StructuredLink {
+  if (typeof link === "object") return link;
+  const slug = link.split("/").pop()?.replace(/\.md$/i, "") ?? link;
+  return { slug, label: slug, path: link, reason: "required_link" };
 }
 
 export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], context?: SynthesisContext): { system: string; user: string } {
@@ -59,6 +87,7 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
   };
 
   if (context) {
+    const structuredRequiredLinks = context.requiredLinks.map(normalizeRequiredLink);
     const compilerContext: Record<string, unknown> = {
       topic_title: context.topicTitle,
       page_kind: context.pageKind,
@@ -70,7 +99,11 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
         title: page.title,
         path: page.path,
       })),
-      required_links: context.requiredLinks,
+      required_links: structuredRequiredLinks,
+      suggested_links: context.suggestedLinks ?? [],
+      merge_candidates: context.mergeCandidates ?? [],
+      relationship_reasons: context.relationshipReasons ?? [],
+      link_instruction: "Every required link MUST appear in the output body as a wiki link using the exact format [[slug|label]]. Do NOT invent wiki links to pages not listed in required_links or suggested_links.",
     };
 
     if (context.existingPageContent) {

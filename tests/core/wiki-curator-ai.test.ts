@@ -11,6 +11,8 @@ import {
   type WikiEvidenceCluster,
   type WikiEvidenceItem,
   type SynthesisContext,
+  type StructuredLink,
+  type MergeCandidate,
 } from "@praxisbase/core";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
 
@@ -835,5 +837,86 @@ describe("AI wiki curator prompt with synthesis context", () => {
       assert.equal(result.proposal.title, "OpenClaw auth expired recovery");
       assert.equal(result.proposal.source_count, 2);
     }
+  });
+
+  it("includes structured required links and merge candidates in captured prompt", async () => {
+    const structuredRequired: StructuredLink[] = [
+      { slug: "openclaw-ack-timing", label: "OpenClaw ACK timing", path: "kb/memory/preferences-openclaw-ack-timing.md", reason: "shared_signature" },
+    ];
+    const mergeCands: MergeCandidate[] = [
+      { title: "OpenClaw auth expired", path: "kb/known-fixes/openclaw-auth-expired.md", reason: "same_title_or_slug" },
+    ];
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw ACK timing",
+      pageKind: "preference",
+      observations: [{ summary: "User prefers ACK before long tasks" }],
+      relatedPages: [],
+      requiredLinks: structuredRequired,
+      suggestedLinks: [{ slug: "openclaw-repair-loop", label: "OpenClaw repair loop", path: "kb/known-fixes/openclaw-repair-loop.md", reason: "entity_overlap" }],
+      mergeCandidates: mergeCands,
+      relationshipReasons: ["shared_signature", "entity_overlap"],
+      pagePlanAction: "create",
+    };
+    let capturedUser = "";
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-23T00:00:00.000Z",
+      synthesisContext: context,
+      client: {
+        async generateJson(args: { user: string }) {
+          capturedUser = args.user;
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw ACK timing",
+              summary: "Send ACK before long tasks.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-ack-timing.md",
+              body_markdown: "# OpenClaw ACK timing\n\n## Problem\nACK was delayed.\n\n## Fix\nSend ACK before long tasks and reference [[openclaw-ack-timing|OpenClaw ACK timing]] when documenting the repair.\n\n## Verification\nTest passed: ACK sent on time.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    const parsed = JSON.parse(capturedUser) as {
+      compiler_context: {
+        required_links: StructuredLink[];
+        suggested_links: StructuredLink[];
+        merge_candidates: MergeCandidate[];
+        relationship_reasons: string[];
+        link_instruction: string;
+      };
+    };
+    const cc = parsed.compiler_context;
+    assert.deepEqual(cc.required_links[0], structuredRequired[0]);
+    assert.deepEqual(cc.suggested_links[0], { slug: "openclaw-repair-loop", label: "OpenClaw repair loop", path: "kb/known-fixes/openclaw-repair-loop.md", reason: "entity_overlap" });
+    assert.deepEqual(cc.merge_candidates[0], mergeCands[0]);
+    assert.deepEqual(cc.relationship_reasons, ["shared_signature", "entity_overlap"]);
+    assert.ok(cc.link_instruction.includes("[[slug|label]]"), "prompt should explain wiki link format");
+    assert.ok(cc.link_instruction.includes("Do NOT invent"), "prompt should forbid invented wiki links");
+  });
+
+  it("normalizes string requiredLinks to structured links in prompt", () => {
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw auth expired",
+      pageKind: "known_fix",
+      observations: [{ summary: "Auth expired" }],
+      relatedPages: [],
+      requiredLinks: ["kb/memory/preferences-openclaw-ack-timing.md"],
+    };
+    const prompt = buildWikiCuratorPrompt(cluster, evidence, context);
+    const user = prompt.user;
+
+    const parsed = JSON.parse(user) as { compiler_context: { required_links: StructuredLink[] } };
+    const links = parsed.compiler_context.required_links;
+    assert.equal(links.length, 1);
+    assert.equal(links[0].slug, "preferences-openclaw-ack-timing");
+    assert.equal(links[0].label, "preferences-openclaw-ack-timing");
+    assert.equal(links[0].path, "kb/memory/preferences-openclaw-ack-timing.md");
+    assert.equal(links[0].reason, "required_link");
   });
 });
