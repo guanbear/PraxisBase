@@ -74,7 +74,7 @@ describe("runHarvest", () => {
   it("harvests local OpenClaw sources", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-harvest-openclaw-"));
     const source = join(root, "openclaw.log");
-    await writeFile(source, "Claude authentication expired. Please login again. Refreshing login fixed OpenClaw sync and pnpm check passed.");
+    await writeFile(source, "Claude authentication expired. Please login again. Refreshing login fixed OpenClaw sync and pnpm check passed. Reusable lesson: refresh login before retrying OpenClaw sync when Claude authentication expires.");
     const report = await runHarvest(root, {
       openclawSources: [source],
       now: "2026-05-20T00:00:00.000Z",

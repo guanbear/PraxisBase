@@ -127,4 +127,57 @@ describe("review policy", () => {
     assert.equal(decision.human_required, false);
     assert.equal(decision.required_human_reasons.includes("weak_single_source"), false);
   });
+
+  it("quality hard block risk note prevents auto-promote", () => {
+    const decision = decideAutoReview(
+      curatedProposal({
+        review_hint: {
+          why_review: "Quality gate failed",
+          suggested_decision: "reject",
+          risk_notes: ["quality_hard_block:raw_json"],
+        },
+      }),
+      defaultReviewPolicy("personal"),
+    );
+    assert.equal(decision.auto_promote, false);
+    assert.equal(decision.human_required, true);
+    assert.ok(decision.required_human_reasons.includes("quality_hard_block"));
+    assert.match(decision.reason, /quality gate/i);
+  });
+
+  it("quality human required risk note prevents auto-promote", () => {
+    const decision = decideAutoReview(
+      curatedProposal({
+        review_hint: {
+          why_review: "Quality gate needs human",
+          suggested_decision: "edit",
+          risk_notes: ["quality_human_required:missing_wikilinks"],
+        },
+      }),
+      defaultReviewPolicy("personal"),
+    );
+    assert.equal(decision.auto_promote, false);
+    assert.equal(decision.human_required, true);
+    assert.ok(decision.required_human_reasons.includes("quality_human_required"));
+    assert.match(decision.reason, /quality gate/i);
+  });
+
+  it("quality hard block takes precedence over low-risk personal kind", () => {
+    const decision = decideAutoReview(
+      curatedProposal({
+        page_kind: "known_fix",
+        scope: "personal",
+        guards: highSignalGuards(),
+        review_hint: {
+          why_review: "Quality hard block",
+          suggested_decision: "reject",
+          risk_notes: ["quality_hard_block:template_fallback"],
+        },
+      }),
+      defaultReviewPolicy("personal"),
+    );
+    assert.equal(decision.auto_promote, false);
+    assert.equal(decision.human_required, true);
+    assert.ok(decision.required_human_reasons.includes("quality_hard_block"));
+  });
 });

@@ -1,0 +1,275 @@
+import { z } from "zod";
+import type { CuratedWikiProposal } from "./curation-model.js";
+import {
+  WikiHardBlockReasonSchema,
+  WikiHumanRequiredReasonSchema,
+  type WikiPromotionQualityAssessment,
+} from "./curation-model.js";
+import { isAllowedWikiPatchPath, containsPrivateMaterial } from "./lint.js";
+import { appearsToBeRawLog } from "../protocol/redact.js";
+
+/** Context for quality assessment beyond the proposal itself. */
+export interface PromotionQualityContext {
+  /** Other pending proposals, used for duplicate source hash detection across creates. */
+  otherProposals?: CuratedWikiProposal[];
+  /** Whether an existing stable page was found matching this topic. */
+  existingPageFound?: boolean;
+  /** Related stable page paths that exist in kb/ or skills/. */
+  relatedPaths?: string[];
+  /** Conflicts detected during topic planning. */
+  conflicts?: Array<{ claim: string; source_refs: string[]; reason: string }>;
+  /** Minimum confidence threshold for auto-promote (default 0.82). */
+  minConfidence?: number;
+  /** Minimum source count for auto-promote (default 2). */
+  minSourceCount?: number;
+}
+
+// Template fallback sentences that should never appear in promoted pages.
+
+const TEMPLATE_FALLBACK_SENTENCES = [
+  "Re-run the failing workflow and confirm the original symptom is gone",
+  "Keep this page updated when the same signature appears again",
+  "Review the provenance and apply the repeated successful action",
+];
+
+// Reference-only detection helpers.
+
+function isReferenceOnlyBody(body: string): boolean {
+  const referenceTerms = /\b(official documentation|official docs|api reference|reference documentation|session initialization metadata|session boot|boot configuration|skill registry|sandbox mode|approval policy|provider config|system prompt)\b/i;
+  const experienceTerms = /\b(fixed|resolved|verified|workaround|pitfall|decision|user preference|repair|lesson learned|failed attempt|success|error recovered|bug fix)\b/i;
+  return referenceTerms.test(body) && !experienceTerms.test(body);
+}
+
+function isReferenceOnlyEvidence(proposal: CuratedWikiProposal): boolean {
+  const text = [
+    proposal.title,
+    proposal.summary,
+    proposal.body_markdown,
+    ...proposal.provenance.map((p) => p.excerpt ?? ""),
+  ].join("\n");
+  return isReferenceOnlyBody(text);
+}
+
+// Raw JSON detection.
+
+function containsRawJson(body: string): boolean {
+  // Detect lines that look like raw JSON objects or arrays (not inside markdown code blocks)
+  const lines = body.split("\n");
+  let inCodeBlock = false;
+  let jsonLineCount = 0;
+  for (const line of lines) {
+    if (/^```/.test(line.trim())) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+    const trimmed = line.trim();
+    if (/^\{["\w]/.test(trimmed) && /"\w+"\s*:/.test(trimmed)) {
+      jsonLineCount++;
+    }
+    if (/^\[["\{]/.test(trimmed) && trimmed.endsWith("]") && trimmed.length > 20) {
+      jsonLineCount++;
+    }
+  }
+  return jsonLineCount >= 2;
+}
+
+// Raw transcript/log detection.
+
+function containsRawTranscript(body: string): boolean {
+  return appearsToBeRawLog(body);
+}
+
+// Template fallback detection.
+
+function containsTemplateFallback(body: string): boolean {
+  for (const sentence of TEMPLATE_FALLBACK_SENTENCES) {
+    if (body.includes(sentence)) return true;
+  }
+  return false;
+}
+
+// Wiki structure detection.
+
+function hasWikiStructure(body: string): boolean {
+  const hasH1 = /^#\s+.+/m.test(body);
+  const hasH2 = /^##\s+/m.test(body);
+  return hasH1 && hasH2;
+}
+
+function hasPromotableMarkdownShape(body: string): boolean {
+  return /^#\s+.+/m.test(body);
+}
+
+// Missing wikilinks detection.
+
+function hasWikilinksOrRelated(body: string): boolean {
+  return /\[\[[^\]]+\]\]/.test(body) || /^related:/m.test(body);
+}
+
+// Duplicate source hash across create proposals.
+
+function hasDuplicateSourceHashAcrossCreates(
+  proposal: CuratedWikiProposal,
+  others: CuratedWikiProposal[],
+): boolean {
+  if (proposal.action !== "create" && proposal.action !== "skill_create") return false;
+  for (const hash of proposal.source_hashes) {
+    for (const other of others) {
+      if (other.id === proposal.id) continue;
+      if (other.action !== "create" && other.action !== "skill_create") continue;
+      if (other.source_hashes.includes(hash)) return true;
+    }
+  }
+  return false;
+}
+
+// Main assessment function.
+
+/**
+ * Deterministic quality assessment for a wiki promotion proposal.
+ *
+ * Returns a WikiPromotionQualityAssessment with hard_blocks and human_required
+ * reason arrays. The proposal may only auto-promote when both arrays are empty
+ * and the review policy also allows it.
+ */
+export function assessWikiPromotionQuality(
+  proposal: CuratedWikiProposal,
+  context?: PromotionQualityContext,
+): WikiPromotionQualityAssessment {
+  const hardBlocks: z.infer<typeof WikiHardBlockReasonSchema>[] = [];
+  const humanRequired: z.infer<typeof WikiHumanRequiredReasonSchema>[] = [];
+  const body = proposal.body_markdown;
+  const ctx = context ?? {};
+
+  // Hard blocks cannot be auto-promoted under any circumstances.
+
+  // 1. Missing provenance
+  if (proposal.source_refs.length === 0 || proposal.source_hashes.length === 0 || proposal.provenance.length === 0) {
+    hardBlocks.push("missing_provenance");
+  }
+
+  // 2. Unsafe target path
+  if (!isAllowedWikiPatchPath(proposal.target_path)) {
+    hardBlocks.push("unsafe_path");
+  }
+
+  // 3. Private material
+  if (containsPrivateMaterial(body)) {
+    hardBlocks.push("private_material");
+  }
+
+  // 4. Raw JSON in body
+  if (containsRawJson(body)) {
+    hardBlocks.push("raw_json");
+  }
+
+  // 5. Raw transcript/log body
+  if (containsRawTranscript(body)) {
+    hardBlocks.push("raw_transcript");
+  }
+
+  // 6. Template fallback text
+  if (containsTemplateFallback(body)) {
+    hardBlocks.push("template_fallback");
+  }
+
+  // 7. Reference-only / official-doc-only content
+  if (isReferenceOnlyEvidence(proposal)) {
+    hardBlocks.push("reference_only");
+  }
+
+  // 8. Duplicate source hash across multiple create proposals
+  if (ctx.otherProposals && hasDuplicateSourceHashAcrossCreates(proposal, ctx.otherProposals)) {
+    hardBlocks.push("duplicate_source_hash");
+  }
+
+  // 9. Body missing wiki structure (no H1 or no H2)
+  if (!hasWikiStructure(body)) {
+    hardBlocks.push("body_missing_wiki_structure");
+  }
+
+  // 10. Create action when existing page was found
+  if (
+    (proposal.action === "create" || proposal.action === "skill_create")
+    && ctx.existingPageFound === true
+  ) {
+    hardBlocks.push("create_with_existing_page");
+  }
+
+  // Human-required gates can be promoted only after human review.
+
+  // 1. Weak single source
+  const minSourceCount = ctx.minSourceCount ?? 2;
+  if (proposal.source_count < minSourceCount) {
+    const hasStrongSignal = proposal.guards.some(
+      (g) => g.id === "experience_signal" && g.ok,
+    ) && proposal.guards.some(
+      (g) => g.id === "verification_or_lesson" && g.ok,
+    );
+    if (!hasStrongSignal) {
+      humanRequired.push("weak_single_source");
+    }
+  }
+
+  // 2. Low confidence
+  const minConfidence = ctx.minConfidence ?? 0.82;
+  if (proposal.confidence < minConfidence) {
+    humanRequired.push("low_confidence");
+  }
+
+  // 3. Unresolved conflict
+  if (ctx.conflicts && ctx.conflicts.length > 0) {
+    humanRequired.push("unresolved_conflict");
+  }
+
+  // 4. Missing wikilinks when related pages exist
+  if (
+    ctx.relatedPaths && ctx.relatedPaths.length > 0
+    && !hasWikilinksOrRelated(body)
+  ) {
+    humanRequired.push("missing_wikilinks");
+  }
+
+  // 5. Team/org/global scope
+  if (proposal.scope === "team" || proposal.scope === "org" || proposal.scope === "global") {
+    humanRequired.push("team_or_global_scope");
+  }
+
+  // 6. Skill or policy target
+  if (proposal.page_kind === "skill") {
+    humanRequired.push("skill_or_policy_target");
+  }
+
+  // 7. Destructive action (archive/supersede)
+  if (proposal.action === "archive" || proposal.action === "supersede") {
+    humanRequired.push("destructive_action");
+  }
+
+  return {
+    topic_key: proposal.id,
+    hard_blocks: hardBlocks,
+    human_required: humanRequired,
+    passed: hardBlocks.length === 0 && humanRequired.length === 0,
+  };
+}
+
+// Promote-time guard helpers.
+
+/**
+ * Final promote-time guard. Rejects content that has raw JSON, template
+ * fallback text, or missing wiki shape even if an old proposal bypassed
+ * the review policy. Returns an error message or null if the content passes.
+ */
+export function promotionTimeGuard(content: string): string | null {
+  if (containsRawJson(content)) {
+    return "Refusing to promote content containing raw JSON into stable knowledge.";
+  }
+  if (containsTemplateFallback(content)) {
+    return "Refusing to promote content containing template fallback text into stable knowledge.";
+  }
+  if (!hasPromotableMarkdownShape(content)) {
+    return "Refusing to promote content missing wiki structure (H1 heading) into stable knowledge.";
+  }
+  return null;
+}

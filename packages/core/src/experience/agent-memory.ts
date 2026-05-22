@@ -86,9 +86,30 @@ async function listFilesRecursively(dir: string, maxBytes: number): Promise<{ pa
   return results;
 }
 
+function trimSummary(text: string): string {
+  return text.length > MAX_SUMMARY_LENGTH
+    ? text.slice(0, MAX_SUMMARY_LENGTH) + "...[truncated]"
+    : text;
+}
+
+function openClawSummaryHint(text: string): string {
+  const signature = detectOpenClawProblemSignature(text);
+  const meaningfulPatterns = [
+    /\b(?:auth|authentication|login|expired|sync|memory|openclaw)\b/i,
+    /\b(?:fix(?:ed|ing)?|refresh(?:ed|ing)?|resolve(?:d|s)?|workaround|retry|avoid|lesson|reusable)\b/i,
+    /\b(?:verify|verified|passed|pnpm|test|check)\b/i,
+    /(?:修复|刷新|登录|验证|通过|经验|复用|避免|重试)/,
+  ];
+  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  const meaningful = lines.filter((line) => meaningfulPatterns.some((pattern) => pattern.test(line)));
+  const detail = meaningful.slice(0, 4).join(" ");
+  if (!detail) return signature;
+  return trimSummary(`${signature} ${detail}`);
+}
+
 function extractSummaryHint(text: string, agent: AgentMemoryAgent): string {
   if (agent === "openclaw") {
-    return detectOpenClawProblemSignature(text);
+    return openClawSummaryHint(text);
   }
 
   const signalText = agent === "codex" ? extractCodexExperienceText(parseJsonForSignal(text) ?? text, text) : text;
@@ -106,9 +127,7 @@ function extractSummaryHint(text: string, agent: AgentMemoryAgent): string {
 
   if (meaningful.length > 0) {
     const joined = meaningful.slice(0, 5).join(" ");
-    return joined.length > MAX_SUMMARY_LENGTH
-      ? joined.slice(0, MAX_SUMMARY_LENGTH) + "...[truncated]"
-      : joined;
+    return trimSummary(joined);
   }
   return agent === "claude-code" ? "claude-code repair log" : "codex session";
 }
@@ -390,15 +409,13 @@ async function loadExistingHashes(root: string, dirs: string[]): Promise<Set<str
 
 function generateRedactedSummary(text: string, hint?: string): string {
   if (hint && hint.length > 0) {
-    return hint.length > MAX_SUMMARY_LENGTH
-      ? hint.slice(0, MAX_SUMMARY_LENGTH) + "...[truncated]"
-      : hint;
+    return trimSummary(hint);
   }
 
   const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
   const joined = lines.slice(0, 5).join(" ");
   if (joined.length > MAX_SUMMARY_LENGTH) {
-    return joined.slice(0, MAX_SUMMARY_LENGTH) + "...[truncated]";
+    return trimSummary(joined);
   }
   return joined || "agent memory";
 }

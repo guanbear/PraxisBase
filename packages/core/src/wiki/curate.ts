@@ -11,6 +11,7 @@ import { containsPrivateMaterial, isAllowedWikiPatchPath } from "./lint.js";
 import { makeWikiSlug, type WikiSource } from "./model.js";
 import { buildWikiCuratorPrompt, type SynthesisContext } from "./curator-prompt.js";
 import { decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
+import { assessWikiPromotionQuality } from "./promotion-quality.js";
 import {
   CuratedWikiProposalSchema,
   WikiCurationReportSchema,
@@ -813,11 +814,11 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     : undefined;
   const proposalClusters = sortProposalClusters(clusters.filter((cluster) => cluster.source_count >= minSourceCount));
   const evidenceById = new Map(pool.items.map((item) => [item.id, item]));
-  const proposals: CuratedWikiProposal[] = [];
+  const synthesizedProposals: CuratedWikiProposal[] = [];
   let conflicts = 0;
 
   for (const cluster of proposalClusters) {
-    if (limit !== undefined && proposals.length >= limit) break;
+    if (limit !== undefined && synthesizedProposals.length >= limit) break;
     const evidence = cluster.evidence_ids.map((id) => evidenceById.get(id)).filter((item): item is WikiEvidenceItem => Boolean(item));
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,
@@ -825,10 +826,42 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       client: aiClient,
     });
     if (result.ok) {
-      proposals.push(result.proposal);
+      synthesizedProposals.push(result.proposal);
     } else {
       conflicts++;
     }
+  }
+
+  let qualityHardBlockCount = 0;
+  let qualityHumanRequiredCount = 0;
+  const proposals: CuratedWikiProposal[] = [];
+  for (const proposal of synthesizedProposals) {
+    const planForTarget = pagePlans.find((plan) =>
+      plan.target_path === proposal.target_path || plan.existing_path === proposal.target_path,
+    );
+    const assessment = assessWikiPromotionQuality(proposal, {
+      otherProposals: synthesizedProposals,
+      existingPageFound: proposal.action === "create" && planForTarget?.action === "update",
+      relatedPaths: planForTarget?.related_paths ?? [],
+      minSourceCount,
+    });
+    if (assessment.hard_blocks.length > 0) {
+      qualityHardBlockCount++;
+      continue;
+    }
+    const riskNotes = [
+      ...proposal.review_hint.risk_notes,
+      ...assessment.human_required.map((reason) => `quality_human_required:${reason}`),
+    ];
+    if (assessment.human_required.length > 0) qualityHumanRequiredCount++;
+    proposals.push({
+      ...proposal,
+      review_hint: {
+        ...proposal.review_hint,
+        risk_notes: riskNotes,
+        suggested_decision: assessment.human_required.length > 0 ? "edit" : proposal.review_hint.suggested_decision,
+      },
+    });
   }
 
   let written = 0;
@@ -867,8 +900,8 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       topics: topics.length,
       page_plans_by_action: pagePlansByAction,
       duplicate_source_hash_groups: duplicateSourceHashGroups,
-      hard_blocks: 0,
-      human_required_quality: 0,
+      hard_blocks: qualityHardBlockCount,
+      human_required_quality: qualityHumanRequiredCount,
     },
     proposals: proposals.map((proposal) => ({
       id: proposal.id,

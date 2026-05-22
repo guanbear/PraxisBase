@@ -42,6 +42,7 @@ export * from "./wiki/curator-prompt.js";
 export * from "./wiki/filter-rules.js";
 export * from "./wiki/lint.js";
 export * from "./wiki/quality.js";
+export * from "./wiki/promotion-quality.js";
 export * from "./wiki/resolver.js";
 export * from "./wiki/graph-slices.js";
 export * from "./wiki/retrieval.js";

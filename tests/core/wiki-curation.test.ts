@@ -259,7 +259,7 @@ describe("wiki evidence curation", () => {
 
   it("curate dry-run writes report only", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curate-"));
-    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login.");
+    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
 
     const report = await curateWiki(root, { mode: "dry-run", degraded: true, now: "2026-05-21T00:00:00.000Z" });
 
@@ -273,8 +273,8 @@ describe("wiki evidence curation", () => {
 
   it("dry-run report includes compiler_counts with nonzero observations, topics, and page plans", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-compiler-counts-"));
-    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login.");
-    await writeCapture(root, "capture_2", "OpenClaw auth expired again; refreshing login fixed sync.");
+    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
+    await writeCapture(root, "capture_2", "OpenClaw auth expired again; refreshing login fixed sync. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
 
     const report = await curateWiki(root, { mode: "dry-run", degraded: true, now: "2026-05-21T00:00:00.000Z" });
 
@@ -294,9 +294,9 @@ describe("wiki evidence curation", () => {
 
   it("compiler_counts page_plans_by_action sums match page plan count", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-plan-actions-"));
-    await writeCapture(root, "capture_ack1", "ACK timing: send short ACK before long tasks.");
-    await writeCapture(root, "capture_ack2", "ACK timing: user preference to ACK first for long OpenClaw work.");
-    await writeCapture(root, "capture_auth", "Fixed OpenClaw auth expired by refreshing login.");
+    await writeCapture(root, "capture_ack1", "ACK timing: send short ACK before long tasks. Verification passed in delegated work acceptance test. Reusable lesson: send ACK before long delegated work.");
+    await writeCapture(root, "capture_ack2", "ACK timing: user preference to ACK first for long OpenClaw work. Verification passed in delegated work acceptance test. Reusable lesson: send ACK before long delegated work.");
+    await writeCapture(root, "capture_auth", "Fixed OpenClaw auth expired by refreshing login. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
 
     const report = await curateWiki(root, { mode: "dry-run", degraded: true, now: "2026-05-21T00:00:00.000Z" });
 
@@ -309,10 +309,22 @@ describe("wiki evidence curation", () => {
     assert.ok(plans.create > 0, "should have at least one create plan");
   });
 
+  it("quality gate blocks degraded template fallback proposals before review writes them", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-quality-block-"));
+    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login.");
+
+    const report = await curateWiki(root, { mode: "review", degraded: true, now: "2026-05-21T00:00:00.000Z" });
+
+    assert.equal(report.compiler_counts?.hard_blocks, 1);
+    assert.equal(report.output_counts.curated_proposals, 0);
+    assert.equal(report.output_counts.written_proposals, 0);
+    await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
+  });
+
   it("curate review writes curated proposals without stable knowledge", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curate-"));
-    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login.");
-    await writeCapture(root, "capture_2", "OpenClaw auth expired again; refreshing login fixed sync.");
+    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
+    await writeCapture(root, "capture_2", "OpenClaw auth expired again; refreshing login fixed sync. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
 
     const report = await curateWiki(root, { mode: "review", degraded: true, now: "2026-05-21T00:00:00.000Z" });
 

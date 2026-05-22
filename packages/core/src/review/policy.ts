@@ -99,10 +99,26 @@ export function decideAutoReview(proposal: CuratedWikiProposal, policy: ReviewPo
   }
   if (isWeakSingleSource(proposal, policy)) reasons.push("weak_single_source");
 
-  const humanRequired = reasons.some((reason) => policy.require_human_for.includes(reason) || reason === "weak_single_source");
+  const qualityHardBlock = proposal.review_hint.risk_notes.some((note) => note.startsWith("quality_hard_block:"));
+  const qualityHumanRequired = proposal.review_hint.risk_notes.some((note) => note.startsWith("quality_human_required:"));
+  if (qualityHardBlock) reasons.push("quality_hard_block");
+  if (qualityHumanRequired) reasons.push("quality_human_required");
+
+  const humanRequired = reasons.some((reason) =>
+    policy.require_human_for.includes(reason)
+    || reason === "weak_single_source"
+    || reason === "quality_hard_block"
+    || reason === "quality_human_required",
+  );
   const autoReview = policy.auto_review;
   let autoPromote = false;
   let reason = humanRequired ? `Human review required: ${reasons.join(", ")}` : "Eligible for automated review.";
+
+  if (humanRequired && (qualityHardBlock || qualityHumanRequired)) {
+    reason = qualityHardBlock
+      ? `Quality gate hard block: ${reasons.join(", ")}`
+      : `Quality gate human required: ${reasons.join(", ")}`;
+  }
 
   if (!humanRequired && autoReview) {
     if (
