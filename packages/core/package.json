@@ -215,6 +215,10 @@
       "types": "./src/wiki/render-site.ts",
       "default": "./dist/wiki/render-site.js"
     },
+    "./wiki/relationship-planner.js": {
+      "types": "./src/wiki/relationship-planner.ts",
+      "default": "./dist/wiki/relationship-planner.js"
+    },
     "./agent-access/manifest.js": {
       "types": "./src/agent-access/manifest.ts",
       "default": "./dist/agent-access/manifest.js"
