@@ -16,6 +16,13 @@ export interface PendingWikiProposalCandidate {
   kind: TargetType;
   scope: Scope;
   confidence?: number;
+  source_count?: number;
+  review_hint?: {
+    why_review: string;
+    suggested_decision: string;
+    risk_notes: string[];
+  };
+  guard_messages?: string[];
   patch_path: string;
   patch_content: string;
   source_id: string;
@@ -140,6 +147,7 @@ function candidateMetadata(record: WikiProposalCandidateRecord): PendingWikiProp
 }
 
 function curatedCandidateMetadata(record: CuratedWikiProposal): PendingWikiProposalCandidate {
+  const failedGuards = record.guards.filter((g) => !g.ok).map((g) => g.message);
   return {
     id: record.id,
     anchor: candidateAnchor(record.id),
@@ -148,6 +156,13 @@ function curatedCandidateMetadata(record: CuratedWikiProposal): PendingWikiPropo
     kind: record.page_kind === "skill" ? "skill" : record.page_kind === "preference" || record.page_kind === "incident" ? "note" : record.page_kind,
     scope: record.scope,
     confidence: record.confidence,
+    source_count: record.source_count,
+    review_hint: {
+      why_review: record.review_hint.why_review,
+      suggested_decision: record.review_hint.suggested_decision,
+      risk_notes: record.review_hint.risk_notes,
+    },
+    guard_messages: failedGuards.length > 0 ? failedGuards : undefined,
     patch_path: record.target_path,
     patch_content: record.body_markdown,
     source_id: record.source_refs.join(", "),

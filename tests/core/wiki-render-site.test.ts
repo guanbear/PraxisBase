@@ -408,4 +408,229 @@ Body.
     assert.equal(index.includes("Latest Daily Experience"), false);
     await assert.rejects(stat(join(root, "dist/experience.html")));
   });
+
+  it("shows wiki curation report metrics on index and review pages", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curation-report-"));
+    await mkdir(join(root, ".praxisbase/reports/wiki-curation"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/reports/wiki-curation/wiki-curation-report_older.json"),
+      JSON.stringify({
+        id: "wiki-curation-report_older",
+        protocol_version: "0.1",
+        type: "wiki_curation_report",
+        created_at: "2026-05-21T12:00:00.000Z",
+        mode: "dry-run",
+        ai: { configured: false, mode: "degraded" },
+        input_counts: { evidence_items: 1, filtered_noise: 0, human_required: 0, rejected: 0, clusters: 1 },
+        output_counts: { curated_proposals: 1, written_proposals: 0, conflicts: 0 },
+        compiler_counts: {
+          observations: 1,
+          topics: 1,
+          page_plans_by_action: { create: 1, update: 0, merge: 0, supersede: 0, archive: 0 },
+          duplicate_source_hash_groups: 0,
+          hard_blocks: 0,
+          human_required_quality: 0,
+        },
+        proposals: [],
+        warnings: [],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      join(root, ".praxisbase/reports/wiki-curation/wiki-curation-report_2026_05_22.json"),
+      JSON.stringify({
+        id: "wiki-curation-report_2026_05_22",
+        protocol_version: "0.1",
+        type: "wiki_curation_report",
+        created_at: "2026-05-22T12:00:00.000Z",
+        mode: "review",
+        ai: { configured: true, mode: "production", model: "gpt-4.1" },
+        input_counts: { evidence_items: 80, filtered_noise: 12, human_required: 5, rejected: 3, clusters: 8 },
+        output_counts: { curated_proposals: 10, written_proposals: 7, conflicts: 1 },
+        compiler_counts: {
+          observations: 42,
+          topics: 8,
+          page_plans_by_action: { create: 5, update: 2, merge: 1, supersede: 0, archive: 0 },
+          duplicate_source_hash_groups: 3,
+          hard_blocks: 2,
+          human_required_quality: 4,
+        },
+        proposals: [],
+        warnings: [],
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Wiki Compiler"));
+    assert.ok(index.includes("Observations"));
+    assert.match(index, /<strong>42<\/strong>/);
+    assert.ok(index.includes("Topics"));
+    assert.match(index, /<strong>8<\/strong>/);
+    assert.ok(index.includes("Plan Create"));
+    assert.match(index, /<strong>5<\/strong>/);
+    assert.ok(index.includes("Plan Update"));
+    assert.match(index, /<strong>2<\/strong>/);
+    assert.ok(index.includes("Plan Merge"));
+    assert.match(index, /<strong>1<\/strong>/);
+    assert.ok(index.includes("Plan Supersede"));
+    assert.ok(index.includes("Plan Archive"));
+    assert.ok(index.includes("Dup source-hash groups"));
+    assert.match(index, /<strong>3<\/strong>/);
+    assert.ok(index.includes("Hard blocks"));
+    assert.match(index, /<strong>2<\/strong>/);
+    assert.ok(index.includes("Quality review needed"));
+    assert.match(index, /<strong>4<\/strong>/);
+    assert.ok(index.includes("Written proposals"));
+    assert.match(index, /<strong>7<\/strong>/);
+    assert.ok(index.includes("2026-05-22"));
+    assert.ok(index.includes("review"));
+    assert.ok(index.includes("AI production"));
+    assert.ok(index.includes("gpt-4.1"));
+    assert.equal(index.includes("2026-05-21"), false);
+    assert.equal(index.includes("Deterministic"), false);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("Wiki Compiler"));
+    assert.ok(review.includes("Observations"));
+    assert.match(review, /<strong>42<\/strong>/);
+  });
+
+  it("Review metric Human required stays 0 when latest curation report has input_counts.human_required=57 but no exception records and no needs_human candidates", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curation-human-required-"));
+    await mkdir(join(root, ".praxisbase/reports/wiki-curation"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/reports/wiki-curation/wiki-curation-report_hr.json"),
+      JSON.stringify({
+        id: "wiki-curation-report_hr",
+        protocol_version: "0.1",
+        type: "wiki_curation_report",
+        created_at: "2026-05-22T14:00:00.000Z",
+        mode: "review",
+        ai: { configured: true, mode: "production", model: "gpt-4.1" },
+        input_counts: { evidence_items: 100, filtered_noise: 20, human_required: 57, rejected: 10, clusters: 6 },
+        output_counts: { curated_proposals: 5, written_proposals: 5, conflicts: 0 },
+        compiler_counts: {
+          observations: 30,
+          topics: 6,
+          page_plans_by_action: { create: 4, update: 1, merge: 0, supersede: 0, archive: 0 },
+          duplicate_source_hash_groups: 0,
+          hard_blocks: 0,
+          human_required_quality: 3,
+        },
+        proposals: [],
+        warnings: [],
+      }),
+      "utf8",
+    );
+    // Also write a pending candidate that is NOT needs_human
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-proposal_safe.json"),
+      JSON.stringify({
+        id: "wiki-proposal_safe",
+        protocol_version: "0.1",
+        type: "wiki_proposal_candidate",
+        source_id: "capture:safe",
+        source_kind: "capture",
+        source_hash: "sha256:safe",
+        patch: {
+          path: "kb/notes/safe.md",
+          content: "---\nid: safe\ntype: note\nscope: personal\n---\n# Safe\n\nBody.\n",
+        },
+        created_at: "2026-05-22T14:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    // The main "Human required" metric link should show 0
+    const humanRequiredMatch = review.match(/href="#human-required"[^>]*><span>Human required<\/span><strong>(\d+)<\/strong>/);
+    assert.ok(humanRequiredMatch, "Human required metric link should exist");
+    assert.equal(humanRequiredMatch[1], "0", "Human required count should be 0 since no exception records exist");
+
+    // Quality review needed should show 3 (from compiler_counts)
+    assert.ok(review.includes("Quality review needed"));
+    assert.match(review, /<strong>3<\/strong>/);
+
+    // Input/privacy triage should show 57 (from input_counts.human_required)
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Input/privacy triage"));
+    assert.match(index, /<strong>57<\/strong>/);
+  });
+
+  it("curated proposal card exposes risk_notes and guard failure messages", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-risk-notes-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-curated_risk.json"),
+      JSON.stringify({
+        id: "wiki-curated_risk",
+        protocol_version: "0.1",
+        type: "wiki_curated_proposal",
+        target_path: "kb/known-fixes/ack-timing.md",
+        action: "create",
+        page_kind: "known_fix",
+        scope: "team",
+        title: "ACK Timing Repair",
+        summary: "Fix ACK timing issues in the pipeline.",
+        body_markdown: "# ACK Timing Repair\n\nFix the ACK timing issue.",
+        source_refs: ["raw-vault://codex/session-ack"],
+        source_hashes: ["sha256:ack"],
+        source_count: 3,
+        evidence_ids: ["capture_ack_1"],
+        confidence: 0.78,
+        maturity: "draft",
+        provenance: [{ source_ref: "raw-vault://codex/session-ack", source_hash: "sha256:ack" }],
+        review_hint: {
+          why_review: "Team scope requires human approval",
+          suggested_decision: "approve",
+          risk_notes: ["single source", "unresolved conflict in field X"],
+        },
+        guards: [
+          { id: "path", ok: true, message: "allowed" },
+          { id: "body_structure", ok: false, message: "Body lacks wiki structure: no headings found" },
+          { id: "duplicate_hash", ok: false, message: "Duplicate source hash detected across proposals" },
+        ],
+        created_at: "2026-05-22T15:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    // Risk notes should appear
+    assert.ok(review.includes("Risk notes"));
+    assert.ok(review.includes("single source"));
+    assert.ok(review.includes("unresolved conflict in field X"));
+    // Guard failures should appear
+    assert.ok(review.includes("Guard failures"));
+    assert.ok(review.includes("Body lacks wiki structure: no headings found"));
+    assert.ok(review.includes("Duplicate source hash detected across proposals"));
+    // Why review and suggested decision
+    assert.ok(review.includes("Team scope requires human approval"));
+    assert.ok(review.includes("approve"));
+    // Source count and confidence
+    assert.ok(review.includes("Sources"));
+    assert.match(review, /<dd>3<\/dd>/);
+    assert.ok(review.includes("Confidence"));
+    assert.ok(review.includes("0.78"));
+
+    // Also check index page pending candidates section
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Risk notes"));
+    assert.ok(index.includes("single source"));
+    assert.ok(index.includes("Guard failures"));
+    assert.ok(index.includes("Body lacks wiki structure"));
+    assert.ok(index.includes("Sources"));
+    assert.ok(index.includes("0.78"));
+  });
 });

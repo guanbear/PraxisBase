@@ -319,6 +319,11 @@ function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): st
         <dt>Kind</dt><dd>${escapeHtml(item.kind)}</dd>
         <dt>Scope</dt><dd>${escapeHtml(item.scope)}</dd>
         <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+        ${item.source_count !== undefined ? `<dt>Sources</dt><dd>${escapeHtml(String(item.source_count))}</dd>` : ""}
+        ${item.confidence !== undefined ? `<dt>Confidence</dt><dd>${escapeHtml(item.confidence.toFixed(2))}</dd>` : ""}
+        ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
+        ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
+        ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
       </dl>
     </li>`).join("\n")}
   </ol>
@@ -377,7 +382,12 @@ function renderCandidateCard(item: ReviewQueueCandidate): string {
       <dt>Kind</dt><dd>${escapeHtml(item.kind)}</dd>
       <dt>Scope</dt><dd>${escapeHtml(item.scope)}</dd>
       <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+      ${item.source_count !== undefined ? `<dt>Sources</dt><dd>${escapeHtml(String(item.source_count))}</dd>` : ""}
+      ${item.confidence !== undefined ? `<dt>Confidence</dt><dd>${escapeHtml(item.confidence.toFixed(2))}</dd>` : ""}
       <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
+      ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
+      ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
+      ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
     </dl>
     <details>
       <summary>Preview generated markdown</summary>
@@ -431,7 +441,7 @@ function renderHumanRequired(records: HumanRequiredRecord[]): string {
 </section>`;
 }
 
-function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: ReviewQueue): string {
+function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: ReviewQueue, curationReport: WikiCurationReportSummary | null): string {
   const counts = {
     pending: queue.candidates.filter((item) => item.status === "pending").length,
     approved: queue.candidates.filter((item) => item.status === "approved").length,
@@ -457,6 +467,7 @@ function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: Review
     <a class="metric-link" href="#human-required"><span>Human required</span><strong>${escapeHtml(String(counts.human))}</strong></a>
     <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
   </section>
+  ${curationReport ? renderWikiCompilerSection(curationReport) : ""}
   <section class="review-section" data-status="pending">
     <h2>Confirm from Terminal</h2>
     <p>This static site cannot execute local commands. Run these after inspecting candidates you want to accept.</p>
@@ -482,7 +493,8 @@ function renderDashboard(
   qualityFindings: number,
   dailyReport: DailyReportSummary | null,
   experienceSummaries: ExperienceSummary[],
-  pendingCandidates: PendingWikiProposalCandidate[]
+  pendingCandidates: PendingWikiProposalCandidate[],
+  curationReport: WikiCurationReportSummary | null
 ): string {
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
   const recent = [...pages]
@@ -515,6 +527,7 @@ function renderDashboard(
     ${cards.map(renderMetricCard).join("\n")}
   </section>
   ${dailyReport ? renderDailyUpdateSection(dailyReport) : ""}
+  ${curationReport ? renderWikiCompilerSection(curationReport) : ""}
   ${renderPendingCandidates(pendingCandidates)}
   <section class="dashboard-grid">
     <div id="knowledge-pages">
@@ -658,6 +671,32 @@ function renderDailyPrivacyFindings(report: DailyReportSummary): string {
 </section>`;
 }
 
+function renderWikiCompilerSection(report: WikiCurationReportSummary): string {
+  const dateLabel = report.created_at.slice(0, 10);
+  const planCards = [
+    { label: "Create", value: String(report.compiler_page_plans_create) },
+    { label: "Update", value: String(report.compiler_page_plans_update) },
+    { label: "Merge", value: String(report.compiler_page_plans_merge) },
+    { label: "Supersede", value: String(report.compiler_page_plans_supersede) },
+    { label: "Archive", value: String(report.compiler_page_plans_archive) },
+  ];
+  const aiLabel = report.ai_configured ? `AI ${report.ai_mode}` : "Deterministic";
+  return `<section class="wiki-compiler-status">
+  <h2>Wiki Compiler</h2>
+  <p class="eyebrow">${escapeHtml(dateLabel)} &middot; ${escapeHtml(report.mode)} &middot; ${escapeHtml(aiLabel)}${report.ai_model ? ` &middot; ${escapeHtml(report.ai_model)}` : ""}</p>
+  <div class="metrics">
+    <article><span>Observations</span><strong>${escapeHtml(String(report.compiler_observations))}</strong></article>
+    <article><span>Topics</span><strong>${escapeHtml(String(report.compiler_topics))}</strong></article>
+    ${planCards.map((card) => `<article><span>Plan ${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`).join("\n")}
+    <article><span>Dup source-hash groups</span><strong>${escapeHtml(String(report.compiler_duplicate_source_hash_groups))}</strong></article>
+    <article><span>Hard blocks</span><strong>${escapeHtml(String(report.compiler_hard_blocks))}</strong></article>
+    <article><span>Quality review needed</span><strong>${escapeHtml(String(report.compiler_human_required_quality))}</strong></article>
+    <article><span>Written proposals</span><strong>${escapeHtml(String(report.output_written_proposals))}</strong></article>
+    ${report.input_human_required > 0 ? `<article><span>Input/privacy triage</span><strong>${escapeHtml(String(report.input_human_required))}</strong></article>` : ""}
+  </div>
+</section>`;
+}
+
 function renderLlms(pages: WikiSitePage[], full: boolean): string {
   const lines = ["# PraxisBase Wiki", "", "Agent-readable knowledge exports.", ""];
   for (const page of pages) {
@@ -699,6 +738,32 @@ interface DailyReportSummary {
   human_required: number;
   proposal_candidates: number;
   site_pages: number;
+}
+
+interface WikiCurationReportSummary {
+  created_at: string;
+  mode: string;
+  ai_configured: boolean;
+  ai_mode: string;
+  ai_model: string | undefined;
+  input_human_required: number;
+  input_evidence_items: number;
+  input_filtered_noise: number;
+  input_rejected: number;
+  input_clusters: number;
+  output_curated_proposals: number;
+  output_written_proposals: number;
+  output_conflicts: number;
+  compiler_observations: number;
+  compiler_topics: number;
+  compiler_page_plans_create: number;
+  compiler_page_plans_update: number;
+  compiler_page_plans_merge: number;
+  compiler_page_plans_supersede: number;
+  compiler_page_plans_archive: number;
+  compiler_duplicate_source_hash_groups: number;
+  compiler_hard_blocks: number;
+  compiler_human_required_quality: number;
 }
 
 async function collectLatestDailyReport(root: string): Promise<DailyReportSummary | null> {
@@ -746,6 +811,68 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 
 function safePathForReaddir(root: string, relativePath: string): string {
   return posix.resolve(root, relativePath);
+}
+
+async function collectLatestWikiCurationReport(root: string): Promise<WikiCurationReportSummary | null> {
+  const dir = safePathForReaddir(root, ".praxisbase/reports/wiki-curation");
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return null;
+  }
+
+  const jsonFiles = entries.filter((name) => name.endsWith(".json"));
+  if (jsonFiles.length === 0) return null;
+
+  const candidates: Array<Record<string, unknown>> = [];
+  for (const file of jsonFiles) {
+    try {
+      const report = await readJson<Record<string, unknown>>(root, `.praxisbase/reports/wiki-curation/${file}`);
+      if (report && report.type === "wiki_curation_report" && typeof report.created_at === "string") {
+        candidates.push(report);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const latest = candidates[0];
+
+  const ai = detailsRecord(latest.ai);
+  const inputCounts = detailsRecord(latest.input_counts);
+  const outputCounts = detailsRecord(latest.output_counts);
+  const compilerCounts = detailsRecord(latest.compiler_counts);
+  const pagePlans = detailsRecord(compilerCounts.page_plans_by_action);
+
+  return {
+    created_at: String(latest.created_at),
+    mode: stringValue(latest.mode) ?? "unknown",
+    ai_configured: ai.configured === true,
+    ai_mode: stringValue(ai.mode) ?? "unknown",
+    ai_model: stringValue(ai.model),
+    input_human_required: numberValue(inputCounts.human_required) ?? 0,
+    input_evidence_items: numberValue(inputCounts.evidence_items) ?? 0,
+    input_filtered_noise: numberValue(inputCounts.filtered_noise) ?? 0,
+    input_rejected: numberValue(inputCounts.rejected) ?? 0,
+    input_clusters: numberValue(inputCounts.clusters) ?? 0,
+    output_curated_proposals: numberValue(outputCounts.curated_proposals) ?? 0,
+    output_written_proposals: numberValue(outputCounts.written_proposals) ?? 0,
+    output_conflicts: numberValue(outputCounts.conflicts) ?? 0,
+    compiler_observations: numberValue(compilerCounts.observations) ?? 0,
+    compiler_topics: numberValue(compilerCounts.topics) ?? 0,
+    compiler_page_plans_create: numberValue(pagePlans.create) ?? 0,
+    compiler_page_plans_update: numberValue(pagePlans.update) ?? 0,
+    compiler_page_plans_merge: numberValue(pagePlans.merge) ?? 0,
+    compiler_page_plans_supersede: numberValue(pagePlans.supersede) ?? 0,
+    compiler_page_plans_archive: numberValue(pagePlans.archive) ?? 0,
+    compiler_duplicate_source_hash_groups: numberValue(compilerCounts.duplicate_source_hash_groups) ?? 0,
+    compiler_hard_blocks: numberValue(compilerCounts.hard_blocks) ?? 0,
+    compiler_human_required_quality: numberValue(compilerCounts.human_required_quality) ?? 0,
+  };
 }
 
 async function collectLatestExperienceSummaries(root: string, limit = 8): Promise<ExperienceSummary[]> {
@@ -886,13 +1013,14 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const qualityReport = await buildWikiQualityReport(root, { pages, graph });
   const outputs = [...SITE_OUTPUTS];
   const dailyReport = await collectLatestDailyReport(root);
+  const curationReport = await collectLatestWikiCurationReport(root);
   const experienceSummaries = await collectLatestExperienceSummaries(root);
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
   const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates));
-  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates, curationReport));
+  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: [
