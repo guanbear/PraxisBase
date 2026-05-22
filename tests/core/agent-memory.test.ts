@@ -98,6 +98,102 @@ describe("scanAgentMemory", () => {
     await assert.rejects(() => stat(join(root, ".praxisbase/raw-vault/refs")), { code: "ENOENT" });
   });
 
+  it("skips Codex startup metadata and keeps task sessions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-codex-meta-scan-"));
+    const sessions = join(root, "codex-sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "meta.jsonl"), JSON.stringify({
+      timestamp: "2026-05-20T00:00:00.000Z",
+      type: "session_meta",
+      payload: {
+        base_instructions: { text: "You are Codex. Observe sandbox_mode and approval_policy." },
+        sandbox_mode: "danger-full-access",
+      },
+    }));
+    await writeFile(join(sessions, "task.jsonl"), [
+      JSON.stringify({
+        timestamp: "2026-05-20T00:01:00.000Z",
+        type: "session_meta",
+        payload: { cwd: "/workspace/praxisbase" },
+      }),
+      JSON.stringify({
+        timestamp: "2026-05-20T00:05:00.000Z",
+        type: "message",
+        payload: {
+          role: "assistant",
+          content: "Fixed PraxisBase Codex memory filtering and pnpm test passed.",
+        },
+      }),
+    ].join("\n"));
+
+    const result = await scanAgentMemory(root, {
+      agent: "codex",
+      sources: [sessions],
+      limit: 10,
+      now: "2026-05-20T00:00:00.000Z",
+    });
+
+    assert.equal(result.candidates.length, 1);
+    assert.equal(result.skipped, 1);
+    assert.equal(result.candidates[0].source_path, join(sessions, "task.jsonl"));
+    assert.match(result.candidates[0].summary_hint ?? "", /Fixed PraxisBase Codex memory filtering/);
+    assert.equal((result.candidates[0].summary_hint ?? "").includes("base_instructions"), false);
+  });
+
+  it("summarizes Codex task turns without injected instructions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-codex-real-jsonl-"));
+    const sessions = join(root, "codex-sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session.jsonl"), [
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "developer",
+          content: [{ type: "input_text", text: "Final reports must include changed files and tests." }],
+        },
+      }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: "# AGENTS.md instructions for /Users/guanbear\n<INSTRUCTIONS>Use skills and generate reports.</INSTRUCTIONS>" }],
+        },
+      }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: "Fix PraxisBase Codex extraction so task summaries ignore injected skills." }],
+        },
+      }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "assistant",
+          content: [{ type: "output_text", text: "Implemented Codex task-turn extraction and pnpm check passed." }],
+        },
+      }),
+    ].join("\n"));
+
+    const result = await scanAgentMemory(root, {
+      agent: "codex",
+      sources: [sessions],
+      limit: 10,
+      now: "2026-05-20T00:00:00.000Z",
+    });
+
+    assert.equal(result.candidates.length, 1);
+    const summary = result.candidates[0].summary_hint ?? "";
+    assert.match(summary, /Fix PraxisBase Codex extraction/);
+    assert.match(summary, /Implemented Codex task-turn extraction/);
+    assert.equal(summary.includes("Final reports must include"), false);
+    assert.equal(summary.includes("AGENTS.md instructions"), false);
+  });
+
   it("expands explicit tilde source paths", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-codex-tilde-"));
     const previousHome = process.env.HOME;

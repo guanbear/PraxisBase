@@ -293,6 +293,13 @@ function renderExperienceSummaries(summaries: ExperienceSummary[]): string {
 </section>`;
 }
 
+function renderMetricCard(card: { label: string; value: string; href?: string }): string {
+  if (card.href) {
+    return `<a class="metric-link" href="${escapeHtml(card.href)}"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></a>`;
+  }
+  return `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`;
+}
+
 function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): string {
   if (candidates.length === 0) return "";
   return `<section class="pending-candidates">
@@ -469,14 +476,14 @@ function renderDashboard(
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
     .slice(0, 6);
   const cards = [
-    ["Sources", String(new Set(pages.flatMap((page) => page.source_ids)).size)],
-    ["Pages", String(pages.length)],
-    ["Broken links", String(graph.broken_links.length)],
-    ["Duplicates", String(graph.duplicates.length)],
-    ["Orphans", String(graph.orphans.length)],
-    ["Stale", String(stalePages)],
-    ["Quality findings", String(qualityFindings)],
-    ["Bundle status", bundleStatus],
+    { label: "Sources", value: String(new Set(pages.flatMap((page) => page.source_ids)).size), href: "#knowledge-pages" },
+    { label: "Pages", value: String(pages.length), href: "#knowledge-pages" },
+    { label: "Broken links", value: String(graph.broken_links.length), href: "issues.html" },
+    { label: "Duplicates", value: String(graph.duplicates.length), href: "issues.html" },
+    { label: "Orphans", value: String(graph.orphans.length), href: "graph.html" },
+    { label: "Stale", value: String(stalePages), href: "issues.html" },
+    { label: "Quality findings", value: String(qualityFindings), href: "issues.html" },
+    { label: "Bundle status", value: bundleStatus },
   ];
 
   return renderLayout({
@@ -492,14 +499,13 @@ function renderDashboard(
     </div>
   </section>
   <section class="metrics">
-    ${cards.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`).join("\n")}
+    ${cards.map(renderMetricCard).join("\n")}
   </section>
   ${dailyReport ? renderDailyUpdateSection(dailyReport) : ""}
-  ${renderExperienceSummaries(experienceSummaries)}
   ${renderPendingCandidates(pendingCandidates)}
   <section class="dashboard-grid">
-    <div>
-      <h2>Recent Sources</h2>
+    <div id="knowledge-pages">
+      <h2>Knowledge Pages</h2>
       <ol class="link-list">
         ${recent.map((page) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
       </ol>

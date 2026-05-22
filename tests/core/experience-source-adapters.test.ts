@@ -39,6 +39,112 @@ describe("experience source adapters", () => {
     assert.match(result.envelopes[0].redacted_summary, /Implemented OpenClaw auth refresh/);
   });
 
+  it("filters Codex session metadata while keeping task experience", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-codex-meta-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session.jsonl"), [
+      JSON.stringify({
+        timestamp: "2026-05-21T00:00:00.000Z",
+        type: "session_meta",
+        payload: {
+          cwd: "/workspace/app",
+          base_instructions: { text: "You are Codex. Follow sandbox_mode and approval_policy." },
+          sandbox_mode: "danger-full-access",
+        },
+      }),
+      JSON.stringify({
+        timestamp: "2026-05-21T00:05:00.000Z",
+        type: "message",
+        payload: {
+          role: "assistant",
+          content: "Implemented PraxisBase wiki page navigation and pnpm test passed.",
+        },
+      }),
+    ].join("\n"), "utf8");
+    const source = await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(result.scanned, 2);
+    assert.equal(result.fetched, 1);
+    assert.equal(result.skipped, 1);
+    assert.equal(result.envelopes.length, 1);
+    assert.match(result.envelopes[0].redacted_summary, /Implemented PraxisBase wiki page navigation/);
+    assert.equal(result.envelopes[0].redacted_summary.includes("base_instructions"), false);
+    assert.equal(result.envelopes[0].redacted_summary.includes("sandbox_mode"), false);
+  });
+
+  it("summarizes Codex JSONL from user and assistant task turns only", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-codex-turns-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session.jsonl"), [
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "developer",
+          content: [{ type: "input_text", text: "Generate final reports and run tests." }],
+        },
+      }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: "# AGENTS.md instructions\n<INSTRUCTIONS>Implement tasks autonomously.</INSTRUCTIONS>" }],
+        },
+      }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: "Fix PraxisBase homepage links and Codex memory extraction." }],
+        },
+      }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "assistant",
+          content: [{ type: "output_text", text: "Updated dashboard links, filtered Codex startup noise, and pnpm check passed." }],
+        },
+      }),
+    ].join("\n"), "utf8");
+    const source = await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(result.envelopes.length, 2);
+    const summaries = result.envelopes.map((envelope) => envelope.redacted_summary).join("\n");
+    assert.match(summaries, /Fix PraxisBase homepage links/);
+    assert.match(summaries, /Updated dashboard links/);
+    assert.equal(summaries.includes("Generate final reports"), false);
+    assert.equal(summaries.includes("AGENTS.md instructions"), false);
+  });
+
   it("fetches HTTP Claude Code repair logs without storing credentials in config", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-http-"));
     const source = await addExperienceSource(root, {

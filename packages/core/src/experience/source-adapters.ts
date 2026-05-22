@@ -16,6 +16,7 @@ import { safePath, writeText } from "../store/file-store.js";
 import { detectOpenClawProblemSignature } from "../repair/signature.js";
 import { evaluateExperiencePrivacy, type EvaluateExperiencePrivacyInput } from "./privacy-policy.js";
 import type { GitCommandRunner } from "./git-workflow.js";
+import { extractCodexExperienceText, isUsefulCodexExperience } from "./codex-signal.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -165,6 +166,9 @@ function summaryForItem(source: ExperienceSourceConfig, item: RawExperienceItem,
   if (source.agent === "openclaw") {
     return detectOpenClawProblemSignature(item.raw_log ?? rawText);
   }
+  if (source.agent === "codex") {
+    return summarizeText(extractCodexExperienceText(item, rawText), "codex experience");
+  }
   return summarizeText(item.text ?? item.raw_log ?? rawText, `${source.agent} experience`);
 }
 
@@ -192,6 +196,11 @@ function itemText(item: RawExperienceItem, rawText: string): string {
     item.text,
     rawText,
   ].filter((value): value is string => typeof value === "string" && value.length > 0).join("\n");
+}
+
+function shouldUseItem(source: ExperienceSourceConfig, item: RawExperienceItem, rawText: string): boolean {
+  if (source.agent !== "codex") return true;
+  return isUsefulCodexExperience(item, rawText);
 }
 
 function makeEnvelope(
@@ -262,7 +271,7 @@ async function itemsFromFile(path: string, maxBytes: number, warnings: string[])
   const rawText = await readFile(path, "utf8");
   const parsed = parseJsonItems(rawText);
   if (parsed) {
-    return parsed.map((item) => ({ item, rawText, filePath: path }));
+    return parsed.map((item) => ({ item, rawText: JSON.stringify(item), filePath: path }));
   }
   return [{ item: { text: rawText }, rawText, filePath: path }];
 }
@@ -429,22 +438,25 @@ export async function resolveExperienceSource(
 ): Promise<ResolvedExperienceSource> {
   const limit = options.limit ?? DEFAULT_LIMIT;
   const warnings: string[] = [];
-  let rawItems: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }> = [];
+  let resolvedItems: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }> = [];
 
   try {
     const resolved = await resolveSourceItems(root, source, options);
-    rawItems = resolved.items.slice(0, limit);
+    resolvedItems = resolved.items;
     warnings.push(...resolved.warnings);
   } catch (error) {
     warnings.push(`source_failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 
+  const rawItems = resolvedItems
+    .filter((entry) => shouldUseItem(source, entry.item, entry.rawText))
+    .slice(0, limit);
   const envelopes = rawItems.map((entry, index) =>
     makeEnvelope(source, entry.item, entry.rawText, index, options, entry.filePath)
   );
   const rejected = envelopes.filter((envelope) => envelope.privacy.verdict === "reject").length;
   const humanRequired = envelopes.filter((envelope) => envelope.privacy.verdict === "human_required").length;
-  const skipped = Math.max(0, rawItems.length - envelopes.length);
+  const skipped = Math.max(0, resolvedItems.length - envelopes.length);
   const status = warnings.length > 0 || rejected > 0 || humanRequired > 0
     ? (envelopes.length > 0 ? "partial" : "failed")
     : "completed";
@@ -452,7 +464,7 @@ export async function resolveExperienceSource(
   return {
     source,
     status,
-    scanned: rawItems.length,
+    scanned: resolvedItems.length,
     fetched: rawItems.length,
     enveloped: envelopes.length,
     rejected,

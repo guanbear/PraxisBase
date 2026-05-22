@@ -22,6 +22,7 @@ import { compileWiki } from "../wiki/compile.js";
 import { buildWikiGraph } from "../wiki/resolver.js";
 import { buildWikiSite, collectWikiPages } from "../wiki/render-site.js";
 import { buildContext } from "./context.js";
+import { extractCodexExperienceText, isUsefulCodexExperience } from "./codex-signal.js";
 
 const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log"]);
 const DEFAULT_LIMIT = 20;
@@ -89,13 +90,15 @@ function extractSummaryHint(text: string, agent: AgentMemoryAgent): string {
     return detectOpenClawProblemSignature(text);
   }
 
+  const signalText = agent === "codex" ? extractCodexExperienceText(parseJsonForSignal(text) ?? text, text) : text;
   const meaningfulPatterns = [
-    /\b(?:implemented|changed|fixed|added|updated|removed|created|refactored)\b/i,
+    /\b(?:implement(?:ed|ing)?|change(?:d|s|ing)?|fix(?:ed|ing)?|add(?:ed|ing)?|update(?:d|s|ing)?|remove(?:d|ing)?|create(?:d|s|ing)?|refactor(?:ed|ing)?)\b/i,
     /\b(?:pnpm|npm|yarn)\s+(?:check|test|build|install|run)\b/i,
     /\btests?\s+(?:passed|failed)\b/i,
+    /(?:实现|修复|调整|更新|新增|删除|重构|排查|定位|验证|测试|通过|失败|提交|生成|构建|部署)/,
   ];
 
-  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = signalText.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
   const meaningful = lines.filter((line) =>
     meaningfulPatterns.some((pattern) => pattern.test(line))
   );
@@ -107,6 +110,27 @@ function extractSummaryHint(text: string, agent: AgentMemoryAgent): string {
       : joined;
   }
   return agent === "claude-code" ? "claude-code repair log" : "codex session";
+}
+
+function parseJsonForSignal(content: string): unknown {
+  const trimmed = content.trim();
+  if (!trimmed) return undefined;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+  }
+
+  const items: unknown[] = [];
+  for (const line of trimmed.split(/\r?\n/)) {
+    const l = line.trim();
+    if (!l) continue;
+    try {
+      items.push(JSON.parse(l));
+    } catch {
+      return undefined;
+    }
+  }
+  return items.length > 0 ? items : undefined;
 }
 
 function makeSourceRef(agent: AgentMemoryAgent, filePath: string): string {
@@ -210,6 +234,9 @@ function makeCandidateFromSource(
 ): AgentMemoryCandidate | undefined {
   const experienceEnvelope = parseExperienceEnvelope(content);
   if (experienceEnvelope && experienceEnvelope.agent !== input.agent) {
+    return undefined;
+  }
+  if (!experienceEnvelope && input.agent === "codex" && !isUsefulCodexExperience(parseJsonForSignal(content) ?? content, content)) {
     return undefined;
   }
   const stagedEnvelope = !experienceEnvelope && input.agent === "openclaw"

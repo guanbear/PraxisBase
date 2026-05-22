@@ -199,9 +199,11 @@ Body.
     assert.match(index, /<strong>7<\/strong>/);
     assert.ok(index.includes("href=\"review.html#human-required\""));
     assert.ok(index.includes("href=\"review.html#pending-candidates\""));
-    assert.ok(index.includes("Latest Experience Summaries"));
-    assert.ok(index.includes("OpenClaw detected Claude authentication expired"));
-    assert.ok(index.includes("openclaw-memory://openclaw://memory/auth#chunk-1"));
+    assert.ok(index.includes("href=\"#knowledge-pages\""));
+    assert.ok(index.includes("id=\"knowledge-pages\""));
+    assert.ok(index.includes("Knowledge Pages"));
+    assert.equal(index.includes("Latest Experience Summaries"), false);
+    assert.equal(index.includes("openclaw-memory://openclaw://memory/auth#chunk-1"), false);
     const issues = await readFile(join(root, "dist/issues.html"), "utf8");
     assert.ok(issues.includes("Daily Privacy Findings"));
     assert.ok(issues.includes("Rejected"));
