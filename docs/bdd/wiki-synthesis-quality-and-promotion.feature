@@ -62,6 +62,27 @@ Feature: Wiki synthesis quality and promotion
     Then curation rebuilds the body from evidence actions, verification, reusable lessons, and provenance
     And the proposal still goes through the normal quality gate
 
+  Scenario: Fallback body is written for future agents
+    Given repeated evidence has concrete symptoms, actions, verification, and reusable lessons
+    When deterministic fallback writes the wiki body
+    Then the body contains "## When to Use"
+    And the body contains "## What To Do"
+    And the body contains "## Verify"
+    And the body does not contain a long machine signature applicability sentence
+
+  Scenario: Status-check topics become procedures
+    Given repeated OpenClaw evidence says task runner status is missing
+    And the reusable action is to verify runner presence before dispatch debugging
+    When PraxisBase builds wiki topics
+    Then the topic is planned as a procedure
+    And the target path is under "kb/procedures/"
+
+  Scenario: Duplicate same-run targets are reduced before review
+    Given two curated wiki proposals target the same stable path
+    And one proposal has higher source count and confidence
+    When PraxisBase writes review proposals
+    Then only the higher quality proposal is written for that target path
+
   Scenario: Team mode remains review-gated
     Given a team-scoped curated proposal passes content quality
     When the default team review policy runs

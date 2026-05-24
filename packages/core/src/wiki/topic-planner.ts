@@ -122,10 +122,24 @@ function confidenceForObservations(obs: WikiObservation[]): number {
 }
 
 function pageKindFromObservations(obs: WikiObservation[]): WikiTopic["page_kind"] {
-  const kindHints = obs.map((o) => o.problem ?? o.action ?? "");
+  const kindHints = obs.map((o) => [
+    o.kind,
+    o.problem,
+    o.action,
+    o.verification,
+    o.reusable_lesson,
+    ...o.topics,
+    ...o.entities,
+  ].filter(Boolean).join(" "));
   for (const hint of kindHints) {
-    if (/fix|resolved|repair|error/i.test(hint)) return "known_fix";
-    if (/procedure|steps|how to/i.test(hint)) return "procedure";
+    const hasConcreteRepair = /\b(fix(?:ed)?|failed|failure|resolved|repair(?:ed)?|restart(?:ed)?|workaround|root cause)\b/i.test(hint);
+    if (/\b(task runner|runner|status|presence|health check|preflight|dispatch chain)\b/i.test(hint)
+      && /\b(check|verify|inspect|status|presence|health|before debugging|before dispatch)\b/i.test(hint)
+      && !hasConcreteRepair) {
+      return "procedure";
+    }
+    if (hasConcreteRepair || /\berror\b/i.test(hint)) return "known_fix";
+    if (/procedure|steps|how to|check|verify|inspect/i.test(hint)) return "procedure";
     if (/decision|chose|prefer/i.test(hint)) return "decision";
     if (/pitfall|avoid|mistake/i.test(hint)) return "pitfall";
     if (/preference|config|setting/i.test(hint)) return "preference";

@@ -154,7 +154,7 @@ describe("AI wiki curator", () => {
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.match(result.proposal.body_markdown, /^# OpenClaw auth expired recovery/m);
-      assert.match(result.proposal.body_markdown, /## Verification/);
+      assert.match(result.proposal.body_markdown, /## Verify/);
       assert.ok(result.proposal.guards.some((guard) => guard.id === "body" && guard.ok));
     }
   });
@@ -202,6 +202,55 @@ describe("AI wiki curator", () => {
     if (result.ok) {
       assert.match(result.proposal.body_markdown, /Refresh OpenClaw login/);
       assert.equal(result.proposal.guards.every((guard) => guard.ok), true);
+    }
+  });
+
+  it("builds deterministic fallback bodies as reusable agent guidance", async () => {
+    const noisySignatureCluster: WikiEvidenceCluster = {
+      ...cluster,
+      signatures: Array.from({ length: 8 }, (_, index) => `openclaw:runner-status-${index}`),
+      normalized_title: "OpenClaw task runner presence checks",
+      page_kind: "procedure",
+      target_path_hint: "kb/procedures/openclaw-task-runner-presence-checks.md",
+    };
+    const result = await synthesizeCuratedWikiProposal(noisySignatureCluster, {
+      evidence: [
+        {
+          ...evidence[0],
+          title: "OpenClaw task runner presence checks",
+          summary: "OpenClaw task runner status was missing during dispatch debugging.",
+          actions: ["Verify task runner presence before dispatch debugging"],
+          verification: ["Runner status check passed"],
+          reusable_lessons: ["Check runner presence before debugging dispatch hangs"],
+          signatures: noisySignatureCluster.signatures,
+          suggested_wiki_kind: "procedure",
+        },
+      ],
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw task runner presence checks",
+              summary: "Verify runner presence before dispatch debugging.",
+              page_kind: "procedure",
+              target_path: "kb/procedures/openclaw-task-runner-presence-checks.md",
+              body_markdown: "TBD",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(result.proposal.body_markdown, /## When to Use/);
+      assert.match(result.proposal.body_markdown, /## What To Do/);
+      assert.match(result.proposal.body_markdown, /## Verify/);
+      assert.doesNotMatch(result.proposal.body_markdown, /Use this when evidence matches openclaw:runner-status-0,/);
     }
   });
 
@@ -385,8 +434,8 @@ describe("AI wiki curator", () => {
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.doesNotMatch(result.proposal.body_markdown, /Suggested Wiki Kind|Confidence:/);
-      assert.equal((result.proposal.body_markdown.match(/^## Problem$/gm) ?? []).length, 1);
-      assert.equal((result.proposal.body_markdown.match(/^## Verification$/gm) ?? []).length, 1);
+      assert.equal((result.proposal.body_markdown.match(/^#\s+/gm) ?? []).length, 1);
+      assert.equal((result.proposal.body_markdown.match(/^## Verify$/gm) ?? []).length, 1);
     }
   });
 
@@ -751,7 +800,10 @@ describe("AI wiki curator", () => {
       now: "2026-05-21T00:00:00.000Z",
       concurrency: 2,
       aiClient: {
-        async generateJson() {
+        async generateJson(args: { user: string }) {
+          const user = JSON.parse(args.user) as { expected_schema?: { target_path?: string } };
+          const targetPath = user.expected_schema?.target_path ?? "kb/known-fixes/openclaw-reusable-repair-lesson.md";
+          const title = targetPath.split("/").pop()?.replace(/\.md$/i, "") ?? "openclaw-reusable-repair-lesson";
           active++;
           maxActive = Math.max(maxActive, active);
           await new Promise<void>((resolve) => {
@@ -769,8 +821,8 @@ describe("AI wiki curator", () => {
               title: "OpenClaw reusable repair lesson",
               summary: "A concrete OpenClaw repair lesson was distilled.",
               page_kind: "known_fix",
-              target_path: "kb/known-fixes/openclaw-reusable-repair-lesson.md",
-              body_markdown: "# OpenClaw reusable repair lesson\n\n## Problem\nA repair workflow failed.\n\n## Fix\nApply the distilled repair lesson.\n\n## Verification\nThe verification command passed.",
+              target_path: targetPath,
+              body_markdown: `# ${title}\n\n## Problem\nA repair workflow failed.\n\n## Fix\nApply the distilled repair lesson.\n\n## Verification\nThe verification command passed.`,
               confidence: 0.9,
               risk_notes: [],
             },

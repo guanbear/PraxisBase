@@ -104,9 +104,9 @@ function hasWikiStructure(body: string): boolean {
   const hasH2 = /^##\s+/m.test(body);
   return hasH1
     && hasH2
-    && hasSection(body, ["Problem", "Context"])
-    && hasSection(body, ["Fix", "Steps", "Procedure", "Decision", "Operating Rule", "Applicability"])
-    && hasSection(body, ["Verification"])
+    && hasSection(body, ["Problem", "Context", "Symptoms", "When to Use"])
+    && hasSection(body, ["Fix", "Steps", "Procedure", "Decision", "Operating Rule", "Applicability", "What To Do"])
+    && hasSection(body, ["Verification", "Verify"])
     && hasSection(body, ["Reusable Lessons"])
     && hasSection(body, ["Provenance", "Sources"]);
 }

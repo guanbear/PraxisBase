@@ -14,6 +14,18 @@ The wiki curator must request a compiled wiki article, not a summary. A valid bo
 
 The model may write concise prose, but must not copy raw transcripts, raw JSON, session boot metadata, source hashes as titles, or official reference pages as stable wiki content.
 
+For agent-facing stable pages, the preferred body shape is:
+
+- `## When to Use`
+- `## Symptoms` or `## Context`
+- `## What To Do`, `## Procedure`, `## Fix`, `## Decision`, or `## Operating Rule`
+- `## Verify`
+- `## Reusable Lessons`
+- `## Provenance`
+- `## Related Wiki Pages` when links are supplied.
+
+The canonical shape is intentionally operational. It should tell a future agent when the page applies, what to do next, and how to verify the outcome. The body must avoid report-style narration, long machine signature lists, and repeated source boilerplate in the main guidance sections.
+
 ## Evidence Selection And Clustering
 
 PraxisBase must treat stable wiki pages as context, not as fresh evidence that creates another page by itself. New wiki synthesis starts from harvested redacted experience, native memory, captures, or external refs. Existing stable pages are loaded for update planning, relationship planning, and merge context.
@@ -27,6 +39,10 @@ Topic clustering must prefer stable semantic identity over source identity. The 
 3. normalized title only as a fallback.
 
 This keeps repeated evidence from Codex and OpenClaw as one compiled page with multiple provenance entries instead of many single-source pages.
+
+Page kind selection must prefer the action a future agent can take. Evidence whose reusable action is "verify/check runner status", "inspect dispatch chain", or "run a health check" should become a `procedure` unless it also has a concrete repaired defect and fix. Repeated failures with a known workaround or repair remain `known_fix`; one-off observations without a reusable action remain `note`.
+
+Within one curation run, multiple synthesized proposals MUST NOT be written for the same stable `target_path`. The curation stage must keep the highest quality candidate for that path, using source count, confidence, page-kind usefulness, and guard quality as tie breakers. Dropped duplicates remain represented by provenance in future merge/update runs rather than becoming competing review items.
 
 ## Deterministic Repair
 
@@ -97,3 +113,5 @@ When related pages exist and proposals are promoted, graph links must be greater
 Broken link count must not increase because synthesis used title-only slugs where canonical stable page ids were available.
 
 The smoke also fails quality review when all or most promoted pages are single-source islands, when JSON-like list items survive into stable wiki bodies, or when Codex/OpenClaw initialization records become user-facing wiki pages.
+
+Personal daily `ai_distill.human_required` is an input privacy count, not a wiki review count. In personal mode it commonly means chunks were kept out of AI and wiki synthesis because deterministic pre-AI privacy checks saw concrete secret-like material. Team mode must remain strict; any future personal relaxation must redact locally before AI rather than sending suspicious text upstream.

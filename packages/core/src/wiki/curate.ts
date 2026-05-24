@@ -622,24 +622,30 @@ function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], t
   const verification = uniq(evidence.flatMap((item) => item.verification)).slice(0, 4);
   const lessons = uniq(evidence.flatMap((item) => item.reusable_lessons)).slice(0, 5);
   const summaryLines = evidence.flatMap((item) => (item.problem ?? item.summary).split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
-  const problem = summaryLines.find((line) => /\b(failed|failure|error|slow|reported|missing|timeout|stuck)\b|反馈|没有|不能|失败|超时|慢/i.test(line))
+  const symptom = summaryLines.find((line) => /\b(failed|failure|error|slow|reported|missing|timeout|stuck)\b|反馈|没有|不能|失败|超时|慢/i.test(line))
     ?? summaryLines[0]
     ?? evidence[0].title;
+  const whenToUse = uniq([
+    cluster.normalized_title,
+    ...evidence.flatMap((item) => item.signatures).filter((signature) => !/^sha256:/i.test(signature)),
+  ].map((item) => item.trim())).slice(0, 3);
 
   return [
     `# ${title}`,
     "",
-    "## Problem",
-    problem,
+    "## When to Use",
+    whenToUse.length > 0
+      ? `Use this when ${whenToUse.join(" / ")} appears in agent work.`
+      : `Use this when ${title} appears in agent work.`,
     "",
-    "## Applicability",
-    `Use this when evidence matches ${cluster.signatures.join(", ") || cluster.normalized_title}.`,
+    "## Symptoms",
+    symptom,
     "",
-    "## Fix",
+    "## What To Do",
     ...(actions.length > 0 ? actions.map((action) => `- ${action}`) : ["- Review the provenance and apply the repeated successful action."]),
     "",
     ...(failed.length > 0 ? ["## Failed Attempts", ...failed.map((item) => `- ${item}`), ""] : []),
-    "## Verification",
+    "## Verify",
     ...(verification.length > 0 ? verification.map((item) => `- ${item}`) : ["- Re-run the failing workflow and confirm the original symptom is gone."]),
     "",
     "## Reusable Lessons",
@@ -900,9 +906,9 @@ function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): Cura
     || item.suggested_wiki_kind === "pitfall"
     || item.suggested_wiki_kind === "known_fix"
   );
-  const actionability = /##\s+(Fix|Steps|Procedure|Decision|Applicability|Reusable Lessons)\b/i.test(body)
+  const actionability = /##\s+(Fix|Steps|Procedure|Decision|Operating Rule|Applicability|When to Use|What To Do|Reusable Lessons)\b/i.test(body)
     && /\b(use this|when|refresh|retry|run|send|avoid|verify|check|should|must|fix|decision)\b/i.test(bodyContent);
-  const verificationOrLesson = /##\s+(Verification|Reusable Lessons)\b/i.test(body)
+  const verificationOrLesson = /##\s+(Verification|Verify|Reusable Lessons)\b/i.test(body)
     && /\b(verify|test|passed|fixed|resolved|lesson|remember|prefer|should|must|avoid|run|check|sync|re-run)\b/i.test(bodyContent);
   const referenceOnly = /\b(official documentation|official docs|api reference|reference documentation|session initialization metadata|session boot|boot configuration|skill registry|sandbox mode|approval policy)\b/i.test(evidenceText)
     && !hasConcreteExperienceTerms(evidenceText);
@@ -1048,6 +1054,41 @@ export async function synthesizeCuratedWikiProposal(
 
 function proposalSlug(proposal: CuratedWikiProposal): string {
   return wikiSlugFromTargetPath(proposal.target_path, proposal.title).toLowerCase();
+}
+
+function proposalPageKindRank(kind: CuratedWikiProposal["page_kind"]): number {
+  if (kind === "known_fix") return 7;
+  if (kind === "procedure") return 6;
+  if (kind === "pitfall") return 5;
+  if (kind === "decision") return 4;
+  if (kind === "skill") return 3;
+  if (kind === "preference") return 2;
+  if (kind === "incident") return 1;
+  return 0;
+}
+
+function failedGuardCount(proposal: CuratedWikiProposal): number {
+  return proposal.guards.filter((guard) => !guard.ok).length;
+}
+
+function compareProposalQuality(a: CuratedWikiProposal, b: CuratedWikiProposal): number {
+  return b.source_count - a.source_count
+    || b.confidence - a.confidence
+    || proposalPageKindRank(b.page_kind) - proposalPageKindRank(a.page_kind)
+    || failedGuardCount(a) - failedGuardCount(b)
+    || a.title.localeCompare(b.title)
+    || a.id.localeCompare(b.id);
+}
+
+function dedupeProposalsByTargetPath(proposals: CuratedWikiProposal[]): CuratedWikiProposal[] {
+  const byTarget = new Map<string, CuratedWikiProposal>();
+  for (const proposal of proposals) {
+    const existing = byTarget.get(proposal.target_path);
+    if (!existing || compareProposalQuality(proposal, existing) < 0) {
+      byTarget.set(proposal.target_path, proposal);
+    }
+  }
+  return Array.from(byTarget.values()).sort((a, b) => a.id.localeCompare(b.id));
 }
 
 function sanitizeProposalRelationships(proposal: CuratedWikiProposal, allowedTargetSlugs: Set<string>): CuratedWikiProposal {
@@ -1271,10 +1312,10 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     ));
   }
 
-  const synthesizedProposals = synthesizedProposalEntries
+  const synthesizedProposals = dedupeProposalsByTargetPath(synthesizedProposalEntries
     .sort((a, b) => a.index - b.index)
     .slice(0, limit)
-    .map((entry) => entry.proposal);
+    .map((entry) => entry.proposal));
 
   let qualityHardBlockCount = 0;
   let qualityHumanRequiredCount = 0;

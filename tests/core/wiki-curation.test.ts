@@ -433,6 +433,63 @@ describe("wiki evidence curation", () => {
     assert.equal(report.input_counts.filtered_noise, 1);
     assert.equal(report.output_counts.curated_proposals, 0);
   });
+
+  it("deduplicates same-run proposals that target the same stable path", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-dedup-target-"));
+    await writeCapture(root, "capture_ack_1", "ACK timing was slow. Action: send a short ACK before long dispatch. Verification passed. Reusable lesson: ACK before long OpenClaw work.");
+    await writeCapture(root, "capture_ack_2", "OpenClaw dispatch looked silent. Action: send ACK before long dispatch. Verification passed. Reusable lesson: ACK before long OpenClaw work.");
+    await writeCapture(root, "capture_auth_1", "OpenClaw auth expired. Action: refresh login. Verification passed. Reusable lesson: refresh login before retrying sync.");
+
+    const duplicateTarget = "kb/known-fixes/shared-operator-guidance.md";
+    const report = await curateWiki(root, {
+      mode: "review",
+      now: "2026-05-23T00:00:00.000Z",
+      aiClient: {
+        async generateJson(args: { user: string }) {
+          const user = JSON.parse(args.user) as { compiler_context?: { topic_title?: string } };
+          const topicTitle = user.compiler_context?.topic_title ?? "";
+          const isAck = /ack/i.test(topicTitle);
+          return {
+            ok: true,
+            json: {
+              title: isAck ? "ACK timing before long-running agent work" : "OpenClaw auth expired recovery",
+              summary: isAck ? "Send ACK before long dispatch work." : "Refresh login before retrying sync.",
+              page_kind: "known_fix",
+              target_path: duplicateTarget,
+              body_markdown: [
+                `# ${isAck ? "ACK timing before long-running agent work" : "OpenClaw auth expired recovery"}`,
+                "",
+                "## Problem",
+                isAck ? "Long OpenClaw dispatch work can look silent." : "OpenClaw auth expiry can break sync.",
+                "",
+                "## Fix",
+                isAck ? "Send a short ACK before dispatch." : "Refresh login before retrying sync.",
+                "",
+                "## Verification",
+                "Verification passed.",
+                "",
+                "## Reusable Lessons",
+                isAck ? "ACK before long OpenClaw work." : "Refresh login before sync retry.",
+                "",
+                "## Provenance",
+                "Added by test AI.",
+              ].join("\n"),
+              confidence: isAck ? 0.93 : 0.83,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.output_counts.written_proposals, 1);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.length, 1);
+    const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", proposalFiles[0]), "utf8"));
+    assert.equal(proposal.target_path, duplicateTarget);
+    assert.equal(proposal.title, "ACK timing before long-running agent work");
+    assert.equal(proposal.source_count, 2);
+  });
 });
 
 describe("wiki observation extraction", () => {

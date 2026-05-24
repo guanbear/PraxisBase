@@ -19,3 +19,7 @@
 - [x] Run targeted wiki tests.
 - [x] Run `pnpm check`.
 - [x] Commit source, docs, and tests only.
+- [x] Prefer agent-usable wiki body sections over report-style summaries.
+- [x] Classify reusable status/health-check evidence as procedures.
+- [x] Deduplicate same-run proposals with the same target path before review writes.
+- [x] Explain daily `ai_distill.human_required` as privacy-gated input count, not wiki review count.

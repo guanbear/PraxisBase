@@ -181,6 +181,69 @@ describe("buildWikiTopics", () => {
     assert.equal(topics[0].source_count, 2);
   });
 
+  it("classifies repeated runner status checks as procedures", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "obs-runner-1",
+        source_ref: "openclaw://runner/status-1",
+        source_hash: "sha256:runner-1",
+        kind: "procedure",
+        problem: "OpenClaw task runner status was missing during dispatch debugging",
+        action: "Verify task runner presence before debugging dispatch",
+        verification: "Runner status check passed",
+        reusable_lesson: "Check runner presence before debugging dispatch hangs",
+        entities: ["openclaw", "runner"],
+      }),
+      obs({
+        id: "obs-runner-2",
+        source_ref: "codex://runner/status-2",
+        source_hash: "sha256:runner-2",
+        kind: "procedure",
+        problem: "OpenClaw hanging task investigation needed runner presence checks",
+        action: "Check task runner status before dispatch debugging",
+        verification: "Runner presence check passed",
+        reusable_lesson: "Verify runner presence first",
+        entities: ["openclaw", "runner"],
+      }),
+    ]);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].title, "OpenClaw task runner presence checks");
+    assert.equal(topics[0].page_kind, "procedure");
+    assert.match(topics[0].target_path, /^kb\/procedures\//);
+  });
+
+  it("keeps concrete runner repairs as known fixes", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "obs-runner-fix-1",
+        source_ref: "openclaw://runner/fix-1",
+        source_hash: "sha256:runner-fix-1",
+        kind: "fix",
+        problem: "OpenClaw runner failed after registration state drift",
+        action: "Check runner status and restart the registered runner",
+        verification: "Runner status check passed after restart",
+        reusable_lesson: "Restart the registered runner before retrying task dispatch",
+        entities: ["openclaw", "runner"],
+      }),
+      obs({
+        id: "obs-runner-fix-2",
+        source_ref: "codex://runner/fix-2",
+        source_hash: "sha256:runner-fix-2",
+        kind: "fix",
+        problem: "OpenClaw task runner failure blocked dispatch",
+        action: "Restart the runner and check status",
+        verification: "Task dispatch succeeded after runner restart",
+        reusable_lesson: "Treat runner registration drift as a concrete fix",
+        entities: ["openclaw", "runner"],
+      }),
+    ]);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].page_kind, "known_fix");
+    assert.match(topics[0].target_path, /^kb\/known-fixes\//);
+  });
+
   it("keeps separate topics for different problems", () => {
     const observations = [
       obs({ id: "o1", problem: "ACK timing slow", action: "Refresh" }),
