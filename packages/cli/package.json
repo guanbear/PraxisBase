@@ -87,6 +87,10 @@
       "types": "./src/commands/wiki.ts",
       "default": "./dist/commands/wiki.js"
     },
+    "./commands/kb.js": {
+      "types": "./src/commands/kb.ts",
+      "default": "./dist/commands/kb.js"
+    },
     "./commands/smoke.js": {
       "types": "./src/commands/smoke.ts",
       "default": "./dist/commands/smoke.js"

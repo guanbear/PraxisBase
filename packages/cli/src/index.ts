@@ -20,6 +20,7 @@ import { contextCommand } from "./commands/context.js";
 import { distillCommand } from "./commands/distill.js";
 import { watchCommand } from "./commands/watch.js";
 import { wikiCommand } from "./commands/wiki.js";
+import { kbCommand } from "./commands/kb.js";
 import { smokeCommand } from "./commands/smoke.js";
 import { remoteCommand } from "./commands/remote.js";
 import { sourceCommand } from "./commands/source.js";
@@ -600,6 +601,58 @@ program
     }
   ) => {
     console.log(await watchCommand(process.cwd(), options));
+  });
+
+program
+  .command("kb")
+  .argument("<sub>", "subcommand (audit|prune|rebuild)")
+  .option("--yes", "confirm destructive prune before rebuild")
+  .option("--dry-run", "force prune to report without deleting files")
+  .option("--mode <mode>", "personal or team-git")
+  .option("--limit <n>")
+  .option("--build-site")
+  .option("--branch <name>")
+  .option("--commit")
+  .option("--push")
+  .option("--pr")
+  .option("--degraded", "run deterministic fallback without production AI distill")
+  .option("--no-ai", "disable AI distill for this run")
+  .option("--max-ai-chunks <n>", "maximum production AI distill chunks for this run")
+  .option("--ai-timeout-ms <n>", "override AI provider timeout for this run")
+  .option("--ai-concurrency <n>", "maximum concurrent AI distill and curation calls")
+  .option("--retry-failed-distill-only", "retry only chunks with cached AI distill failures")
+  .option("--max-curation-proposals <n>", "maximum AI wiki curation proposals for this run")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      yes?: boolean;
+      dryRun?: boolean;
+      mode?: "personal" | "team-git";
+      limit?: string;
+      buildSite?: boolean;
+      branch?: string;
+      commit?: boolean;
+      push?: boolean;
+      pr?: boolean;
+      degraded?: boolean;
+      noAi?: boolean;
+      maxAiChunks?: string;
+      aiTimeoutMs?: string;
+      aiConcurrency?: string;
+      retryFailedDistillOnly?: boolean;
+      maxCurationProposals?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await kbCommand(process.cwd(), sub, {
+      ...options,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      maxAiChunks: options.maxAiChunks ? parseInt(options.maxAiChunks, 10) : undefined,
+      aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
+      aiConcurrency: options.aiConcurrency ? parseInt(options.aiConcurrency, 10) : undefined,
+      maxCurationProposals: options.maxCurationProposals ? parseInt(options.maxCurationProposals, 10) : undefined,
+    }));
   });
 
 program

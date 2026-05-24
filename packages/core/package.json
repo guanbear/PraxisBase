@@ -219,6 +219,10 @@
       "types": "./src/wiki/relationship-planner.ts",
       "default": "./dist/wiki/relationship-planner.js"
     },
+    "./kb/maintenance.js": {
+      "types": "./src/kb/maintenance.ts",
+      "default": "./dist/kb/maintenance.js"
+    },
     "./agent-access/manifest.js": {
       "types": "./src/agent-access/manifest.ts",
       "default": "./dist/agent-access/manifest.js"
