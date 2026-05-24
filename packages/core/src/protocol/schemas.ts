@@ -854,8 +854,21 @@ export const WikiGraphSliceSchema = z.object({
   links: z.array(z.object({
     from: z.string().min(1),
     to: z.string().min(1),
-    type: z.enum(["wikilink", "source_overlap", "related"]),
+    type: z.enum([
+      "related",
+      "uses",
+      "depends_on",
+      "fixes",
+      "caused_by",
+      "verified_by",
+      "contradicts",
+      "supersedes",
+      "same_topic_as",
+      "source_overlap",
+    ]),
     weight: z.number(),
+    confidence: z.number().min(0).max(1).optional(),
+    source_refs: z.array(z.string()).optional(),
   })),
 });
 

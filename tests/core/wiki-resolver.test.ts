@@ -90,4 +90,34 @@ describe("wiki resolver", () => {
     assert.deepEqual(graph.duplicates, []);
     assert.deepEqual(graph.orphans, []);
   });
+
+  it("emits typed graph edges for related links and shared provenance", () => {
+    const graph = buildWikiGraph([
+      {
+        id: "wiki-a",
+        slug: "wiki-a",
+        title: "A",
+        page_kind: "note",
+        scope: "personal",
+        maturity: "draft",
+        lifecycle: "active",
+        source_ids: ["sha256:1"],
+        body_markdown: "[[wiki-b|B]]",
+      },
+      {
+        id: "wiki-b",
+        slug: "wiki-b",
+        title: "B",
+        page_kind: "note",
+        scope: "personal",
+        maturity: "draft",
+        lifecycle: "active",
+        source_ids: ["sha256:1"],
+        body_markdown: "",
+      },
+    ]);
+
+    assert.ok(graph.links.some((edge) => edge.from === "wiki-a" && edge.to === "wiki-b" && edge.type === "related"));
+    assert.ok(graph.links.some((edge) => edge.from === "wiki-a" && edge.to === "wiki-b" && edge.type === "source_overlap"));
+  });
 });

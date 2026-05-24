@@ -28,8 +28,10 @@ export interface WikiGraphNode {
 export interface WikiGraphLink {
   from: string;
   to: string;
-  type: "wikilink" | "source_overlap" | "related";
+  type: "related" | "uses" | "depends_on" | "fixes" | "caused_by" | "verified_by" | "contradicts" | "supersedes" | "same_topic_as" | "source_overlap";
   weight: number;
+  confidence?: number;
+  source_refs?: string[];
 }
 
 export interface WikiGraph {
@@ -62,6 +64,17 @@ function parseWikilinks(text: string): string[] {
     slugs.push(match[1].trim());
   }
   return slugs;
+}
+
+function addGraphLink(links: WikiGraphLink[], link: WikiGraphLink): void {
+  if (links.some((existing) =>
+    existing.from === link.from
+    && existing.to === link.to
+    && existing.type === link.type
+  )) {
+    return;
+  }
+  links.push(link);
 }
 
 function addAlias(index: Map<string, string | null>, key: string | undefined, pageId: string): void {
@@ -114,11 +127,12 @@ export function resolveWikiLinks(
       const targetId = targetIndex.get(slug.toLowerCase());
       if (targetId !== undefined) {
         if (targetId !== null) {
-          links.push({
+          addGraphLink(links, {
             from: page.id,
             to: targetId,
-            type: "wikilink",
+            type: "related",
             weight: 1,
+            confidence: 0.8,
           });
         } else {
           brokenLinks.push({ from: page.id, target: slug });
@@ -149,18 +163,23 @@ export function buildWikiGraph(pages: WikiPage[]): WikiGraph {
     for (let j = i + 1; j < pages.length; j++) {
       const aSources = pages[i].source_ids ?? [];
       const bSources = new Set(pages[j].source_ids ?? []);
-      if (aSources.some((s) => bSources.has(s))) {
-        links.push({
+      const sharedSources = aSources.filter((s) => bSources.has(s)).sort();
+      if (sharedSources.length > 0) {
+        addGraphLink(links, {
           from: pages[i].id,
           to: pages[j].id,
           type: "source_overlap",
           weight: 0.5,
+          confidence: 0.7,
+          source_refs: sharedSources,
         });
-        links.push({
+        addGraphLink(links, {
           from: pages[j].id,
           to: pages[i].id,
           type: "source_overlap",
           weight: 0.5,
+          confidence: 0.7,
+          source_refs: sharedSources,
         });
       }
     }
