@@ -68,6 +68,14 @@ When curation prepares review proposals
 Then only one proposal for that target path MUST be written
 And it MUST be the higher quality candidate.
 
+#### Scenario: Stale Pending Proposal Is Replaced
+
+Given the pending review inbox already has a `wiki_curated_proposal` for `kb/known-fixes/openclaw-auth-expired.md`
+And a later curation run writes a current proposal for the same target path
+When curation writes review proposals
+Then the older pending proposal for that target path MUST be removed
+And the inbox MUST contain only the current proposal for that target path.
+
 ### Requirement: Relationship Links Must Survive Synthesis
 
 When the relationship planner supplies required links, the final curated proposal body MUST include those links as `[[slug|label]]`. When suggested links exist and the body contains no wikilinks, the system SHOULD insert a bounded related section using supplied suggested links.
@@ -104,6 +112,25 @@ Given the AI curator returns safe markdown with missing actionable guidance
 When curation validates the proposal
 Then PraxisBase SHOULD rebuild the body from evidence actions, verification, reusable lessons, and provenance
 And the rebuilt proposal MUST still pass the normal quality gate before review.
+
+#### Scenario: Narrow Markdown Artifacts Are Repaired
+
+Given the AI curator returns safe markdown containing a stray leading `n` before a multi-space bullet marker outside a fenced code block
+When deterministic repair runs
+Then the final proposal body SHOULD contain a valid markdown bullet
+And the stray leading `n` MUST NOT remain in the bullet line.
+
+### Requirement: One-Off Run Reports Must Not Auto-Promote As Stable Guidance
+
+Single-source pages tied to a specific acceptance-test run, smoke report, run id, or test report artifact MUST require human review even when they contain actionability and verification wording. Reusable acceptance-test or smoke-test procedures without a concrete artifact id MUST NOT be marked `one_off_run_report`. The reusable fix or procedure may be synthesized from repeated evidence, but the one-off report itself is evidence, not stable agent guidance.
+
+#### Scenario: One-Off Acceptance Run Requires Review
+
+Given a single-source curated wiki proposal targets a specific OpenClaw acceptance-test run id
+And the body has when-to-use, action, verification, reusable lessons, and provenance sections
+When promotion quality assessment runs
+Then it MUST mark `one_off_run_report`
+And the proposal MUST NOT auto-promote.
 
 ### Requirement: Wiki Graph And Site Must Resolve Link Aliases Safely
 

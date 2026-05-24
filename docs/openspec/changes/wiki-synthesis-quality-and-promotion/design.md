@@ -44,6 +44,8 @@ Page kind selection must prefer the action a future agent can take. Evidence who
 
 Within one curation run, multiple synthesized proposals MUST NOT be written for the same stable `target_path`. The curation stage must keep the highest quality candidate for that path, using source count, confidence, page-kind usefulness, and guard quality as tie breakers. Dropped duplicates remain represented by provenance in future merge/update runs rather than becoming competing review items.
 
+Pending review proposals are also treated as a queue keyed by stable `target_path`. When a new curation run writes a current proposal for a target, older pending `wiki_curated_proposal` files for the same target are removed before writing the new proposal. This prevents the review inbox from showing stale duplicates that no longer represent the current synthesis result. Review-mode curation is a single-writer operation; concurrent runs may use last-writer-wins behavior and must tolerate already-removed stale files.
+
 ## Deterministic Repair
 
 After AI synthesis and before quality assessment, PraxisBase runs deterministic repair:
@@ -53,6 +55,7 @@ After AI synthesis and before quality assessment, PraxisBase runs deterministic 
 3. Insert missing required wikilinks exactly as `[[slug|label]]`.
 4. If no valid context wikilink exists and suggested links are available, insert up to three suggested wikilinks using resolver slugs from stable page ids or from planned pages that are likely to enter stable knowledge in the same run.
 5. Insert missing provenance from source refs and hashes.
+6. Normalize narrow markdown artifacts introduced by AI synthesis, such as a stray leading `n` before a multi-space bullet marker outside fenced code blocks.
 
 Repair is deterministic and auditable. It may make a good proposal easier to promote, but it may not invent evidence or links.
 
@@ -83,6 +86,7 @@ Missing required structure means the body lacks one of the required section grou
 Human-required reasons remain:
 
 - weak single source;
+- one-off run/report page;
 - low confidence;
 - unresolved conflict;
 - missing wikilinks;
@@ -90,6 +94,8 @@ Human-required reasons remain:
 - skill/policy target;
 - archive/supersede;
 - ambiguous merge target.
+
+One-off run/report pages are evidence, not stable guidance. A single-source page whose title, path, body, or provenance is tied to a specific acceptance-test run, smoke report, run id, or test report with an artifact id must require human review even if the text has actionability and verification wording. Reusable acceptance-test procedures without a concrete run/report id should not be flagged by this reason. A future agent should learn the reusable fix or procedure, not memorize one run artifact as a known fix.
 
 ## Review And Promotion
 

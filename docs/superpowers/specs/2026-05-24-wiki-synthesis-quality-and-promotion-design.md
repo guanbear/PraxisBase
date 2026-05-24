@@ -61,6 +61,7 @@ The system may repair AI output once before assessment:
 - rebuild malformed bodies from evidence summaries when headings are missing or duplicated;
 - append a `## Related Wiki Pages` section for missing required/suggested relationship links;
 - append/normalize `## Provenance` from `source_refs` and `source_hashes`;
+- normalize narrow AI markdown artifacts such as a stray leading `n` before a multi-space bullet marker outside fenced code blocks;
 - keep privacy failures as failures, not repairs.
 
 Repair exists to make good evidence usable. It must not hide weak evidence: if there is no concrete action, verification, or reusable lesson, the proposal remains blocked or human-required.
@@ -77,7 +78,10 @@ Personal mode can auto-promote only low-risk create proposals:
 - confidence is at least `0.82`;
 - no hard blocks and no quality human-required reasons;
 - strong single-source evidence is allowed only when it has action plus verification or reusable lesson;
+- single-source pages tied to a specific run id, acceptance-test run, smoke report, or test report artifact require human review even when they look actionable;
 - update, merge, archive, supersede, skill, policy, team/org/global, private, ambiguous merge, or missing required links require human review.
+
+Pending review proposals are keyed by stable target path. If a later curation run writes a current proposal for a target, older pending `wiki_curated_proposal` files for that target are removed before the new proposal is written, so the review queue represents the current synthesis instead of accumulating stale duplicates. Review-mode curation is single-writer/last-writer-wins and tolerates already-removed stale files.
 
 Team mode remains review-only by default. GitLab/CI approval is the team promotion gate.
 
@@ -103,3 +107,4 @@ The fix is to make the expected wiki artifact testable. Every smoke must report 
 - Team mode never auto-promotes by default.
 - A controlled end-to-end wiki run produces fewer pages than evidence items and graph links greater than zero when related pages exist.
 - Resolved link count and rendered HTML links are part of the acceptance signal; broken title-only slugs must not be treated as successful related links.
+- Single-source one-off run/report candidates are human-required, stale same-target pending proposals are replaced, and narrow AI bullet artifacts are repaired before assessment.

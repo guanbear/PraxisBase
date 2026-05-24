@@ -154,6 +154,23 @@ function hasDuplicateSourceHashAcrossCreates(
   return false;
 }
 
+function isOneOffRunReport(proposal: CuratedWikiProposal): boolean {
+  const text = [
+    proposal.target_path,
+    proposal.title,
+    proposal.summary,
+    proposal.body_markdown,
+    ...proposal.source_refs,
+    ...proposal.provenance.map((p) => p.source_ref),
+  ].join("\n");
+  const hasExplicitRunId = /\brun[\s_-]?id\s*[:=]?\s*[a-z0-9][a-z0-9._-]{5,}\b/i.test(text);
+  const hasReportTerm = /\b(?:acceptance[-_\s]?tests?|stability[-_\s]?smoke|smoke[-_\s]?tests?|run[-_\s]?report|test[-_\s]?report|replay[-_\s]?report|workflow[-_\s]?run|ci[-_\s]?run)\b/i.test(text);
+  const hasSourceReportNamespace = /\b(?:report|reports|run|runs|workflow|job|build)[:/_-]+[a-z0-9._-]*\d[a-z0-9._-]{5,}\b/i.test(text);
+  const hasMixedArtifactId = /\b[a-z][a-z0-9_-]*\d[a-z0-9_-]{5,}\b/i.test(text);
+  const hasUuid = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i.test(text);
+  return hasExplicitRunId || (hasReportTerm && (hasMixedArtifactId || hasSourceReportNamespace || hasUuid));
+}
+
 // Main assessment function.
 
 /**
@@ -240,6 +257,11 @@ export function assessWikiPromotionQuality(
     if (!hasStrongSignal) {
       humanRequired.push("weak_single_source");
     }
+  }
+
+  // 1b. One-off run/report pages are evidence, not stable agent guidance.
+  if (proposal.source_count < 2 && isOneOffRunReport(proposal)) {
+    humanRequired.push("one_off_run_report");
   }
 
   // 2. Low confidence

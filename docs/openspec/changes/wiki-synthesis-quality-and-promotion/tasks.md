@@ -23,3 +23,6 @@
 - [x] Classify reusable status/health-check evidence as procedures.
 - [x] Deduplicate same-run proposals with the same target path before review writes.
 - [x] Explain daily `ai_distill.human_required` as privacy-gated input count, not wiki review count.
+- [x] Require review for single-source one-off run/report pages.
+- [x] Replace stale pending proposals for the same target path.
+- [x] Repair narrow AI markdown bullet artifacts before quality assessment.

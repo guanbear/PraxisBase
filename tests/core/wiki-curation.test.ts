@@ -490,6 +490,80 @@ describe("wiki evidence curation", () => {
     assert.equal(proposal.title, "ACK timing before long-running agent work");
     assert.equal(proposal.source_count, 2);
   });
+
+  it("replaces stale pending proposals that target the same stable path", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-replace-stale-target-"));
+    const targetPath = "kb/known-fixes/openclaw-auth-expired.md";
+    const unrelatedPath = "kb/known-fixes/unrelated-openclaw-fix.md";
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/inbox/proposals/wiki-curated-stale.json"), JSON.stringify({
+      id: "wiki-curated-stale",
+      protocol_version: PROTOCOL_VERSION,
+      type: "wiki_curated_proposal",
+      target_path: targetPath,
+      action: "create",
+      page_kind: "known_fix",
+      scope: "personal",
+      title: "Stale OpenClaw auth proposal",
+      summary: "Old stale proposal.",
+      body_markdown: "# Stale\n\n## Problem\nOld.",
+      source_refs: ["old:source"],
+      source_hashes: ["sha256:old"],
+      source_count: 1,
+      evidence_ids: ["old"],
+      confidence: 0.66,
+      maturity: "draft",
+      provenance: [{ source_ref: "old:source", source_hash: "sha256:old" }],
+      review_hint: { why_review: "Old", suggested_decision: "edit", risk_notes: [] },
+      guards: [{ id: "path", ok: true, message: "allowed" }],
+      created_at: "2026-05-20T00:00:00.000Z",
+    }), "utf8");
+    await writeFile(join(root, ".praxisbase/inbox/proposals/wiki-curated-unrelated.json"), JSON.stringify({
+      id: "wiki-curated-unrelated",
+      protocol_version: PROTOCOL_VERSION,
+      type: "wiki_curated_proposal",
+      target_path: unrelatedPath,
+      action: "create",
+      page_kind: "known_fix",
+      scope: "personal",
+      title: "Unrelated OpenClaw fix",
+      summary: "Unrelated proposal must remain.",
+      body_markdown: "# Unrelated\n\n## Problem\nOld.",
+      source_refs: ["unrelated:source"],
+      source_hashes: ["sha256:unrelated"],
+      source_count: 1,
+      evidence_ids: ["unrelated"],
+      confidence: 0.66,
+      maturity: "draft",
+      provenance: [{ source_ref: "unrelated:source", source_hash: "sha256:unrelated" }],
+      review_hint: { why_review: "Unrelated", suggested_decision: "edit", risk_notes: [] },
+      guards: [{ id: "path", ok: true, message: "allowed" }],
+      created_at: "2026-05-20T00:00:00.000Z",
+    }), "utf8");
+    await writeFile(join(root, ".praxisbase/inbox/proposals/manual-note.json"), JSON.stringify({
+      id: "manual-note",
+      type: "manual_review_note",
+      target_path: targetPath,
+    }), "utf8");
+    await writeFile(join(root, ".praxisbase/inbox/proposals/malformed.json"), "{not-json", "utf8");
+    await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
+    await writeCapture(root, "capture_2", "OpenClaw auth expired again; refreshing login fixed sync. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
+
+    const report = await curateWiki(root, { mode: "review", degraded: true, now: "2026-05-23T00:00:00.000Z" });
+
+    assert.equal(report.output_counts.written_proposals, 1);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.includes("wiki-curated-stale.json"), false);
+    assert.equal(proposalFiles.includes("wiki-curated-unrelated.json"), true);
+    assert.equal(proposalFiles.includes("manual-note.json"), true);
+    assert.equal(proposalFiles.includes("malformed.json"), true);
+    const currentFiles = proposalFiles.filter((file) => !["wiki-curated-unrelated.json", "manual-note.json", "malformed.json"].includes(file));
+    assert.equal(currentFiles.length, 1);
+    const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", currentFiles[0]), "utf8"));
+    assert.equal(proposal.target_path, targetPath);
+    assert.match(proposal.title, /OpenClaw auth expired/i);
+    assert.notEqual(proposal.id, "wiki-curated-stale");
+  });
 });
 
 describe("wiki observation extraction", () => {

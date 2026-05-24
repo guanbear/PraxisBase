@@ -265,6 +265,7 @@ describe("WikiHumanRequiredReasonSchema", () => {
       "destructive_action",
       "ambiguous_merge_target",
       "multiple_canonical_targets",
+      "one_off_run_report",
     ];
     for (const r of reasons) {
       assert.equal(WikiHumanRequiredReasonSchema.parse(r), r);

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { makeId, computeHash } from "../protocol/id.js";
@@ -778,11 +778,25 @@ function ensureReusableLessonsSection(body: string, evidence: WikiEvidenceItem[]
   return `${body.replace(/\s+$/, "")}\n${lines.join("\n")}\n`;
 }
 
+function normalizeMarkdownBulletArtifacts(body: string): string {
+  const lines = body.split("\n");
+  let inCodeBlock = false;
+  return lines.map((line) => {
+    if (/^\s*```/.test(line.trim())) {
+      inCodeBlock = !inCodeBlock;
+      return line;
+    }
+    if (inCodeBlock) return line;
+    return line.replace(/^(\s*)n([*+-]\s{2,})/, "$1$2");
+  }).join("\n");
+}
+
 function repairWikiBody(body: string, cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], context?: SynthesisContext): string {
   if (containsPrivateMaterial(body)) return body;
+  const normalizedBody = normalizeMarkdownBulletArtifacts(body);
   return ensureProvenanceSection(
     ensureReusableLessonsSection(
-      ensureRelatedLinksSection(body, context),
+      ensureRelatedLinksSection(normalizedBody, context),
       evidence,
     ),
     cluster,
@@ -1112,6 +1126,46 @@ function sanitizeProposalRelationships(proposal: CuratedWikiProposal, allowedTar
   });
 }
 
+async function removeStaleProposalFilesForTargets(root: string, proposals: CuratedWikiProposal[]): Promise<void> {
+  const targetPaths = new Set(proposals.map((proposal) => proposal.target_path));
+  const currentIds = new Set(proposals.map((proposal) => proposal.id));
+  if (targetPaths.size === 0) return;
+
+  let files: string[];
+  try {
+    files = await readdir(join(root, protocolPaths.inboxProposals));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
+  }
+
+  for (const file of files) {
+    if (!file.endsWith(".json")) continue;
+    const path = join(root, protocolPaths.inboxProposals, file);
+    let existing: unknown;
+    try {
+      existing = JSON.parse(await readFile(path, "utf-8"));
+    } catch {
+      continue;
+    }
+    const record = existing && typeof existing === "object" ? existing as { id?: unknown; target_path?: unknown; type?: unknown } : {};
+    if (
+      record.type === "wiki_curated_proposal"
+      && typeof record.target_path === "string"
+      && targetPaths.has(record.target_path)
+      && typeof record.id === "string"
+    ) {
+      const isCurrentCanonicalFile = currentIds.has(record.id) && file === `${record.id}.json`;
+      if (isCurrentCanonicalFile) continue;
+      try {
+        await unlink(path);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
+  }
+}
+
 export async function curateWiki(root: string, options: CurateWikiOptions): Promise<WikiCurationReport> {
   const now = options.now ?? new Date().toISOString();
   const aiConfig = await readAiProviderConfig(root);
@@ -1383,6 +1437,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
 
   let written = 0;
   if (options.mode === "review") {
+    await removeStaleProposalFilesForTargets(root, proposals);
     for (const proposal of proposals) {
       await writeJson(root, `${protocolPaths.inboxProposals}/${proposal.id}.json`, proposal);
       written++;

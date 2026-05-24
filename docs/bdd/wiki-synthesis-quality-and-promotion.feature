@@ -83,6 +83,26 @@ Feature: Wiki synthesis quality and promotion
     When PraxisBase writes review proposals
     Then only the higher quality proposal is written for that target path
 
+  Scenario: Stale pending proposal for the same target is replaced
+    Given the review inbox already contains a pending wiki proposal for "kb/known-fixes/openclaw-auth-expired.md"
+    And a later curation run synthesizes a current proposal for the same stable path
+    When PraxisBase writes review proposals
+    Then the stale pending proposal is removed
+    And only the current proposal remains for that stable path
+
+  Scenario: One-off run reports stay review-gated
+    Given a single-source curated proposal describes a specific OpenClaw acceptance-test run id
+    And the proposal body has action and verification sections
+    When promotion quality is assessed
+    Then the proposal is marked "one_off_run_report"
+    And personal auto-promotion does not promote it
+
+  Scenario: Narrow AI markdown artifacts are repaired
+    Given the AI curator returns a wiki body with "n*   Test reports should be checked"
+    When deterministic repair runs
+    Then the proposal body contains "*   Test reports should be checked"
+    And the proposal body does not contain "n*   Test reports should be checked"
+
   Scenario: Team mode remains review-gated
     Given a team-scoped curated proposal passes content quality
     When the default team review policy runs

@@ -262,6 +262,147 @@ describe("assessWikiPromotionQuality - human required", () => {
     assert.equal(result.human_required.length, 0);
     assert.equal(result.passed, true);
   });
+
+  it("human-required for single-source one-off run reports even when actionability guards pass", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      title: "OpenClaw acceptance test environment run octoclaw acceptance test mp9ot12v",
+      target_path: "kb/known-fixes/openclaw-acceptance-test-environment-run-octoclaw-acceptance-test-mp9ot12v.md",
+      summary: "A specific OpenClaw acceptance test run interacted via Slack and recorded one run result.",
+      body_markdown: [
+        "# OpenClaw acceptance test environment run octoclaw acceptance test mp9ot12v",
+        "",
+        "## When to Use",
+        "Use this when reviewing that exact acceptance test run.",
+        "",
+        "## Symptoms",
+        "The run reported a dispatch warning.",
+        "",
+        "## What To Do",
+        "Review the run report before taking action.",
+        "",
+        "## Verify",
+        "Check the run log.",
+        "",
+        "## Reusable Lessons",
+        "Do not generalize a single run id into a stable fix.",
+        "",
+        "## Provenance",
+        "- openclaw:report:octoclaw-acceptance-test-mp9ot12v (sha256:a)",
+      ].join("\n"),
+      source_refs: ["openclaw:report:octoclaw-acceptance-test-mp9ot12v"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      provenance: [{ source_ref: "openclaw:report:octoclaw-acceptance-test-mp9ot12v", source_hash: "sha256:a" }],
+    }));
+
+    assert.ok(result.human_required.includes("one_off_run_report"));
+    assert.equal(result.passed, false);
+  });
+
+  it("does not treat reusable acceptance test procedures as one-off run reports", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      title: "Run OpenClaw acceptance test after gateway changes",
+      target_path: "kb/procedures/run-openclaw-acceptance-test-after-gateway-changes.md",
+      page_kind: "procedure",
+      body_markdown: [
+        "# Run OpenClaw acceptance test after gateway changes",
+        "",
+        "## When to Use",
+        "Use this after changing gateway routing.",
+        "",
+        "## Symptoms",
+        "Gateway changes need a repeatable acceptance check.",
+        "",
+        "## What To Do",
+        "Run the OpenClaw acceptance test suite.",
+        "",
+        "## Verify",
+        "Confirm the acceptance test suite passes.",
+        "",
+        "## Reusable Lessons",
+        "Run acceptance checks after gateway routing changes.",
+        "",
+        "## Provenance",
+        "- codex:session:1 (sha256:a)",
+      ].join("\n"),
+      source_refs: ["codex:session:1"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+    }));
+
+    assert.equal(result.human_required.includes("one_off_run_report"), false);
+  });
+
+  it("human-required for explicit run id artifacts without broader report wording", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      title: "OpenClaw run id abc123def456",
+      target_path: "kb/known-fixes/openclaw-run-id-abc123def456.md",
+      summary: "Run id: abc123def456 recorded a one-off dispatch warning.",
+      body_markdown: [
+        "# OpenClaw run id abc123def456",
+        "",
+        "## When to Use",
+        "Use this only when reviewing this exact run id.",
+        "",
+        "## Symptoms",
+        "Run id: abc123def456 recorded a dispatch warning.",
+        "",
+        "## What To Do",
+        "Review the source run before taking action.",
+        "",
+        "## Verify",
+        "Check the run output.",
+        "",
+        "## Reusable Lessons",
+        "Do not generalize one run id into a stable fix.",
+        "",
+        "## Provenance",
+        "- openclaw:run:abc123def456 (sha256:a)",
+      ].join("\n"),
+      source_refs: ["openclaw:run:abc123def456"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      provenance: [{ source_ref: "openclaw:run:abc123def456", source_hash: "sha256:a" }],
+    }));
+
+    assert.ok(result.human_required.includes("one_off_run_report"));
+  });
+
+  it("human-required for underscore report artifacts and provenance-only run ids", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      title: "OpenClaw acceptance test dispatch warning",
+      target_path: "kb/known-fixes/openclaw-acceptance-test-dispatch-warning.md",
+      summary: "A source report captured one specific dispatch warning.",
+      body_markdown: [
+        "# OpenClaw acceptance test dispatch warning",
+        "",
+        "## When to Use",
+        "Use this when reviewing the linked source artifact.",
+        "",
+        "## Symptoms",
+        "A dispatch warning appeared in the test output.",
+        "",
+        "## What To Do",
+        "Review the report before deciding whether a reusable fix exists.",
+        "",
+        "## Verify",
+        "Check the source report.",
+        "",
+        "## Reusable Lessons",
+        "Keep source reports as evidence until repeated evidence exists.",
+        "",
+        "## Provenance",
+        "- openclaw:report:acceptance_test_run:abc123def456 (sha256:a)",
+      ].join("\n"),
+      source_refs: ["openclaw:report:acceptance_test_run:abc123def456"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      provenance: [{ source_ref: "openclaw:report:acceptance_test_run:abc123def456", source_hash: "sha256:a" }],
+    }));
+
+    assert.ok(result.human_required.includes("one_off_run_report"));
+  });
 });
 
 describe("promotionTimeGuard", () => {

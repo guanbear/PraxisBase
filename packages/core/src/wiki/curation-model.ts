@@ -341,6 +341,7 @@ export const WikiHumanRequiredReasonSchema = z.enum([
   "destructive_action",
   "ambiguous_merge_target",
   "multiple_canonical_targets",
+  "one_off_run_report",
 ]);
 
 /** Promotion quality assessment result for a page plan. */

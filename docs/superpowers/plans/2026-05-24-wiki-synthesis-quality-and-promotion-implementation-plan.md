@@ -137,3 +137,20 @@ git add docs/superpowers/specs/2026-05-24-wiki-synthesis-quality-and-promotion-d
   tests/core/wiki-promotion-quality.test.ts
 git commit -m "fix: enforce wiki synthesis quality contract"
 ```
+
+## Task 6: Real-Run Quality Follow-Up
+
+- [ ] Add a failing promotion-quality test proving a single-source one-off acceptance/smoke/run report is marked `one_off_run_report` even when actionability guards pass.
+- [ ] Add a failing curation test proving an existing pending proposal with the same `target_path` is removed before writing the current proposal.
+- [ ] Add a failing curator repair test proving a stray leading `n` before a markdown bullet is normalized.
+- [ ] Implement the smallest quality-gate and curation-writer changes needed to pass those tests:
+  - add `one_off_run_report` to human-required quality reasons;
+  - detect one-off run/report signatures only for single-source proposals;
+  - remove stale pending `wiki_curated_proposal` files keyed by the same target path before review writes;
+  - normalize the narrow `n*` / `n-` bullet artifact during deterministic repair.
+- [ ] Run:
+
+```bash
+pnpm build && pnpm exec tsc -p tsconfig.tests.json && node --test dist-tests/tests/core/wiki-promotion-quality.test.js dist-tests/tests/core/wiki-curation.test.js dist-tests/tests/core/wiki-curator-ai.test.js
+pnpm check
+```

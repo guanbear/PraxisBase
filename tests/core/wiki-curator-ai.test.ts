@@ -468,6 +468,59 @@ describe("AI wiki curator", () => {
     }
   });
 
+  it("repairs accidental leading n before markdown bullet lists without changing code fences", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw Slack replay stability failures",
+              summary: "Replay failures need stable verification.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-slack-replay-stability-failures.md",
+              body_markdown: [
+                "# OpenClaw Slack replay stability failures",
+                "",
+                "## Problem",
+                "Slack replay verification can fail after deploy.",
+                "",
+                "## Fix",
+                "n*   Test reports should be checked before restarting the gateway.",
+                "n-   Restart only after the report shows a gateway drift.",
+                "n+   Record the verification result.",
+                "n* means multiply by n in a literal note.",
+                "```text",
+                "n* do not change this code sample",
+                "```",
+                "",
+                "## Verification",
+                "Replay gate passed.",
+                "",
+                "## Reusable Lessons",
+                "Check replay reports before taking repair action.",
+              ].join("\n"),
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.doesNotMatch(result.proposal.body_markdown, /^n\*\s{2,}/m);
+      assert.match(result.proposal.body_markdown, /^\*\s+Test reports/m);
+      assert.match(result.proposal.body_markdown, /^-\s+Restart only/m);
+      assert.match(result.proposal.body_markdown, /^\+\s+Record the verification result/m);
+      assert.match(result.proposal.body_markdown, /^n\* means multiply by n/m);
+      assert.match(result.proposal.body_markdown, /^n\* do not change this code sample/m);
+    }
+  });
+
   it("rejects AI body containing private material", async () => {
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,
