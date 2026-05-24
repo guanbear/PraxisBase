@@ -164,4 +164,99 @@ describe("daily experience protocol", () => {
     assert.equal(result.saved_ratio, 0.9);
     assert.equal(result.matched_rule_family, "test-output");
   });
+
+  it("accepts a daily report with context economy summary", () => {
+    const parsed = DailyExperienceReportSchema.parse({
+      id: "daily_2026-05-25",
+      protocol_version: "0.1",
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: true,
+        model: "GLM-4.7",
+        chunks: 2,
+        distilled: 2,
+        failed: 0,
+        human_required: 0,
+        cache_hits: 0,
+        warnings: [],
+      },
+      context_economy: {
+        enabled: true,
+        reducer_version: REDUCER_VERSION,
+        rule_set_hash: "sha256:rules123",
+        items_seen: 5,
+        items_reduced: 3,
+        items_passed_through: 2,
+        input_bytes: 10000,
+        output_bytes: 4000,
+        saved_bytes: 6000,
+        report_ref: ".praxisbase/reports/context-economy/ctx-econ_20260525T000000.json",
+        warnings: [],
+      },
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      outputs: [],
+      warnings: [],
+      created_at: "2026-05-25T00:00:00.000Z",
+    });
+
+    assert.ok(parsed.context_economy);
+    assert.equal(parsed.context_economy.enabled, true);
+    assert.equal(parsed.context_economy.items_seen, 5);
+    assert.equal(parsed.context_economy.saved_bytes, 6000);
+  });
+
+  it("accepts a daily report with context economy disabled", () => {
+    const parsed = DailyExperienceReportSchema.parse({
+      id: "daily_2026-05-25",
+      protocol_version: "0.1",
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai_distill: {
+        configured: false,
+        mode: "degraded",
+        production_ready: false,
+        chunks: 0,
+        distilled: 0,
+        failed: 0,
+        human_required: 0,
+        warnings: [],
+      },
+      context_economy: {
+        enabled: false,
+        reducer_version: REDUCER_VERSION,
+        rule_set_hash: "disabled",
+        items_seen: 0,
+        items_reduced: 0,
+        items_passed_through: 0,
+        input_bytes: 0,
+        output_bytes: 0,
+        saved_bytes: 0,
+        warnings: [],
+      },
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      outputs: [],
+      warnings: [],
+      created_at: "2026-05-25T00:00:00.000Z",
+    });
+
+    assert.ok(parsed.context_economy);
+    assert.equal(parsed.context_economy.enabled, false);
+  });
+
+  it("exposes project rules path", () => {
+    assert.equal(protocolPaths.contextEconomyProjectRules, ".praxisbase/context-economy/rules.json");
+  });
 });

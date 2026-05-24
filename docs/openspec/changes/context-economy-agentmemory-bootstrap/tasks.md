@@ -8,11 +8,11 @@
 - [x] Add reducer version, rule-set hash, reduction hash, matched rule, facts, and warnings to reduction results.
 - [x] Add built-in rule families for Codex sessions, OpenClaw logs, command output, test output, git output, agentmemory-shaped memories, JSON/JSONL, and generic fallback.
 - [x] Add deterministic user/project rule overlay by rule id and diagnostics for invalid regex.
-- [ ] Add user/project rule overlay loading from disk.
-- [ ] Insert reducer before chunking and AI distill in daily/source ingestion.
-- [ ] Ensure reducer version/rule-set changes cannot silently reuse stale AI distill cache entries.
+- [x] Add user/project rule overlay loading from disk.
+- [x] Insert reducer before chunking and AI distill in daily/source ingestion.
+- [x] Ensure reducer version/rule-set changes cannot silently reuse stale AI distill cache entries.
 - [x] Add `context_economy` report fields and compact reducer debug reports.
-- [ ] Add a `--no-context-economy` or equivalent bypass for debugging.
+- [x] Add a `--no-context-economy` or equivalent bypass for debugging.
 - [x] Run focused reducer/daily tests.
 
 ## M17 AgentMemory Interop

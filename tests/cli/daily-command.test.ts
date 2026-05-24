@@ -77,4 +77,33 @@ describe("daily CLI command", () => {
     assert.match(parsed.personal, /praxisbase daily run --mode personal/);
     assert.equal(parsed.installed, false);
   });
+
+  it("passes noContextEconomy flag through to the daily experience runner", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-no-ctx-econ-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await sourceCommand(root, "add", {
+      name: "local-codex",
+      agent: "codex",
+      type: "local",
+      path: sessions,
+      scope: "personal",
+      json: true,
+    });
+
+    const output = await dailyCommand(root, "run", {
+      mode: "personal",
+      degraded: true,
+      noContextEconomy: true,
+      json: true,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.ok(parsed.report.context_economy);
+    assert.equal(parsed.report.context_economy.enabled, false);
+    assert.equal(parsed.report.context_economy.rule_set_hash, "disabled");
+  });
 });

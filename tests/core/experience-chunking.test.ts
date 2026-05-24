@@ -169,6 +169,48 @@ describe("experience chunking", () => {
     assert.ok(chunks.every((chunk) => Buffer.byteLength(chunk.text, "utf8") <= 1024));
     assert.ok(elapsedMs < 250, `chunking took ${elapsedMs}ms`);
   });
+
+  it("produces different chunk hashes when reducerIdentitySalt changes", () => {
+    const base = {
+      source_id: "source_1",
+      agent: "codex" as const,
+      channel: "local" as const,
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:source",
+      scope_hint: "personal" as const,
+      text: "Implemented OpenClaw auth refresh and pnpm test passed.",
+      maxChunkBytes: 2000,
+    };
+
+    const withoutSalt = chunkTextExperience(base);
+    const withSalt = chunkTextExperience({ ...base, reducerIdentitySalt: "context-reducer-v1:sha256:abc" });
+
+    assert.equal(withoutSalt.length, 1);
+    assert.equal(withSalt.length, 1);
+    assert.notEqual(withoutSalt[0].chunk_hash, withSalt[0].chunk_hash);
+    assert.equal(withSalt[0].reducer_identity_salt, "context-reducer-v1:sha256:abc");
+    assert.equal(withoutSalt[0].reducer_identity_salt, undefined);
+  });
+
+  it("preserves stable hashes when reducerIdentitySalt is the same", () => {
+    const base = {
+      source_id: "source_1",
+      agent: "codex" as const,
+      channel: "local" as const,
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:source",
+      scope_hint: "personal" as const,
+      text: "Fixed OpenClaw ACK timing and pnpm test passed.",
+      maxChunkBytes: 2000,
+      reducerIdentitySalt: "context-reducer-v1:sha256:same",
+    };
+
+    const first = chunkTextExperience(base);
+    const second = chunkTextExperience(base);
+
+    assert.equal(first[0].chunk_hash, second[0].chunk_hash);
+    assert.equal(first[0].chunk_id, second[0].chunk_id);
+  });
 });
 
 describe("AI privacy gates", () => {

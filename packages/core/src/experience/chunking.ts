@@ -5,11 +5,15 @@ import { basename, extname, isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
 import { computeHash, makeId } from "../protocol/id.js";
 import type {
+  ContextReducerRule,
+  ContextReductionResult,
   ExperienceScopeHint,
   ExperienceSourceChannel,
   ExperienceSourceConfig,
+  NormalizedReducerInput,
 } from "../protocol/schemas.js";
 import type { AgentProfile } from "../protocol/types.js";
+import { contextReducerIdentitySalt, reduceContext } from "./context-reducer.js";
 
 const execFileAsync = promisify(execFile);
 const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log", ".sqlite"]);
@@ -27,6 +31,7 @@ export interface ExperienceChunk {
   chunk_hash: string;
   text: string;
   created_at?: string;
+  reducer_identity_salt?: string;
 }
 
 export interface ChunkTextExperienceInput {
@@ -39,6 +44,7 @@ export interface ChunkTextExperienceInput {
   text: string;
   maxChunkBytes?: number;
   created_at?: string;
+  reducerIdentitySalt?: string;
 }
 
 export interface ChunkExperienceSourceOptions {
@@ -46,6 +52,10 @@ export interface ChunkExperienceSourceOptions {
   maxChunkBytes?: number;
   limit?: number;
   now?: string;
+  contextReducer?: {
+    projectRules?: ContextReducerRule[];
+    recordResult?: (result: ContextReductionResult) => void;
+  };
 }
 
 interface OpenClawSqliteChunkRow {
@@ -167,12 +177,16 @@ function sourceRefForFile(source: ExperienceSourceConfig, filePath: string): str
 export function chunkTextExperience(input: ChunkTextExperienceInput): ExperienceChunk[] {
   const maxChunkBytes = input.maxChunkBytes ?? DEFAULT_MAX_CHUNK_BYTES;
   return splitByBytes(input.text, maxChunkBytes).map((text, index) => {
-    const chunkHash = computeHash(JSON.stringify({
+    const hashPayload: Record<string, unknown> = {
       source_ref: input.source_ref,
       source_hash: input.source_hash,
       index,
       text,
-    }));
+    };
+    if (input.reducerIdentitySalt) {
+      hashPayload.reducer_identity_salt = input.reducerIdentitySalt;
+    }
+    const chunkHash = computeHash(JSON.stringify(hashPayload));
     return {
       source_id: input.source_id,
       agent: input.agent,
@@ -184,6 +198,7 @@ export function chunkTextExperience(input: ChunkTextExperienceInput): Experience
       chunk_hash: chunkHash,
       text,
       created_at: input.created_at,
+      reducer_identity_salt: input.reducerIdentitySalt,
     };
   });
 }
@@ -219,6 +234,7 @@ async function chunksFromOpenClawSqlite(
   source: ExperienceSourceConfig,
   filePath: string,
   maxChunkBytes: number,
+  contextReducer?: ChunkExperienceSourceOptions["contextReducer"],
 ): Promise<ExperienceChunk[]> {
   const query = [
     "SELECT id, path, text, updated_at",
@@ -234,16 +250,31 @@ async function chunksFromOpenClawSqlite(
     .flatMap((row) => {
       const sourceRef = `openclaw-memory://${row.path as string}#${row.id as string}`;
       const text = row.text as string;
+      const sourceHash = computeHash(JSON.stringify({ source_id: source.id, source_ref: sourceRef, text }));
+      const reduced = reduceTextForChunking({
+        text,
+        sourceRef,
+        sourceHash,
+        contextReducer,
+        sourceMetadata: {
+          agent: source.agent,
+          source_id: source.id,
+          source_type: source.source_type,
+          path: row.path as string,
+          adapter: "openclaw-sqlite",
+        },
+      });
       return chunkTextExperience({
         source_id: source.id,
         agent: source.agent,
         channel: source.channel,
         source_ref: sourceRef,
-        source_hash: computeHash(JSON.stringify({ source_id: source.id, source_ref: sourceRef, text })),
+        source_hash: sourceHash,
         scope_hint: source.scope_default,
-        text,
+        text: reduced.text,
         maxChunkBytes,
         created_at: typeof row.updated_at === "number" ? new Date(row.updated_at * 1000).toISOString() : undefined,
+        reducerIdentitySalt: reduced.reducerIdentitySalt,
       });
     });
 }
@@ -253,25 +284,65 @@ async function chunksFromFile(
   filePath: string,
   maxBytes: number,
   maxChunkBytes: number,
+  contextReducer?: ChunkExperienceSourceOptions["contextReducer"],
 ): Promise<ExperienceChunk[]> {
   const ext = extname(filePath).toLowerCase();
-  if (ext === ".sqlite") return chunksFromOpenClawSqlite(source, filePath, maxChunkBytes);
+  if (ext === ".sqlite") return chunksFromOpenClawSqlite(source, filePath, maxChunkBytes, contextReducer);
 
   const s = await stat(filePath);
   if (s.size > maxBytes) return [];
   const rawText = await readFile(filePath, "utf8");
   const text = meaningfulText(rawText, source.agent);
   const sourceRef = sourceRefForFile(source, filePath);
+  const sourceHash = computeHash(rawText);
+  const reduced = reduceTextForChunking({
+    text,
+    sourceRef,
+    sourceHash,
+    contextReducer,
+    sourceMetadata: {
+      agent: source.agent,
+      source_id: source.id,
+      source_type: source.source_type,
+      path: filePath,
+      extension: ext,
+    },
+  });
   return chunkTextExperience({
     source_id: source.id,
     agent: source.agent,
     channel: source.channel,
     source_ref: sourceRef,
-    source_hash: computeHash(rawText),
+    source_hash: sourceHash,
     scope_hint: source.scope_default,
-    text,
+    text: reduced.text,
     maxChunkBytes,
+    reducerIdentitySalt: reduced.reducerIdentitySalt,
   });
+}
+
+function reduceTextForChunking(input: {
+  text: string;
+  sourceRef: string;
+  sourceHash: string;
+  sourceMetadata: Record<string, unknown>;
+  contextReducer?: ChunkExperienceSourceOptions["contextReducer"];
+}): { text: string; reducerIdentitySalt?: string } {
+  if (!input.contextReducer) return { text: input.text };
+  const reducerInput: NormalizedReducerInput = {
+    combined_text: input.text,
+    source_metadata: input.sourceMetadata,
+    source_ref: input.sourceRef,
+    source_hash: input.sourceHash,
+  };
+  const result = reduceContext(reducerInput, {
+    projectRules: input.contextReducer.projectRules,
+  });
+  input.contextReducer.recordResult?.(result);
+  return {
+    text: result.text,
+    reducerIdentitySalt: contextReducerIdentitySalt(result),
+  };
 }
 
 export async function chunkExperienceSource(
@@ -290,7 +361,7 @@ export async function chunkExperienceSource(
   const chunks: ExperienceChunk[] = [];
   for (const file of files) {
     if (chunks.length >= limit) break;
-    chunks.push(...await chunksFromFile(source, file, maxBytes, maxChunkBytes));
+    chunks.push(...await chunksFromFile(source, file, maxBytes, maxChunkBytes, options.contextReducer));
   }
   return chunks.slice(0, limit);
 }

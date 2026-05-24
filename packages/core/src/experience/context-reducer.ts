@@ -16,8 +16,12 @@ import type {
   NormalizedReducerInput,
   ContextEconomyReport,
 } from "../protocol/schemas.js";
+import { ContextReducerRuleSchema } from "../protocol/schemas.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { makeId } from "../protocol/id.js";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { protocolPaths } from "../protocol/paths.js";
 
 export {
   REDUCER_VERSION,
@@ -203,6 +207,24 @@ export interface ReduceInputOptions {
   minUsefulReductionRatio?: number;
 }
 
+export function buildEffectiveReducerRules(options: Pick<ReduceInputOptions, "rules" | "userRules" | "projectRules"> = {}): {
+  rules: ContextReducerRule[];
+  warnings: string[];
+} {
+  const effectiveRules: ContextReducerRule[] = [...(options.rules ?? buildBuiltinRules())];
+  const warnings: string[] = [];
+  const userValidated = options.userRules ? validateRules(options.userRules) : { valid: [], warnings: [] };
+  const projectValidated = options.projectRules ? validateRules(options.projectRules) : { valid: [], warnings: [] };
+  warnings.push(...userValidated.warnings, ...projectValidated.warnings);
+  overlayRulesById(effectiveRules, userValidated.valid);
+  overlayRulesById(effectiveRules, projectValidated.valid);
+  return { rules: effectiveRules, warnings };
+}
+
+export function contextReducerIdentitySalt(result: Pick<ContextReductionResult, "reducer_version" | "rule_set_hash" | "reduction_hash">): string {
+  return `${result.reducer_version}:${result.rule_set_hash}:${result.reduction_hash}`;
+}
+
 export function reduceContext(
   input: NormalizedReducerInput,
   options: ReduceInputOptions = {},
@@ -215,22 +237,15 @@ export function reduceContext(
   const originalBytes = utf8ByteLength(originalText);
   const warnings: string[] = [];
 
-  const builtinRules = options.rules ?? buildBuiltinRules();
-
-  const allRulesWithOverlays: ContextReducerRule[] = [...builtinRules];
-  const userValidated = options.userRules ? validateRules(options.userRules ?? []) : { valid: [], warnings: [] };
-  const projectValidated = options.projectRules ? validateRules(options.projectRules ?? []) : { valid: [], warnings: [] };
-  warnings.push(...userValidated.warnings, ...projectValidated.warnings);
-  overlayRulesById(allRulesWithOverlays, userValidated.valid);
-  overlayRulesById(allRulesWithOverlays, projectValidated.valid);
-
-  const ruleSetHash = computeRuleSetHash(allRulesWithOverlays);
+  const effectiveRules = buildEffectiveReducerRules(options);
+  warnings.push(...effectiveRules.warnings);
+  const ruleSetHash = computeRuleSetHash(effectiveRules.rules);
 
   if (originalBytes < minInputBytes) {
     return buildPassThroughResult(originalText, originalBytes, ruleSetHash, normalized, warnings, "input_below_threshold");
   }
 
-  const match = matchRule(allRulesWithOverlays, normalized);
+  const match = matchRule(effectiveRules.rules, normalized);
   if (!match) {
     return buildPassThroughResult(originalText, originalBytes, ruleSetHash, normalized, warnings, "no_matching_rule");
   }
@@ -361,7 +376,7 @@ function buildFacts(
   };
 }
 
-export function buildContextEconomyReport(items: ContextReductionResult[], now?: string): ContextEconomyReport {
+export function buildContextEconomyReport(items: ContextReductionResult[], now?: string, extraWarnings: string[] = []): ContextEconomyReport {
   const createdAt = now ?? new Date().toISOString();
   let inputBytes = 0;
   let outputBytes = 0;
@@ -408,7 +423,61 @@ export function buildContextEconomyReport(items: ContextReductionResult[], now?:
     saved_bytes: savedBytes,
     rule_hits: ruleHits,
     family_hits: familyHits,
-    warnings: allWarnings,
+    warnings: Array.from(new Set([...extraWarnings, ...allWarnings])).sort(),
     created_at: createdAt,
   };
+}
+
+export interface LoadProjectRulesResult {
+  rules: ContextReducerRule[];
+  warnings: string[];
+}
+
+export async function loadProjectRules(root: string): Promise<LoadProjectRulesResult> {
+  const path = join(root, protocolPaths.contextEconomyProjectRules);
+  let raw: string;
+  try {
+    raw = await readFile(path, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { rules: [], warnings: [] };
+    }
+    return { rules: [], warnings: [`project_rules_read_error: ${error instanceof Error ? error.message : String(error)}`] };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { rules: [], warnings: ["project_rules_parse_error: invalid JSON"] };
+  }
+
+  let rawRules: unknown[];
+  if (Array.isArray(parsed)) {
+    rawRules = parsed;
+  } else if (parsed && typeof parsed === "object" && Array.isArray((parsed as Record<string, unknown>).rules)) {
+    rawRules = (parsed as { rules: unknown[] }).rules;
+  } else {
+    return { rules: [], warnings: ["project_rules_format_error: expected { rules: [...] } or [...]"] };
+  }
+
+  const typed: ContextReducerRule[] = [];
+  const schemaWarnings: string[] = [];
+  rawRules.forEach((rule, index) => {
+    const parsedRule = ContextReducerRuleSchema.safeParse(rule);
+    if (parsedRule.success) {
+      typed.push(parsedRule.data);
+      return;
+    }
+    const message = parsedRule.error.issues.map((issue) => `${issue.path.join(".") || "rule"}: ${issue.message}`).join("; ");
+    schemaWarnings.push(`project_rules_schema_error[${index}]: ${message}`);
+  });
+
+  const { valid, warnings } = validateRules(typed);
+  warnings.unshift(...schemaWarnings);
+  if (typed.length !== valid.length) {
+    warnings.push(`project_rules_filtered: ${typed.length - valid.length} invalid rule(s) removed`);
+  }
+
+  return { rules: valid, warnings };
 }

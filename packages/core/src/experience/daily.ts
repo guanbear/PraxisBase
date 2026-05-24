@@ -15,6 +15,8 @@ import {
   type DailyExperienceReport,
   type ExperienceEnvelope,
   type ExperiencePrivacyVerdict,
+  type ContextReducerRule,
+  type ContextReductionResult,
 } from "../protocol/schemas.js";
 import { readJson, writeJson } from "../store/file-store.js";
 import { compileWiki } from "../wiki/compile.js";
@@ -32,7 +34,20 @@ import {
   type ResolveExperienceSourceOptions,
 } from "./source-adapters.js";
 import { listExperienceSources } from "./source-config.js";
-import { chunkExperienceSource, chunkTextExperience, type ExperienceChunk } from "./chunking.js";
+import {
+  chunkExperienceSource,
+  chunkTextExperience,
+  type ExperienceChunk,
+} from "./chunking.js";
+import {
+  buildContextEconomyReport,
+  loadProjectRules,
+  buildEffectiveReducerRules,
+  computeRuleSetHash,
+  REDUCER_VERSION,
+  contextReducerIdentitySalt,
+  reduceContext,
+} from "./context-reducer.js";
 import { evaluatePreAiPrivacy } from "./privacy-policy.js";
 import {
   createDefaultGitRunner,
@@ -63,6 +78,7 @@ export interface RunDailyExperienceInput {
   aiConcurrency?: number;
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
+  noContextEconomy?: boolean;
 }
 
 function statusFromCounts(input: { warnings: string[]; rejected: number; humanRequired: number; enveloped: number }): "completed" | "partial" | "failed" {
@@ -261,17 +277,56 @@ function makeEnvelopeFromChunk(
   });
 }
 
-function chunksFromEnvelopes(envelopes: ExperienceEnvelope[]): ExperienceChunk[] {
-  return envelopes.flatMap((envelope) => chunkTextExperience({
-    source_id: envelope.source_id,
-    agent: envelope.agent,
-    channel: envelope.channel,
+function chunksFromEnvelopes(
+  envelopes: ExperienceEnvelope[],
+  contextReducer?: {
+    projectRules?: ContextReducerRule[];
+    recordResult?: (result: ContextReductionResult) => void;
+  },
+): ExperienceChunk[] {
+  return envelopes.flatMap((envelope) => {
+    const reduced = reduceEnvelopeSummary(envelope, contextReducer);
+    return chunkTextExperience({
+      source_id: envelope.source_id,
+      agent: envelope.agent,
+      channel: envelope.channel,
+      source_ref: envelope.source_ref,
+      source_hash: envelope.source_hash,
+      scope_hint: envelope.scope_hint,
+      text: reduced.text,
+      created_at: envelope.created_at,
+      reducerIdentitySalt: reduced.reducerIdentitySalt,
+    });
+  });
+}
+
+function reduceEnvelopeSummary(
+  envelope: ExperienceEnvelope,
+  contextReducer?: {
+    projectRules?: ContextReducerRule[];
+    recordResult?: (result: ContextReductionResult) => void;
+  },
+): { text: string; reducerIdentitySalt?: string } {
+  if (!contextReducer) return { text: envelope.redacted_summary };
+  const result = reduceContext({
+    combined_text: envelope.redacted_summary,
+    source_metadata: {
+      agent: envelope.agent,
+      source_id: envelope.source_id,
+      channel: envelope.channel,
+      scope_hint: envelope.scope_hint,
+      adapter: "experience-envelope",
+    },
     source_ref: envelope.source_ref,
     source_hash: envelope.source_hash,
-    scope_hint: envelope.scope_hint,
-    text: envelope.redacted_summary,
-    created_at: envelope.created_at,
-  }));
+  }, {
+    projectRules: contextReducer.projectRules,
+  });
+  contextReducer.recordResult?.(result);
+  return {
+    text: result.text,
+    reducerIdentitySalt: contextReducerIdentitySalt(result),
+  };
 }
 
 async function writePrivacyException(
@@ -484,6 +539,29 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     maxAiChunksWarned = true;
   };
 
+  const contextEconomyEnabled = !input.noContextEconomy;
+  const projectRulesResult = contextEconomyEnabled ? await loadProjectRules(root) : { rules: [], warnings: [] };
+  const reductionResults: ContextReductionResult[] = [];
+  const effectiveReducerRules = contextEconomyEnabled
+    ? buildEffectiveReducerRules({ projectRules: projectRulesResult.rules })
+    : { rules: [], warnings: [] };
+  const contextEconomyWarnings = Array.from(new Set([
+    ...projectRulesResult.warnings,
+    ...effectiveReducerRules.warnings,
+  ])).sort();
+  if (contextEconomyWarnings.length > 0) warnings.push(...contextEconomyWarnings);
+  const reducerRuleSetHash = contextEconomyEnabled
+    ? computeRuleSetHash(effectiveReducerRules.rules)
+    : "disabled";
+  const contextReducerForSource = contextEconomyEnabled
+    ? {
+      projectRules: projectRulesResult.rules,
+      recordResult: (result: ContextReductionResult) => {
+        reductionResults.push(result);
+      },
+    }
+    : undefined;
+
   if (mode === "write") {
     outputs.push(progressPath);
     await writeDailyProgress(root, progressPath, {
@@ -552,6 +630,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           chunks = await chunkExperienceSource(root, source, {
             limit: input.limit ?? remainingAiBudget,
             now,
+            contextReducer: contextReducerForSource,
           });
         } catch (error) {
           sourceWarnings.push(`source_chunk_failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -562,12 +641,16 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         blocked.push(...preblocked);
         rejected += preblocked.filter((envelope) => envelope.privacy.verdict === "reject").length;
         humanRequired += preblocked.filter((envelope) => envelope.privacy.verdict === "human_required").length;
-        chunks = chunksFromEnvelopes(resolved.envelopes.filter((envelope) => envelope.privacy.verdict === "allow"));
+        chunks = chunksFromEnvelopes(
+          resolved.envelopes.filter((envelope) => envelope.privacy.verdict === "allow"),
+          contextReducerForSource,
+        );
         sourceWarnings = sourceWarnings.concat(resolved.warnings);
       }
 
       scanned = chunks.length + blocked.length;
       fetched = chunks.length + blocked.length;
+
       const distillTasks: ExperienceChunk[] = [];
       for (const chunk of chunks) {
         const prePrivacy = evaluatePreAiPrivacy({
@@ -843,6 +926,16 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     aiDistill.warnings.push(warning);
   }
 
+  let contextEconomyRef: string | undefined;
+  const contextEconomyReport = contextEconomyEnabled && (reductionResults.length > 0 || contextEconomyWarnings.length > 0)
+    ? buildContextEconomyReport(reductionResults, now, contextEconomyWarnings)
+    : undefined;
+  if (contextEconomyReport && mode === "write") {
+    contextEconomyRef = `${protocolPaths.reportsContextEconomy}/${contextEconomyReport.id}.json`;
+    await writeJson(root, contextEconomyRef, contextEconomyReport);
+    outputs.push(contextEconomyRef);
+  }
+
   const wikiMode = mode === "write" ? "review" as const : "dry-run" as const;
   if (mode === "write") {
     await writeDailyProgress(root, progressPath, {
@@ -955,6 +1048,20 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings: Array.from(new Set(aiDistill.warnings)).sort(),
   };
 
+  const contextEconomySummary = contextEconomyEnabled ? {
+    enabled: true,
+    reducer_version: REDUCER_VERSION,
+    rule_set_hash: reducerRuleSetHash,
+    items_seen: contextEconomyReport?.items_seen ?? reductionResults.length,
+    items_reduced: contextEconomyReport?.items_reduced ?? reductionResults.filter((r) => r.applied).length,
+    items_passed_through: contextEconomyReport?.items_passed_through ?? reductionResults.filter((r) => !r.applied).length,
+    input_bytes: contextEconomyReport?.input_bytes ?? 0,
+    output_bytes: contextEconomyReport?.output_bytes ?? 0,
+    saved_bytes: contextEconomyReport?.saved_bytes ?? 0,
+    report_ref: contextEconomyRef,
+    warnings: contextEconomyReport?.warnings ?? contextEconomyWarnings,
+  } : { enabled: false, reducer_version: REDUCER_VERSION, rule_set_hash: "disabled", items_seen: 0, items_reduced: 0, items_passed_through: 0, input_bytes: 0, output_bytes: 0, saved_bytes: 0, warnings: [] as string[] };
+
   const report = DailyExperienceReportSchema.parse({
     id: reportId,
     protocol_version: PROTOCOL_VERSION,
@@ -962,6 +1069,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     authority_mode: input.authorityMode,
     mode,
     ai_distill: finalAiDistill,
+    context_economy: contextEconomySummary,
     sources: sourceReports,
     proposal_candidates: curationReport.output_counts.curated_proposals,
     quality_findings: qualityFindings,

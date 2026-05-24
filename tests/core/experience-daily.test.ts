@@ -972,4 +972,304 @@ describe("runDailyExperience", () => {
     assert.equal(report.sources[0].rejected, 1);
     assert.equal(report.sources[0].imported, 0);
   });
+
+  it("includes context economy summary when reducer runs on production sources", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ctx-econ-enabled-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    const longText = Array.from({ length: 60 }, (_, i) => `Line ${i}: pnpm test passed with OpenClaw repair output.`).join("\n");
+    await writeFile(join(sessions, "session-1.txt"), longText, "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: { source_ref: string; source_hash: string; chunk_hash: string; agent: string; scope_hint: string };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw repair verified.",
+              actions: ["Applied repair."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Keep repairs bounded."],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.ok(report.context_economy);
+    assert.equal(report.context_economy.enabled, true);
+    assert.equal(report.context_economy.items_seen, 1);
+    assert.ok(report.context_economy.report_ref);
+    assert.ok(report.outputs.some((output) => output.startsWith(".praxisbase/reports/context-economy/")));
+    const contextReport = JSON.parse(await readFile(join(root, report.context_economy.report_ref!), "utf8"));
+    assert.equal(contextReport.type, "context_economy_report");
+  });
+
+  it("skips context economy when noContextEconomy is set", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ctx-econ-disabled-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      noContextEconomy: true,
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant" };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: { source_ref: string; source_hash: string; chunk_hash: string; agent: string; scope_hint: string };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "Verified repair.",
+              actions: ["Applied fix."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: [],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.ok(report.context_economy);
+    assert.equal(report.context_economy.enabled, false);
+    assert.equal(report.context_economy.rule_set_hash, "disabled");
+    assert.equal(report.context_economy.items_seen, 0);
+    assert.equal(report.context_economy.report_ref, undefined);
+    assert.ok(!report.outputs.some((output) => output.includes("context-economy")));
+  });
+
+  it("loads project rules from .praxisbase/context-economy/rules.json and applies them", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-project-rules-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    const longText = Array.from({ length: 60 }, (_, i) => `Line ${i}: verbose OpenClaw repair log output here.`).join("\n");
+    await writeFile(join(sessions, "session-1.txt"), longText, "utf8");
+    await mkdir(join(root, ".praxisbase/context-economy"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/context-economy/rules.json"),
+      JSON.stringify({
+        rules: [{
+          id: "project-test-rule",
+          family: "project-custom",
+          priority: 10,
+          confidence: 0.95,
+          actions: [{ type: "head_tail", head_lines: 5, tail_lines: 5 }],
+        }],
+      }),
+    );
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant" };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: { source_ref: string; source_hash: string; chunk_hash: string; agent: string; scope_hint: string };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "Verified repair.",
+              actions: ["Applied fix."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: [],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.ok(report.context_economy);
+    assert.equal(report.context_economy.enabled, true);
+    assert.ok(report.context_economy.items_seen >= 1);
+    assert.ok(report.context_economy.report_ref);
+    const contextReport = JSON.parse(await readFile(join(root, report.context_economy.report_ref!), "utf8"));
+    assert.equal(contextReport.rule_set_hash, report.context_economy.rule_set_hash);
+    assert.equal(contextReport.rule_hits["project-test-rule"], 1);
+    assert.equal(contextReport.family_hits["project-custom"], 1);
+  });
+
+  it("salts chunk hashes even when context economy passes text through", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ctx-econ-pass-through-salt-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Short OpenClaw fix note. pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const capturedEnabled: string[] = [];
+    await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "dry-run",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") return { ok: false, error: "curation not relevant" };
+          const prompt = JSON.parse(input.user) as { source: { chunk_hash: string; source_ref: string; source_hash: string; agent: string; scope_hint: string } };
+          capturedEnabled.push(prompt.source.chunk_hash);
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "Verified short repair.",
+              actions: ["Recorded fix."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: [],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    const capturedDisabled: string[] = [];
+    await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "dry-run",
+      now: "2026-05-21T01:00:00.000Z",
+      noContextEconomy: true,
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") return { ok: false, error: "curation not relevant" };
+          const prompt = JSON.parse(input.user) as { source: { chunk_hash: string; source_ref: string; source_hash: string; agent: string; scope_hint: string } };
+          capturedDisabled.push(prompt.source.chunk_hash);
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "Verified short repair.",
+              actions: ["Recorded fix."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: [],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(capturedEnabled.length, 1);
+    assert.equal(capturedDisabled.length, 1);
+    assert.notEqual(capturedEnabled[0], capturedDisabled[0]);
+  });
 });

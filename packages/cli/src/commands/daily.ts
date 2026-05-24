@@ -18,6 +18,7 @@ export interface DailyCommandOptions {
   aiConcurrency?: number;
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
+  noContextEconomy?: boolean;
 }
 
 function authorityMode(mode?: "personal" | "team-git"): "personal-local" | "team-git" {
@@ -75,6 +76,7 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         aiConcurrency: options.aiConcurrency,
         retryFailedDistillOnly: options.retryFailedDistillOnly,
         maxCurationProposals: options.maxCurationProposals,
+        noContextEconomy: options.noContextEconomy,
       });
       return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Daily experience run complete: ${report.id}`;
     }
