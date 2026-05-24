@@ -215,6 +215,14 @@
       "types": "./src/wiki/render-site.ts",
       "default": "./dist/wiki/render-site.js"
     },
+    "./wiki/semantic-review.js": {
+      "types": "./src/wiki/semantic-review.ts",
+      "default": "./dist/wiki/semantic-review.js"
+    },
+    "./wiki/semantic-review-policy.js": {
+      "types": "./src/wiki/semantic-review-policy.ts",
+      "default": "./dist/wiki/semantic-review-policy.js"
+    },
     "./wiki/relationship-planner.js": {
       "types": "./src/wiki/relationship-planner.ts",
       "default": "./dist/wiki/relationship-planner.js"

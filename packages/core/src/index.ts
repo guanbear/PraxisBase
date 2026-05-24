@@ -52,6 +52,8 @@ export * from "./wiki/site-model.js";
 export * from "./wiki/site-html.js";
 export * from "./wiki/site-assets.js";
 export * from "./wiki/render-site.js";
+export * from "./wiki/semantic-review.js";
+export * from "./wiki/semantic-review-policy.js";
 export * from "./kb/maintenance.js";
 export * from "./review/policy.js";
 export * from "./agent-access/manifest.js";
