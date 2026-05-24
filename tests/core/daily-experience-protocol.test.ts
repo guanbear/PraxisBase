@@ -5,6 +5,11 @@ import {
   ExperienceEnvelopeSchema,
   ExperienceSourceConfigSchema,
   protocolPaths,
+  ContextEconomyReportSchema,
+  ContextReductionResultSchema,
+  NormalizedReducerInputSchema,
+  ContextReducerRuleSchema,
+  REDUCER_VERSION,
 } from "@praxisbase/core";
 
 describe("daily experience protocol", () => {
@@ -103,5 +108,60 @@ describe("daily experience protocol", () => {
 
     assert.equal(parsed.changed_stable_knowledge, false);
     assert.equal(parsed.ai_distill.cache_hits, 1);
+  });
+
+  it("exposes context economy report path", () => {
+    assert.equal(protocolPaths.reportsContextEconomy, ".praxisbase/reports/context-economy");
+  });
+
+  it("validates context economy report schema with reducer fields", () => {
+    const report = ContextEconomyReportSchema.parse({
+      id: "ctx-econ_20260525T000000",
+      protocol_version: "0.1",
+      type: "context_economy_report",
+      reducer_version: REDUCER_VERSION,
+      rule_set_hash: "sha256:abc123",
+      items_seen: 10,
+      items_reduced: 7,
+      items_passed_through: 3,
+      input_bytes: 50000,
+      output_bytes: 20000,
+      saved_bytes: 30000,
+      rule_hits: { "test-output-default": 5, "generic-default": 2 },
+      family_hits: { "test-output": 5, "generic": 2 },
+      warnings: [],
+      created_at: "2026-05-25T00:00:00.000Z",
+    });
+
+    assert.equal(report.type, "context_economy_report");
+    assert.equal(report.items_seen, 10);
+    assert.equal(report.saved_bytes, 30000);
+    assert.deepEqual(report.rule_hits, { "test-output-default": 5, "generic-default": 2 });
+  });
+
+  it("validates context reduction result schema", () => {
+    const result = ContextReductionResultSchema.parse({
+      applied: true,
+      text: "reduced",
+      original_bytes: 1000,
+      reduced_bytes: 100,
+      saved_bytes: 900,
+      saved_ratio: 0.9,
+      matched_rule_id: "test-output-default",
+      matched_rule_family: "test-output",
+      matched_rule_confidence: 0.9,
+      reducer_version: REDUCER_VERSION,
+      rule_set_hash: "sha256:rules",
+      reduction_hash: "sha256:reduction",
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:abc",
+      facts: { command: "pnpm test", exit_code: 0, is_failure: false },
+      counters: { original_lines: 50, reduced_lines: 5 },
+      warnings: [],
+    });
+
+    assert.equal(result.applied, true);
+    assert.equal(result.saved_ratio, 0.9);
+    assert.equal(result.matched_rule_family, "test-output");
   });
 });

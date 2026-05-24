@@ -26,6 +26,8 @@ export * from "./experience/source-config.js";
 export * from "./experience/privacy-policy.js";
 export * from "./experience/privacy-triage.js";
 export * from "./experience/chunking.js";
+export * from "./experience/context-reducer.js";
+export * from "./experience/context-reducer-rules.js";
 export * from "./experience/source-adapters.js";
 export * from "./experience/daily.js";
 export * from "./experience/harvest.js";

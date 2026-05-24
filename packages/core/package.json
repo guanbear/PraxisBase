@@ -119,6 +119,14 @@
       "types": "./src/experience/chunking.ts",
       "default": "./dist/experience/chunking.js"
     },
+    "./experience/context-reducer.js": {
+      "types": "./src/experience/context-reducer.ts",
+      "default": "./dist/experience/context-reducer.js"
+    },
+    "./experience/context-reducer-rules.js": {
+      "types": "./src/experience/context-reducer-rules.ts",
+      "default": "./dist/experience/context-reducer-rules.js"
+    },
     "./experience/source-adapters.js": {
       "types": "./src/experience/source-adapters.ts",
       "default": "./dist/experience/source-adapters.js"

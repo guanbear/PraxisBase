@@ -39,6 +39,7 @@ export const protocolPaths = {
   reportsPrivacyTriage: ".praxisbase/reports/privacy-triage",
   aiConfig: ".praxisbase/ai/config.json",
   reportsAiDistill: ".praxisbase/reports/ai-distill",
+  reportsContextEconomy: ".praxisbase/reports/context-economy",
   memoryRefresh: ".praxisbase/memory-refresh",
   experienceSources: ".praxisbase/sources",
   remotes: ".praxisbase/remotes",

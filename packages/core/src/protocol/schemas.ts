@@ -880,6 +880,97 @@ export const WikiGraphSliceSchema = z.object({
   })),
 });
 
+// Context Economy — normalized reducer input
+export const ReducerActionTypeSchema = z.enum([
+  "strip_ansi",
+  "drop_lines_matching",
+  "dedupe_adjacent_lines",
+  "collapse_whitespace",
+  "head_tail",
+  "preserve_sections_matching",
+  "truncate",
+]);
+
+export const NormalizedReducerInputSchema = z.object({
+  command: z.string().optional(),
+  cmd: z.string().optional(),
+  argv: z.array(z.string()).optional(),
+  stdout: z.string().optional(),
+  stderr: z.string().optional(),
+  combined_text: z.string().optional(),
+  exit_code: z.number().int().nullable().optional(),
+  source_metadata: z.record(z.unknown()).optional(),
+  source_ref: z.string().optional(),
+  source_hash: z.string().optional(),
+});
+
+export const ContextReducerRuleActionSchema = z.object({
+  type: ReducerActionTypeSchema,
+  pattern: z.string().optional(),
+  head_lines: z.number().int().nonnegative().optional(),
+  tail_lines: z.number().int().nonnegative().optional(),
+  max_bytes: z.number().int().positive().optional(),
+  section_pattern: z.string().optional(),
+});
+
+export const ContextReducerRuleSchema = z.object({
+  id: z.string().min(1),
+  family: z.string().min(1),
+  priority: z.number().int().nonnegative().default(0),
+  confidence: z.number().min(0).max(1).default(1),
+  tool_match: z.string().optional(),
+  requires_command: z.boolean().default(false),
+  argv_include: z.array(z.string()).optional(),
+  argv_exclude: z.array(z.string()).optional(),
+  command_include: z.array(z.string()).optional(),
+  command_exclude: z.array(z.string()).optional(),
+  content_pattern: z.string().optional(),
+  source_match: z.record(z.unknown()).optional(),
+  actions: z.array(ContextReducerRuleActionSchema),
+  min_input_bytes: z.number().int().nonnegative().optional(),
+  pass_through_file_inspection: z.boolean().default(true),
+  preserve_failure_tail: z.boolean().default(false),
+  preserve_failure_tail_lines: z.number().int().nonnegative().default(30),
+});
+
+export const ContextReductionResultSchema = z.object({
+  applied: z.boolean(),
+  text: z.string(),
+  original_bytes: z.number().int().nonnegative(),
+  reduced_bytes: z.number().int().nonnegative(),
+  saved_bytes: z.number().int().nonnegative(),
+  saved_ratio: z.number().min(0).max(1),
+  matched_rule_id: z.string().nullable(),
+  matched_rule_family: z.string().nullable(),
+  matched_rule_confidence: z.number().min(0).max(1).nullable(),
+  reducer_version: z.string().min(1),
+  rule_set_hash: z.string().min(1),
+  reduction_hash: z.string().min(1),
+  source_ref: z.string().optional(),
+  source_hash: z.string().optional(),
+  facts: z.record(z.unknown()).default({}),
+  counters: z.record(z.number()).default({}),
+  warnings: z.array(z.string()).default([]),
+});
+
+export const ContextEconomyReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("context_economy_report"),
+  reducer_version: z.string().min(1),
+  rule_set_hash: z.string().min(1),
+  items_seen: z.number().int().nonnegative(),
+  items_reduced: z.number().int().nonnegative(),
+  items_passed_through: z.number().int().nonnegative(),
+  input_bytes: z.number().int().nonnegative(),
+  output_bytes: z.number().int().nonnegative(),
+  saved_bytes: z.number().int().nonnegative(),
+  rule_hits: z.record(z.number().int().nonnegative()).default({}),
+  family_hits: z.record(z.number().int().nonnegative()).default({}),
+  warnings: z.array(z.string()).default([]),
+  created_at: z.string(),
+});
+
 export const StructuredErrorSchema = z.object({
   ok: z.literal(false),
   code: z.string().min(1),
@@ -952,3 +1043,9 @@ export type WikiQualityFinding = z.infer<typeof WikiQualityFindingSchema>;
 export type WikiQualityReport = z.infer<typeof WikiQualityReportSchema>;
 export type WikiGraphSliceMode = z.infer<typeof WikiGraphSliceModeSchema>;
 export type WikiGraphSlice = z.infer<typeof WikiGraphSliceSchema>;
+export type ReducerActionType = z.infer<typeof ReducerActionTypeSchema>;
+export type NormalizedReducerInput = z.infer<typeof NormalizedReducerInputSchema>;
+export type ContextReducerRuleAction = z.infer<typeof ContextReducerRuleActionSchema>;
+export type ContextReducerRule = z.input<typeof ContextReducerRuleSchema>;
+export type ContextReductionResult = z.infer<typeof ContextReductionResultSchema>;
+export type ContextEconomyReport = z.infer<typeof ContextEconomyReportSchema>;

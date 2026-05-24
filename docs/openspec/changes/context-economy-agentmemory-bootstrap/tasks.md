@@ -2,17 +2,18 @@
 
 ## M16 Context Economy
 
-- [ ] Add context reducer schemas, built-in rules, and deterministic reduction actions.
-- [ ] Add source/tool normalization for command, argv, stdout, stderr, combined text, exit code, and metadata.
-- [ ] Add specificity-based rule classification and pass-through safety for tiny inputs, poor compression ratio, file-content inspection commands, and failed command output.
-- [ ] Add reducer version, rule-set hash, reduction hash, matched rule, facts, and warnings to reduction results.
-- [ ] Add built-in rule families for Codex sessions, OpenClaw logs, command output, test output, git output, agentmemory-shaped memories, JSON/JSONL, and generic fallback.
-- [ ] Add user/project rule overlay loading with deterministic override by rule id and diagnostics for invalid regex.
+- [x] Add context reducer schemas, built-in rules, and deterministic reduction actions.
+- [x] Add source/tool normalization for command, argv, stdout, stderr, combined text, exit code, and metadata.
+- [x] Add specificity-based rule classification and pass-through safety for tiny inputs, poor compression ratio, file-content inspection commands, and failed command output.
+- [x] Add reducer version, rule-set hash, reduction hash, matched rule, facts, and warnings to reduction results.
+- [x] Add built-in rule families for Codex sessions, OpenClaw logs, command output, test output, git output, agentmemory-shaped memories, JSON/JSONL, and generic fallback.
+- [x] Add deterministic user/project rule overlay by rule id and diagnostics for invalid regex.
+- [ ] Add user/project rule overlay loading from disk.
 - [ ] Insert reducer before chunking and AI distill in daily/source ingestion.
 - [ ] Ensure reducer version/rule-set changes cannot silently reuse stale AI distill cache entries.
-- [ ] Add `context_economy` report fields and compact reducer debug reports.
+- [x] Add `context_economy` report fields and compact reducer debug reports.
 - [ ] Add a `--no-context-economy` or equivalent bypass for debugging.
-- [ ] Run focused reducer/daily tests.
+- [x] Run focused reducer/daily tests.
 
 ## M17 AgentMemory Interop
 
