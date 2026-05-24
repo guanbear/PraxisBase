@@ -69,4 +69,40 @@ describe("wiki lint guards", () => {
     const saved = JSON.parse(await readFile(join(root, ".praxisbase/reports/wiki-lint", reportFiles[0]), "utf8"));
     assert.equal(saved.type, "wiki_lint_report");
   });
+
+  it("flags raw copy, missing root artifacts, and source summary pages as guidance", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-fidelity-lint-"));
+    const report = await runWikiLint(root, {
+      pages: [
+        {
+          id: "wiki-raw-copy",
+          slug: "raw-copy",
+          title: "Raw Copy",
+          page_kind: "known_fix",
+          scope: "personal",
+          maturity: "draft",
+          lifecycle: "active",
+          source_ids: ["sha256:a"],
+          body_markdown: "# Raw Copy\n\n```json\n{\"raw\":\"transcript\"}\n```\n\n## Provenance\n- codex:1",
+          path: "kb/known-fixes/raw-copy.md",
+        },
+        {
+          id: "wiki-source-summary-as-fix",
+          slug: "source-summary-as-fix",
+          title: "Source Summary As Fix",
+          page_kind: "source_summary",
+          scope: "personal",
+          maturity: "draft",
+          lifecycle: "active",
+          source_ids: ["sha256:b"],
+          body_markdown: "# Source Summary As Fix\n\n## What To Do\nUse this source summary as a fix.\n\n## Provenance\n- codex:1",
+          path: "kb/known-fixes/source-summary-as-fix.md",
+        },
+      ] as any,
+    });
+
+    assert.ok(report.findings.some((finding) => finding.rule === "missing-root-artifact"));
+    assert.ok(report.findings.some((finding) => finding.rule === "raw-copy-page"));
+    assert.ok(report.findings.some((finding) => finding.rule === "source-summary-promoted-as-guidance"));
+  });
 });

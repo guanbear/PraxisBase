@@ -1147,6 +1147,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const pendingCandidates = await collectPendingWikiProposalCandidates(root);
   const reviewQueue = await buildReviewQueue(root, pendingCandidates);
   const graph = buildWikiGraph(pages);
+  const rootArtifactOutputs = await writeRootWikiArtifacts(root, pages, graph, new Date().toISOString());
   const lintReport = await runWikiLint(root, { pages });
   const qualityReport = await buildWikiQualityReport(root, { pages, graph });
   const outputs = [...SITE_OUTPUTS];
@@ -1156,7 +1157,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
   const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
-  outputs.push(...await writeRootWikiArtifacts(root, pages, graph, new Date().toISOString()));
+  outputs.push(...rootArtifactOutputs);
 
   await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates, curationReport));
   await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport));
