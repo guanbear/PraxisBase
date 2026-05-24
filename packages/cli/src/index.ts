@@ -364,7 +364,7 @@ program
   .option("--no-ai", "disable AI distill for this run")
   .option("--max-ai-chunks <n>", "maximum production AI distill chunks for the whole run")
   .option("--ai-timeout-ms <n>", "override AI provider timeout for this daily run")
-  .option("--ai-concurrency <n>", "maximum concurrent AI distill calls")
+  .option("--ai-concurrency <n>", "maximum concurrent AI distill and curation calls")
   .option("--retry-failed-distill-only", "retry only chunks with cached AI distill failures")
   .option("--max-curation-proposals <n>", "maximum AI wiki curation proposals for this daily run")
   .option("--json")
@@ -609,6 +609,7 @@ program
   .option("--review")
   .option("--degraded")
   .option("--ai-timeout-ms <n>", "override AI provider timeout for wiki curate")
+  .option("--concurrency <n>", "maximum concurrent AI synthesis calls for wiki curate")
   .option("--min-source-count <n>", "minimum source count for wiki curate proposals")
   .option("--mode <mode>", "graph mode: full, overview, or ego")
   .option("--center <slug>", "center slug or id for ego graph")
@@ -621,6 +622,7 @@ program
     review?: boolean;
     degraded?: boolean;
     aiTimeoutMs?: string;
+    concurrency?: string;
     minSourceCount?: string;
     mode?: "full" | "overview" | "ego";
     center?: string;
@@ -632,6 +634,7 @@ program
     console.log(await wikiCommand(process.cwd(), sub, {
       ...options,
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
+      concurrency: options.concurrency ? parseInt(options.concurrency, 10) : undefined,
       minSourceCount: options.minSourceCount ? parseInt(options.minSourceCount, 10) : undefined,
       depth: options.depth ? parseInt(options.depth, 10) : undefined,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,

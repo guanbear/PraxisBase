@@ -62,15 +62,31 @@ export interface CurateWikiOptions {
   degraded?: boolean;
   minSourceCount?: number;
   limit?: number;
+  concurrency?: number;
   aiClient?: AiJsonClient;
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
   aiTimeoutMs?: number;
+  onProgress?: (progress: WikiCurationProgress) => void | Promise<void>;
 }
 
 export type CuratedProposalResult =
   | { ok: true; proposal: CuratedWikiProposal }
   | { ok: false; category: "ai_error" | "schema_error" | "guard_error" | "privacy_error"; error: string };
+
+export interface WikiCurationProgress {
+  stage: "synthesis";
+  completed: number;
+  total: number;
+  proposals: number;
+  conflicts: number;
+  topic_key: string;
+}
+
+function normalizeConcurrency(value: number | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 1;
+  return Math.max(1, Math.min(16, Math.floor(value)));
+}
 
 function textForSource(source: WikiSource): string {
   return [source.title, source.summary, source.body].filter(Boolean).join("\n").trim();
@@ -846,14 +862,17 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const observationById = new Map(observations.map((observation) => [observation.id, observation]));
   const evidenceById = new Map(pool.items.map((item) => [item.id, item]));
   const sortedPlans = pagePlans.slice().sort((a, b) => a.topic_key.localeCompare(b.topic_key));
-  const synthesizedProposals: CuratedWikiProposal[] = [];
+  const synthesizedProposalEntries: Array<{ index: number; proposal: CuratedWikiProposal }> = [];
   let conflicts = 0;
+  let completedSyntheses = 0;
+  let nextPlanIndex = 0;
+  const concurrency = normalizeConcurrency(options.concurrency);
 
-  for (const plan of sortedPlans) {
-    if (limit !== undefined && synthesizedProposals.length >= limit) break;
+  const processPlan = async (plan: WikiPagePlan, planIndex: number): Promise<void> => {
+    if (limit !== undefined && synthesizedProposalEntries.length >= limit) return;
 
     const topic = topicByKey.get(plan.topic_key);
-    if (!topic) continue;
+    if (!topic) return;
 
     const planObservations = topic.observation_ids
       .map((id) => observationById.get(id))
@@ -862,7 +881,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       .map((observation) => evidenceById.get(observation.evidence_id))
       .filter((item): item is WikiEvidenceItem => Boolean(item));
 
-    if (topic.source_count < minSourceCount) continue;
+    if (topic.source_count < minSourceCount) return;
 
     const canonicalTitle = titleForPagePlan(topic, planEvidence);
     const plannedTargetPath = (plan.action === "update" || plan.action === "merge") && plan.existing_path
@@ -942,18 +961,51 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       planAction: plan.action,
     });
     if (result.ok) {
-      synthesizedProposals.push(CuratedWikiProposalSchema.parse({
-        ...result.proposal,
-        ...(relatedPages.length > 0 ? { related_pages: relatedPages } : {}),
-        ...(structuredRequiredLinks.length > 0 ? { required_links: structuredRequiredLinks } : {}),
-        ...(structuredSuggestedLinks.length > 0 ? { suggested_links: structuredSuggestedLinks } : {}),
-        ...(mergeCandidates.length > 0 ? { merge_candidates: mergeCandidates } : {}),
-        ...(uniqueRelationshipReasons.length > 0 ? { relationship_reasons: uniqueRelationshipReasons } : {}),
-      }));
+      const proposal = CuratedWikiProposalSchema.parse({
+          ...result.proposal,
+          ...(relatedPages.length > 0 ? { related_pages: relatedPages } : {}),
+          ...(structuredRequiredLinks.length > 0 ? { required_links: structuredRequiredLinks } : {}),
+          ...(structuredSuggestedLinks.length > 0 ? { suggested_links: structuredSuggestedLinks } : {}),
+          ...(mergeCandidates.length > 0 ? { merge_candidates: mergeCandidates } : {}),
+          ...(uniqueRelationshipReasons.length > 0 ? { relationship_reasons: uniqueRelationshipReasons } : {}),
+        });
+      if (limit === undefined || synthesizedProposalEntries.length < limit) {
+        synthesizedProposalEntries.push({ index: planIndex, proposal });
+      }
     } else {
       conflicts++;
     }
+    completedSyntheses++;
+    await options.onProgress?.({
+      stage: "synthesis",
+      completed: completedSyntheses,
+      total: sortedPlans.length,
+      proposals: Math.min(synthesizedProposalEntries.length, limit ?? Number.POSITIVE_INFINITY),
+      conflicts,
+      topic_key: plan.topic_key,
+    });
+  };
+
+  const runWorker = async (): Promise<void> => {
+    while (nextPlanIndex < sortedPlans.length) {
+      if (limit !== undefined && synthesizedProposalEntries.length >= limit) return;
+      const planIndex = nextPlanIndex;
+      nextPlanIndex++;
+      await processPlan(sortedPlans[planIndex], planIndex);
+    }
+  };
+
+  if (limit !== 0) {
+    await Promise.all(Array.from(
+      { length: Math.min(concurrency, sortedPlans.length) },
+      () => runWorker(),
+    ));
   }
+
+  const synthesizedProposals = synthesizedProposalEntries
+    .sort((a, b) => a.index - b.index)
+    .slice(0, limit)
+    .map((entry) => entry.proposal);
 
   let qualityHardBlockCount = 0;
   let qualityHumanRequiredCount = 0;

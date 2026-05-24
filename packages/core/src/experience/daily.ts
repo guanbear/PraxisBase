@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { readdir, readFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { computeHash, makeId } from "../protocol/id.js";
@@ -17,7 +19,11 @@ import {
 import { readJson, writeJson } from "../store/file-store.js";
 import { compileWiki } from "../wiki/compile.js";
 import { curateWiki } from "../wiki/curate.js";
+import { CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal } from "../wiki/curation-model.js";
 import { buildWikiSite } from "../wiki/render-site.js";
+import { readReviewPolicy, decideAutoReview } from "../review/policy.js";
+import { reviewProposal } from "../review/reviewer.js";
+import { promoteApprovedProposal } from "../promote/promote.js";
 import { ingestAgentMemory } from "./agent-memory.js";
 import {
   resolveExperienceSource,
@@ -66,6 +72,15 @@ function statusFromCounts(input: { warnings: string[]; rejected: number; humanRe
 
 type DailyAiDistill = DailyExperienceReport["ai_distill"];
 const DISTILL_CACHE_VERSION = "ai-distill-v1";
+
+interface DailyReviewPromoteResult {
+  reviewed: number;
+  approved_by_policy: number;
+  auto_promoted: number;
+  needs_human: number;
+  outputs: string[];
+  warnings: string[];
+}
 
 type DistillCacheEntry =
   | {
@@ -303,7 +318,7 @@ async function writeDailyProgress(
   input: {
     now: string;
     status: "running" | "completed" | "partial" | "failed";
-    current_stage?: "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "site-build";
+    current_stage?: "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "review-promote" | "site-build";
     current_source?: string;
     current_chunk?: {
       index: number;
@@ -330,6 +345,90 @@ async function writeDailyProgress(
     warnings: Array.from(new Set(input.warnings)).sort(),
     updated_at: new Date().toISOString(),
   });
+}
+
+async function runDailyReviewPromote(root: string, input: { enabled: boolean; now: string }): Promise<DailyReviewPromoteResult> {
+  const result: DailyReviewPromoteResult = {
+    reviewed: 0,
+    approved_by_policy: 0,
+    auto_promoted: 0,
+    needs_human: 0,
+    outputs: [],
+    warnings: [],
+  };
+  if (!input.enabled) return result;
+
+  const policy = await readReviewPolicy(root);
+  const proposalDir = join(root, protocolPaths.inboxProposals);
+  const files = await readdir(proposalDir).catch(() => [] as string[]);
+
+  for (const file of files.filter((name) => name.endsWith(".json"))) {
+    try {
+      const raw = JSON.parse(await readFile(join(proposalDir, file), "utf8"));
+      if (raw.type !== "wiki_curated_proposal") continue;
+
+      const curated = CuratedWikiProposalSchema.parse(raw);
+      const decision = decideAutoReview(curated, policy);
+      const proposal = curatedWikiProposalToKnowledgeProposal(curated);
+      const review = reviewProposal(proposal);
+      const reviewPath = `.praxisbase/inbox/reviews/${review.id}.json`;
+      await writeJson(root, reviewPath, review);
+      result.outputs.push(reviewPath);
+      result.reviewed++;
+
+      if (decision.human_required) {
+        result.needs_human++;
+        const exception = ExceptionRecordSchema.parse({
+          id: `exc_${randomUUID().slice(0, 8)}`,
+          protocol_version: PROTOCOL_VERSION,
+          type: "exception_record",
+          category: "human_required",
+          source_id: review.id,
+          reason: decision.reason,
+          details: {
+            proposal_id: curated.id,
+            auto_promote: decision.auto_promote,
+            human_reasons: decision.required_human_reasons,
+          },
+          created_at: input.now,
+        });
+        const exceptionPath = `${protocolPaths.exceptionsHumanRequired}/${exception.id}.json`;
+        await writeJson(root, exceptionPath, exception);
+        result.outputs.push(exceptionPath);
+        continue;
+      }
+
+      result.approved_by_policy++;
+      if (decision.auto_promote) {
+        await promoteApprovedProposal(root, { proposal, review });
+        await unlink(join(proposalDir, file)).catch(() => undefined);
+        result.auto_promoted++;
+        result.outputs.push(proposal.patch.path);
+      }
+    } catch (error) {
+      result.warnings.push(`daily_auto_review_failed:${file}:${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  const runRecordPath = `${protocolPaths.runsReview}/run_review_policy_${randomUUID().slice(0, 8)}.json`;
+  await writeJson(root, runRecordPath, {
+    id: runRecordPath.split("/").pop()?.replace(/\.json$/, "") ?? `run_review_policy_${randomUUID().slice(0, 8)}`,
+    protocol_version: PROTOCOL_VERSION,
+    command: "review",
+    status: result.warnings.length > 0 && result.reviewed === 0 ? "failed" : result.warnings.length > 0 ? "partial" : "completed",
+    started_at: input.now,
+    finished_at: input.now,
+    counts: {
+      reviewed: result.reviewed,
+      approved_by_policy: result.approved_by_policy,
+      auto_promoted: result.auto_promoted,
+      needs_human: result.needs_human,
+    },
+    errors: result.warnings,
+  });
+  result.outputs.push(runRecordPath);
+
+  return result;
 }
 
 export async function runDailyExperience(root: string, input: RunDailyExperienceInput): Promise<DailyExperienceReport> {
@@ -763,12 +862,58 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     now,
     degraded: Boolean(input.degraded || input.noAi),
     limit: input.maxCurationProposals ?? input.limit,
+    concurrency: aiConcurrency,
     aiClient: input.aiClient,
     env: input.env,
     fetchImpl: input.fetchImpl,
     aiTimeoutMs: input.aiTimeoutMs,
+    onProgress: mode === "write"
+      ? async (progress) => {
+        await writeDailyProgress(root, progressPath, {
+          now,
+          status: "running",
+          current_stage: "wiki-curate",
+          current_source: "wiki-curate",
+          current_chunk: {
+            index: progress.completed,
+            total: progress.total,
+            chunk_id: progress.topic_key,
+            ai_chunks: progress.proposals + progress.conflicts,
+          },
+          sources: sourceReports,
+          ai_distill: aiDistill,
+          warnings,
+        });
+      }
+      : undefined,
   });
   outputs.push(`.praxisbase/reports/wiki-curation/${curationReport.id}.json`);
+
+  let reviewPromote: DailyReviewPromoteResult = {
+    reviewed: 0,
+    approved_by_policy: 0,
+    auto_promoted: 0,
+    needs_human: 0,
+    outputs: [],
+    warnings: [],
+  };
+  if (mode === "write" && input.buildSite) {
+    await writeDailyProgress(root, progressPath, {
+      now,
+      status: "running",
+      current_stage: "review-promote",
+      current_source: "review-promote",
+      sources: sourceReports,
+      ai_distill: aiDistill,
+      warnings,
+    });
+    reviewPromote = await runDailyReviewPromote(root, {
+      enabled: input.authorityMode === "personal-local",
+      now,
+    });
+    outputs.push(...reviewPromote.outputs);
+    warnings.push(...reviewPromote.warnings);
+  }
 
   let sitePages = 0;
   let qualityFindings = 0;
@@ -811,7 +956,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     proposal_candidates: curationReport.output_counts.curated_proposals,
     quality_findings: qualityFindings,
     site_pages: sitePages,
-    changed_stable_knowledge: false,
+    changed_stable_knowledge: reviewPromote.auto_promoted > 0,
     outputs: reportOutputs,
     warnings: Array.from(new Set(warnings)).sort(),
     created_at: now,

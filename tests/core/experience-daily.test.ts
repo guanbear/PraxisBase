@@ -213,6 +213,103 @@ describe("runDailyExperience", () => {
     assert.ok(report.outputs.some((output) => output.startsWith(".praxisbase/reports/wiki-curation/")));
   });
 
+  it("auto-promotes low-risk personal wiki proposals before building the site", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-auto-promote-site-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), [
+      "Fixed OpenClaw auth refresh handling.",
+      "Added retry guard and pnpm test passed.",
+    ].join("\n"), "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      buildSite: true,
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return {
+              ok: true,
+              json: {
+                title: "OpenClaw auth refresh repair",
+                summary: "Add retry guard coverage before retrying OpenClaw auth refresh.",
+                page_kind: "known_fix",
+                target_path: "kb/known-fixes/openclaw-auth-refresh-repair.md",
+                body_markdown: [
+                  "# OpenClaw auth refresh repair",
+                  "",
+                  "## Problem",
+                  "Auth refresh handling was incomplete.",
+                  "",
+                  "## Fix",
+                  "- Added retry guard.",
+                  "",
+                  "## Verification",
+                  "- pnpm test passed",
+                  "",
+                  "## Reusable Lessons",
+                  "- Add retry guards around auth refresh repair paths.",
+                ].join("\n"),
+                confidence: 0.91,
+                risk_notes: [],
+              },
+            };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: "codex";
+              scope_hint: "personal";
+            };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw auth refresh needs retry guard coverage.",
+              problem: "Auth refresh handling was incomplete.",
+              actions: ["Added retry guard."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Add retry guards around auth refresh repair paths."],
+              risks: [],
+              suggested_tags: ["openclaw", "auth"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.91,
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.changed_stable_knowledge, true);
+    assert.equal(report.site_pages, 1);
+    const promoted = await readFile(join(root, "kb/known-fixes/openclaw-auth-refresh-repair.md"), "utf8");
+    assert.match(promoted, /OpenClaw auth refresh repair/);
+    const page = await readFile(join(root, "dist/pages/openclaw-auth-refresh-repair.html"), "utf8");
+    assert.match(page, /OpenClaw auth refresh repair/);
+  });
+
   it("uses the configured distill model override for production provider calls", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-distill-stage-model-"));
     const sessions = join(root, "sessions");

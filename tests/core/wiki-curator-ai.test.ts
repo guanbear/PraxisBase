@@ -667,6 +667,75 @@ describe("AI wiki curator", () => {
     const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
     assert.equal(proposalFiles.length, 1);
   });
+
+  it("runs production curation synthesis with bounded concurrency", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-curator-concurrency-"));
+    await mkdir(join(root, ".praxisbase/outbox/captures"), { recursive: true });
+    const summaries = [
+      "Fixed OpenClaw auth expired memory sync by refreshing login. pnpm check passed. Reusable lesson: refresh login before retrying memory sync.",
+      "Fixed OpenClaw Slack replay timeout by increasing final assertion wait. Replay verification passed. Reusable lesson: use longer timeout for delegated Slack work.",
+      "Fixed OpenClaw dashboard runner missing state by checking task runner registration. Unit tests passed. Reusable lesson: verify runner presence before showing task state.",
+    ];
+    for (const [index, summary] of summaries.entries()) {
+      await writeFile(join(root, `.praxisbase/outbox/captures/capture_${index + 1}.json`), JSON.stringify({
+        id: `capture_${index + 1}`,
+        protocol_version: PROTOCOL_VERSION,
+        type: "capture_record",
+        agent: "codex",
+        workspace: root,
+        scope_hint: "personal",
+        result: "success",
+        triggers: ["task_finish"],
+        signals: [],
+        artifacts: [{
+          kind: "transcript",
+          source_ref: `raw-vault://codex/concurrency-${index + 1}`,
+          source_hash: `sha256:concurrency${index + 1}`,
+          redacted_summary: summary,
+        }],
+        created_at: "2026-05-21T00:00:00.000Z",
+      }));
+    }
+
+    let active = 0;
+    let maxActive = 0;
+    const releaseQueue: Array<() => void> = [];
+    const report = await curateWiki(root, {
+      mode: "dry-run",
+      now: "2026-05-21T00:00:00.000Z",
+      concurrency: 2,
+      aiClient: {
+        async generateJson() {
+          active++;
+          maxActive = Math.max(maxActive, active);
+          await new Promise<void>((resolve) => {
+            const timeout = setTimeout(resolve, 20);
+            releaseQueue.push(resolve);
+            if (releaseQueue.length >= 2) {
+              clearTimeout(timeout);
+              for (const release of releaseQueue.splice(0)) release();
+            }
+          });
+          active--;
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw reusable repair lesson",
+              summary: "A concrete OpenClaw repair lesson was distilled.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-reusable-repair-lesson.md",
+              body_markdown: "# OpenClaw reusable repair lesson\n\n## Problem\nA repair workflow failed.\n\n## Fix\nApply the distilled repair lesson.\n\n## Verification\nThe verification command passed.",
+              confidence: 0.9,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.output_counts.curated_proposals, 3);
+    assert.equal(maxActive, 2);
+  });
 });
 
 describe("AI wiki curator prompt with synthesis context", () => {

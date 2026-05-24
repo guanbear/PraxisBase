@@ -18,6 +18,7 @@ export interface WikiCommandOptions {
   degraded?: boolean;
   minSourceCount?: number;
   aiTimeoutMs?: number;
+  concurrency?: number;
 }
 
 export async function wikiCommand(
@@ -42,6 +43,7 @@ export async function wikiCommand(
       minSourceCount: options.minSourceCount,
       limit: options.limit,
       aiTimeoutMs: options.aiTimeoutMs,
+      concurrency: options.concurrency,
     });
     if (options.json) {
       return JSON.stringify({ ok: true, report }, null, 2);
