@@ -286,6 +286,7 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
       <div id="searchResults" class="search-results" hidden></div>
     </div>
     <nav class="topnav" aria-label="Wiki views">
+      <a href="${escapeHtml(prefix)}wiki/index.md">Index</a>
       <a href="${escapeHtml(prefix)}review.html">Review</a>
       <a href="${escapeHtml(prefix)}graph.html">Graph</a>
       <a href="${escapeHtml(prefix)}issues.html">Issues</a>
@@ -811,6 +812,39 @@ function renderAiReadme(result: { pages: WikiSitePage[]; graph: WikiGraph }): st
   ].join("\n");
 }
 
+async function writeRootWikiArtifacts(root: string, pages: WikiSitePage[], graph: WikiGraph, now: string): Promise<string[]> {
+  const byKind = new Map<string, WikiSitePage[]>();
+  for (const page of pages) {
+    const kind = page.page_kind ?? "note";
+    const bucket = byKind.get(kind) ?? [];
+    bucket.push(page);
+    byKind.set(kind, bucket);
+  }
+
+  const indexLines = ["# Wiki Index", ""];
+  for (const [kind, bucket] of Array.from(byKind.entries()).sort(([a], [b]) => a.localeCompare(b))) {
+    indexLines.push(`## ${kind}`, "");
+    for (const page of bucket.sort((a, b) => a.title.localeCompare(b.title))) {
+      const summary = page.summary ? ` - ${page.summary}` : "";
+      indexLines.push(`- [[${page.id}|${page.title}]]${summary}`);
+    }
+    indexLines.push("");
+  }
+
+  const artifacts: Array<{ path: string; body: string }> = [
+    { path: "dist/wiki/index.md", body: indexLines.join("\n") },
+    { path: "dist/wiki/log.md", body: `# Wiki Log\n\n## ${now}\n\n- build-site: ${pages.length} page(s)\n- graph links: ${graph.links.length}\n- broken links: ${graph.broken_links.length}\n` },
+    { path: "dist/wiki/purpose.md", body: "# Wiki Purpose\n\nPraxisBase compiles agent experience into reusable, provenance-backed operational knowledge for humans and agents.\n" },
+    { path: "dist/wiki/schema.md", body: "# Wiki Schema\n\nStable pages should include durable instructions, verification guidance, reusable lessons, provenance, lifecycle metadata, and links to related knowledge.\n" },
+    { path: "dist/wiki/overview.md", body: `# Wiki Overview\n\nCompiled pages: ${pages.length}.\nGraph links: ${graph.links.length}.\nBroken links: ${graph.broken_links.length}.\n` },
+  ];
+
+  for (const artifact of artifacts) {
+    await writeText(root, artifact.path, artifact.body);
+  }
+  return artifacts.map((artifact) => artifact.path);
+}
+
 async function exists(root: string, path: string): Promise<boolean> {
   try {
     await stat(posix.join(root, path));
@@ -1122,6 +1156,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
   const stalePages = lintReport.findings.filter((finding) => finding.rule === "stale_active_page").length;
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
+  outputs.push(...await writeRootWikiArtifacts(root, pages, graph, new Date().toISOString()));
 
   await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates, curationReport));
   await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport));

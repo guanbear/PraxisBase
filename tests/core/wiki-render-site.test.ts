@@ -110,6 +110,39 @@ See [[related-page|Related page]] before changing code.
     assert.ok(page.includes(">Related page</a>"));
   });
 
+  it("writes root wiki artifacts and links them from the site navigation", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-root-artifacts-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/ack-timing.md"), `---
+id: ack-timing
+type: procedure
+knowledge_type: procedure
+scope: personal
+maturity: draft
+sources: [{ uri: "codex:session:1", hash: "sha256:ack" }]
+updated_at: "2026-05-24T00:00:00.000Z"
+---
+# ACK Timing
+
+Send an ACK before long-running agent work.
+`);
+
+    const result = await buildWikiSite(root);
+
+    assert.ok(result.outputs.includes("dist/wiki/index.md"));
+    assert.ok(result.outputs.includes("dist/wiki/log.md"));
+    assert.ok(result.outputs.includes("dist/wiki/purpose.md"));
+    assert.ok(result.outputs.includes("dist/wiki/schema.md"));
+    assert.ok(result.outputs.includes("dist/wiki/overview.md"));
+
+    const indexArtifact = await readFile(join(root, "dist/wiki/index.md"), "utf8");
+    assert.match(indexArtifact, /ACK Timing/);
+    assert.match(indexArtifact, /\[\[ack-timing\|ACK Timing\]\]/);
+
+    const indexHtml = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(indexHtml.includes("href=\"wiki/index.md\""));
+  });
+
   it("renders path-leaf wiki aliases when title slugs differ", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-path-alias-"));
     await mkdir(join(root, "kb/notes"), { recursive: true });
