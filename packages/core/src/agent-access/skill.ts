@@ -62,6 +62,8 @@ praxisbase harvest --openclaw-export <json-file> --build-site --json
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
 \`\`\`
 
+Context should come from compiled wiki pages, root wiki artifacts, graph neighbors, and provenance pointers. Do not rely on raw vault bodies as repair instructions.
+
 ## Capture After Repair
 
 \`\`\`bash

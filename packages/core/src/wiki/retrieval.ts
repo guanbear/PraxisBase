@@ -1,4 +1,7 @@
 import { MATURITY_ORDER, SCOPE_ORDER } from "./model.js";
+import { readJson, readText } from "../store/file-store.js";
+import { collectWikiPages } from "./render-site.js";
+import type { WikiGraph } from "./resolver.js";
 
 export interface WikiContextCandidate {
   id: string;
@@ -17,6 +20,21 @@ export interface RankWikiContextOptions {
   query: string;
   stage: "diagnosis" | "repair" | "verification" | "proposal";
   maxItems: number;
+}
+
+export interface RetrieveWikiContextOptions {
+  query: string;
+  stage?: RankWikiContextOptions["stage"];
+  maxBytes?: number;
+  includeRootArtifacts?: boolean;
+  includeGraphNeighbors?: boolean;
+  maxItems?: number;
+}
+
+export interface RetrievedWikiContext {
+  text: string;
+  items: WikiContextCandidate[];
+  truncated: boolean;
 }
 
 interface ScoredCandidate {
@@ -171,4 +189,112 @@ export function rankWikiContextItems(
     .sort((a, b) => b.score - a.score || a.candidate.path.localeCompare(b.candidate.path))
     .slice(0, options.maxItems)
     .map((item) => item.candidate);
+}
+
+export async function retrieveWikiContext(root: string, options: RetrieveWikiContextOptions): Promise<RetrievedWikiContext> {
+  const maxBytes = options.maxBytes ?? 16 * 1024;
+  const pages = await collectWikiPages(root);
+  const candidates: WikiContextCandidate[] = pages.map((page) => ({
+    id: page.id,
+    path: page.path,
+    kind: page.page_kind ?? "note",
+    title: page.title,
+    summary: page.summary,
+    body: page.body_text,
+    maturity: page.maturity,
+    scope: page.scope,
+    source_ids: page.source_ids,
+    outbound_links: page.outbound_links,
+  }));
+  const selected = rankWikiContextItems(candidates, {
+    query: options.query,
+    stage: options.stage ?? "repair",
+    maxItems: options.maxItems ?? 8,
+  });
+
+  const sections: string[] = ["# PraxisBase Wiki Context", ""];
+  if (options.includeRootArtifacts) {
+    sections.push(...await rootArtifactSections(root));
+  }
+
+  for (const item of selected) {
+    sections.push(
+      `## ${item.title}`,
+      `Path: ${item.path}`,
+      `Kind: ${item.kind}`,
+      "",
+      item.body ?? item.summary,
+      "",
+      "### Provenance",
+      ...(item.source_ids && item.source_ids.length > 0 ? item.source_ids.map((sourceId) => `- ${sourceId}`) : ["- unavailable"]),
+      "",
+    );
+  }
+
+  if (options.includeGraphNeighbors) {
+    const neighbors = await graphNeighborSections(root, selected);
+    if (neighbors.length > 0) sections.push(...neighbors);
+  }
+
+  return enforceTextBudget(sections.join("\n"), selected, maxBytes);
+}
+
+async function rootArtifactSections(root: string): Promise<string[]> {
+  const sections: string[] = [];
+  for (const path of ["dist/wiki/purpose.md", "dist/wiki/schema.md", "dist/wiki/index.md"]) {
+    const content = await readOptionalText(root, path);
+    if (!content) continue;
+    const title = path.split("/").pop()!.replace(/\.md$/, "");
+    sections.push(`## Root Artifact: ${title}`, content.slice(0, 1200), "");
+  }
+  return sections;
+}
+
+async function graphNeighborSections(root: string, selected: WikiContextCandidate[]): Promise<string[]> {
+  const graph = await readOptionalJson<WikiGraph>(root, "dist/graph.json");
+  if (!graph) return [];
+  const selectedIds = new Set(selected.map((item) => item.id));
+  const pageById = new Map(graph.nodes.map((node) => [node.id, node]));
+  const lines: string[] = [];
+  for (const link of graph.links) {
+    const fromSelected = selectedIds.has(link.from);
+    const toSelected = selectedIds.has(link.to);
+    if (!fromSelected && !toSelected) continue;
+    const neighborId = fromSelected ? link.to : link.from;
+    if (selectedIds.has(neighborId)) continue;
+    const neighbor = pageById.get(neighborId);
+    if (!neighbor) continue;
+    lines.push(`- ${link.type}: ${neighbor.title} (${neighbor.id})`);
+    if (lines.length >= 5) break;
+  }
+  return lines.length > 0 ? ["## Graph Neighbors", ...lines, ""] : [];
+}
+
+function enforceTextBudget(text: string, items: WikiContextCandidate[], maxBytes: number): RetrievedWikiContext {
+  if (Buffer.byteLength(text, "utf8") <= maxBytes) {
+    return { text, items, truncated: false };
+  }
+  const marker = "\n...[truncated]";
+  const budget = Math.max(0, maxBytes - Buffer.byteLength(marker, "utf8"));
+  let truncated = text;
+  while (Buffer.byteLength(truncated, "utf8") > budget && truncated.length > 0) {
+    truncated = truncated.slice(0, Math.floor(truncated.length * 0.9));
+  }
+  return { text: `${truncated}${marker}`, items, truncated: true };
+}
+
+async function readOptionalText(root: string, path: string): Promise<string | undefined> {
+  try {
+    return await readText(root, path);
+  } catch {
+    return undefined;
+  }
+}
+
+async function readOptionalJson<T>(root: string, path: string): Promise<T | undefined> {
+  try {
+    return await readJson<T>(root, path);
+  } catch {
+    return undefined;
+  }
 }
