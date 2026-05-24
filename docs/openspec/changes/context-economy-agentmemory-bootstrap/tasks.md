@@ -1,19 +1,34 @@
 # Tasks
 
+## M16 Context Economy
+
 - [ ] Add context reducer schemas, built-in rules, and deterministic reduction actions.
 - [ ] Add source/tool normalization for command, argv, stdout, stderr, combined text, exit code, and metadata.
 - [ ] Add specificity-based rule classification and pass-through safety for tiny inputs, poor compression ratio, file-content inspection commands, and failed command output.
 - [ ] Add reducer version, rule-set hash, reduction hash, matched rule, facts, and warnings to reduction results.
+- [ ] Add built-in rule families for Codex sessions, OpenClaw logs, command output, test output, git output, agentmemory-shaped memories, JSON/JSONL, and generic fallback.
+- [ ] Add user/project rule overlay loading with deterministic override by rule id and diagnostics for invalid regex.
 - [ ] Insert reducer before chunking and AI distill in daily/source ingestion.
 - [ ] Ensure reducer version/rule-set changes cannot silently reuse stale AI distill cache entries.
 - [ ] Add `context_economy` report fields and compact reducer debug reports.
+- [ ] Add a `--no-context-economy` or equivalent bypass for debugging.
+- [ ] Run focused reducer/daily tests.
+
+## M17 AgentMemory Interop
+
 - [ ] Add an agentmemory REST client with health, latest memories, smart-search, sessions, and remember operations.
 - [ ] Extend source config and source CLI for `source_type=agentmemory`.
 - [ ] Add `praxisbase agentmemory doctor/import/export` commands.
 - [ ] Add optional `context get --with-agentmemory` sidecar retrieval with PraxisBase stable wiki authority ranking first.
+
+## M18 Personal Bootstrap UX
+
 - [ ] Add `praxisbase personal init/connect/doctor/run/schedule` commands.
 - [ ] Extend generated site model and HTML with context economy and agentmemory health summaries.
 - [ ] Extend generated agent Skill/instructions with first-run and sidecar retrieval guidance.
+
+## Verification
+
 - [ ] Add unit, CLI, and e2e tests for reducer, agentmemory adapter, personal bootstrap, retrieval ranking, and site summaries.
 - [ ] Run `pnpm check`.
 - [ ] Run a real local personal smoke without committing generated `kb/`.

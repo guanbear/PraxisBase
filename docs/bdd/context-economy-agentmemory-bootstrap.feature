@@ -9,6 +9,12 @@ Feature: Context economy, agentmemory interop, and personal bootstrap
     And the AI distill input omits repeated progress noise
     And the daily report includes context economy saved bytes
 
+  Scenario: Normalize source metadata before rule matching
+    Given a source item contains command "pnpm test", stdout, stderr, exit code 1, source ref, and source hash
+    When context economy classifies the item
+    Then the test-output rule sees argv, command, stdout, stderr, and exit code in one canonical input
+    And the reduction result preserves the source ref and source hash
+
   Scenario: Bypass context economy for debugging
     Given a personal OpenClaw source with noisy logs
     When I run daily with context economy disabled
@@ -26,6 +32,20 @@ Feature: Context economy, agentmemory interop, and personal bootstrap
     When context economy reduces the item
     Then the reduced text keeps the command exit status
     And it preserves the failing test name and trailing error context
+
+  Scenario: File inspection commands pass through by default
+    Given a source item comes from command "sed -n '1,200p' src/app.ts"
+    And the output is long file content
+    When context economy runs
+    Then PraxisBase keeps the original text
+    And the context economy report records a file inspection pass-through warning
+
+  Scenario: Invalid local reducer rules are diagnostics
+    Given a project reducer rule contains an invalid regex
+    When personal daily runs with context economy enabled
+    Then the invalid regex is ignored
+    And the run continues with a reducer warning
+    And no raw source text is written to the reducer debug report
 
   Scenario: Reducer rule changes invalidate stale AI cache identity
     Given a source chunk was distilled with reducer rule set hash "sha256:old"
