@@ -306,6 +306,18 @@ describe("runDailyExperience", () => {
     assert.equal(report.site_pages, 1);
     const promoted = await readFile(join(root, "kb/known-fixes/openclaw-auth-refresh-repair.md"), "utf8");
     assert.match(promoted, /OpenClaw auth refresh repair/);
+    const sourceSummaryFiles = await readdir(join(root, ".praxisbase/reports/wiki-source-summaries"));
+    const sourceSummaries = await Promise.all(sourceSummaryFiles.map(async (file) =>
+      JSON.parse(await readFile(join(root, ".praxisbase/reports/wiki-source-summaries", file), "utf8")) as {
+        contributed_to_pages: string[];
+      }
+    ));
+    assert.ok(
+      sourceSummaries.some((summary) =>
+        summary.contributed_to_pages.includes("kb/known-fixes/openclaw-auth-refresh-repair.md")
+      ),
+      "expected daily auto-promote to record the promoted wiki page on source summaries",
+    );
     const page = await readFile(join(root, "dist/pages/openclaw-auth-refresh-repair.html"), "utf8");
     assert.match(page, /OpenClaw auth refresh repair/);
   });

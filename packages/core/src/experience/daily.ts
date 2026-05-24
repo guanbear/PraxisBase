@@ -21,6 +21,7 @@ import { compileWiki } from "../wiki/compile.js";
 import { curateWiki } from "../wiki/curate.js";
 import { CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal } from "../wiki/curation-model.js";
 import { buildWikiSite } from "../wiki/render-site.js";
+import { recordWikiSourceSummaryContributions } from "../wiki/source-summary.js";
 import { readReviewPolicy, decideAutoReview } from "../review/policy.js";
 import { reviewProposal } from "../review/reviewer.js";
 import { promoteApprovedProposal } from "../promote/promote.js";
@@ -401,6 +402,7 @@ async function runDailyReviewPromote(root: string, input: { enabled: boolean; no
       result.approved_by_policy++;
       if (decision.auto_promote) {
         await promoteApprovedProposal(root, { proposal, review });
+        await recordWikiSourceSummaryContributions(root, curated);
         await unlink(join(proposalDir, file)).catch(() => undefined);
         result.auto_promoted++;
         result.outputs.push(proposal.patch.path);

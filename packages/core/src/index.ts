@@ -38,6 +38,7 @@ export * from "./wiki/compile.js";
 export * from "./wiki/curation-model.js";
 export * from "./wiki/topic-planner.js";
 export * from "./wiki/curate.js";
+export * from "./wiki/source-summary.js";
 export * from "./wiki/curator-prompt.js";
 export * from "./wiki/filter-rules.js";
 export * from "./wiki/lint.js";
