@@ -324,7 +324,7 @@ export async function buildWikiEvidencePoolFromRoot(root: string): Promise<WikiE
   return buildWikiEvidencePool(await collectWikiSources(root), await readWikiFilterRules(root));
 }
 
-const IGNORED_OBSERVATION_SIG_PREFIX = /^(capture|native_memory|episode|external_ref|proposal|review|skill):/;
+const IGNORED_OBSERVATION_SIG_PREFIX = /^(capture|native_memory|episode|external_ref|proposal|review|skill|text):/;
 
 function observationKindFromSuggested(suggested: WikiEvidenceItem["suggested_wiki_kind"]): WikiObservation["kind"] {
   if (suggested === "known_fix") return "fix";

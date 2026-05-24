@@ -267,12 +267,14 @@ export async function loadExistingWikiPages(root: string): Promise<ExistingWikiP
       }
       const fm = parseFrontmatter(content);
       const bodyText = stripFrontmatter(content);
+      const fallbackTitle = bodyText.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? file.replace(/\.md$/i, "");
+      const title = fm.title || fallbackTitle;
       pages.push({
         path: file,
-        title: fm.title,
-        slug: makeWikiSlug(fm.title || file.replace(/\.md$/i, "")),
+        title,
+        slug: makeWikiSlug(title || file.replace(/\.md$/i, "")),
         source_hashes: fm.source_hashes,
-        entities: extractExistingPageEntities({ title: fm.title, body: bodyText, signatures: fm.signatures }),
+        entities: extractExistingPageEntities({ title, body: bodyText, signatures: fm.signatures }),
         signatures: fm.signatures,
         body_text: bodyText,
         scope: fm.scope,
