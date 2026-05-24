@@ -56,9 +56,10 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
   const systemLines = [
     "You are the PraxisBase wiki curator.",
     "Return only JSON.",
-    "Synthesize a durable wiki proposal from safe evidence.",
+    "Synthesize a compiled wiki article from safe evidence; do not summarize raw material.",
     "Do not copy raw transcripts, credentials, tokens, cookies, auth headers, or private keys.",
-    "The page must include problem/context, fix or decision, verification, risks when useful, and provenance.",
+    "The page must include # Title, ## Problem or ## Context, an action section (## Fix, ## Procedure, ## Decision, or ## Operating Rule), ## Verification, ## Reusable Lessons, and ## Provenance.",
+    "When relationship links are supplied, include a ## Related Wiki Pages section using exact [[slug|label]] wiki links.",
   ];
 
   const userObj: Record<string, unknown> = {
@@ -89,6 +90,15 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
   if (context) {
     const structuredRequiredLinks = context.requiredLinks.map(normalizeRequiredLink);
     const compilerContext: Record<string, unknown> = {
+      required_sections: [
+        "# Title",
+        "## Problem or ## Context",
+        "## Fix / ## Procedure / ## Decision / ## Operating Rule",
+        "## Verification",
+        "## Reusable Lessons",
+        "## Provenance",
+        "## Related Wiki Pages when links are supplied",
+      ],
       topic_title: context.topicTitle,
       page_kind: context.pageKind,
       observations: context.observations.map((obs) => ({
@@ -103,7 +113,7 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
       suggested_links: context.suggestedLinks ?? [],
       merge_candidates: context.mergeCandidates ?? [],
       relationship_reasons: context.relationshipReasons ?? [],
-      link_instruction: "Every required link MUST appear in the output body as a wiki link using the exact format [[slug|label]]. Do NOT invent wiki links to pages not listed in required_links or suggested_links.",
+      link_instruction: "Every required link MUST appear in the output body as a wiki link using the exact format [[slug|label]]. Suggested links may appear when useful. Do NOT invent wiki links to pages not listed in required_links or suggested_links.",
     };
 
     if (context.existingPageContent) {

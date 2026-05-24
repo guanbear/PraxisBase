@@ -18,7 +18,7 @@ function goodProposal(overrides: Partial<CuratedWikiProposal> = {}): CuratedWiki
     scope: "personal",
     title: "Test fix",
     summary: "A test fix with verification.",
-    body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.",
+    body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
     source_refs: ["codex:session:1", "codex:session:2"],
     source_hashes: ["sha256:a", "sha256:b"],
     source_count: 2,
@@ -120,6 +120,14 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
   it("hard-blocks body missing wiki structure", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       body_markdown: "Just plain text with no headings at all.",
+    }));
+    assert.ok(result.hard_blocks.includes("body_missing_wiki_structure"));
+    assert.equal(result.passed, false);
+  });
+
+  it("hard-blocks bodies missing reusable lessons", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test\n\n## Problem\nSomething broke.\n\n## Fix\nApply.\n\n## Verification\nTests pass.\n\n## Provenance\n- codex:session:1 (sha256:a)",
     }));
     assert.ok(result.hard_blocks.includes("body_missing_wiki_structure"));
     assert.equal(result.passed, false);

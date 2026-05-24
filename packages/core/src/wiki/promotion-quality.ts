@@ -102,11 +102,25 @@ function containsTemplateFallback(body: string): boolean {
 function hasWikiStructure(body: string): boolean {
   const hasH1 = /^#\s+.+/m.test(body);
   const hasH2 = /^##\s+/m.test(body);
-  return hasH1 && hasH2;
+  return hasH1
+    && hasH2
+    && hasSection(body, ["Problem", "Context"])
+    && hasSection(body, ["Fix", "Steps", "Procedure", "Decision", "Operating Rule", "Applicability"])
+    && hasSection(body, ["Verification"])
+    && hasSection(body, ["Reusable Lessons"])
+    && hasSection(body, ["Provenance", "Sources"]);
 }
 
 function hasPromotableMarkdownShape(body: string): boolean {
   return /^#\s+.+/m.test(body);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasSection(body: string, names: string[]): boolean {
+  return names.some((name) => new RegExp(`^##\\s+${escapeRegExp(name)}\\b`, "im").test(body));
 }
 
 // Missing wikilinks detection.

@@ -753,8 +753,11 @@ describe("AI wiki curator prompt with synthesis context", () => {
     const prompt = buildWikiCuratorPrompt(cluster, evidence, context);
     const user = prompt.user;
 
+    assert.match(prompt.system, /compiled wiki article/i);
     assert.ok(user.includes("OpenClaw ACK timing"), "prompt.user should contain topic title");
     assert.ok(user.includes("preference"), "prompt.user should contain page kind");
+    assert.ok(user.includes("required_sections"), "prompt.user should contain required sections");
+    assert.ok(user.includes("Related Wiki Pages"), "prompt.user should contain related section contract");
     assert.ok(user.includes("User prefers ACK before long tasks"), "prompt.user should contain first observation summary");
     assert.ok(user.includes("send a short ACK first, then continue"), "prompt.user should contain raw_excerpt");
     assert.ok(user.includes("ACK timing improved response perception"), "prompt.user should contain second observation summary");
@@ -877,6 +880,64 @@ describe("AI wiki curator prompt with synthesis context", () => {
     assert.ok(capturedUser.includes("OpenClaw ACK timing"), "AI client should receive related page title");
     assert.ok(capturedUser.includes("kb/memory/preferences-openclaw-ack-timing.md"), "AI client should receive related page path and required links");
     assert.ok(capturedUser.includes("UPDATE or MERGE"), "AI client should receive update/merge instruction");
+  });
+
+  it("repairs AI output that omits supplied relationship links and provenance", async () => {
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw auth expired",
+      pageKind: "known_fix",
+      observations: [{ summary: "Auth expired; refresh fixed it" }],
+      relatedPages: [
+        { title: "OpenClaw operational coordination", path: "kb/known-fixes/openclaw-operational-coordination.md" },
+      ],
+      requiredLinks: [
+        {
+          slug: "openclaw-operational-coordination",
+          label: "OpenClaw operational coordination",
+          path: "kb/known-fixes/openclaw-operational-coordination.md",
+          reason: "entity_overlap",
+        },
+      ],
+      suggestedLinks: [
+        {
+          slug: "agent-terminal-io-patterns",
+          label: "Agent terminal IO patterns",
+          path: "kb/known-fixes/agent-terminal-io-patterns.md",
+          reason: "related_terminal_io",
+        },
+      ],
+      pagePlanAction: "create",
+    };
+
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      synthesisContext: context,
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login before retrying memory sync.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nMemory sync fails after auth expiry.\n\n## Fix\nRefresh login and retry sync.\n\n## Verification\nRun memory sync again.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(result.proposal.body_markdown, /## Related Wiki Pages/);
+      assert.match(result.proposal.body_markdown, /\[\[openclaw-operational-coordination\|OpenClaw operational coordination\]\]/);
+      assert.match(result.proposal.body_markdown, /## Reusable Lessons/);
+      assert.match(result.proposal.body_markdown, /## Provenance/);
+    }
   });
 
   it("existing synthesizeCuratedWikiProposal callers work without context", async () => {

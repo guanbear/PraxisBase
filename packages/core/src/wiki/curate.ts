@@ -559,6 +559,85 @@ function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], t
   ].join("\n");
 }
 
+function normalizeStructuredLink(link: string | StructuredLink): StructuredLink {
+  if (typeof link === "object") return link;
+  const slug = link.split("/").pop()?.replace(/\.md$/i, "") ?? link;
+  return { slug, label: slug, path: link, reason: "required_link" };
+}
+
+function extractBodyWikilinkSlugs(body: string): Set<string> {
+  const slugs = new Set<string>();
+  for (const match of body.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g)) {
+    slugs.add(match[1].trim().toLowerCase());
+  }
+  return slugs;
+}
+
+function relationshipLinksFromContext(context: SynthesisContext | undefined, includeSuggested: boolean): StructuredLink[] {
+  if (!context) return [];
+  const bodyLinks = new Map<string, StructuredLink>();
+  for (const link of context.requiredLinks.map(normalizeStructuredLink)) {
+    bodyLinks.set(link.slug.toLowerCase(), link);
+  }
+  if (includeSuggested) {
+    for (const link of (context.suggestedLinks ?? []).slice(0, 3)) {
+      bodyLinks.set(link.slug.toLowerCase(), link);
+    }
+  }
+  return Array.from(bodyLinks.values());
+}
+
+function ensureRelatedLinksSection(body: string, context?: SynthesisContext): string {
+  const existingSlugs = extractBodyWikilinkSlugs(body);
+  const contextLinks = relationshipLinksFromContext(context, existingSlugs.size === 0);
+  if (contextLinks.length === 0) return body;
+  const missing = contextLinks.filter((link) => !existingSlugs.has(link.slug.toLowerCase()));
+  if (missing.length === 0) return body;
+  const relatedLines = [
+    "",
+    "## Related Wiki Pages",
+    ...missing.map((link) => `- [[${link.slug}|${link.label}]] - ${link.reason}`),
+  ];
+  return `${body.replace(/\s+$/, "")}\n${relatedLines.join("\n")}\n`;
+}
+
+function ensureProvenanceSection(body: string, cluster: WikiEvidenceCluster): string {
+  if (/^##\s+(Provenance|Sources)\b/im.test(body)) return body;
+  const lines = [
+    "",
+    "## Provenance",
+    ...cluster.source_refs.map((ref, index) => `- ${ref} (${cluster.source_hashes[index] ?? "unknown-hash"})`),
+  ];
+  return `${body.replace(/\s+$/, "")}\n${lines.join("\n")}\n`;
+}
+
+function ensureReusableLessonsSection(body: string, evidence: WikiEvidenceItem[]): string {
+  if (/^##\s+Reusable Lessons\b/im.test(body)) return body;
+  const lessons = uniq(evidence.flatMap((item) => item.reusable_lessons)).slice(0, 5);
+  if (lessons.length === 0) {
+    const actions = uniq(evidence.flatMap((item) => item.actions)).slice(0, 3);
+    lessons.push(...actions.map((action) => `When the same symptom recurs, ${action}.`));
+  }
+  if (lessons.length === 0) return body;
+  const lines = [
+    "",
+    "## Reusable Lessons",
+    ...lessons.map((lesson) => `- ${lesson}`),
+  ];
+  return `${body.replace(/\s+$/, "")}\n${lines.join("\n")}\n`;
+}
+
+function repairWikiBody(body: string, cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], context?: SynthesisContext): string {
+  if (containsPrivateMaterial(body)) return body;
+  return ensureProvenanceSection(
+    ensureReusableLessonsSection(
+      ensureRelatedLinksSection(body, context),
+      evidence,
+    ),
+    cluster,
+  );
+}
+
 function proposalAction(pageKind: WikiEvidenceCluster["page_kind"], planAction?: WikiPagePlanAction): CuratedWikiProposal["action"] {
   if (planAction === "update") return pageKind === "skill" ? "skill_update" : "update";
   if (planAction === "merge") return "update";
@@ -567,10 +646,10 @@ function proposalAction(pageKind: WikiEvidenceCluster["page_kind"], planAction?:
   return pageKind === "skill" ? "skill_create" : "create";
 }
 
-function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], now: string, planAction?: WikiPagePlanAction): CuratedWikiProposal {
+function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], now: string, planAction?: WikiPagePlanAction, context?: SynthesisContext): CuratedWikiProposal {
   const title = titleFromCluster(cluster);
   const targetPath = cluster.target_path_hint ?? targetPathForCluster(cluster.page_kind, title);
-  const body = buildBody(cluster, evidence);
+  const body = repairWikiBody(buildBody(cluster, evidence), cluster, evidence, context);
   const guards = [
     { id: "path", ok: isAllowedWikiPatchPath(targetPath), message: isAllowedWikiPatchPath(targetPath) ? "allowed stable knowledge path" : "unsafe target path" },
     { id: "privacy", ok: !containsPrivateMaterial(body), message: containsPrivateMaterial(body) ? "private material detected" : "no private material detected" },
@@ -690,7 +769,7 @@ function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): Cura
   ];
 }
 
-function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], json: unknown, now: string, planAction?: WikiPagePlanAction): CuratedWikiProposal {
+function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], json: unknown, now: string, planAction?: WikiPagePlanAction, context?: SynthesisContext): CuratedWikiProposal {
   const record = json && typeof json === "object" ? json as Record<string, unknown> : {};
   const rawBody = typeof record.body_markdown === "string" && record.body_markdown.trim()
     ? record.body_markdown.trim()
@@ -719,11 +798,12 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
     : aiTargetPath && !looksMachineGeneratedPath(aiTargetPath)
       ? aiTargetPath
       : hintedTargetPath ?? targetPathForCluster(pageKind, title);
-  const body = isAcceptableAiBody(rawBody)
+  const bodyBeforeRepair = isAcceptableAiBody(rawBody)
     ? rawBody
     : containsPrivateMaterial(rawBody)
       ? rawBody
       : buildBody(cluster, evidence, title);
+  const body = repairWikiBody(bodyBeforeRepair, cluster, evidence, context);
   const confidence = typeof record.confidence === "number" && Number.isFinite(record.confidence)
     ? Math.max(0, Math.min(1, record.confidence))
     : cluster.confidence_hint;
@@ -789,9 +869,9 @@ export async function synthesizeCuratedWikiProposal(
         maxOutputBytes: 8192,
       });
       if (!response.ok) return { ok: false, category: "ai_error", error: response.error };
-      proposal = proposalFromAiJson(cluster, options.evidence, response.json, now, planAction);
+      proposal = proposalFromAiJson(cluster, options.evidence, response.json, now, planAction, options.synthesisContext);
     } else {
-      proposal = synthesizeDegradedProposal(cluster, options.evidence, now, planAction);
+      proposal = synthesizeDegradedProposal(cluster, options.evidence, now, planAction, options.synthesisContext);
     }
 
     const failedGuard = proposal.guards.find((guard) => !guard.ok);
