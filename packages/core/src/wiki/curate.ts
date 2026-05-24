@@ -20,6 +20,7 @@ import {
   WikiEvidenceClusterSchema,
   WikiEvidenceItemSchema,
   WikiObservationSchema,
+  WikiSourceSummarySchema,
   type CuratedWikiProposal,
   type WikiCurationReport,
   type WikiEvidenceCluster,
@@ -33,6 +34,53 @@ import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-p
 import { buildWikiRelationshipPlans, type WikiRelationshipPlan, type RelationshipWikiPage } from "./relationship-planner.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
+const REPORTS_WIKI_SOURCE_SUMMARIES = ".praxisbase/reports/wiki-source-summaries";
+
+async function writeWikiSourceSummaries(root: string, input: {
+  evidence: WikiEvidenceItem[];
+  observations: WikiObservation[];
+  topics: WikiTopic[];
+  now: string;
+}): Promise<void> {
+  const observationsByEvidence = new Map<string, WikiObservation[]>();
+  for (const obs of input.observations) {
+    const bucket = observationsByEvidence.get(obs.evidence_id) ?? [];
+    bucket.push(obs);
+    observationsByEvidence.set(obs.evidence_id, bucket);
+  }
+  const topicKeysByObservation = new Map<string, string[]>();
+  for (const topic of input.topics) {
+    for (const observationId of topic.observation_ids) {
+      const bucket = topicKeysByObservation.get(observationId) ?? [];
+      bucket.push(topic.topic_key);
+      topicKeysByObservation.set(observationId, bucket);
+    }
+  }
+
+  for (const item of input.evidence) {
+    const observationsForItem = observationsByEvidence.get(item.id) ?? [];
+    const topicKeys = Array.from(new Set(observationsForItem.flatMap((obs) => topicKeysByObservation.get(obs.id) ?? []))).sort();
+    const summaryId = makeId("source-summary", item.id);
+    const summary = WikiSourceSummarySchema.parse({
+      id: summaryId,
+      type: "wiki_source_summary",
+      source_id: item.id,
+      source_ref: item.source_ref,
+      source_hash: item.source_hash,
+      source_kind: item.kind,
+      scope: item.scope,
+      summary: item.summary,
+      entities: Array.from(new Set(observationsForItem.flatMap((obs) => obs.entities))).sort(),
+      topics: Array.from(new Set(observationsForItem.flatMap((obs) => obs.topics))).sort(),
+      observation_ids: observationsForItem.map((obs) => obs.id).sort(),
+      topic_keys: topicKeys,
+      privacy_verdict: item.privacy_verdict,
+      contributed_to_pages: [],
+      created_at: input.now,
+    });
+    await writeJson(root, `${REPORTS_WIKI_SOURCE_SUMMARIES}/${summaryId}.json`, summary);
+  }
+}
 
 function countPagePlansByAction(plans: WikiPagePlan[]): { create: number; update: number; merge: number; supersede: number; archive: number } {
   const byAction = { create: 0, update: 0, merge: 0, supersede: 0, archive: 0 };
@@ -1194,6 +1242,9 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
 
   const observations = buildWikiObservationsFromEvidence(pool.items);
   const topics = buildWikiTopics(observations);
+
+  await writeWikiSourceSummaries(root, { evidence: pool.items, observations, topics, now });
+
   const existingPages = await loadExistingWikiPages(root);
   const existingRelationshipPlans = buildWikiRelationshipPlans({ topics, existingPages });
   const initialPagePlans = planWikiPages(topics, existingPages, { relationships: existingRelationshipPlans });

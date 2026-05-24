@@ -47,6 +47,55 @@ export const WikiEvidenceItemSchema = z.object({
 
 export type WikiEvidenceItem = z.infer<typeof WikiEvidenceItemSchema>;
 
+export const WikiSourceSummarySchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("wiki_source_summary"),
+  source_id: z.string().min(1),
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1),
+  source_kind: WikiEvidenceKindSchema.or(z.literal("stable_kb")).or(z.literal("skill")).or(z.literal("review")),
+  scope: ScopeSchema,
+  summary: z.string().min(1),
+  entities: z.array(z.string()).default([]),
+  topics: z.array(z.string()).default([]),
+  observation_ids: z.array(z.string()).default([]),
+  topic_keys: z.array(z.string()).default([]),
+  privacy_verdict: z.enum(["safe", "personal_only", "team_allowed", "human_required", "reject"]),
+  contributed_to_pages: z.array(z.string()).default([]),
+  created_at: z.string().datetime(),
+});
+
+export type WikiSourceSummary = z.infer<typeof WikiSourceSummarySchema>;
+
+export const WikiRootArtifactSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("wiki_root_artifact"),
+  kind: z.enum(["purpose", "schema", "index", "log", "overview"]),
+  path: z.string().min(1),
+  title: z.string().min(1),
+  body_markdown: z.string().min(1),
+  generated_at: z.string().datetime(),
+});
+
+export type WikiRootArtifact = z.infer<typeof WikiRootArtifactSchema>;
+
+export const WikiRelationshipTypeSchema = z.enum([
+  "related", "uses", "depends_on", "fixes", "caused_by",
+  "verified_by", "contradicts", "supersedes", "same_topic_as", "source_overlap",
+]);
+
+export type WikiRelationshipType = z.infer<typeof WikiRelationshipTypeSchema>;
+
+export const WikiTypedRelationshipSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+  type: WikiRelationshipTypeSchema,
+  confidence: z.number().min(0).max(1),
+  source_refs: z.array(z.string()).default([]),
+});
+
+export type WikiTypedRelationship = z.infer<typeof WikiTypedRelationshipSchema>;
+
 export const WikiEvidenceClusterSchema = z.object({
   id: z.string().min(1),
   cluster_key: z.string().min(1),

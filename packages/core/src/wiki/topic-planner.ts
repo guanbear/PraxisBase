@@ -93,9 +93,65 @@ function titleForSemanticFamily(family: string): string {
   return "Untitled topic";
 }
 
+function canonicalTerms(text: string): string[] {
+  const aliases: Array<[RegExp, string]> = [
+    [/\backnowledg(?:e|ement)?\b|\back\b/g, "ack"],
+    [/\bdelegat(?:e|ed|ion|ing)?\b|\bdispatch(?:ed|ing)?\b/g, "delegate"],
+    [/\bsilent\b|\bno early feedback\b|\bno feedback\b/g, "silent"],
+    [/\blong running\b|\blong task\b|\bslow\b/g, "long"],
+    [/\btimed? out\b|\btime out\b|\btimeout\b|\bstall(?:ed)?\b|\bexceeded time limit\b/g, "timeout"],
+    [/\bglm\b|\bllm\b|\bmodel calls?\b|\bai\b/g, "model"],
+    [/\bcompil(?:e|ing)\b|\bsynthes(?:is|ize|izing)\b|\bcuration\b|\bgeneration\b|\bproposals?\b/g, "synthesis"],
+    [/\bcached?\b|\bcache reuse\b|\breuse cached?\b/g, "cache"],
+    [/\bbatches\b/g, "batch"],
+  ];
+  let aliased = normalizeText(text);
+  for (const [pattern, replacement] of aliases) {
+    aliased = aliased.replace(pattern, replacement);
+  }
+  return Array.from(new Set(aliased.split(/\s+/).filter((term) => term.length >= 3))).sort();
+}
+
+function canonicalTopicSignature(obs: WikiObservation): string | undefined {
+  const entities = obs.entities.map(normalizeText).filter(Boolean).sort();
+  const terms = canonicalTerms([
+    obs.problem,
+    obs.action,
+    obs.reusable_lesson,
+    ...obs.topics,
+  ].filter(Boolean).join(" "));
+  const anchors = terms.filter((term) => [
+    "ack",
+    "batch",
+    "cache",
+    "delegate",
+    "gateway",
+    "long",
+    "model",
+    "runner",
+    "silent",
+    "slack",
+    "stdin",
+    "synthesis",
+    "timeout",
+  ].includes(term));
+
+  if (anchors.length < 2) return undefined;
+
+  return normalizedTopicKey([
+    `kind:${obs.kind}`,
+    `scope:${obs.scope}`,
+    entities.join(",") || "no-entities",
+    anchors.join(","),
+  ]);
+}
+
 export function topicKeyForObservation(obs: WikiObservation): string {
   const family = semanticTopicFamily(obs);
   if (family) return normalizedTopicKey([`family:${family}`, obs.scope]);
+
+  const canonical = canonicalTopicSignature(obs);
+  if (canonical) return canonical;
 
   const semanticTopics = obs.topics.map(normalizeText).filter(Boolean).sort();
   const problem = semanticTopics.length > 0 ? semanticTopics.join(",") : normalizeText(obs.problem);
