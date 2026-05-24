@@ -254,12 +254,18 @@ export function assessWikiPromotionQuality(
   }
 
   // 4. Missing required wikilinks (precise check when requiredLinks is populated)
+  const bodySlugs = extractWikilinkSlugs(body);
   if (ctx.requiredLinks && ctx.requiredLinks.length > 0) {
-    const bodySlugs = extractWikilinkSlugs(body);
     const missing = ctx.requiredLinks.filter(
       (link) => !bodySlugs.has(link.slug.toLowerCase()),
     );
     if (missing.length > 0) {
+      humanRequired.push("missing_wikilinks");
+    }
+  } else if (ctx.relatedPages && ctx.relatedPages.length > 0) {
+    const relatedSlugs = new Set(ctx.relatedPages.map((page) => page.slug.toLowerCase()));
+    const hasResolvableRelatedLink = Array.from(bodySlugs).some((slug) => relatedSlugs.has(slug));
+    if (!hasResolvableRelatedLink) {
       humanRequired.push("missing_wikilinks");
     }
   } else if (ctx.relatedPaths && ctx.relatedPaths.length > 0 && !hasWikilinksOrRelated(body)) {

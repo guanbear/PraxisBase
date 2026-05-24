@@ -8,6 +8,8 @@
 - [x] Require core sections in promotion quality gate.
 - [x] Add unit tests for link/provenance repair.
 - [x] Add unit tests for section hard blocks.
+- [x] Add regression tests for canonical relationship slugs, resolver aliases, and clickable HTML wikilinks.
+- [x] Use stable page ids for relationship planning and require resolver-valid related links.
 - [x] Run targeted wiki tests.
 - [x] Run `pnpm check`.
 - [ ] Commit source, docs, and tests only.

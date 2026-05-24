@@ -12,6 +12,14 @@ Feature: Wiki synthesis quality and promotion
     And the proposal body contains "[[openclaw-operational-coordination|OpenClaw operational coordination]]"
     And the proposal body contains "## Provenance"
 
+  Scenario: Links must resolve to stable page ids, not just look like wikilinks
+    Given a stable note page has frontmatter id "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies"
+    And its human title slug is "asynchronous-task-ux-and-dispatch-mapping-anomalies"
+    When relationship planning, synthesis repair, graph build, and site render run
+    Then generated relationship links use the stable page id slug
+    And title-slug aliases still resolve in graph for older pages
+    And rendered HTML turns resolved wikilinks into clickable page links
+
   Scenario: Raw or weak output cannot enter stable knowledge
     Given a curated proposal body contains raw JSON or lacks reusable lessons
     When promotion quality is assessed

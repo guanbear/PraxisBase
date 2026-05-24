@@ -42,7 +42,7 @@ A curated wiki proposal is promotable only when the body is a useful agent-facin
 - `## Verification`
 - `## Reusable Lessons`
 - `## Provenance`
-- if relationship planning found related pages, `## Related Wiki Pages` with exact `[[slug|label]]` links.
+- if relationship planning found related pages, `## Related Wiki Pages` with exact resolver-valid `[[slug|label]]` links.
 
 The body must not contain:
 
@@ -64,6 +64,8 @@ The system may repair AI output once before assessment:
 - keep privacy failures as failures, not repairs.
 
 Repair exists to make good evidence usable. It must not hide weak evidence: if there is no concrete action, verification, or reusable lesson, the proposal remains blocked or human-required.
+
+Relationship slugs are canonicalized from stable page identity. A promoted page's frontmatter `id`, or the deterministic id derived from its target path, is the slug new synthesis should use. Title-derived and path-leaf slugs are compatibility aliases for graph/site resolution, not the preferred output. This keeps newly generated pages clickable and prevents a graph with many syntactic wikilinks but almost no resolved edges.
 
 ## Promotion Policy
 
@@ -88,6 +90,7 @@ The repeated drift came from accepting implementation-level milestones as produc
 - "site built" did not mean "graph is connected";
 - "AI produced JSON" did not mean "compiled wiki article";
 - documents described the desired flow but did not define enough deterministic contracts and smoke acceptance.
+- link checks counted `[[...]]` tokens rather than resolver-valid page edges.
 
 The fix is to make the expected wiki artifact testable. Every smoke must report evidence count, topic count, written proposals, promotable proposals, promoted pages, graph links, orphan ratio, and quality failures by reason.
 
@@ -99,3 +102,4 @@ The fix is to make the expected wiki artifact testable. Every smoke must report 
 - Personal auto-promote succeeds for a strong, linked, low-risk create proposal.
 - Team mode never auto-promotes by default.
 - A controlled end-to-end wiki run produces fewer pages than evidence items and graph links greater than zero when related pages exist.
+- Resolved link count and rendered HTML links are part of the acceptance signal; broken title-only slugs must not be treated as successful related links.

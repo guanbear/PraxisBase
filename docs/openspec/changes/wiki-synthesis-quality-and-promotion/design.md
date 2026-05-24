@@ -21,10 +21,12 @@ After AI synthesis and before quality assessment, PraxisBase runs deterministic 
 1. Reject private material without repair.
 2. Replace malformed or duplicated heading bodies with evidence-shaped body.
 3. Insert missing required wikilinks exactly as `[[slug|label]]`.
-4. If no wikilinks exist and suggested links are available, insert up to three suggested wikilinks.
+4. If no valid context wikilink exists and suggested links are available, insert up to three suggested wikilinks using resolver slugs from stable page ids.
 5. Insert missing provenance from source refs and hashes.
 
 Repair is deterministic and auditable. It may make a good proposal easier to promote, but it may not invent evidence or links.
+
+Relationship slugs are canonicalized from stable page identity, not from display title alone. For promoted pages this means the frontmatter `id` or target-path id is the canonical resolver slug. The graph and HTML renderer may accept title-slug and path-leaf aliases for older content, but new repair output must use canonical slugs so links are clickable and unambiguous.
 
 ## Quality Gate
 
@@ -41,6 +43,8 @@ Repair is deterministic and auditable. It may make a good proposal easier to pro
 - create action when an existing page was found.
 
 Missing required structure means the body lacks one of the required section groups above. The existing `body_missing_wiki_structure` reason is used to avoid schema churn.
+
+`missing_wikilinks` means the proposal lacks a resolver-valid link to a supplied required or related stable page. A body that merely contains any `[[...]]` token does not satisfy the gate when the supplied related page slugs do not appear.
 
 Human-required reasons remain:
 
@@ -72,3 +76,4 @@ A real or controlled smoke is not successful only because it exits zero. It must
 - graph node/link/orphan counts after site build.
 
 When related pages exist and proposals are promoted, graph links must be greater than zero.
+Broken link count must not increase because synthesis used title-only slugs where canonical stable page ids were available.

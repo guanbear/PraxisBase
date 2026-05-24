@@ -1,3 +1,5 @@
+import { makeWikiSlug } from "./model.js";
+
 export interface WikiPage {
   id: string;
   slug: string;
@@ -10,6 +12,7 @@ export interface WikiPage {
   claims?: unknown[];
   outbound_links?: string[];
   body_markdown?: string;
+  path?: string;
 }
 
 export interface WikiGraphNode {
@@ -61,16 +64,38 @@ function parseWikilinks(text: string): string[] {
   return slugs;
 }
 
+function addAlias(index: Map<string, string | null>, key: string | undefined, pageId: string): void {
+  const normalized = key?.trim().toLowerCase();
+  if (!normalized) return;
+  const existing = index.get(normalized);
+  if (existing === undefined) {
+    index.set(normalized, pageId);
+  } else if (existing !== pageId) {
+    index.set(normalized, null);
+  }
+}
+
+function pathLeafAliases(path: string | undefined): string[] {
+  if (!path) return [];
+  const parts = path.replace(/\\/g, "/").split("/");
+  const leaf = parts[parts.length - 1] ?? "";
+  const withoutExtension = leaf === "SKILL.md" ? parts[parts.length - 2] ?? "" : leaf.replace(/\.md$/i, "");
+  const slug = makeWikiSlug(withoutExtension);
+  return slug.startsWith("wiki-") ? [slug, slug.slice(5)] : [slug];
+}
+
 export function resolveWikiLinks(
   pages: WikiPage[]
 ): Pick<WikiGraph, "links" | "broken_links"> {
-  const slugIndex = new Map<string, string>();
-  const titleIndex = new Map<string, string>();
-  const idIndex = new Map<string, string>();
+  const targetIndex = new Map<string, string | null>();
   for (const page of pages) {
-    slugIndex.set(page.slug, page.id);
-    titleIndex.set(page.title.toLowerCase(), page.id);
-    idIndex.set(page.id, page.id);
+    addAlias(targetIndex, page.slug, page.id);
+    addAlias(targetIndex, page.id, page.id);
+    addAlias(targetIndex, page.title, page.id);
+    addAlias(targetIndex, makeWikiSlug(page.title), page.id);
+    for (const alias of pathLeafAliases(page.path)) {
+      addAlias(targetIndex, alias, page.id);
+    }
   }
 
   const links: WikiGraphLink[] = [];
@@ -86,15 +111,18 @@ export function resolveWikiLinks(
       if (seen.has(slug)) continue;
       seen.add(slug);
 
-      const targetId =
-        slugIndex.get(slug) ?? titleIndex.get(slug.toLowerCase()) ?? idIndex.get(slug);
+      const targetId = targetIndex.get(slug.toLowerCase());
       if (targetId !== undefined) {
-        links.push({
-          from: page.id,
-          to: targetId,
-          type: "wikilink",
-          weight: 1,
-        });
+        if (targetId !== null) {
+          links.push({
+            from: page.id,
+            to: targetId,
+            type: "wikilink",
+            weight: 1,
+          });
+        } else {
+          brokenLinks.push({ from: page.id, target: slug });
+        }
       } else {
         brokenLinks.push({ from: page.id, target: slug });
       }

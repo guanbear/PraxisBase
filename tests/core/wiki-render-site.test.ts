@@ -79,6 +79,70 @@ Refresh login. <script>alert("x")</script>
     await assert.doesNotReject(stat(join(root, "dist/site.js")));
   });
 
+  it("renders wiki links in page markdown as clickable links to resolved pages", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-links-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(join(root, "kb/notes/wiki-related-page.md"), `---
+id: wiki-related-page
+type: note
+scope: personal
+maturity: draft
+---
+# Related Page
+
+Target body.
+`);
+    await writeFile(join(root, "kb/notes/source-page.md"), `---
+id: source-page
+type: note
+scope: personal
+maturity: draft
+---
+# Source Page
+
+See [[related-page|Related page]] before changing code.
+`);
+
+    await buildWikiSite(root);
+
+    const page = await readFile(join(root, "dist/pages/source-page.html"), "utf8");
+    assert.ok(page.includes('href="wiki-related-page.html"'));
+    assert.ok(page.includes(">Related page</a>"));
+  });
+
+  it("renders path-leaf wiki aliases when title slugs differ", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-path-alias-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(join(root, "kb/notes/wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw.md"), `---
+id: wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw
+type: note
+scope: personal
+maturity: draft
+---
+# Improving Perceived Responsiveness in OpenClaw/OctoClaw
+
+Target body.
+`);
+    await writeFile(join(root, "kb/notes/source-page.md"), `---
+id: source-page
+type: note
+scope: personal
+maturity: draft
+---
+# Source Page
+
+See [[improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw|ACK handling]].
+`);
+
+    await buildWikiSite(root);
+
+    const graph = JSON.parse(await readFile(join(root, "dist/graph.json"), "utf8"));
+    assert.equal(graph.broken_links.length, 0);
+    const page = await readFile(join(root, "dist/pages/source-page.html"), "utf8");
+    assert.ok(page.includes('href="wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw.html"'));
+    assert.ok(page.includes(">ACK handling</a>"));
+  });
+
   it("removes stale generated page artifacts when stable wiki pages disappear", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-stale-pages-"));
     const pagePath = join(root, "kb/notes/transient.md");

@@ -146,7 +146,61 @@ function relatedPages(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGrap
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
-function markdownToHtml(markdown: string): string {
+function wikiLinkIndex(pages: WikiSitePage[]): Map<string, WikiSitePage | null> {
+  const index = new Map<string, WikiSitePage | null>();
+  const add = (key: string | undefined, page: WikiSitePage): void => {
+    const normalized = key?.trim().toLowerCase();
+    if (!normalized) return;
+    const existing = index.get(normalized);
+    if (existing === undefined) {
+      index.set(normalized, page);
+    } else if (existing !== null && existing.id !== page.id) {
+      index.set(normalized, null);
+    }
+  };
+  const pathAliases = (path: string | undefined): string[] => {
+    if (!path) return [];
+    const parts = path.replace(/\\/g, "/").split("/");
+    const leaf = parts[parts.length - 1] ?? "";
+    const withoutExtension = leaf === "SKILL.md" ? parts[parts.length - 2] ?? "" : leaf.replace(/\.md$/i, "");
+    const slug = makeWikiSlug(withoutExtension);
+    return slug.startsWith("wiki-") ? [slug, slug.slice(5)] : [slug];
+  };
+  for (const page of pages) {
+    add(page.slug, page);
+    add(page.id, page);
+    add(page.title, page);
+    add(makeWikiSlug(page.title), page);
+    for (const alias of pathAliases(page.path)) {
+      add(alias, page);
+    }
+  }
+  return index;
+}
+
+function renderInlineMarkdown(text: string, linkIndex: Map<string, WikiSitePage | null>): string {
+  const pattern = /\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g;
+  let html = "";
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    html += escapeHtml(text.slice(lastIndex, match.index));
+    const rawTarget = match[1].trim();
+    const label = (match[2] ?? rawTarget).trim();
+    const page = linkIndex.get(rawTarget.toLowerCase());
+    if (page) {
+      html += `<a href="${escapeHtml(`${page.slug}.html`)}">${escapeHtml(label)}</a>`;
+    } else {
+      html += escapeHtml(match[0]);
+    }
+    lastIndex = pattern.lastIndex;
+  }
+  html += escapeHtml(text.slice(lastIndex));
+  return html;
+}
+
+function markdownToHtml(markdown: string, pages: WikiSitePage[] = []): string {
+  const linkIndex = wikiLinkIndex(pages);
   const lines = markdown.split(/\r?\n/);
   const html: string[] = [];
   let paragraph: string[] = [];
@@ -155,12 +209,12 @@ function markdownToHtml(markdown: string): string {
 
   const flushParagraph = (): void => {
     if (paragraph.length === 0) return;
-    html.push(`<p>${escapeHtml(paragraph.join(" "))}</p>`);
+    html.push(`<p>${renderInlineMarkdown(paragraph.join(" "), linkIndex)}</p>`);
     paragraph = [];
   };
   const flushList = (): void => {
     if (list.length === 0) return;
-    html.push(`<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`);
+    html.push(`<ul>${list.map((item) => `<li>${renderInlineMarkdown(item, linkIndex)}</li>`).join("")}</ul>`);
     list = [];
   };
 
@@ -593,7 +647,7 @@ function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph)
     body: `<main class="page-shell">
   <nav class="side-nav" aria-label="Knowledge pages">${nav}</nav>
   <article class="content">
-    ${markdownToHtml(page.body_markdown ?? "")}
+    ${markdownToHtml(page.body_markdown ?? "", pages)}
   </article>
   <aside class="meta-rail">
     <section>

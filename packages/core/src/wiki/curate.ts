@@ -589,7 +589,12 @@ function relationshipLinksFromContext(context: SynthesisContext | undefined, inc
 
 function ensureRelatedLinksSection(body: string, context?: SynthesisContext): string {
   const existingSlugs = extractBodyWikilinkSlugs(body);
-  const contextLinks = relationshipLinksFromContext(context, existingSlugs.size === 0);
+  const suppliedSuggested = (context?.suggestedLinks ?? []).map(normalizeStructuredLink);
+  const hasContextLink = [
+    ...(context?.requiredLinks ?? []).map(normalizeStructuredLink),
+    ...suppliedSuggested,
+  ].some((link) => existingSlugs.has(link.slug.toLowerCase()));
+  const contextLinks = relationshipLinksFromContext(context, existingSlugs.size === 0 || !hasContextLink);
   if (contextLinks.length === 0) return body;
   const missing = contextLinks.filter((link) => !existingSlugs.has(link.slug.toLowerCase()));
   if (missing.length === 0) return body;

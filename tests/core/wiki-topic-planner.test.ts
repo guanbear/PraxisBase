@@ -211,6 +211,30 @@ describe("loadExistingWikiPages", () => {
     assert.equal(skillPage.scope, "team");
   });
 
+  it("uses frontmatter id as the resolvable slug for note pages", async () => {
+    const tmp = await mkdtemp(join(tmpdir(), "wiki-planner-"));
+    await mkdir(join(tmp, "kb", "notes"), { recursive: true });
+    await writeFile(
+      join(tmp, "kb", "notes", "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies.md"),
+      [
+        "---",
+        "id: wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+        "title: Asynchronous Task UX and Dispatch Mapping Anomalies",
+        "scope: personal",
+        "sources:",
+        "  - uri: \"raw-vault://openclaw/report\"",
+        "    hash: \"sha256:report\"",
+        "---",
+        "# Asynchronous Task UX and Dispatch Mapping Anomalies",
+      ].join("\n"),
+    );
+
+    const pages = await loadExistingWikiPages(tmp);
+    const note = pages.find((p) => p.title === "Asynchronous Task UX and Dispatch Mapping Anomalies");
+    assert.ok(note);
+    assert.equal(note.slug, "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies");
+  });
+
   it("returns empty when kb/ and skills/ do not exist", async () => {
     const tmp = await mkdtemp(join(tmpdir(), "wiki-planner-"));
     const pages = await loadExistingWikiPages(tmp);

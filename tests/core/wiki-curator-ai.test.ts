@@ -940,6 +940,57 @@ describe("AI wiki curator prompt with synthesis context", () => {
     }
   });
 
+  it("adds resolvable suggested links when AI output contains only non-context wikilinks", async () => {
+    const context: SynthesisContext = {
+      topicTitle: "OpenClaw gateway status check",
+      pageKind: "procedure",
+      observations: [{ summary: "Verify gateway and plugin versions before debugging dispatch failures." }],
+      relatedPages: [
+        { title: "Asynchronous Task UX and Dispatch Mapping Anomalies", path: "kb/notes/wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies.md" },
+      ],
+      requiredLinks: [],
+      suggestedLinks: [
+        {
+          slug: "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+          label: "Asynchronous Task UX and Dispatch Mapping Anomalies",
+          path: "kb/notes/wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies.md",
+          reason: "entity_overlap",
+        },
+      ],
+      pagePlanAction: "create",
+    };
+
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      synthesisContext: context,
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw gateway status check",
+              summary: "Verify gateway and plugin versions before dispatch debugging.",
+              page_kind: "procedure",
+              target_path: "kb/procedures/openclaw-gateway-status-check.md",
+              body_markdown: "# OpenClaw gateway status check\n\n## Problem\nDispatch debugging can start from stale gateway state.\n\n## Procedure\nCheck [[asynchronous-task-ux-and-dispatch-mapping-anomalies|dispatch UX]] before changing code.\n\n## Verification\nConfirm gateway and plugin versions match.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(
+        result.proposal.body_markdown,
+        /\[\[wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies\|Asynchronous Task UX and Dispatch Mapping Anomalies\]\]/,
+      );
+    }
+  });
+
   it("existing synthesizeCuratedWikiProposal callers work without context", async () => {
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,

@@ -38,6 +38,51 @@ describe("wiki resolver", () => {
     assert.deepEqual(result.broken_links, []);
   });
 
+  it("resolves title-slug aliases to the canonical page id", () => {
+    const result = resolveWikiLinks([
+      {
+        id: "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+        slug: "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+        title: "Asynchronous Task UX and Dispatch Mapping Anomalies",
+        body_markdown: "",
+      },
+      {
+        id: "gateway-status-check",
+        slug: "gateway-status-check",
+        title: "Gateway status check",
+        body_markdown: "See [[asynchronous-task-ux-and-dispatch-mapping-anomalies|dispatch UX]].",
+      },
+    ]);
+
+    assert.deepEqual(result.links.map((link) => `${link.from}->${link.to}`), [
+      "gateway-status-check->wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+    ]);
+    assert.deepEqual(result.broken_links, []);
+  });
+
+  it("resolves path-leaf aliases when title slugs differ", () => {
+    const result = resolveWikiLinks([
+      {
+        id: "wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw",
+        slug: "wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw",
+        title: "Improving Perceived Responsiveness in OpenClaw/OctoClaw",
+        path: "kb/notes/wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw.md",
+        body_markdown: "",
+      },
+      {
+        id: "gateway-status-check",
+        slug: "gateway-status-check",
+        title: "Gateway status check",
+        body_markdown: "See [[improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw]].",
+      },
+    ]);
+
+    assert.deepEqual(result.links.map((link) => `${link.from}->${link.to}`), [
+      "gateway-status-check->wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw",
+    ]);
+    assert.deepEqual(result.broken_links, []);
+  });
+
   it("builds backlinks and duplicate/orphan health findings", () => {
     const graph = buildWikiGraph(pages as any);
     assert.equal(graph.nodes.length, 2);

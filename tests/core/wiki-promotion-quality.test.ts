@@ -347,6 +347,17 @@ describe("assessWikiPromotionQuality - required links", () => {
     });
     assert.ok(result.human_required.includes("missing_wikilinks"));
   });
+
+  it("requires at least one related page slug to resolve when related pages are supplied", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test\n\n## Problem\nSee [[related-page|Related page]].\n\n## Fix\nApply.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nReuse the fix.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
+    }), {
+      relatedPages: [
+        { slug: "wiki-related-page", title: "Related page", path: "kb/notes/wiki-related-page.md" },
+      ],
+    });
+    assert.ok(result.human_required.includes("missing_wikilinks"));
+  });
 });
 
 describe("assessWikiPromotionQuality - ambiguous merge", () => {

@@ -15,8 +15,11 @@
 - Modify `packages/core/src/wiki/curator-prompt.ts`: strengthen the AI contract and link/provenance instructions.
 - Modify `packages/core/src/wiki/curate.ts`: add deterministic page repair for relationship links and provenance sections.
 - Modify `packages/core/src/wiki/promotion-quality.ts`: require core wiki sections for promotion.
+- Modify `packages/core/src/wiki/topic-planner.ts`: use stable page ids as relationship slugs.
+- Modify `packages/core/src/wiki/resolver.ts` and `packages/core/src/wiki/render-site.ts`: resolve canonical slugs plus unambiguous title/path aliases and render wikilinks as clickable page links.
 - Modify `tests/core/wiki-curator-ai.test.ts`: prove missing relationship links are repaired.
 - Modify `tests/core/wiki-promotion-quality.test.ts`: prove missing sections block promotion and good pages pass.
+- Modify `tests/core/wiki-topic-planner.test.ts`, `tests/core/wiki-resolver.test.ts`, and `tests/core/wiki-render-site.test.ts`: prove stable ids, graph aliases, and HTML wikilinks work.
 - Modify `tests/cli/wiki-compiler-core-redesign-e2e.test.ts`: keep the graph-link regression as the end-to-end contract.
 
 ## Task 1: Promotion Quality Contract
@@ -68,8 +71,9 @@ function repairWikiBody(body: string, cluster: WikiEvidenceCluster, context?: Sy
 Rules:
 
 - required links always get appended when missing;
-- if there are suggested links and the body has no wikilinks, append up to three suggested links;
+- if there are suggested links and the body has no valid context wikilink, append up to three suggested links;
 - no invented links;
+- suggested/required links use canonical stable page slugs, not display-title slugs when those differ;
 - provenance is generated from `cluster.source_refs` and `cluster.source_hashes`;
 - do not repair private-material bodies.
 
@@ -96,6 +100,9 @@ assert.match(prompt.user, /Related Wiki Pages/);
 - [ ] Run the same `wiki-curator-ai` test command.
 
 ## Task 4: End-To-End Regression
+
+- [ ] Add focused regressions for stable-page id slugs, title/path alias resolution, resolver-valid related links, and clickable rendered wikilinks.
+- [ ] Implement canonical slug loading from frontmatter id or target path, graph alias resolution, strict related-page promotion checks, and inline wikilink rendering.
 
 - [ ] Run:
 

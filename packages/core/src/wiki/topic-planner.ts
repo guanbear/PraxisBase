@@ -156,6 +156,7 @@ export function buildWikiTopics(observations: WikiObservation[]): WikiTopic[] {
 }
 
 function parseFrontmatter(content: string): {
+  id?: string;
   title: string;
   source_hashes: string[];
   scope: Scope;
@@ -168,6 +169,8 @@ function parseFrontmatter(content: string): {
     return { title: h1, source_hashes: [], scope: "project", frontmatter_sources: [], signatures: [] };
   }
   const fm = fmMatch[1];
+  const idMatch = fm.match(/^id:\s*(.+)$/m);
+  const id = idMatch ? idMatch[1].trim().replace(/^["']|["']$/g, "") : undefined;
   const titleMatch = fm.match(/^title:\s*(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim().replace(/^["']|["']$/g, "") : "";
   const hashes: string[] = [];
@@ -207,7 +210,7 @@ function parseFrontmatter(content: string): {
   }
   const scopeMatch = fm.match(/^scope:\s*(.+)/m);
   const scope = (scopeMatch?.[1]?.trim() ?? "project") as Scope;
-  return { title, source_hashes: hashes, scope, frontmatter_sources: sources, signatures };
+  return { id, title, source_hashes: hashes, scope, frontmatter_sources: sources, signatures };
 }
 
 function stripFrontmatter(content: string): string {
@@ -230,6 +233,13 @@ function extractExistingPageEntities(input: { title: string; body: string; signa
   if (/\bauth\b/i.test(text)) entities.add("auth");
   if (/\bdelegat(?:ion|ed|ing)\b/i.test(text)) entities.add("delegation");
   return Array.from(entities).sort();
+}
+
+function targetIdFromPath(path: string, title: string): string {
+  const parts = path.split("/");
+  const leaf = parts[parts.length - 1] ?? title;
+  const withoutExtension = leaf === "SKILL.md" ? parts[parts.length - 2] ?? title : leaf.replace(/\.md$/i, "");
+  return makeWikiSlug(withoutExtension || title);
 }
 
 async function collectMdFiles(dir: string, root: string): Promise<string[]> {
@@ -272,7 +282,7 @@ export async function loadExistingWikiPages(root: string): Promise<ExistingWikiP
       pages.push({
         path: file,
         title,
-        slug: makeWikiSlug(title || file.replace(/\.md$/i, "")),
+        slug: makeWikiSlug(fm.id ?? targetIdFromPath(file, title)),
         source_hashes: fm.source_hashes,
         entities: extractExistingPageEntities({ title, body: bodyText, signatures: fm.signatures }),
         signatures: fm.signatures,
