@@ -2,13 +2,14 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   PROTOCOL_VERSION,
+  CuratedWikiProposalSchema,
   decideAutoReview,
   defaultReviewPolicy,
   type CuratedWikiProposal,
 } from "@praxisbase/core";
 
 function curatedProposal(overrides: Partial<CuratedWikiProposal> = {}): CuratedWikiProposal {
-  return {
+  return CuratedWikiProposalSchema.parse({
     id: "wiki-curated-openclaw-auth",
     protocol_version: PROTOCOL_VERSION,
     type: "wiki_curated_proposal",
@@ -33,7 +34,7 @@ function curatedProposal(overrides: Partial<CuratedWikiProposal> = {}): CuratedW
     guards: [{ id: "path", ok: true, message: "allowed" }],
     created_at: "2026-05-21T00:00:00.000Z",
     ...overrides,
-  };
+  });
 }
 
 function highSignalGuards(): CuratedWikiProposal["guards"] {

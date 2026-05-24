@@ -721,10 +721,10 @@ Expected: PASS.
 ## Task 9: Golden Corpus E2E
 
 **Files:**
-- Add: `tests/fixtures/wiki-fidelity-golden/`
+- Add: `tests/fixtures/wiki-fidelity-golden/` or inline golden fixture helpers in the E2E test
 - Add: `tests/cli/wiki-fidelity-contract-e2e.test.ts`
 
-- [ ] **Step 1: Create fixture evidence**
+- [x] **Step 1: Create fixture evidence**
 
 Create fixture files that represent:
 
@@ -733,7 +733,7 @@ Create fixture files that represent:
 - one source with private material that should become human-required or rejected;
 - one query synthesis item that should become a `synthesis` proposal.
 
-- [ ] **Step 2: Add failing E2E test**
+- [x] **Step 2: Add failing E2E test**
 
 ```ts
 it("compiles golden evidence into fewer linked wiki pages than sources", async () => {
@@ -755,13 +755,13 @@ it("compiles golden evidence into fewer linked wiki pages than sources", async (
 });
 ```
 
-- [ ] **Step 3: Run E2E test to verify it fails**
+- [x] **Step 3: Run E2E test to verify it fails**
 
 Run: `pnpm build && tsc -p tsconfig.tests.json && node --test dist-tests/tests/cli/wiki-fidelity-contract-e2e.test.js`
 
 Expected: FAIL before Tasks 1-8 are complete.
 
-- [ ] **Step 4: Run E2E test to verify it passes**
+- [x] **Step 4: Run E2E test to verify it passes**
 
 Run: `pnpm build && tsc -p tsconfig.tests.json && node --test dist-tests/tests/cli/wiki-fidelity-contract-e2e.test.js`
 
@@ -772,7 +772,7 @@ Expected: PASS.
 **Files:**
 - All files modified above.
 
-- [ ] **Step 1: Run targeted suite**
+- [x] **Step 1: Run targeted suite**
 
 Run:
 
@@ -789,19 +789,19 @@ pnpm build && tsc -p tsconfig.tests.json && node --test \
 
 Expected: PASS.
 
-- [ ] **Step 2: Run full check**
+- [x] **Step 2: Run full check**
 
 Run: `pnpm check`
 
 Expected: PASS.
 
-- [ ] **Step 3: Inspect git diff**
+- [x] **Step 3: Inspect git diff**
 
 Run: `git status --short && git diff --stat`
 
 Expected: only source, tests, fixture, and docs files are changed. Runtime directories such as `kb/`, `dist/`, and `.praxisbase/` are not staged unless explicitly requested.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/core/src/wiki packages/core/src/agent-access packages/cli/src/commands/wiki.ts tests docs

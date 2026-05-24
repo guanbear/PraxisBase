@@ -38,7 +38,7 @@ function goodProposal(overrides: Partial<CuratedWikiProposal> = {}): CuratedWiki
     ],
     created_at: "2026-05-22T00:00:00.000Z",
     ...overrides,
-  };
+  } as CuratedWikiProposal;
 }
 
 describe("assessWikiPromotionQuality - hard blocks", () => {
