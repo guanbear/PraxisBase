@@ -10,6 +10,7 @@ export const AiProviderConfigSchema = z.object({
   model: z.string().min(1),
   distill_model: z.string().min(1).optional(),
   curation_model: z.string().min(1).optional(),
+  review_model: z.string().min(1).optional(),
   base_url: z.string().url().optional(),
   base_url_env: z.string().min(1).default("PRAXISBASE_LLM_BASE_URL"),
   api_key_env: z.string().min(1).default("PRAXISBASE_LLM_API_KEY"),
@@ -26,6 +27,7 @@ export interface WriteAiProviderConfigInput {
   model: string;
   distillModel?: string;
   curationModel?: string;
+  reviewModel?: string;
   baseUrl?: string;
   baseUrlEnv?: string;
   apiKeyEnv?: string;
@@ -57,6 +59,7 @@ export async function writeAiProviderConfig(root: string, input: WriteAiProvider
     model: input.model,
     ...(input.distillModel ? { distill_model: input.distillModel } : {}),
     ...(input.curationModel ? { curation_model: input.curationModel } : {}),
+    ...(input.reviewModel ? { review_model: input.reviewModel } : {}),
     ...(input.baseUrl ? { base_url: input.baseUrl } : {}),
     base_url_env: input.baseUrlEnv ?? "PRAXISBASE_LLM_BASE_URL",
     api_key_env: input.apiKeyEnv ?? "PRAXISBASE_LLM_API_KEY",

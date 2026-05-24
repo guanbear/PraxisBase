@@ -6,8 +6,8 @@
 - [x] Add semantic review counts to curation reports.
 - [ ] Add semantic review counts to daily reports.
 - [ ] Require passing semantic review for personal auto-promotion of new wiki pages.
-- [ ] Add review model and semantic review CLI options.
-- [ ] Use effective review model selection `review_model ?? curation_model ?? model`.
+- [x] Add review model and semantic review CLI options.
+- [x] Use effective review model selection `review_model ?? curation_model ?? model`.
 - [ ] Keep reviewer inputs compatible with context economy by reviewing distilled summaries and provenance excerpts, not raw noisy transcripts.
 - [ ] Treat agentmemory sidecar hits as non-authoritative unless ingested into PraxisBase provenance.
 - [ ] Render semantic review decisions and reasons in the site/review UI.

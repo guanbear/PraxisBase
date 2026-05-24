@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { PROTOCOL_VERSION, WikiCurationReportSchema } from "@praxisbase/core";
 import type { AiJsonClient } from "@praxisbase/core/ai/client.js";
+import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { curateWiki } from "@praxisbase/core/wiki/curate.js";
 import type { SemanticWikiReview } from "@praxisbase/core/wiki/semantic-review.js";
 
@@ -57,6 +58,35 @@ function semanticReview(overrides: Partial<SemanticWikiReview> = {}): SemanticWi
     reason: "Reusable procedure with concrete trigger, action, verification, and multi-source provenance.",
     reviewed_at: NOW,
     ...overrides,
+  };
+}
+
+function curationProposal() {
+  return {
+    title: "OpenClaw auth expired",
+    summary: "Fixed OpenClaw auth expired by refreshing login.",
+    body_markdown: "# OpenClaw auth expired\n\n## When to Use\nUse when OpenClaw auth expires.\n\n## What To Do\n- Refresh login\n\n## Verify\n- Re-run sync\n\n## Reusable Lessons\n- Refresh login before retrying\n\n## Provenance\n- raw-vault://codex/capture_1 (sha256:capture_1)",
+    target_path: "kb/known-fixes/openclaw-auth-expired.md",
+    page_kind: "known_fix",
+    confidence: 0.9,
+    action: "create",
+    source_count: 2,
+  };
+}
+
+function fetchModelSequence(capturedModels: string[], reviewModel: string): typeof fetch {
+  let callCount = 0;
+  return async (_url, init) => {
+    const body = JSON.parse(init?.body as string);
+    callCount++;
+    capturedModels.push(body.model);
+    const content = callCount === 1
+      ? JSON.stringify(curationProposal())
+      : JSON.stringify(semanticReview());
+    if (callCount > 1) assert.equal(body.model, reviewModel);
+    return new Response(JSON.stringify({
+      choices: [{ message: { content } }],
+    }), { status: 200, headers: { "content-type": "application/json" } });
   };
 }
 
@@ -222,5 +252,80 @@ describe("curateWiki semantic review integration", () => {
 
     assert.equal(parsed.output_counts.curated_proposals, 1);
     assert.equal(parsed.semantic_review, undefined);
+  });
+
+  it("uses review_model over curation_model and model for semantic review when no explicit client", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-semantic-review-model-"));
+    await writeOpenClawAuthCaptures(root);
+    const capturedModels: string[] = [];
+
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "base-model",
+      curationModel: "curation-model",
+      reviewModel: "review-model",
+      apiKeyEnv: "TEST_API_KEY",
+    });
+
+    const report = await curateWiki(root, {
+      mode: "review",
+      now: NOW,
+      semanticReview: { enabled: true },
+      env: { TEST_API_KEY: "test-key" },
+      fetchImpl: fetchModelSequence(capturedModels, "review-model"),
+    });
+
+    assert.equal(report.semantic_review?.enabled, true);
+    assert.equal(report.semantic_review?.reviewed, 1);
+    assert.deepEqual(capturedModels, ["curation-model", "review-model"]);
+  });
+
+  it("falls back to curation_model when review_model is absent", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-semantic-curation-fallback-"));
+    await writeOpenClawAuthCaptures(root);
+    const capturedModels: string[] = [];
+
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "base-model",
+      curationModel: "curation-model",
+      apiKeyEnv: "TEST_API_KEY",
+    });
+
+    const report = await curateWiki(root, {
+      mode: "review",
+      now: NOW,
+      semanticReview: { enabled: true },
+      env: { TEST_API_KEY: "test-key" },
+      fetchImpl: fetchModelSequence(capturedModels, "curation-model"),
+    });
+
+    assert.equal(report.semantic_review?.enabled, true);
+    assert.equal(report.semantic_review?.reviewed, 1);
+    assert.deepEqual(capturedModels, ["curation-model", "curation-model"]);
+  });
+
+  it("falls back to model when neither review_model nor curation_model is set", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-semantic-base-fallback-"));
+    await writeOpenClawAuthCaptures(root);
+    const capturedModels: string[] = [];
+
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "base-model",
+      apiKeyEnv: "TEST_API_KEY",
+    });
+
+    const report = await curateWiki(root, {
+      mode: "review",
+      now: NOW,
+      semanticReview: { enabled: true },
+      env: { TEST_API_KEY: "test-key" },
+      fetchImpl: fetchModelSequence(capturedModels, "base-model"),
+    });
+
+    assert.equal(report.semantic_review?.enabled, true);
+    assert.equal(report.semantic_review?.reviewed, 1);
+    assert.deepEqual(capturedModels, ["base-model", "base-model"]);
   });
 });

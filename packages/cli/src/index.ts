@@ -407,6 +407,7 @@ program
   .option("--model <model>")
   .option("--distill-model <model>")
   .option("--curation-model <model>")
+  .option("--review-model <model>")
   .option("--base-url <url>")
   .option("--base-url-env <name>")
   .option("--api-key-env <name>")
@@ -419,6 +420,7 @@ program
       model?: string;
       distillModel?: string;
       curationModel?: string;
+      reviewModel?: string;
       baseUrl?: string;
       baseUrlEnv?: string;
       apiKeyEnv?: string;
@@ -663,6 +665,8 @@ program
   .option("--degraded")
   .option("--ai-timeout-ms <n>", "override AI provider timeout for wiki curate")
   .option("--concurrency <n>", "maximum concurrent AI synthesis calls for wiki curate")
+  .option("--semantic-review", "enable semantic review for wiki curate proposals")
+  .option("--no-semantic-review", "disable semantic review for wiki curate proposals")
   .option("--min-source-count <n>", "minimum source count for wiki curate proposals")
   .option("--mode <mode>", "graph mode: full, overview, or ego")
   .option("--center <slug>", "center slug or id for ego graph")
@@ -677,6 +681,7 @@ program
     aiTimeoutMs?: string;
     concurrency?: string;
     minSourceCount?: string;
+    semanticReview?: boolean;
     mode?: "full" | "overview" | "ego";
     center?: string;
     depth?: string;

@@ -1253,6 +1253,18 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     })
     : undefined);
 
+  const semanticReviewEnabled = Boolean(options.semanticReview?.enabled);
+  const effectiveReviewClient = options.semanticReview?.client ?? (() => {
+    if (!semanticReviewEnabled || degraded || !runtimeAiConfig) return undefined;
+    const reviewModel = runtimeAiConfig.review_model ?? runtimeAiConfig.curation_model ?? runtimeAiConfig.model;
+    const reviewAiConfig = { ...runtimeAiConfig, model: reviewModel };
+    return createOpenAiCompatibleJsonClient({
+      config: reviewAiConfig,
+      env: options.env,
+      fetchImpl: options.fetchImpl,
+    });
+  })();
+
   const pool = await buildWikiEvidencePoolFromRoot(root);
   const minSourceCount = options.minSourceCount ?? 1;
 
@@ -1505,7 +1517,6 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     });
   }
 
-  const semanticReviewEnabled = Boolean(options.semanticReview?.enabled);
   const semanticReviewCounts = {
     enabled: semanticReviewEnabled,
     reviewed: 0,
@@ -1519,7 +1530,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const semanticReviewedProposals: CuratedWikiProposal[] = [];
 
   if (semanticReviewEnabled) {
-    const reviewClient = options.semanticReview?.client;
+    const reviewClient = effectiveReviewClient;
     const maxOutputBytes = options.semanticReview?.maxOutputBytes;
     const existingPageRefs: ExistingWikiPageRef[] = existingPages.map((page) => ({
       slug: page.slug,

@@ -154,4 +154,32 @@ describe("wiki curate CLI", () => {
     assert.equal(counts.isolated_topics, 0);
     assert.equal(counts.orphan_risk_after_plan, 0);
   });
+
+  it("enables semantic review with semanticReview option", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-curate-semantic-"));
+    await writeCapture(root);
+    await writeSecondCapture(root);
+
+    const output = await wikiCommand(root, "curate", {
+      review: true,
+      degraded: true,
+      semanticReview: true,
+      json: true,
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.semantic_review?.enabled, true);
+  });
+
+  it("keeps semantic review disabled by default for backward compatibility", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-curate-no-semantic-"));
+    await writeCapture(root);
+
+    const output = await wikiCommand(root, "curate", { review: true, degraded: true, json: true });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.semantic_review, undefined);
+  });
 });

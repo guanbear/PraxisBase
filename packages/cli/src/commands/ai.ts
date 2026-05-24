@@ -9,6 +9,7 @@ export interface AiCommandOptions {
   model?: string;
   distillModel?: string;
   curationModel?: string;
+  reviewModel?: string;
   baseUrl?: string;
   baseUrlEnv?: string;
   apiKeyEnv?: string;
@@ -45,6 +46,7 @@ export async function aiCommand(root: string, subcommand: string, options: AiCom
       model: options.model,
       distillModel: options.distillModel,
       curationModel: options.curationModel,
+      reviewModel: options.reviewModel,
       baseUrl: options.baseUrl,
       baseUrlEnv: options.baseUrlEnv,
       apiKeyEnv: options.apiKeyEnv,

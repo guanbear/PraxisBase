@@ -77,6 +77,37 @@ describe("AI provider config", () => {
     assert.doesNotMatch(raw, /secret-value|sk-/);
   });
 
+  it("stores review_model and existing configs without review_model stay valid", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-ai-config-review-model-"));
+
+    const config = await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "GLM-5.1",
+      curationModel: "GLM-5.1",
+      reviewModel: "GLM-4.7",
+      apiKeyEnv: "ZAI_API_KEY",
+    });
+
+    assert.equal(config.model, "GLM-5.1");
+    assert.equal(config.curation_model, "GLM-5.1");
+    assert.equal(config.review_model, "GLM-4.7");
+
+    const readBack = await readAiProviderConfig(root);
+    assert.equal(readBack?.review_model, "GLM-4.7");
+
+    // Existing configs without review_model stay valid
+    const root2 = await mkdtemp(join(tmpdir(), "praxisbase-ai-config-no-review-"));
+    const config2 = await writeAiProviderConfig(root2, {
+      provider: "openai-compatible",
+      model: "gpt-test",
+    });
+    assert.equal(config2.review_model, undefined);
+
+    const readBack2 = await readAiProviderConfig(root2);
+    assert.equal(readBack2?.review_model, undefined);
+    assert.equal(readBack2?.model, "gpt-test");
+  });
+
   it("rejects unsupported providers", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-ai-config-provider-"));
 
