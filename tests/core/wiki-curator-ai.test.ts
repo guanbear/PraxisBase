@@ -159,6 +159,52 @@ describe("AI wiki curator", () => {
     }
   });
 
+  it("falls back to deterministic synthesis when AI body fails quality guards", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: [
+                "# OpenClaw auth expired recovery",
+                "",
+                "## Problem",
+                "Authentication expiry affected sync.",
+                "",
+                "## Fix",
+                "TBD.",
+                "",
+                "## Verification",
+                "TBD.",
+                "",
+                "## Reusable Lessons",
+                "TBD.",
+                "",
+                "## Provenance",
+                "TBD.",
+              ].join("\n"),
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(result.proposal.body_markdown, /Refresh OpenClaw login/);
+      assert.equal(result.proposal.guards.every((guard) => guard.ok), true);
+    }
+  });
+
   it("repairs AI body that uses a machine-generated hash heading", async () => {
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,

@@ -71,12 +71,21 @@ function isLowRiskPersonalKind(kind: CuratedWikiProposal["page_kind"]): boolean 
   return kind === "known_fix" || kind === "procedure" || kind === "pitfall" || kind === "note";
 }
 
+function isPersonalLowRiskWikiUpdate(proposal: CuratedWikiProposal, policy: ReviewPolicy): boolean {
+  return policy.mode === "personal"
+    && (proposal.action === "update")
+    && (proposal.scope === "personal" || proposal.scope === "project")
+    && isLowRiskPersonalKind(proposal.page_kind)
+    && /^(kb\/(known-fixes|procedures|decisions|pitfalls|memory|notes)\/|skills\/)/.test(proposal.target_path);
+}
+
 function hasPassingGuard(proposal: CuratedWikiProposal, guardId: string): boolean {
   return proposal.guards.some((guard) => guard.id === guardId && guard.ok);
 }
 
 function isWeakSingleSource(proposal: CuratedWikiProposal, policy: ReviewPolicy): boolean {
   if (proposal.source_count >= policy.min_source_count_for_auto_promote) return false;
+  if (proposal.page_kind === "note") return true;
   return ![
     "experience_signal",
     "actionability",
@@ -93,7 +102,9 @@ export function decideAutoReview(proposal: CuratedWikiProposal, policy: ReviewPo
   if (proposal.scope === "team" || proposal.scope === "org" || proposal.scope === "global") reasons.push("team_or_org_target");
   if (proposal.page_kind === "skill") reasons.push("skill_or_policy_target");
   if (proposal.action === "archive" || proposal.action === "supersede") reasons.push("destructive_or_archive_action");
-  if (proposal.action === "update" || proposal.action === "skill_update") reasons.push("updates_existing_stable_page");
+  if (proposal.action === "skill_update" || (proposal.action === "update" && !isPersonalLowRiskWikiUpdate(proposal, policy))) {
+    reasons.push("updates_existing_stable_page");
+  }
   if (proposal.review_hint.suggested_decision === "split" || proposal.review_hint.suggested_decision === "merge") {
     reasons.push("conflicting_evidence");
   }

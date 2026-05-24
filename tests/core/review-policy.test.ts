@@ -128,6 +128,52 @@ describe("review policy", () => {
     assert.equal(decision.required_human_reasons.includes("weak_single_source"), false);
   });
 
+  it("high-signal single-source personal notes still require human review", () => {
+    const decision = decideAutoReview(
+      curatedProposal({
+        page_kind: "note",
+        target_path: "kb/notes/wiki-single-event.md",
+        source_refs: ["codex:session:1"],
+        source_hashes: ["sha256:a"],
+        source_count: 1,
+        evidence_ids: ["ev_1"],
+        provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+        guards: highSignalGuards(),
+      }),
+      defaultReviewPolicy("personal"),
+    );
+
+    assert.equal(decision.auto_review, true);
+    assert.equal(decision.auto_promote, false);
+    assert.equal(decision.human_required, true);
+    assert.ok(decision.required_human_reasons.includes("weak_single_source"));
+  });
+
+  it("low-risk personal wiki updates can follow auto-promote policy", () => {
+    const decision = decideAutoReview(
+      curatedProposal({
+        action: "update",
+        target_path: "kb/notes/wiki-openclaw-ack-timing.md",
+        page_kind: "note",
+        scope: "personal",
+        guards: highSignalGuards(),
+        related_pages: [
+          {
+            slug: "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+            path: "kb/notes/wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies.md",
+            title: "Asynchronous Task UX and Dispatch Mapping Anomalies",
+          },
+        ],
+      }),
+      defaultReviewPolicy("personal"),
+    );
+
+    assert.equal(decision.auto_review, true);
+    assert.equal(decision.auto_promote, true);
+    assert.equal(decision.human_required, false);
+    assert.equal(decision.required_human_reasons.includes("updates_existing_stable_page"), false);
+  });
+
   it("quality hard block risk note prevents auto-promote", () => {
     const decision = decideAutoReview(
       curatedProposal({

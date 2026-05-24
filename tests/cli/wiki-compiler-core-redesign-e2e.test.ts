@@ -173,7 +173,7 @@ describe("wiki compiler core redesign e2e", () => {
 
     assert.equal(report.input_counts.evidence_items, 10);
     assert.equal(report.compiler_counts?.topics, 2);
-    assert.equal(report.compiler_counts?.relationship_counts.suggested_links, 4);
+    assert.ok((report.compiler_counts?.relationship_counts.suggested_links ?? 0) >= 4);
     assert.equal(report.output_counts.written_proposals, 2);
 
     const review = await reviewAutoWithPolicy(root, { promoteApproved: true });

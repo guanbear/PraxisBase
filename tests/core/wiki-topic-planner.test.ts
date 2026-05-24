@@ -127,6 +127,60 @@ describe("buildWikiTopics", () => {
     assert.equal(stdinTopics[0].observation_ids.length, 2);
   });
 
+  it("merges ACK timing observations with different wording into one semantic topic", () => {
+    const observations = [
+      obs({
+        id: "obs-ack-openclaw",
+        source_ref: "openclaw://memory/ack",
+        source_hash: "sha256:ack-openclaw",
+        problem: "OpenClaw delegated work feels slow because it waits too long before the first response",
+        action: "Send a short acknowledgement before tools or dispatch",
+        entities: ["openclaw", "delegation"],
+        topics: [],
+      }),
+      obs({
+        id: "obs-ack-codex",
+        source_ref: "raw-vault://codex/ack",
+        source_hash: "sha256:ack-codex",
+        problem: "Long-running tool or network tasks should not appear silent",
+        action: "ACK first, then continue with the actual execution and final result",
+        entities: ["codex"],
+        topics: [],
+      }),
+    ];
+
+    const topics = buildWikiTopics(observations);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].source_count, 2);
+    assert.deepEqual(topics[0].source_refs.sort(), ["openclaw://memory/ack", "raw-vault://codex/ack"]);
+  });
+
+  it("uses a stable semantic title for Slack replay stability topics", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "obs-slack-1",
+        source_ref: "openclaw://stability/report-1",
+        source_hash: "sha256:slack-1",
+        problem: "Stability Smoke v2 post-deploy failed due live Slack delivery and replay_missing artifacts",
+        action: "Classify Slack replay missing data before treating it as product regression",
+        entities: ["openclaw", "slack"],
+      }),
+      obs({
+        id: "obs-slack-2",
+        source_ref: "openclaw://stability/report-2",
+        source_hash: "sha256:slack-2",
+        problem: "Nightly Slack replay lanes reported unknown because replay artifacts were missing",
+        action: "Verify replay artifacts before rerunning post-deploy stability checks",
+        entities: ["openclaw", "slack"],
+      }),
+    ]);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].title, "OpenClaw Slack replay and post-deploy stability failures");
+    assert.equal(topics[0].source_count, 2);
+  });
+
   it("keeps separate topics for different problems", () => {
     const observations = [
       obs({ id: "o1", problem: "ACK timing slow", action: "Refresh" }),

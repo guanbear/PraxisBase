@@ -245,6 +245,29 @@ describe("wiki evidence curation", () => {
     assert.equal(pool.filtered_noise, 0);
   });
 
+  it("does not treat existing stable wiki pages as fresh curation evidence", () => {
+    const pool = buildWikiEvidencePool([
+      {
+        ...source(
+          "stable-kb-ack",
+          "OpenClaw ACK timing",
+          "# OpenClaw ACK timing\n\n## Problem\nLong delegated work needs an ACK first.\n\n## Fix\nSend a short ACK before tools or dispatch.\n\n## Verification\nDelegated work acceptance passed.\n\n## Reusable Lessons\nACK before long work.\n\n## Provenance\n- raw-vault://openclaw/ack (sha256:ack)",
+        ),
+        kind: "stable_kb",
+        path: "kb/known-fixes/openclaw-ack-timing.md",
+        knowledge_type: "known_fix",
+      },
+      source(
+        "fresh-ack",
+        "OpenClaw ACK timing follow-up",
+        "User reported OpenClaw delegated work still felt slow. Action: send a short ACK before dispatch. Verification passed in delegated work acceptance. Reusable lesson: ACK before long OpenClaw work.",
+      ),
+    ]);
+
+    assert.deepEqual(pool.items.map((item) => item.id), ["fresh-ack"]);
+    assert.equal(pool.filtered_noise, 1);
+  });
+
   it("clusters repeated source evidence into one proposal input", () => {
     const clusters = clusterWikiEvidence([
       evidence("ev1", { title: "OpenClaw auth expired", source_ref: "codex:1", source_hash: "sha256:1" }),
@@ -346,6 +369,31 @@ describe("wiki evidence curation", () => {
     ]);
     await assert.rejects(() => stat(join(root, "kb")), { code: "ENOENT" });
     await assert.rejects(() => stat(join(root, "skills")), { code: "ENOENT" });
+  });
+
+  it("adds suggested links between new planned pages that share entities", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-planned-links-"));
+    await writeCapture(root, "capture_ack", "OpenClaw delegated work felt silent. Action: send a short ACK before dispatch. Verification passed in delegated work acceptance. Reusable lesson: ACK before long OpenClaw work.");
+    await writeCapture(root, "capture_ack_2", "Long OpenClaw dispatch appeared silent again. Action: send ACK before background dispatch. Verification passed after the delegated work completed. Reusable lesson: ACK before long OpenClaw work.");
+    await writeCapture(root, "capture_runner", "OpenClaw task runner was missing when checking hanging tasks. Action: verify task runner presence before debugging dispatch. Verification passed after runner status check. Reusable lesson: verify runner presence first.");
+    await writeCapture(root, "capture_runner_2", "OpenClaw hanging task investigation found runner status missing. Action: verify task runner presence before dispatch debugging. Verification passed after runner status check. Reusable lesson: verify runner presence first.");
+    await writeCapture(root, "capture_one_off", "OpenClaw one-off acceptance run had a dispatch warning. Action: record the warning for later review.");
+
+    const report = await curateWiki(root, { mode: "review", degraded: true, now: "2026-05-21T00:00:00.000Z" });
+
+    assert.ok((report.compiler_counts?.relationship_counts.suggested_links ?? 0) > 0);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    const proposals = await Promise.all(proposalFiles.map(async (file) =>
+      JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", file), "utf8")),
+    ));
+    assert.ok(proposals.some((proposal) => proposal.suggested_links?.length > 0));
+    assert.ok(proposals.some((proposal) => /\[\[[^\]]+\]\]/.test(proposal.body_markdown)));
+    assert.equal(
+      proposals.some((proposal) =>
+        proposal.suggested_links?.some((link: { path: string }) => link.path.includes("one-off-acceptance-run")),
+      ),
+      false,
+    );
   });
 
   it("can require multiple sources before writing curated proposals", async () => {
@@ -549,5 +597,64 @@ describe("wiki curation with relationship plans", () => {
     const plans = report.compiler_counts!.page_plans_by_action;
     assert.ok(plans.update >= 1, `expected at least 1 update plan, got ${plans.update}`);
     assert.equal(report.output_counts.curated_proposals, 1);
+  });
+
+  it("does not keep planned-page links to proposals that need human review", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-planned-link-quality-"));
+    await writeCapture(root, "capture_ack_1", "OpenClaw delegated work felt silent. Fix: send a short ACK before dispatch. Verification passed in delegated work acceptance. Reusable lesson: ACK before long OpenClaw work.");
+    await writeCapture(root, "capture_ack_2", "OpenClaw dispatch appeared silent again. Fix: send ACK before background dispatch. Verification passed after delegated work completed. Reusable lesson: ACK before long OpenClaw work.");
+    await writeCapture(root, "capture_runner_1", "OpenClaw task runner was missing when checking hanging tasks. Fix: verify task runner presence before debugging dispatch. Verification passed after runner status check. Reusable lesson: verify runner presence first.");
+    await writeCapture(root, "capture_runner_2", "OpenClaw hanging task investigation found runner status missing. Fix: verify task runner presence before dispatch debugging. Verification passed after runner status check. Reusable lesson: verify runner presence first.");
+
+    const report = await curateWiki(root, {
+      mode: "review",
+      now: "2026-05-23T00:00:00.000Z",
+      aiClient: {
+        async generateJson(args: { user: string }) {
+          const user = JSON.parse(args.user) as { compiler_context?: { topic_title?: string } };
+          const topicTitle = user.compiler_context?.topic_title ?? "";
+          if (/task runner/i.test(topicTitle)) {
+            return {
+              ok: true,
+              json: {
+                title: "OpenClaw task runner presence checks",
+                summary: "Verify runner presence before dispatch debugging.",
+                page_kind: "known_fix",
+                target_path: "kb/known-fixes/openclaw-task-runner-presence-checks.md",
+                body_markdown: "# OpenClaw task runner presence checks\n\n## Problem\nRunner state was missing.\n\n## Fix\nCheck runner status.\n\n## Verification\nRunner status check passed.",
+                confidence: 0.5,
+                risk_notes: [],
+              },
+            };
+          }
+          return {
+            ok: true,
+            json: {
+              title: "ACK timing before long-running agent work",
+              summary: "Send an ACK before long OpenClaw dispatch work.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+              body_markdown: "# ACK timing before long-running agent work\n\n## Problem\nLong OpenClaw dispatch work can look silent.\n\n## Fix\nSend a short ACK before dispatch.\n\n## Verification\nDelegated work acceptance passed.\n\n## Reusable Lessons\nACK before long OpenClaw work.",
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.compiler_counts?.human_required_quality, 1);
+    assert.equal(report.output_counts.curated_proposals, 2);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    const proposals = await Promise.all(proposalFiles.map(async (file) =>
+      JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", file), "utf8")),
+    ));
+    const proposal = proposals.find((item) => item.target_path === "kb/known-fixes/ack-timing-before-long-running-agent-work.md");
+    assert.ok(proposal);
+    assert.doesNotMatch(proposal.body_markdown, /openclaw-task-runner-presence-checks/);
+    assert.notEqual(
+      proposal.suggested_links?.some((link: { slug: string }) => link.slug === "openclaw-task-runner-presence-checks"),
+      true,
+    );
   });
 });

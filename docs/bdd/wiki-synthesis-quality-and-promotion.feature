@@ -32,6 +32,36 @@ Feature: Wiki synthesis quality and promotion
     Then the proposal is approved
     And the stable wiki page is written
 
+  Scenario: Personal mode may promote low-risk wiki updates
+    Given a personal update proposal adds provenance and resolver-valid related wiki links to an existing page
+    And the proposal has no quality hard block or human-required reason
+    When the personal review policy runs with promotion enabled
+    Then the existing stable wiki page is updated
+
+  Scenario: Startup and configuration fragments stay out of wiki proposals
+    Given a Codex memory chunk only describes system prompts, sandbox mode, installed skills, and session initialization
+    When PraxisBase builds the wiki evidence pool
+    Then the chunk is counted as filtered noise
+    And no wiki page candidate is written for it
+
+  Scenario: Repeated operational lessons cluster before synthesis
+    Given one OpenClaw memory and one Codex memory both describe delayed ACK behavior for long-running delegated work
+    When PraxisBase builds wiki topics
+    Then there is one ACK timing topic
+    And the topic has multiple source refs
+
+  Scenario: Auto-promoted pages do not link to human-gated planned pages
+    Given one planned page has repeated evidence and promotion-grade confidence
+    And another planned page is a low-confidence or single-source candidate
+    When PraxisBase prepares suggested links for synthesis
+    Then the promotion-grade page does not receive a wikilink to the human-gated candidate
+
+  Scenario: Safe but weak AI synthesis falls back to evidence-shaped body
+    Given the AI curator returns safe markdown that lacks actionable repair guidance
+    When PraxisBase validates the curated wiki proposal
+    Then curation rebuilds the body from evidence actions, verification, reusable lessons, and provenance
+    And the proposal still goes through the normal quality gate
+
   Scenario: Team mode remains review-gated
     Given a team-scoped curated proposal passes content quality
     When the default team review policy runs

@@ -50,7 +50,53 @@ function normalizedTopicKey(parts: string[]): string {
     .join("::");
 }
 
+function semanticTopicFamily(obs: WikiObservation): string | undefined {
+  const text = [
+    obs.problem,
+    obs.action,
+    obs.reusable_lesson,
+    ...obs.topics,
+    ...obs.entities,
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  if (
+    /\back(?:nowledg(?:e|ement|ement)?| timing)?\b/.test(text)
+    && /\b(long|slow|tool|network|dispatch|delegat|first response|silent|before|先发|回复慢)\b/i.test(text)
+  ) {
+    return "ack-timing";
+  }
+  if (/\bstdin\b/.test(text) && /\b(closed|close|write|tty|interactive)\b/.test(text)) {
+    return "stdin-closed";
+  }
+  if (/\b(task runner|runner)\b/.test(text) && /\b(missing|presence|hanging|status|verify)\b/.test(text)) {
+    return "task-runner-presence";
+  }
+  if (/\bslack\b/.test(text) && /\b(replay|missing|artifact|footer|delivery)\b/.test(text)) {
+    return "slack-replay-verification";
+  }
+  if (/\bdispatch|routing|stickyresult|idle queue\b/.test(text)) {
+    return "dispatch-routing";
+  }
+  if (/\bgateway\b/.test(text) && /\b(restart|status|streaming|configuration|config)\b/.test(text)) {
+    return "gateway-restart";
+  }
+  return undefined;
+}
+
+function titleForSemanticFamily(family: string): string {
+  if (family === "ack-timing") return "ACK timing before long-running agent work";
+  if (family === "stdin-closed") return "Subprocess stdin closed handling";
+  if (family === "task-runner-presence") return "OpenClaw task runner presence checks";
+  if (family === "slack-replay-verification") return "OpenClaw Slack replay and post-deploy stability failures";
+  if (family === "dispatch-routing") return "OpenClaw dispatch routing failures";
+  if (family === "gateway-restart") return "OpenClaw gateway restart after configuration changes";
+  return "Untitled topic";
+}
+
 export function topicKeyForObservation(obs: WikiObservation): string {
+  const family = semanticTopicFamily(obs);
+  if (family) return normalizedTopicKey([`family:${family}`, obs.scope]);
+
   const semanticTopics = obs.topics.map(normalizeText).filter(Boolean).sort();
   const problem = semanticTopics.length > 0 ? semanticTopics.join(",") : normalizeText(obs.problem);
   const action = semanticTopics.length > 0 ? "" : normalizeText(obs.action);
@@ -126,12 +172,13 @@ export function buildWikiTopics(observations: WikiObservation[]): WikiTopic[] {
 
   const topics: WikiTopic[] = [];
   for (const [key, bucket] of buckets) {
+    const family = semanticTopicFamily(bucket[0]);
     const sourceRefs = uniqSorted(bucket.map((o) => o.source_ref));
     const sourceHashes = uniqSorted(bucket.map((o) => o.source_hash));
     const entities = uniqSorted(bucket.flatMap((o) => o.entities));
     const scope = bucket[0].scope;
     const pageKind = pageKindFromObservations(bucket);
-    const title = inferTitle(bucket);
+    const title = family ? titleForSemanticFamily(family) : inferTitle(bucket);
     const topic = WikiTopicSchema.parse({
       id: makeId("wiki-topic", key),
       topic_key: key,

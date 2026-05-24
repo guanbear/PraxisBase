@@ -27,9 +27,10 @@ import {
   type WikiObservation,
   type WikiPagePlan,
   type WikiPagePlanAction,
+  type WikiTopic,
 } from "./curation-model.js";
 import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-planner.js";
-import { buildWikiRelationshipPlans } from "./relationship-planner.js";
+import { buildWikiRelationshipPlans, type WikiRelationshipPlan, type RelationshipWikiPage } from "./relationship-planner.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
 
@@ -47,6 +48,94 @@ function countDuplicateSourceHashGroups(plans: WikiPagePlan[]): number {
 
 function zeroFloor(value: number): number {
   return Math.max(0, value);
+}
+
+function wikiSlugFromTargetPath(path: string, title: string): string {
+  const parts = path.split("/");
+  const leaf = parts[parts.length - 1] ?? title;
+  const withoutExtension = leaf === "SKILL.md"
+    ? parts[parts.length - 2] ?? title
+    : leaf.replace(/\.md$/i, "");
+  return makeWikiSlug(withoutExtension || title);
+}
+
+function isLowRiskPlannedPageKind(kind: WikiTopic["page_kind"]): boolean {
+  return kind === "known_fix" || kind === "procedure" || kind === "pitfall" || kind === "note";
+}
+
+function isLikelyStablePlannedTopic(topic: WikiTopic): boolean {
+  return isLowRiskPlannedPageKind(topic.page_kind)
+    && topic.source_count >= 2
+    && topic.confidence >= 0.82;
+}
+
+function plannedRelationshipPages(topics: WikiTopic[], pagePlans: WikiPagePlan[]): RelationshipWikiPage[] {
+  const topicByKey = new Map(topics.map((topic) => [topic.topic_key, topic]));
+  const pages: RelationshipWikiPage[] = [];
+  for (const plan of pagePlans) {
+    if (plan.action !== "create") continue;
+    const topic = topicByKey.get(plan.topic_key);
+    if (!topic) continue;
+    if (!isLikelyStablePlannedTopic(topic)) continue;
+    pages.push({
+      id: topic.id,
+      path: plan.target_path,
+      title: plan.canonical_title,
+      slug: wikiSlugFromTargetPath(plan.target_path, plan.canonical_title),
+      page_kind: topic.page_kind,
+      scope: topic.scope,
+      source_hashes: topic.source_hashes,
+      entities: topic.entities,
+    });
+  }
+  return pages;
+}
+
+function relationshipsBetweenPlannedPages(topics: WikiTopic[], pagePlans: WikiPagePlan[]): WikiRelationshipPlan[] {
+  const createTopicIds = new Set(
+    pagePlans
+      .filter((plan) => plan.action === "create")
+      .map((plan) => topics.find((topic) => topic.topic_key === plan.topic_key && isLikelyStablePlannedTopic(topic))?.id)
+      .filter((id): id is string => Boolean(id)),
+  );
+  if (createTopicIds.size < 2) return [];
+  const plannedPages = plannedRelationshipPages(topics, pagePlans);
+  return buildWikiRelationshipPlans({
+    topics: topics.filter((topic) => createTopicIds.has(topic.id)),
+    existingPages: plannedPages,
+  }).filter((plan) =>
+    plan.topic_id !== plan.target_page_id
+    && createTopicIds.has(plan.topic_id)
+    && createTopicIds.has(plan.target_page_id),
+  );
+}
+
+function addRelationshipLinksToPagePlans(pagePlans: WikiPagePlan[], topics: WikiTopic[], relationships: WikiRelationshipPlan[]): WikiPagePlan[] {
+  const topicById = new Map(topics.map((topic) => [topic.id, topic]));
+  const relsByTopicKey = new Map<string, WikiRelationshipPlan[]>();
+  for (const rel of relationships) {
+    const topic = topicById.get(rel.topic_id);
+    if (!topic) continue;
+    const bucket = relsByTopicKey.get(topic.topic_key) ?? [];
+    bucket.push(rel);
+    relsByTopicKey.set(topic.topic_key, bucket);
+  }
+
+  return pagePlans.map((plan) => {
+    const rels = relsByTopicKey.get(plan.topic_key) ?? [];
+    if (rels.length === 0) return plan;
+    return {
+      ...plan,
+      required_links: uniq([
+        ...plan.required_links,
+        ...rels.filter((rel) => rel.required_link).map((rel) => rel.target_slug),
+      ]),
+      related_paths: uniq([
+        ...plan.related_paths,
+        ...rels.filter((rel) => !rel.required_link && rel.strength === "related").map((rel) => rel.target_path),
+      ]),
+    };
+  });
 }
 
 export interface WikiEvidencePool {
@@ -260,7 +349,10 @@ export function buildWikiEvidencePool(sources: WikiSource[], rules: WikiFilterRu
 
   for (const source of sources) {
     const kind = evidenceKindForSource(source);
-    if (!kind) continue;
+    if (!kind) {
+      if (source.kind === "stable_kb" || source.kind === "skill") filteredNoise++;
+      continue;
+    }
     const filter = decideWikiFilter(source, rules);
     if (filter.action === "exclude") {
       filteredNoise++;
@@ -573,6 +665,54 @@ function extractBodyWikilinkSlugs(body: string): Set<string> {
   return slugs;
 }
 
+function stripDisallowedWikilinks(body: string, disallowedSlugs: Set<string>): string {
+  if (disallowedSlugs.size === 0) return body;
+  const lines = body.split(/\r?\n/);
+  const output: string[] = [];
+  let sectionHeading: string | undefined;
+  let sectionLines: string[] = [];
+
+  const flushRelatedSection = () => {
+    if (!sectionHeading) return;
+    const kept = sectionLines.filter((line) => {
+      const slugs = Array.from(line.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g))
+        .map((match) => match[1].trim().toLowerCase());
+      return slugs.length === 0 || slugs.some((slug) => !disallowedSlugs.has(slug));
+    });
+    if (kept.some((line) => /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/.test(line))) {
+      output.push(sectionHeading, ...kept);
+    }
+    sectionHeading = undefined;
+    sectionLines = [];
+  };
+
+  for (const line of lines) {
+    if (/^##\s+Related Wiki Pages\b/i.test(line)) {
+      flushRelatedSection();
+      sectionHeading = line;
+      sectionLines = [];
+      continue;
+    }
+    if (sectionHeading && /^##\s+/.test(line)) {
+      flushRelatedSection();
+      output.push(line);
+      continue;
+    }
+    if (sectionHeading) {
+      sectionLines.push(line);
+      continue;
+    }
+    output.push(line);
+  }
+  flushRelatedSection();
+
+  return output.join("\n").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, rawSlug: string, rawLabel?: string) => {
+    const slug = rawSlug.trim().toLowerCase();
+    if (!disallowedSlugs.has(slug)) return match;
+    return (rawLabel ?? rawSlug).trim();
+  });
+}
+
 function relationshipLinksFromContext(context: SynthesisContext | undefined, includeSuggested: boolean): StructuredLink[] {
   if (!context) return [];
   const bodyLinks = new Map<string, StructuredLink>();
@@ -748,6 +888,7 @@ function isAcceptableAiBody(body: string): boolean {
 
 function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): CuratedWikiProposal["guards"] {
   const evidenceText = evidence.map((item) => [item.title, item.summary, ...item.actions, ...item.verification, ...item.reusable_lessons].join("\n")).join("\n");
+  const bodyContent = body.replace(/^#{1,6}\s+.+$/gm, " ");
   const experienceSignal = evidence.some((item) =>
     item.actions.length > 0
     || item.verification.length > 0
@@ -760,9 +901,9 @@ function proposalQualityGuards(body: string, evidence: WikiEvidenceItem[]): Cura
     || item.suggested_wiki_kind === "known_fix"
   );
   const actionability = /##\s+(Fix|Steps|Procedure|Decision|Applicability|Reusable Lessons)\b/i.test(body)
-    && /\b(use this|when|refresh|retry|run|send|avoid|verify|check|should|must|fix|decision)\b/i.test(body);
+    && /\b(use this|when|refresh|retry|run|send|avoid|verify|check|should|must|fix|decision)\b/i.test(bodyContent);
   const verificationOrLesson = /##\s+(Verification|Reusable Lessons)\b/i.test(body)
-    && /\b(verify|test|passed|fixed|resolved|lesson|remember|prefer|should|must|avoid|run|check|sync|re-run)\b/i.test(body);
+    && /\b(verify|test|passed|fixed|resolved|lesson|remember|prefer|should|must|avoid|run|check|sync|re-run)\b/i.test(bodyContent);
   const referenceOnly = /\b(official documentation|official docs|api reference|reference documentation|session initialization metadata|session boot|boot configuration|skill registry|sandbox mode|approval policy)\b/i.test(evidenceText)
     && !hasConcreteExperienceTerms(evidenceText);
 
@@ -879,7 +1020,15 @@ export async function synthesizeCuratedWikiProposal(
       proposal = synthesizeDegradedProposal(cluster, options.evidence, now, planAction, options.synthesisContext);
     }
 
-    const failedGuard = proposal.guards.find((guard) => !guard.ok);
+    let failedGuard = proposal.guards.find((guard) => !guard.ok);
+    if (failedGuard && failedGuard.id !== "privacy" && failedGuard.id !== "path") {
+      const fallback = synthesizeDegradedProposal(cluster, options.evidence, now, planAction, options.synthesisContext);
+      const fallbackFailedGuard = fallback.guards.find((guard) => !guard.ok);
+      if (!fallbackFailedGuard) {
+        proposal = fallback;
+        failedGuard = undefined;
+      }
+    }
     if (failedGuard) {
       return {
         ok: false,
@@ -895,6 +1044,31 @@ export async function synthesizeCuratedWikiProposal(
       error: error instanceof Error ? error.message : String(error),
     };
   }
+}
+
+function proposalSlug(proposal: CuratedWikiProposal): string {
+  return wikiSlugFromTargetPath(proposal.target_path, proposal.title).toLowerCase();
+}
+
+function sanitizeProposalRelationships(proposal: CuratedWikiProposal, allowedTargetSlugs: Set<string>): CuratedWikiProposal {
+  const relationshipSlugs = new Set<string>();
+  for (const page of proposal.related_pages ?? []) relationshipSlugs.add(page.slug.toLowerCase());
+  for (const link of proposal.required_links ?? []) relationshipSlugs.add(link.slug.toLowerCase());
+  for (const link of proposal.suggested_links ?? []) relationshipSlugs.add(link.slug.toLowerCase());
+  const disallowedSlugs = new Set(Array.from(relationshipSlugs).filter((slug) => !allowedTargetSlugs.has(slug)));
+  if (disallowedSlugs.size === 0) return proposal;
+
+  const relatedPages = proposal.related_pages?.filter((page) => allowedTargetSlugs.has(page.slug.toLowerCase()));
+  const requiredLinks = proposal.required_links?.filter((link) => allowedTargetSlugs.has(link.slug.toLowerCase()));
+  const suggestedLinks = proposal.suggested_links?.filter((link) => allowedTargetSlugs.has(link.slug.toLowerCase()));
+
+  return CuratedWikiProposalSchema.parse({
+    ...proposal,
+    body_markdown: stripDisallowedWikilinks(proposal.body_markdown, disallowedSlugs),
+    ...(relatedPages && relatedPages.length > 0 ? { related_pages: relatedPages } : { related_pages: undefined }),
+    ...(requiredLinks && requiredLinks.length > 0 ? { required_links: requiredLinks } : { required_links: undefined }),
+    ...(suggestedLinks && suggestedLinks.length > 0 ? { suggested_links: suggestedLinks } : { suggested_links: undefined }),
+  });
 }
 
 export async function curateWiki(root: string, options: CurateWikiOptions): Promise<WikiCurationReport> {
@@ -926,8 +1100,18 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const observations = buildWikiObservationsFromEvidence(pool.items);
   const topics = buildWikiTopics(observations);
   const existingPages = await loadExistingWikiPages(root);
-  const relationshipPlans = buildWikiRelationshipPlans({ topics, existingPages });
-  const pagePlans = planWikiPages(topics, existingPages, { relationships: relationshipPlans });
+  const existingRelationshipPlans = buildWikiRelationshipPlans({ topics, existingPages });
+  const initialPagePlans = planWikiPages(topics, existingPages, { relationships: existingRelationshipPlans });
+  const plannedRelationshipPlans = relationshipsBetweenPlannedPages(topics, initialPagePlans);
+  const relationshipPlans = [
+    ...existingRelationshipPlans,
+    ...plannedRelationshipPlans,
+  ].sort((a, b) =>
+    a.topic_id.localeCompare(b.topic_id)
+    || a.target_title.localeCompare(b.target_title)
+    || a.target_path.localeCompare(b.target_path),
+  );
+  const pagePlans = addRelationshipLinksToPagePlans(initialPagePlans, topics, plannedRelationshipPlans);
   const pagePlansByAction = countPagePlansByAction(pagePlans);
   const duplicateSourceHashGroups = countDuplicateSourceHashGroups(pagePlans);
   const topicsWithRelationships = new Set(relationshipPlans.map((plan) => plan.topic_id));
@@ -1095,39 +1279,63 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   let qualityHardBlockCount = 0;
   let qualityHumanRequiredCount = 0;
   const proposals: CuratedWikiProposal[] = [];
-  for (const proposal of synthesizedProposals) {
+  const assessProposal = (proposal: CuratedWikiProposal) => {
     const planForTarget = pagePlans.find((plan) =>
       plan.target_path === proposal.target_path || plan.existing_path === proposal.target_path,
     );
-    const assessment = assessWikiPromotionQuality(proposal, {
+    const relatedPaths = uniq([
+      ...(proposal.related_pages ?? []).map((page) => page.path),
+      ...(proposal.suggested_links ?? []).map((link) => link.path),
+    ]);
+    return assessWikiPromotionQuality(proposal, {
       otherProposals: synthesizedProposals,
       existingPageFound: Boolean(
         (proposal.action === "create" || proposal.action === "skill_create")
         && planForTarget
         && planForTarget.action !== "create",
       ),
-      relatedPaths: planForTarget?.related_paths ?? [],
+      relatedPaths,
       relatedPages: proposal.related_pages,
       requiredLinks: proposal.required_links,
       mergeCandidates: proposal.merge_candidates,
       relationshipReasons: proposal.relationship_reasons,
       minSourceCount,
     });
+  };
+  const initialAssessments = new Map<string, ReturnType<typeof assessWikiPromotionQuality>>();
+  for (const proposal of synthesizedProposals) {
+    initialAssessments.set(proposal.id, assessProposal(proposal));
+  }
+  const allowedTargetSlugs = new Set(existingPages.map((page) => page.slug.toLowerCase()));
+  for (const proposal of synthesizedProposals) {
+    const assessment = initialAssessments.get(proposal.id);
+    if (assessment && assessment.hard_blocks.length === 0 && assessment.human_required.length === 0) {
+      allowedTargetSlugs.add(proposalSlug(proposal));
+    }
+  }
+  for (const proposal of synthesizedProposals) {
+    const initialAssessment = initialAssessments.get(proposal.id);
+    if (initialAssessment && initialAssessment.hard_blocks.length > 0) {
+      qualityHardBlockCount++;
+      continue;
+    }
+    const sanitizedProposal = sanitizeProposalRelationships(proposal, allowedTargetSlugs);
+    const assessment = assessProposal(sanitizedProposal);
     if (assessment.hard_blocks.length > 0) {
       qualityHardBlockCount++;
       continue;
     }
     const riskNotes = [
-      ...proposal.review_hint.risk_notes,
+      ...sanitizedProposal.review_hint.risk_notes,
       ...assessment.human_required.map((reason) => `quality_human_required:${reason}`),
     ];
     if (assessment.human_required.length > 0) qualityHumanRequiredCount++;
     proposals.push({
-      ...proposal,
+      ...sanitizedProposal,
       review_hint: {
-        ...proposal.review_hint,
+        ...sanitizedProposal.review_hint,
         risk_notes: riskNotes,
-        suggested_decision: assessment.human_required.length > 0 ? "edit" : proposal.review_hint.suggested_decision,
+        suggested_decision: assessment.human_required.length > 0 ? "edit" : sanitizedProposal.review_hint.suggested_decision,
       },
     });
   }

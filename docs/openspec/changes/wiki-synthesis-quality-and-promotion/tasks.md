@@ -10,6 +10,12 @@
 - [x] Add unit tests for section hard blocks.
 - [x] Add regression tests for canonical relationship slugs, resolver aliases, and clickable HTML wikilinks.
 - [x] Use stable page ids for relationship planning and require resolver-valid related links.
+- [x] Filter startup/configuration/status-only noise before wiki curation.
+- [x] Cluster repeated agent experience by semantic problem family before AI synthesis.
+- [x] Allow personal low-risk update proposals to auto-promote when quality gates pass.
+- [x] Prevent auto-promotable pages from linking to human-gated planned pages.
+- [x] Fall back to deterministic evidence-shaped synthesis for safe AI output that fails non-security guards.
+- [x] Re-run real personal daily smoke and inspect graph/content quality.
 - [x] Run targeted wiki tests.
 - [x] Run `pnpm check`.
-- [ ] Commit source, docs, and tests only.
+- [x] Commit source, docs, and tests only.
