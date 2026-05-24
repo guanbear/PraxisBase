@@ -21,10 +21,15 @@
 - Test: `tests/core/daily-experience-protocol.test.ts`
 
 - [ ] Add failing tests for rule matching by agent/parser/source ref.
+- [ ] Add failing tests for tool/command normalization from `{command}`, `{cmd}`, `{argv}`, stdout, stderr, combined text, and exit code.
+- [ ] Add failing tests for specificity scoring: a higher-specificity git/test rule beats generic fallback, with deterministic id tie-breaks.
 - [ ] Add failing tests for `strip_ansi`, `drop_lines_matching`, `dedupe_adjacent_lines`, `collapse_whitespace`, `head_tail`, `preserve_sections_matching`, and `truncate`.
+- [ ] Add failing tests for pass-through safety: tiny input is not reduced, non-useful reduction returns original text, file-content inspection commands pass through, and failed commands preserve more tail context.
+- [ ] Add failing tests for invalid user/project regex diagnostics without throwing.
 - [ ] Add failing protocol test for `context_economy` report fields.
 - [ ] Implement `ContextReducerRuleSchema`, `ContextReductionReportSchema`, and report path `.praxisbase/reports/context-economy`.
 - [ ] Implement deterministic reducer actions with UTF-8 safe slicing.
+- [ ] Implement `ContextReductionResult` with `reducer_version`, `rule_set_hash`, `reduction_hash`, matched rule id, family, confidence, applied flag, byte counts, facts, and warnings.
 - [ ] Implement built-in rules for Codex session, OpenClaw log, agentmemory memory, command/test output, and generic fallback.
 - [ ] Run focused tests:
 
@@ -43,10 +48,11 @@ pnpm exec tsc -p tsconfig.tests.json && node --test dist-tests/tests/core/contex
 
 - [ ] Add failing daily test proving reducer runs before chunking by asserting a noisy source produces fewer chunk bytes and the AI client receives reduced text.
 - [ ] Add failing test proving source refs and source hashes are preserved after reduction.
+- [ ] Add failing test proving changed reducer rule-set hash changes the chunk/cache input identity and does not silently reuse stale AI distill cache entries.
 - [ ] Add failing test for `--no-context-economy` or equivalent input flag that bypasses reduction.
 - [ ] Add `contextEconomy?: boolean` to `RunDailyExperienceInput`, defaulting to true.
 - [ ] Reduce raw item text immediately after source item normalization and before `chunkExperienceSource`.
-- [ ] Accumulate report counters: items seen, items reduced, input bytes, output bytes, saved bytes, rule hits, warnings.
+- [ ] Accumulate report counters: items seen, items reduced, input bytes, output bytes, saved bytes, reducer version, rule set hash, rule hits, warnings.
 - [ ] Persist compact reducer debug reports without raw unredacted content.
 - [ ] Run focused daily/source tests.
 

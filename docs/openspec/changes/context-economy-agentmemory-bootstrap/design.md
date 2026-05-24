@@ -23,15 +23,30 @@ The reducer is deterministic and runs before AI. AgentMemory is an optional REST
 
 Rules are loaded from built-in, user, then project scope. They match source metadata and content patterns, then apply deterministic actions such as ANSI stripping, duplicate-line removal, section preservation, head/tail clipping, and bounded truncation.
 
+Inputs are first normalized into a shared execution/source shape with tool name, command, argv, stdout, stderr, combined text, exit code, source metadata, source ref, and source hash. This is required so rules can preserve failure context and avoid treating every source as generic text.
+
+Rules are selected by specificity scoring. Priority, exact tool/argv matches, argv include groups, command include groups, and source metadata matches increase specificity; ties break by rule id. Invalid regex patterns in user/project rules are reported and ignored instead of failing the run.
+
+Reduction is pass-through safe:
+
+- tiny inputs are skipped;
+- reduced output is used only when it is meaningfully smaller than the original;
+- file-content inspection commands pass through unless explicitly opted in;
+- failed commands preserve more head/tail context;
+- counters/facts are retained for observability and later synthesis.
+
 The reducer must preserve:
 
 - source ref;
 - source hash;
 - command/test failure signal;
 - explicit lessons and verification;
-- privacy and provenance fields.
+- privacy and provenance fields;
+- reducer version, rule-set hash, matched rule id, reduction hash, applied flag, byte counts, facts, and warnings.
 
 Daily reports include byte accounting and rule hit summaries. Debug reports contain hashes and counters, not unredacted raw source material.
+
+Reducer version and rule-set hash must participate in chunk/cache identity or equivalent stale-cache protection so changed reducer rules cannot silently reuse old AI distill output.
 
 ## AgentMemory Interop
 
@@ -70,7 +85,9 @@ Personal agentmemory imports cannot enter team knowledge by default. Team export
 ## Failure Modes
 
 - Reducer rule failure: skip the failed rule for that item and record a warning.
+- Invalid rule regex: ignore the regex and record a warning.
 - Empty reduction: use a bounded head/tail fallback.
+- Reduction not worthwhile: pass through original text and record `applied=false`.
 - AgentMemory unavailable: source doctor fails or sidecar retrieval warns; local wiki flow continues.
 - AgentMemory auth unsafe: block request before sending bearer.
 - Personal bootstrap partial detection: write only confirmed sources and report candidates that need user confirmation.

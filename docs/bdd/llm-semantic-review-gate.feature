@@ -42,3 +42,16 @@ Feature: LLM semantic review gate
     When deterministic arbitration runs
     Then the final action is needs_human
     And the curation report counts the reviewer as unavailable
+
+  Scenario: Review model falls back through curation model
+    Given AI config has model "GLM-5.1" and curation_model "GLM-4.7"
+    And review_model is not configured
+    When semantic review runs
+    Then the reviewer uses model "GLM-4.7"
+
+  Scenario: Agentmemory sidecar is not promotion evidence
+    Given a synthesized wiki candidate has one agentmemory sidecar hit
+    And that hit has not been ingested into PraxisBase provenance
+    When semantic review runs
+    Then the reviewer treats the hit as related context only
+    And the candidate cannot be promoted solely because of that hit

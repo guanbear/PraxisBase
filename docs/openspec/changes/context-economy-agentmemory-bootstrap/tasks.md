@@ -1,7 +1,11 @@
 # Tasks
 
 - [ ] Add context reducer schemas, built-in rules, and deterministic reduction actions.
+- [ ] Add source/tool normalization for command, argv, stdout, stderr, combined text, exit code, and metadata.
+- [ ] Add specificity-based rule classification and pass-through safety for tiny inputs, poor compression ratio, file-content inspection commands, and failed command output.
+- [ ] Add reducer version, rule-set hash, reduction hash, matched rule, facts, and warnings to reduction results.
 - [ ] Insert reducer before chunking and AI distill in daily/source ingestion.
+- [ ] Ensure reducer version/rule-set changes cannot silently reuse stale AI distill cache entries.
 - [ ] Add `context_economy` report fields and compact reducer debug reports.
 - [ ] Add an agentmemory REST client with health, latest memories, smart-search, sessions, and remember operations.
 - [ ] Extend source config and source CLI for `source_type=agentmemory`.

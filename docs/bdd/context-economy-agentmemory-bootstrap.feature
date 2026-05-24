@@ -15,6 +15,24 @@ Feature: Context economy, agentmemory interop, and personal bootstrap
     Then chunking receives the unreduced source text
     And the report says context economy is disabled
 
+  Scenario: Tiny or non-beneficial reductions pass through unchanged
+    Given a source item is already short or cannot be reduced meaningfully
+    When context economy runs
+    Then PraxisBase keeps the original item text
+    And the context economy report records applied false
+
+  Scenario: Failed command output preserves diagnostic tail
+    Given a Codex source item contains a failed test command with long output
+    When context economy reduces the item
+    Then the reduced text keeps the command exit status
+    And it preserves the failing test name and trailing error context
+
+  Scenario: Reducer rule changes invalidate stale AI cache identity
+    Given a source chunk was distilled with reducer rule set hash "sha256:old"
+    When the same source is reduced with rule set hash "sha256:new"
+    Then PraxisBase does not silently reuse the old AI distill cache entry
+    And the daily report records the new reducer rule set hash
+
   Scenario: Import agentmemory as a source
     Given an agentmemory daemon is reachable on localhost
     And it returns memories for project "praxisbase"

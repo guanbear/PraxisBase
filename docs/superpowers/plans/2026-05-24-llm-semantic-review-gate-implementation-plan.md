@@ -16,7 +16,7 @@
 - Create `packages/core/src/wiki/semantic-review-policy.ts`: deterministic arbitration from quality assessment + semantic review + scope/policy.
 - Modify `packages/core/src/wiki/curation-model.ts`: semantic review schemas and curation report counts.
 - Modify `packages/core/src/wiki/curate.ts`: run semantic review after synthesis/hard gates and before writing review candidates.
-- Modify `packages/core/src/ai/config.ts`: optional `review_model`.
+- Modify `packages/core/src/ai/config.ts`: optional `review_model`, with effective selection `review_model ?? curation_model ?? model`.
 - Modify `packages/cli/src/commands/wiki.ts`: semantic review CLI options.
 - Modify `packages/cli/src/commands/daily.ts`: pass semantic review options through daily.
 - Modify `packages/core/src/experience/daily.ts`: require semantic review for production auto-promotion of new wiki pages.
@@ -49,7 +49,7 @@ Expected: module not found or schema missing.
 
 - [ ] **Step 3: Implement schema and prompt builder**
 
-Implement `SemanticWikiReviewSchema`, `buildSemanticWikiReviewPrompt()`, `normalizeSemanticWikiReview()`, and exported types. The prompt must forbid rewriting and require strict JSON.
+Implement `SemanticWikiReviewSchema`, `buildSemanticWikiReviewPrompt()`, `normalizeSemanticWikiReview()`, and exported types. The prompt must forbid rewriting, require strict JSON, and state that only PraxisBase provenance-bearing evidence can support promotion. Agentmemory sidecar hits are related context only unless ingested into PraxisBase envelopes/source summaries.
 
 - [ ] **Step 4: Verify**
 
@@ -194,7 +194,7 @@ Run daily focused tests.
 
 - [ ] **Step 1: Write failing CLI/config tests**
 
-Assert `review_model` can be configured. Assert `wiki curate` accepts semantic review options and passes them through.
+Assert `review_model` can be configured. Assert effective review model selection is `review_model ?? curation_model ?? model`. Assert `wiki curate` accepts semantic review options and passes them through.
 
 - [ ] **Step 2: Implement config and CLI parsing**
 

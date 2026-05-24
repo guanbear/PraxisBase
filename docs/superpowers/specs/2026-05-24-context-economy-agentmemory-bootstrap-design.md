@@ -124,9 +124,11 @@ The reducer receives:
 - source id, agent, channel, source type, parser;
 - source ref and source hash;
 - raw text or normalized item text;
-- optional command/tool metadata when available;
+- optional command/tool metadata when available: tool name, command string, argv, stdout, stderr, combined text, exit code, cwd, duration, and source-specific metadata;
 - authority mode (`personal-local` or `team-git`);
 - configured max input bytes and max output bytes.
+
+The first implementation should normalize all inputs into a shared execution/source shape before matching rules. This follows OpenHuman's TokenJuice lesson: rule quality depends on having `command`, `argv`, `exit_code`, and output streams available, not only a blob of text.
 
 ### Rule Model
 
@@ -147,7 +149,15 @@ interface ContextReducerRule {
   id: string;
   enabled: boolean;
   priority: number;
+  family: string;
+  description?: string;
   match: {
+    tool_names?: string[];
+    argv0?: string[];
+    argv_includes?: string[][];
+    argv_includes_any?: string[][];
+    command_includes?: string[];
+    command_includes_any?: string[];
     agent?: "codex" | "openclaw" | "claude-code" | "agentmemory";
     channel?: string;
     parser?: string;
@@ -155,6 +165,28 @@ interface ContextReducerRule {
     source_ref_pattern?: string;
     content_pattern?: string;
   };
+  filters?: {
+    skip_patterns?: string[];
+    keep_patterns?: string[];
+  };
+  transforms?: {
+    strip_ansi?: boolean;
+    trim_empty_edges?: boolean;
+    dedupe_adjacent?: boolean;
+    pretty_print_json?: boolean;
+  };
+  summarize?: {
+    head?: number;
+    tail?: number;
+  };
+  failure?: {
+    preserve_on_failure?: boolean;
+    head?: number;
+    tail?: number;
+  };
+  counters?: Array<{ name: string; pattern: string; flags?: string }>;
+  match_output?: Array<{ pattern: string; flags?: string; message: string }>;
+  on_empty?: string;
   actions: Array<
     | { type: "strip_ansi" }
     | { type: "drop_lines_matching"; pattern: string }
@@ -168,6 +200,57 @@ interface ContextReducerRule {
 ```
 
 No rule may fabricate facts, rewrite outcomes, or remove provenance markers.
+
+Rules are selected by specificity, not only by declaration order. The scorer should consider priority, exact argv/tool matches, argv include groups, command include groups, and source metadata matches. Ties are broken by rule id for deterministic output.
+
+Invalid regexes in user/project rules are diagnostics, not fatal errors. A bad local rule must not crash a daily run.
+
+### Pass-Through Safety
+
+OpenHuman's TokenJuice does not blindly compact every output. PraxisBase should adopt the same safety pattern:
+
+- skip reduction for very small inputs because there is little token gain and higher distortion risk;
+- run reduction but keep original text if the reduced output is not meaningfully smaller;
+- never compact known file-content inspection commands such as `cat`, `sed`, `head`, `tail`, `nl`, `jq`, or `yq` unless a specific source rule explicitly opts in;
+- preserve more head/tail context when `exit_code` indicates failure;
+- keep structured facts/counters such as error count, failure count, changed file count, and omitted line count alongside the reduced text;
+- expose a raw/debug bypass so a user can reproduce old behavior.
+
+Recommended initial defaults:
+
+```text
+min_reduce_input_bytes = 512
+max_inline_chars = 1200
+min_useful_reduction_ratio = 0.95
+```
+
+If a reduced candidate is longer than the original, or above the useful-ratio threshold, the original text is passed through and the report records `applied=false`.
+
+### Reduction Output Contract
+
+Each item reduction returns:
+
+```ts
+interface ContextReductionResult {
+  source_ref: string;
+  source_hash: string;
+  reduction_hash: string;
+  reducer_version: string;
+  rule_set_hash: string;
+  family: string;
+  matched_rule_id: string | null;
+  confidence: number;
+  applied: boolean;
+  input_bytes: number;
+  output_bytes: number;
+  ratio: number;
+  reduced_text: string;
+  facts: Record<string, number>;
+  warnings: string[];
+}
+```
+
+`reduction_hash` is computed from reducer version, rule-set hash, source hash, matched rule, and reduced text. It becomes part of chunk/cache observability so changed reducer rules cannot silently reuse stale AI distill output.
 
 ### Built-In Rule Families
 
@@ -194,6 +277,8 @@ Daily reports add:
   "output_bytes": 2710000,
   "saved_bytes": 15610000,
   "reduction_ratio": 0.852,
+  "reducer_version": "context-economy-v1",
+  "rule_set_hash": "sha256:...",
   "rules_hit": {
     "codex-session-default": 42,
     "openclaw-log-default": 31
@@ -208,7 +293,9 @@ The reducer must also write compact debug records under `.praxisbase/reports/con
 
 - Parse failure falls back to safe text reduction and records `structured_parse_failed`.
 - Rule error disables that rule for the item and records `reducer_rule_failed:<id>`.
+- Invalid user/project rule regex is ignored and records `invalid_rule_regex:<id>`.
 - If reduction output is empty, keep a bounded head/tail fallback and record `empty_reduction_fallback`.
+- If reduction is not meaningfully smaller, pass through original text and record `reduction_not_worthwhile`.
 - If privacy precheck rejects the item, downstream AI is skipped as before.
 
 ## M17: AgentMemory Interop

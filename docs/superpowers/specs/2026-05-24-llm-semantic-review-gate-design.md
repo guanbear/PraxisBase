@@ -248,7 +248,7 @@ Use existing AI provider config and stage-specific model selection:
 
 - `distill_model`: chunk distillation;
 - `curation_model`: wiki synthesis;
-- new `review_model`: semantic review, defaulting to `curation_model` when unset.
+- new `review_model`: semantic review, defaulting to `curation_model ?? model` when unset.
 
 CLI options:
 
@@ -258,6 +258,16 @@ CLI options:
 - `--semantic-review-concurrency <n>`.
 
 Personal mode can auto-promote reviewer-approved low-risk pages. Team mode can store `approved_by_ai` but still requires GitLab/MR/human policy.
+
+## M16-M18 Compatibility
+
+This gate is the quality foundation for the later context economy and agentmemory interop work.
+
+- The reviewer input should use distilled evidence, source summaries, compact provenance excerpts, and M16-reduced source text. It must not require raw transcripts or full noisy logs.
+- The reviewer may inspect agentmemory-imported evidence only after PraxisBase has converted it into normal provenance-bearing envelopes or source summaries.
+- Agentmemory sidecar retrieval is not stable evidence. A sidecar hit can suggest a merge target or related context, but it cannot support promotion unless the underlying material has been ingested into PraxisBase provenance.
+- Context economy may reduce token volume before review, but it may not remove source refs, source hashes, verification signal, or privacy warnings needed by the reviewer.
+- Personal bootstrap should leave semantic review enabled by default. `--no-semantic-review` is a degraded/debug mode and prevents new auto-promotion.
 
 ## Site And Review UX
 

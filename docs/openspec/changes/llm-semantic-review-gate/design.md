@@ -12,7 +12,7 @@ The synthesizer and reviewer are separate roles. The synthesizer writes a candid
 
 ## Semantic Review
 
-The reviewer receives candidate markdown, source summaries, provenance excerpts, related pages, existing target page content when relevant, and deterministic gate results.
+The reviewer receives candidate markdown, source summaries, provenance excerpts, related pages, existing target page content when relevant, and deterministic gate results. Effective model selection is `review_model ?? curation_model ?? model`.
 
 It returns strict JSON with:
 
@@ -60,6 +60,13 @@ Add semantic review counts to curation and daily reports:
 ```
 
 Persist detailed semantic reviews under `.praxisbase/reports/wiki-semantic-review/`.
+
+## Compatibility With Later Milestones
+
+- Context economy may reduce evidence before semantic review, but source refs, hashes, verification, privacy warnings, and reusable lessons must remain available to the reviewer.
+- Agentmemory results are valid review evidence only after PraxisBase ingests them as provenance-bearing envelopes or source summaries.
+- Agentmemory sidecar retrieval cannot by itself justify promotion of a wiki page.
+- Personal bootstrap keeps semantic review enabled by default; disabling it marks the run degraded and blocks new auto-promotion.
 
 ## UX
 
