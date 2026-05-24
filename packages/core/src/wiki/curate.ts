@@ -32,6 +32,8 @@ import {
 } from "./curation-model.js";
 import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-planner.js";
 import { buildWikiRelationshipPlans, type WikiRelationshipPlan, type RelationshipWikiPage } from "./relationship-planner.js";
+import { reviewWikiCandidateSemantically, type ExistingWikiPageRef } from "./semantic-review.js";
+import { decideSemanticWikiAction } from "./semantic-review-policy.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
 const REPORTS_WIKI_SOURCE_SUMMARIES = ".praxisbase/reports/wiki-source-summaries";
@@ -201,6 +203,11 @@ export interface CurateWikiOptions {
   limit?: number;
   concurrency?: number;
   aiClient?: AiJsonClient;
+  semanticReview?: {
+    enabled?: boolean;
+    client?: AiJsonClient;
+    maxOutputBytes?: number;
+  };
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
   aiTimeoutMs?: number;
@@ -1435,6 +1442,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   let qualityHardBlockCount = 0;
   let qualityHumanRequiredCount = 0;
   const proposals: CuratedWikiProposal[] = [];
+  const finalAssessments = new Map<string, ReturnType<typeof assessWikiPromotionQuality>>();
   const assessProposal = (proposal: CuratedWikiProposal) => {
     const planForTarget = pagePlans.find((plan) =>
       plan.target_path === proposal.target_path || plan.existing_path === proposal.target_path,
@@ -1481,6 +1489,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       qualityHardBlockCount++;
       continue;
     }
+    finalAssessments.set(sanitizedProposal.id, assessment);
     const riskNotes = [
       ...sanitizedProposal.review_hint.risk_notes,
       ...assessment.human_required.map((reason) => `quality_human_required:${reason}`),
@@ -1496,10 +1505,146 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     });
   }
 
+  const semanticReviewEnabled = Boolean(options.semanticReview?.enabled);
+  const semanticReviewCounts = {
+    enabled: semanticReviewEnabled,
+    reviewed: 0,
+    promote: 0,
+    merge: 0,
+    revise: 0,
+    reject: 0,
+    needs_human: 0,
+    unavailable: 0,
+  };
+  const semanticReviewedProposals: CuratedWikiProposal[] = [];
+
+  if (semanticReviewEnabled) {
+    const reviewClient = options.semanticReview?.client;
+    const maxOutputBytes = options.semanticReview?.maxOutputBytes;
+    const existingPageRefs: ExistingWikiPageRef[] = existingPages.map((page) => ({
+      slug: page.slug,
+      path: page.path,
+      title: page.title,
+    }));
+
+    for (const proposal of proposals) {
+      const assessment = finalAssessments.get(proposal.id);
+      if (assessment && assessment.hard_blocks.length > 0) {
+        semanticReviewedProposals.push(proposal);
+        continue;
+      }
+
+      let review = null;
+      if (reviewClient) {
+        review = await reviewWikiCandidateSemantically(proposal, {
+          client: reviewClient,
+          existingPages: existingPageRefs,
+          qualityAssessment: assessment ?? {
+            topic_key: proposal.id,
+            hard_blocks: [],
+            human_required: [],
+            passed: true,
+          },
+          maxOutputBytes,
+        });
+      }
+
+      if (review) {
+        semanticReviewCounts.reviewed++;
+      } else {
+        semanticReviewCounts.unavailable++;
+      }
+
+      const arbitration = decideSemanticWikiAction({
+        proposal: {
+          id: proposal.id,
+          action: proposal.action,
+          scope: proposal.scope,
+          source_count: proposal.source_count,
+          page_kind: proposal.page_kind,
+          title: proposal.title,
+        },
+        assessment: assessment ?? {
+          topic_key: proposal.id,
+          hard_blocks: [],
+          human_required: [],
+          passed: true,
+        },
+        review: review ?? undefined,
+      });
+
+      const semanticRiskNotes: string[] = [];
+      if (review) {
+        semanticRiskNotes.push(`semantic_review:${review.decision}`);
+        semanticRiskNotes.push(`semantic_score:${review.quality_score}`);
+        semanticRiskNotes.push(`semantic_reason:${review.reason}`);
+      } else {
+        semanticRiskNotes.push("semantic_review:unavailable");
+      }
+
+      switch (arbitration.action) {
+        case "write_candidate": {
+          semanticReviewCounts.promote++;
+          semanticReviewedProposals.push({
+            ...proposal,
+            review_hint: {
+              ...proposal.review_hint,
+              risk_notes: [...proposal.review_hint.risk_notes, ...semanticRiskNotes],
+            },
+          });
+          break;
+        }
+        case "reject": {
+          semanticReviewCounts.reject++;
+          break;
+        }
+        case "needs_human": {
+          semanticReviewCounts.needs_human++;
+          semanticReviewedProposals.push({
+            ...proposal,
+            review_hint: {
+              ...proposal.review_hint,
+              risk_notes: [...proposal.review_hint.risk_notes, ...semanticRiskNotes, "semantic_review:needs_human"],
+              suggested_decision: "edit",
+            },
+          });
+          break;
+        }
+        case "rewrite_as_merge": {
+          semanticReviewCounts.merge++;
+          semanticReviewedProposals.push({
+            ...proposal,
+            review_hint: {
+              ...proposal.review_hint,
+              risk_notes: [...proposal.review_hint.risk_notes, ...semanticRiskNotes, "semantic_review:merge"],
+              suggested_decision: "edit",
+            },
+          });
+          break;
+        }
+        case "retry_synthesis": {
+          semanticReviewCounts.revise++;
+          semanticReviewCounts.needs_human++;
+          semanticReviewedProposals.push({
+            ...proposal,
+            review_hint: {
+              ...proposal.review_hint,
+              risk_notes: [...proposal.review_hint.risk_notes, ...semanticRiskNotes, "semantic_review:revise"],
+              suggested_decision: "edit",
+            },
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  const finalProposals = semanticReviewEnabled ? semanticReviewedProposals : proposals;
+
   let written = 0;
   if (options.mode === "review") {
-    await removeStaleGeneratedWikiProposalFiles(root, proposals);
-    for (const proposal of proposals) {
+    await removeStaleGeneratedWikiProposalFiles(root, finalProposals);
+    for (const proposal of finalProposals) {
       await writeJson(root, `${protocolPaths.inboxProposals}/${proposal.id}.json`, proposal);
       written++;
     }
@@ -1524,10 +1669,11 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       clusters: topics.length,
     },
     output_counts: {
-      curated_proposals: proposals.length,
+      curated_proposals: finalProposals.length,
       written_proposals: written,
       conflicts,
     },
+    ...(semanticReviewEnabled ? { semantic_review: semanticReviewCounts } : {}),
     compiler_counts: {
       observations: observations.length,
       topics: topics.length,
@@ -1537,7 +1683,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       human_required_quality: qualityHumanRequiredCount,
       relationship_counts: relationshipCounts,
     },
-    proposals: proposals.map((proposal) => ({
+    proposals: finalProposals.map((proposal) => ({
       id: proposal.id,
       target_path: proposal.target_path,
       title: proposal.title,

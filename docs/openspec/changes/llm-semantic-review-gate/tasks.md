@@ -2,8 +2,9 @@
 
 - [x] Add semantic review schema, prompt builder, and AI runner.
 - [x] Add deterministic semantic arbitration policy.
-- [ ] Wire semantic review into wiki curation before candidate write.
-- [ ] Add semantic review counts to curation and daily reports.
+- [x] Wire semantic review into wiki curation before candidate write.
+- [x] Add semantic review counts to curation reports.
+- [ ] Add semantic review counts to daily reports.
 - [ ] Require passing semantic review for personal auto-promotion of new wiki pages.
 - [ ] Add review model and semantic review CLI options.
 - [ ] Use effective review model selection `review_model ?? curation_model ?? model`.
