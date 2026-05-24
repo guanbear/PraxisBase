@@ -18,7 +18,11 @@ type: known_fix
 
 # OpenClaw Auth Expired
 
-Refresh auth state when OpenClaw logs mention auth expired. ${"details ".repeat(200)}
+## When to Use
+Use this when OpenClaw logs mention authentication expired during memory sync.
+
+## Fix
+Refresh auth state and retry memory sync. ${"details ".repeat(200)}
 `,
       "utf8"
     );
@@ -83,9 +87,13 @@ scope: team
 maturity: proven
 signatures: ["openclaw:auth-expired"]
 ---
-# 认证失败
+# OpenClaw 认证失败
 
-OpenClaw 认证失败 needs auth repair. [[auth-repair]]
+## When to Use
+Use this when OpenClaw 认证失败 appears during auth repair.
+
+## Fix
+Refresh OpenClaw credentials and retry the failing operation. [[auth-repair]]
 `);
     await writeFile(join(root, "skills/openclaw/auth-repair/SKILL.md"), `---
 id: auth-repair
@@ -111,7 +119,7 @@ Refresh credentials safely.
     assert.ok(output.citations.some((citation) => citation.path === "kb/known-fixes/openclaw-auth-expired.md"));
   });
 
-  it("returns daily ingested redacted experience refs before promotion", async () => {
+  it("does not return raw-vault refs as default agent guidance before promotion", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-context-raw-ref-"));
     await mkdir(join(root, ".praxisbase/raw-vault/refs"), { recursive: true });
     await writeFile(join(root, ".praxisbase/raw-vault/refs/raw_ref_openclaw-auth.json"), JSON.stringify({
@@ -135,11 +143,93 @@ Refresh credentials safely.
       maxBytes: 4000,
     });
 
-    assert.equal(output.warnings.length, 0);
-    const item = output.items[0];
-    assert.ok(item);
-    assert.equal(item.kind, "raw_vault_ref");
-    assert.match(item.summary ?? "", /authentication expired/);
-    assert.ok(output.citations.some((citation) => citation.path === ".praxisbase/raw-vault/refs/raw_ref_openclaw-auth.json"));
+    assert.deepEqual(output.items, []);
+    assert.ok(output.warnings.includes("context_unavailable"));
+    assert.equal(output.citations.some((citation) => citation.path.startsWith(".praxisbase/raw-vault/refs/")), false);
+  });
+
+  it("returns stable wiki before matching raw evidence when both exist", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-authority-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/raw-vault/refs"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-gateway-restart.md"), `---
+id: openclaw-gateway-restart
+type: procedure
+knowledge_type: procedure
+scope: personal
+maturity: draft
+sources:
+  - uri: openclaw-memory://memory/gateway#1
+    hash: sha256:stable
+---
+# OpenClaw gateway restart after configuration changes
+
+## When to Use
+Use this after changing OpenClaw gateway routing, model, or provider configuration.
+
+## What To Do
+Restart the gateway and then check the health endpoint.
+`);
+    await writeFile(join(root, ".praxisbase/raw-vault/refs/raw_ref_openclaw-gateway.json"), JSON.stringify({
+      id: "raw_ref_openclaw-gateway",
+      type: "raw_vault_ref",
+      source_ref: "openclaw-memory://memory/gateway#raw",
+      source_hash: "sha256:raw",
+      redacted_summary: "OpenClaw gateway restart after configuration changes with many exact query terms.",
+      scope_hint: "personal",
+    }), "utf8");
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "OpenClaw gateway restart after configuration changes",
+      maxBytes: 4000,
+    });
+
+    assert.equal(output.items[0]?.path, "kb/procedures/openclaw-gateway-restart.md");
+    assert.equal(output.items.some((item) => item.path.startsWith(".praxisbase/raw-vault/refs/")), false);
+  });
+
+  it("does not return stable kb pages that fail promote-time wiki quality", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-quality-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/openclaw-run-id-abc123def456.md"), `---
+id: openclaw-run-id-abc123def456
+type: known_fix
+---
+# OpenClaw run id abc123def456
+
+## When to Use
+Use this only when reviewing this exact run id.
+
+## What To Do
+Review the source run before taking action.
+`);
+    await writeFile(join(root, "kb/known-fixes/openclaw-auth-refresh.md"), `---
+id: openclaw-auth-refresh
+type: known_fix
+---
+# OpenClaw auth refresh repair
+
+## When to Use
+Use this when OpenClaw authentication expires during memory sync.
+
+## What To Do
+Refresh the OpenClaw login and retry memory sync.
+`);
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "diagnosis",
+      query: "OpenClaw run id abc123def456 auth refresh",
+      maxBytes: 4000,
+    });
+
+    assert.equal(output.items.some((item) => item.path.endsWith("openclaw-run-id-abc123def456.md")), false);
+    assert.equal(output.items[0]?.path, "kb/known-fixes/openclaw-auth-refresh.md");
   });
 });

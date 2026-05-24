@@ -157,6 +157,73 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
     });
     assert.equal(result.hard_blocks.includes("duplicate_source_hash"), false);
   });
+
+  it("hard-blocks process-status titles that are not reusable wiki topics", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      title: "Successfully fixed and re-approved in a subsequent commit (c52742b)",
+      target_path: "kb/known-fixes/successfully-fixed-and-re-approved-in-a-subsequent-commit-c52742b.md",
+      body_markdown: [
+        "# Successfully fixed and re-approved in a subsequent commit (c52742b)",
+        "",
+        "## When to Use",
+        "Use this when Successfully fixed and re-approved in a subsequent commit (c52742b) appears in agent work.",
+        "",
+        "## Symptoms",
+        "A staged sign-off plan was generated and later approved.",
+        "",
+        "## What To Do",
+        "- Successfully fixed and re-approved in a subsequent commit (c52742b)",
+        "",
+        "## Verify",
+        "The follow-up commit was approved.",
+        "",
+        "## Reusable Lessons",
+        "Use staged signoff when dependencies matter.",
+        "",
+        "## Provenance",
+        "- raw-vault://codex/rollout (sha256:a)",
+      ].join("\n"),
+    }));
+
+    assert.ok(result.hard_blocks.includes("non_reusable_topic"));
+    assert.ok(result.hard_blocks.includes("generic_applicability"));
+    assert.ok(result.hard_blocks.includes("non_specific_action"));
+    assert.equal(result.passed, false);
+  });
+
+  it("hard-blocks generic applicability and action text even with a readable title", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      title: "OpenClaw gateway restart after configuration changes",
+      target_path: "kb/procedures/openclaw-gateway-restart-after-configuration-changes.md",
+      page_kind: "procedure",
+      body_markdown: [
+        "# OpenClaw gateway restart after configuration changes",
+        "",
+        "## When to Use",
+        "Use this when OpenClaw gateway restart after configuration changes / text:capture-openclaw-sha256-abc-suggested appears in agent work.",
+        "",
+        "## Symptoms",
+        "Gateway configuration changed.",
+        "",
+        "## What To Do",
+        "- OpenClaw gateway restart after configuration changes",
+        "",
+        "## Verify",
+        "Confirm the gateway is healthy.",
+        "",
+        "## Reusable Lessons",
+        "Restart services after configuration changes.",
+        "",
+        "## Provenance",
+        "- openclaw-memory://memory/config (sha256:a)",
+      ].join("\n"),
+    }));
+
+    assert.equal(result.hard_blocks.includes("non_reusable_topic"), false);
+    assert.ok(result.hard_blocks.includes("generic_applicability"));
+    assert.ok(result.hard_blocks.includes("non_specific_action"));
+    assert.equal(result.passed, false);
+  });
 });
 
 describe("assessWikiPromotionQuality - human required", () => {
@@ -416,7 +483,7 @@ describe("assessWikiPromotionQuality - human required", () => {
 
 describe("promotionTimeGuard", () => {
   it("passes well-formed wiki content", () => {
-    const content = "# Title\n\n## Problem\nIssue.\n\n## Fix\nApply.\n";
+    const content = "# OpenClaw auth refresh repair\n\n## When to Use\nUse this when OpenClaw authentication expires during memory sync.\n\n## Problem\nIssue.\n\n## Fix\nRefresh the OpenClaw login and retry memory sync.\n";
     assert.equal(promotionTimeGuard(content), null);
   });
 
@@ -442,8 +509,45 @@ describe("promotionTimeGuard", () => {
   });
 
   it("passes content inside code blocks", () => {
-    const content = "# Title\n\n## Example\n```json\n{\"key\": \"value\"}\n```\n\n## Fix\nApply.\n";
+    const content = "# OpenClaw auth refresh repair\n\n## When to Use\nUse this when OpenClaw authentication expires during memory sync.\n\n## Example\n```json\n{\"key\": \"value\"}\n```\n\n## Fix\nRefresh the OpenClaw login and retry memory sync.\n";
     assert.equal(promotionTimeGuard(content), null);
+  });
+
+  it("rejects generic heading titles from old candidates", () => {
+    const content = "# Title\n\n## Context\nA run completed.\n\n## Procedure\nReview the source run before taking action.\n";
+    const err = promotionTimeGuard(content);
+    assert.ok(err);
+    assert.match(err, /reusable wiki topic/i);
+  });
+
+  it("rejects stale candidates with raw evidence applicability", () => {
+    const content = [
+      "# OpenClaw gateway restart after configuration changes",
+      "",
+      "## Applicability",
+      "Use this when evidence matches text:capture-openclaw-sha256-abc-suggested.",
+      "",
+      "## Fix",
+      "Restart the OpenClaw gateway after configuration changes.",
+    ].join("\n");
+    const err = promotionTimeGuard(content);
+    assert.ok(err);
+    assert.match(err, /generic applicability/i);
+  });
+
+  it("rejects run-specific wiki titles even when the body is actionable", () => {
+    const content = [
+      "# OpenClaw acceptance test environment (run: octoclaw-acceptance-test-mp9ot12v) interacting via Slack",
+      "",
+      "## When to Use",
+      "Use this when diagnosing OpenClaw acceptance test failures related to unsupported search parameters.",
+      "",
+      "## Fix",
+      "Remove unsupported search filter parameters and rerun the acceptance test.",
+    ].join("\n");
+    const err = promotionTimeGuard(content);
+    assert.ok(err);
+    assert.match(err, /reusable wiki topic/i);
   });
 });
 

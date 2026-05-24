@@ -453,6 +453,10 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     distilled: 0,
     failed: 0,
     human_required: 0,
+    privacy_required: 0,
+    review_required: 0,
+    rejected_low_signal: 0,
+    rejected_quality: 0,
     cache_hits: 0,
     warnings: [],
   };
@@ -583,6 +587,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           if (verdict === "reject") rejected++;
           else humanRequired++;
           aiDistill.human_required++;
+          aiDistill.privacy_required++;
           continue;
         }
 
@@ -611,6 +616,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           humanRequired++;
           aiDistill.chunks++;
           aiDistill.human_required++;
+          aiDistill.privacy_required++;
           aiDistill.cache_hits++;
           continue;
         }
@@ -700,6 +706,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
               blocked.push(envelope);
               humanRequired++;
               aiDistill.human_required++;
+              aiDistill.privacy_required++;
               if (mode === "write") {
                 await writeDistillCache(root, cachePath, {
                   type: "ai_distill_cache_entry",
@@ -716,6 +723,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
               }
             } else {
               aiDistill.failed++;
+              aiDistill.rejected_quality++;
               if (mode === "write") {
                 await writeDistillCache(root, cachePath, {
                   type: "ai_distill_cache_entry",

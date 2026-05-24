@@ -188,7 +188,10 @@ describe("runHarvest", () => {
         repair_result: "success",
         verification: "Verified.",
       },
-      patch: { path: "kb/known-fixes/harvest-known-fix.md", content: "# Harvest Known Fix\n" },
+      patch: {
+        path: "kb/known-fixes/harvest-known-fix.md",
+        content: "# Harvest Known Fix\n\n## When to Use\nUse this when harvest detects the known fix signal during review.\n\n## Fix\nApply the harvested known fix and rerun the verification check.\n",
+      },
       created_at: "2026-05-20T00:00:00.000Z",
     }));
     await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
@@ -224,7 +227,7 @@ describe("runHarvest", () => {
       scope: "personal",
       title: "OpenClaw auth expired recovery",
       summary: "Refresh login before retrying memory sync.",
-      body_markdown: "# OpenClaw auth expired recovery\n\n## Problem\nAuth expired.\n\n## Fix\n- Refresh login.\n\n## Verification\n- pnpm test passed\n",
+      body_markdown: "# OpenClaw auth expired recovery\n\n## When to Use\nUse this when OpenClaw authentication expires during memory sync.\n\n## Problem\nAuth expired.\n\n## Fix\n- Refresh the OpenClaw login before retrying memory sync.\n\n## Verification\n- pnpm test passed\n",
       source_refs: ["raw-vault://codex/session-1"],
       source_hashes: ["sha256:session1"],
       source_count: 1,

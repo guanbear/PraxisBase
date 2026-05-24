@@ -1,6 +1,7 @@
 import { MATURITY_ORDER, SCOPE_ORDER } from "./model.js";
 import { readJson, readText } from "../store/file-store.js";
 import { collectWikiPages } from "./render-site.js";
+import { promotionTimeGuard } from "./promotion-quality.js";
 import type { WikiGraph } from "./resolver.js";
 
 export interface WikiContextCandidate {
@@ -82,6 +83,13 @@ function scopeWeight(value: string | undefined): number {
   return value ? (SCOPE_ORDER[value] ?? 0) : 0;
 }
 
+function authorityWeight(candidate: WikiContextCandidate): number {
+  if (candidate.path.startsWith("kb/") || candidate.path.startsWith("skills/")) return 1000;
+  if (candidate.path.startsWith("dist/wiki/") || candidate.path.includes("/indexes/") || candidate.path.includes("/bundles/")) return 500;
+  if (candidate.path.startsWith(".praxisbase/raw-vault/refs/")) return -500;
+  return 0;
+}
+
 function stageWeight(candidate: WikiContextCandidate, stage: RankWikiContextOptions["stage"]): number {
   const kind = normalize(candidate.kind);
   const text = normalize(`${candidate.title}\n${candidate.summary}\n${candidate.body ?? ""}`);
@@ -120,7 +128,7 @@ function scoreCandidate(candidate: WikiContextCandidate, query: string, tokens: 
   const path = normalize(candidate.path);
   const id = normalize(candidate.id);
   const exact = normalize(query);
-  let score = maturityWeight(candidate.maturity) * 2 + scopeWeight(candidate.scope) + stageWeight(candidate, stage);
+  let score = authorityWeight(candidate) + maturityWeight(candidate.maturity) * 2 + scopeWeight(candidate.scope) + stageWeight(candidate, stage);
   let matched = exact.length === 0;
 
   if (exact) {
@@ -193,7 +201,9 @@ export function rankWikiContextItems(
 
 export async function retrieveWikiContext(root: string, options: RetrieveWikiContextOptions): Promise<RetrievedWikiContext> {
   const maxBytes = options.maxBytes ?? 16 * 1024;
-  const pages = await collectWikiPages(root);
+  const pages = (await collectWikiPages(root)).filter((page) =>
+    !(page.path.startsWith("kb/") && promotionTimeGuard(page.body_markdown ?? page.body_text)),
+  );
   const candidates: WikiContextCandidate[] = pages.map((page) => ({
     id: page.id,
     path: page.path,

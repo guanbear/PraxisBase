@@ -26,7 +26,11 @@ async function seedKnownFix(root: string): Promise<void> {
     "---",
     "# OpenClaw Auth Expired",
     "",
-    "Refresh login when OpenClaw reports expired authentication.",
+    "## When to Use",
+    "Use this when OpenClaw reports expired authentication during repair work.",
+    "",
+    "## Fix",
+    "Refresh login and retry the failing OpenClaw operation.",
   ].join("\n"));
 }
 

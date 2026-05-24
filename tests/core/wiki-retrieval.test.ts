@@ -71,6 +71,39 @@ describe("wiki retrieval", () => {
     assert.equal(ranked[0].id, "cn-auth");
   });
 
+  it("uses authority tier before raw text match strength", () => {
+    const ranked = rankWikiContextItems([
+      {
+        id: "stable-gateway",
+        path: "kb/procedures/openclaw-gateway-restart.md",
+        kind: "procedure",
+        title: "OpenClaw gateway restart after configuration changes",
+        summary: "Restart gateway after config changes.",
+        body: "",
+        maturity: "draft",
+        scope: "personal",
+        source_ids: ["source-stable"],
+        outbound_links: [],
+      },
+      {
+        id: "raw-gateway",
+        path: ".praxisbase/raw-vault/refs/raw_ref_openclaw-gateway.json",
+        kind: "raw_vault_ref",
+        title: "raw_ref_openclaw-gateway",
+        summary: "OpenClaw gateway restart after configuration changes OpenClaw gateway restart after configuration changes.",
+        body: "OpenClaw gateway restart after configuration changes ".repeat(8),
+        source_ids: ["source-raw"],
+        outbound_links: [],
+      },
+    ], {
+      query: "OpenClaw gateway restart after configuration changes",
+      stage: "repair",
+      maxItems: 2,
+    });
+
+    assert.equal(ranked[0].id, "stable-gateway");
+  });
+
   it("returns compiled pages, root artifact hints, graph neighbors, and provenance pointers", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-retrieve-"));
     await mkdir(join(root, "kb/procedures"), { recursive: true });
@@ -104,8 +137,11 @@ updated_at: "2026-05-24T00:00:00.000Z"
 ---
 # Agent feedback
 
+## When to Use
+Use this when an agent appears silent during long-running work.
+
 ## What To Do
-See [[ack-timing|ACK timing]].
+Use [[ack-timing|ACK timing]] before waiting on long-running work.
 
 ## Agent Use
 Use this when an agent appears silent.

@@ -28,7 +28,16 @@ const proposal = {
   },
   patch: {
     path: "kb/known-fixes/openclaw-auth-expired.md",
-    content: "# OpenClaw auth expired\n"
+    content: [
+      "# OpenClaw auth expired",
+      "",
+      "## When to Use",
+      "Use this when OpenClaw reports expired authentication during repair work.",
+      "",
+      "## Fix",
+      "Refresh the OpenClaw login and rerun the minimal verification call.",
+      "",
+    ].join("\n")
   },
   created_at: "2026-05-17T10:00:00Z"
 };

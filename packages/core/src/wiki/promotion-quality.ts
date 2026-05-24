@@ -123,6 +123,69 @@ function hasSection(body: string, names: string[]): boolean {
   return names.some((name) => new RegExp(`^##\\s+${escapeRegExp(name)}\\b`, "im").test(body));
 }
 
+function extractSection(body: string, names: string[]): string | undefined {
+  const lines = body.split(/\r?\n/);
+  let capturing = false;
+  const captured: string[] = [];
+  for (const line of lines) {
+    if (/^##\s+/.test(line)) {
+      if (capturing) break;
+      capturing = names.some((name) => new RegExp(`^##\\s+${escapeRegExp(name)}\\b`, "i").test(line));
+      continue;
+    }
+    if (capturing) captured.push(line);
+  }
+  const section = captured.join("\n").trim();
+  return section.length > 0 ? section : undefined;
+}
+
+function normalizeText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9\u3400-\u9fff]+/g, " ").trim();
+}
+
+function isReusableTopicTitle(title: string, targetPath?: string): boolean {
+  const normalized = normalizeText([title, targetPath].filter(Boolean).join(" "));
+  if (normalized.length < 8) return false;
+  const processStatus = /\b(successfully fixed|re approved|subsequent commit|follow up commit|approval passed|review passed|fixed and approved|staged sign off|signoff program|automated pr inspection run|run id|specific prs)\b/i;
+  const sourceArtifact = /\b(sha256|raw vault|raw ref|wiki curated|candidate|capture codex|capture openclaw|text capture|source summary|agent distilled dreaming candidates|dreaming candidates)\b/i;
+  const oneOffRunStatus = /\b(test run|smoke report|acceptance test run)\b.*\b(occurred|completed|interacted|recorded|tracking)\b/i;
+  const runSpecificTitle = /\brun\s+[a-z0-9][a-z0-9 ]*\d[a-z0-9 ]{5,}\b/i;
+  const mostlyHashOrRun = /\b[0-9a-f]{7,}\b/i.test(title) && /\b(commit|sha|run|id)\b/i.test(title);
+  return !processStatus.test(normalized) && !sourceArtifact.test(normalized) && !oneOffRunStatus.test(normalized) && !runSpecificTitle.test(normalized) && !mostlyHashOrRun;
+}
+
+function hasConcreteApplicability(body: string, title: string): boolean {
+  const section = extractSection(body, ["When to Use", "Applicability"]);
+  if (!section) return true;
+  const normalized = normalizeText(section);
+  const normalizedTitle = normalizeText(title);
+  if (/\bappears in agent work\b/i.test(section)) return false;
+  if (/\btext[:_-]?capture\b|\bsource[_-]?summary\b|\bwiki[_-]?curated\b|\bsha256\b/i.test(section)) return false;
+  const genericTitleTrigger = normalizedTitle.length > 0
+    && normalized.replace(/^use this when\s+/, "").replace(/\s+appears$/, "") === normalizedTitle;
+  if (genericTitleTrigger) return false;
+  const meaningfulTrigger = /\b(after|before|when|if|during|fails?|failure|error|timeout|stuck|change|restart|repair|verify|login|auth|routing|configuration|配置|失败|超时|重启|修复|验证)\b/i;
+  return meaningfulTrigger.test(section);
+}
+
+function hasSpecificAction(body: string, title: string): boolean {
+  const section = extractSection(body, ["What To Do", "Fix", "Steps", "Procedure", "Decision", "Operating Rule"]);
+  if (!section) return false;
+  const lines = section
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*]\s*/, "").trim())
+    .filter(Boolean);
+  if (lines.length === 0) return false;
+  const normalizedTitle = normalizeText(title);
+  const specificVerb = /\b(add|added|implement|implemented|apply|use|send|record|fix|fixed|refreshing|restart|run|check|verify|confirm|update|change|refresh|remove|route|merge|split|write|open|review|promote|fallback|rollback|重启|使用|应用|发送|记录|检查|验证|确认|更新|修改|刷新|回滚)\b/i;
+  return lines.some((line) => {
+    const normalizedLine = normalizeText(line);
+    if (normalizedLine === normalizedTitle) return false;
+    if (normalizedLine.length < 10) return false;
+    return specificVerb.test(line);
+  });
+}
+
 // Missing wikilinks detection.
 
 function hasWikilinksOrRelated(body: string): boolean {
@@ -244,6 +307,18 @@ export function assessWikiPromotionQuality(
     hardBlocks.push("create_with_existing_page");
   }
 
+  // 11. Semantic wiki quality: stable pages must be reusable guidance, not
+  // process status or source-id-driven summaries.
+  if (!isReusableTopicTitle(proposal.title, proposal.target_path)) {
+    hardBlocks.push("non_reusable_topic");
+  }
+  if (!hasConcreteApplicability(body, proposal.title)) {
+    hardBlocks.push("generic_applicability");
+  }
+  if (!hasSpecificAction(body, proposal.title)) {
+    hardBlocks.push("non_specific_action");
+  }
+
   // Human-required gates can be promoted only after human review.
 
   // 1. Weak single source
@@ -335,6 +410,12 @@ export function assessWikiPromotionQuality(
 
 // Promote-time guard helpers.
 
+function markdownTitle(content: string): string | undefined {
+  const match = content.match(/^#\s+(.+)$/m);
+  const title = match?.[1]?.trim();
+  return title && title.length > 0 ? title : undefined;
+}
+
 /**
  * Final promote-time guard. Rejects content that has raw JSON, template
  * fallback text, or missing wiki shape even if an old proposal bypassed
@@ -349,6 +430,16 @@ export function promotionTimeGuard(content: string): string | null {
   }
   if (!hasPromotableMarkdownShape(content)) {
     return "Refusing to promote content missing wiki structure (H1 heading) into stable knowledge.";
+  }
+  const title = markdownTitle(content);
+  if (!title || normalizeText(title) === "title" || !isReusableTopicTitle(title)) {
+    return "Refusing to promote content whose title is not a reusable wiki topic.";
+  }
+  if (!hasConcreteApplicability(content, title)) {
+    return "Refusing to promote content with generic applicability instead of a concrete trigger.";
+  }
+  if (!hasSpecificAction(content, title)) {
+    return "Refusing to promote content without a specific reusable action.";
   }
   return null;
 }

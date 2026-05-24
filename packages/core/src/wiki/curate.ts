@@ -588,6 +588,13 @@ function normalizedTitleForItems(items: WikiEvidenceItem[]): string {
 function titleForPagePlan(topic: { title: string }, evidence: WikiEvidenceItem[]): string {
   const signatures = evidence.flatMap((item) => item.signatures);
   if (signatures.includes("openclaw:auth-expired")) return "OpenClaw auth expired";
+  const text = evidence.map((item) => [item.title, item.summary, ...item.actions, ...item.verification, ...item.reusable_lessons].join(" ")).join(" ");
+  if (/\bopenclaw\b/i.test(text) && /\bauth\b/i.test(text) && /\brefresh\b/i.test(text)) {
+    return "OpenClaw auth refresh repair";
+  }
+  if (/\bopenclaw\b/i.test(text) && /\back\b/i.test(text) && /\b(timing|silent|dispatch|long)\b/i.test(text)) {
+    return "ACK timing before long-running agent work";
+  }
   return topic.title;
 }
 
@@ -673,18 +680,16 @@ function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], t
   const symptom = summaryLines.find((line) => /\b(failed|failure|error|slow|reported|missing|timeout|stuck)\b|反馈|没有|不能|失败|超时|慢/i.test(line))
     ?? summaryLines[0]
     ?? evidence[0].title;
-  const whenToUse = uniq([
-    cluster.normalized_title,
-    ...evidence.flatMap((item) => item.signatures).filter((signature) => !/^sha256:/i.test(signature)),
-  ].map((item) => item.trim())).slice(0, 3);
+  const whenToUse = summaryLines
+    .find((line) => /\b(fail|failure|error|timeout|stuck|slow|expired|missing|silent|change|restart|auth|login|sync|dispatch|配置|失败|超时|重启|认证|登录)\b/i.test(line))
+    ?? symptom
+    ?? title;
 
   return [
     `# ${title}`,
     "",
     "## When to Use",
-    whenToUse.length > 0
-      ? `Use this when ${whenToUse.join(" / ")} appears in agent work.`
-      : `Use this when ${title} appears in agent work.`,
+    `Use this when ${whenToUse.replace(/[.。]\s*$/, "")}.`,
     "",
     "## Symptoms",
     symptom,
@@ -1184,10 +1189,9 @@ function sanitizeProposalRelationships(proposal: CuratedWikiProposal, allowedTar
   });
 }
 
-async function removeStaleProposalFilesForTargets(root: string, proposals: CuratedWikiProposal[]): Promise<void> {
-  const targetPaths = new Set(proposals.map((proposal) => proposal.target_path));
+async function removeStaleGeneratedWikiProposalFiles(root: string, proposals: CuratedWikiProposal[]): Promise<void> {
   const currentIds = new Set(proposals.map((proposal) => proposal.id));
-  if (targetPaths.size === 0) return;
+  if (currentIds.size === 0) return;
 
   let files: string[];
   try {
@@ -1206,14 +1210,9 @@ async function removeStaleProposalFilesForTargets(root: string, proposals: Curat
     } catch {
       continue;
     }
-    const record = existing && typeof existing === "object" ? existing as { id?: unknown; target_path?: unknown; type?: unknown } : {};
-    if (
-      record.type === "wiki_curated_proposal"
-      && typeof record.target_path === "string"
-      && targetPaths.has(record.target_path)
-      && typeof record.id === "string"
-    ) {
-      const isCurrentCanonicalFile = currentIds.has(record.id) && file === `${record.id}.json`;
+    const record = existing && typeof existing === "object" ? existing as { id?: unknown; type?: unknown } : {};
+    if (record.type === "wiki_curated_proposal" || record.type === "wiki_proposal_candidate") {
+      const isCurrentCanonicalFile = typeof record.id === "string" && currentIds.has(record.id) && file === `${record.id}.json`;
       if (isCurrentCanonicalFile) continue;
       try {
         await unlink(path);
@@ -1499,7 +1498,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
 
   let written = 0;
   if (options.mode === "review") {
-    await removeStaleProposalFilesForTargets(root, proposals);
+    await removeStaleGeneratedWikiProposalFiles(root, proposals);
     for (const proposal of proposals) {
       await writeJson(root, `${protocolPaths.inboxProposals}/${proposal.id}.json`, proposal);
       written++;

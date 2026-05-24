@@ -344,6 +344,22 @@ describe("wiki evidence curation", () => {
     await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
   });
 
+  it("quality gate blocks process-status titles before review writes them", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-process-title-block-"));
+    await writeCapture(
+      root,
+      "capture_bad_title",
+      "Successfully fixed and re-approved in a subsequent commit c52742b. Verification passed. Reusable lesson: use staged signoff when dependency chains matter.",
+    );
+
+    const report = await curateWiki(root, { mode: "review", degraded: true, now: "2026-05-24T00:00:00.000Z" });
+
+    assert.equal(report.compiler_counts?.hard_blocks, 1);
+    assert.equal(report.output_counts.curated_proposals, 0);
+    assert.equal(report.output_counts.written_proposals, 0);
+    await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
+  });
+
   it("curate review writes curated proposals without stable knowledge", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curate-"));
     await writeCapture(root, "capture_1", "Fixed OpenClaw auth expired by refreshing login. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
@@ -491,7 +507,7 @@ describe("wiki evidence curation", () => {
     assert.equal(proposal.source_count, 2);
   });
 
-  it("replaces stale pending proposals that target the same stable path", async () => {
+  it("replaces stale generated wiki proposals from previous curation runs", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-replace-stale-target-"));
     const targetPath = "kb/known-fixes/openclaw-auth-expired.md";
     const unrelatedPath = "kb/known-fixes/unrelated-openclaw-fix.md";
@@ -540,6 +556,19 @@ describe("wiki evidence curation", () => {
       guards: [{ id: "path", ok: true, message: "allowed" }],
       created_at: "2026-05-20T00:00:00.000Z",
     }), "utf8");
+    await writeFile(join(root, ".praxisbase/inbox/proposals/wiki-proposal-old-compiler.json"), JSON.stringify({
+      id: "wiki-proposal-old-compiler",
+      protocol_version: PROTOCOL_VERSION,
+      type: "wiki_proposal_candidate",
+      source_id: "old-source",
+      source_kind: "capture",
+      source_hash: "sha256:old-compiler",
+      patch: {
+        path: "kb/known-fixes/old-compiler-candidate.md",
+        content: "# Old compiler candidate\n",
+      },
+      created_at: "2026-05-20T00:00:00.000Z",
+    }), "utf8");
     await writeFile(join(root, ".praxisbase/inbox/proposals/manual-note.json"), JSON.stringify({
       id: "manual-note",
       type: "manual_review_note",
@@ -554,10 +583,11 @@ describe("wiki evidence curation", () => {
     assert.equal(report.output_counts.written_proposals, 1);
     const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
     assert.equal(proposalFiles.includes("wiki-curated-stale.json"), false);
-    assert.equal(proposalFiles.includes("wiki-curated-unrelated.json"), true);
+    assert.equal(proposalFiles.includes("wiki-curated-unrelated.json"), false);
+    assert.equal(proposalFiles.includes("wiki-proposal-old-compiler.json"), false);
     assert.equal(proposalFiles.includes("manual-note.json"), true);
     assert.equal(proposalFiles.includes("malformed.json"), true);
-    const currentFiles = proposalFiles.filter((file) => !["wiki-curated-unrelated.json", "manual-note.json", "malformed.json"].includes(file));
+    const currentFiles = proposalFiles.filter((file) => !["manual-note.json", "malformed.json"].includes(file));
     assert.equal(currentFiles.length, 1);
     const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", currentFiles[0]), "utf8"));
     assert.equal(proposal.target_path, targetPath);

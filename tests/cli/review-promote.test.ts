@@ -228,7 +228,11 @@ updated_at: "2026-05-21T10:00:00.000Z"
 ---
 # OpenClaw Auth Refresh
 
-When OpenClaw auth expires, refresh the login before retrying agent repair.
+## When to Use
+Use this when OpenClaw authentication expires during agent repair.
+
+## Fix
+Refresh the OpenClaw login before retrying the failing repair operation.
 `,
         },
         created_at: "2026-05-21T10:00:00.000Z",

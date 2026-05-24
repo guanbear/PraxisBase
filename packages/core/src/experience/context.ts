@@ -7,6 +7,7 @@ import { protocolPaths } from "../protocol/paths.js";
 import { readText, writeJson } from "../store/file-store.js";
 import { ContextResponseSchema, type ContextResponse, type ContextStage } from "../protocol/schemas.js";
 import { rankWikiContextItems, type WikiContextCandidate } from "../wiki/retrieval.js";
+import { promotionTimeGuard } from "../wiki/promotion-quality.js";
 
 const DEFAULT_BUDGETS: Record<ContextStage, number> = {
   diagnosis: 16 * 1024,
@@ -20,7 +21,6 @@ const CONTEXT_ROOTS = [
   "skills",
   protocolPaths.indexes,
   protocolPaths.bundles,
-  protocolPaths.rawVaultRefs,
 ] as const;
 
 export interface BuildContextInput {
@@ -191,6 +191,9 @@ function textCandidate(path: string, raw: string): WikiContextCandidate {
 }
 
 function buildCandidate(path: string, raw: string): WikiContextCandidate | undefined {
+  if (path.startsWith("kb/") && path.endsWith(".md") && promotionTimeGuard(raw)) {
+    return undefined;
+  }
   if (path.endsWith(".md")) return markdownCandidate(path, raw);
   if (path.endsWith(".json")) return jsonCandidate(path, raw);
   if (path.endsWith(".txt")) return textCandidate(path, raw);

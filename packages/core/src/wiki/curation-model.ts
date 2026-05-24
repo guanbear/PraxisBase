@@ -382,6 +382,10 @@ export const WikiHardBlockReasonSchema = z.enum([
   "duplicate_source_hash",
   "body_missing_wiki_structure",
   "create_with_existing_page",
+  "non_reusable_topic",
+  "generic_applicability",
+  "non_specific_action",
+  "incoherent_topic",
 ]);
 
 /** Human-required reason codes for the promotion quality gate. */
