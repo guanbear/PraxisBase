@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -16,6 +16,9 @@ const validPage = [
   "",
   "## Fix",
   "Refresh the OpenClaw login and retry memory sync.",
+  "",
+  "## Related Wiki Pages",
+  "* [[bad-generated|Bad generated page]]",
   "",
 ].join("\n");
 
@@ -84,5 +87,8 @@ describe("kb maintenance", () => {
     assert.equal(await exists(join(root, "kb/known-fixes/openclaw-auth.md")), true);
     assert.equal(await exists(join(root, "kb/known-fixes/readme.txt")), true);
     assert.equal(await exists(join(root, "skills/openclaw/auth/SKILL.md")), true);
+    const remaining = await readFile(join(root, "kb/known-fixes/openclaw-auth.md"), "utf8");
+    assert.ok(!remaining.includes("[[bad-generated"));
+    assert.ok(remaining.includes("Bad generated page"));
   });
 });

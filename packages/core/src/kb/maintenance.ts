@@ -1,5 +1,5 @@
 import { readdir, rm } from "node:fs/promises";
-import { safePath, readText } from "../store/file-store.js";
+import { safePath, readText, writeText } from "../store/file-store.js";
 import { promotionTimeGuard } from "../wiki/promotion-quality.js";
 
 export type KbMaintenanceMode = "audit" | "prune";
@@ -47,6 +47,35 @@ async function collectKbMarkdownFiles(root: string, relativeDir = "kb"): Promise
   return files;
 }
 
+function slugFromKbPath(relativePath: string): string {
+  const filename = relativePath.split("/").at(-1) ?? relativePath;
+  return filename.replace(/\.md$/i, "").toLowerCase();
+}
+
+function unlinkDeletedWikiRefs(content: string, deletedSlugs: Set<string>): string {
+  return content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, rawSlug: string, label?: string) => {
+    const slug = rawSlug.trim().toLowerCase();
+    if (!deletedSlugs.has(slug)) return match;
+    return (label ?? rawSlug).trim();
+  });
+}
+
+async function removeLinksToDeletedPages(root: string, deletedPaths: string[]): Promise<void> {
+  if (deletedPaths.length === 0) return;
+  const deletedPathSet = new Set(deletedPaths);
+  const deletedSlugs = new Set(deletedPaths.map(slugFromKbPath));
+  const files = await collectKbMarkdownFiles(root);
+
+  for (const file of files) {
+    if (deletedPathSet.has(file)) continue;
+    const content = await readText(root, file);
+    const updated = unlinkDeletedWikiRefs(content, deletedSlugs);
+    if (updated !== content) {
+      await writeText(root, file, updated);
+    }
+  }
+}
+
 export async function auditKb(root: string): Promise<KbMaintenanceReport> {
   const files = await collectKbMarkdownFiles(root);
   const findings: KbMaintenanceFinding[] = [];
@@ -86,6 +115,7 @@ export async function pruneKb(root: string, options: PruneKbOptions = {}): Promi
       await rm(safePath(root, finding.path), { force: true });
       deleted.push(finding.path);
     }
+    await removeLinksToDeletedPages(root, deleted);
   }
 
   return {

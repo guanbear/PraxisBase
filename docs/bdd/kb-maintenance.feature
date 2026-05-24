@@ -17,8 +17,10 @@ Feature: KB maintenance
   Scenario: Confirmed prune deletes only bad kb markdown
     Given a low-quality markdown page under kb
     And a low-quality skill file under skills
+    And a valid kb page links to the low-quality markdown page
     When I run kb prune with confirmation
     Then only the low-quality kb markdown page is deleted
+    And the valid kb page keeps the link label as plain text
 
   Scenario: Rebuild reuses the daily wiki flow
     Given a local source and a low-quality stable page

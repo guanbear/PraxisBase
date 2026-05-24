@@ -27,6 +27,7 @@ Previous versions could leave low-quality generated markdown physically under `k
 - Evaluate content with `promotionTimeGuard(content)`.
 - Return a structured report with `checked`, `passed`, `failed`, `findings`, `deleted`, and `dry_run`.
 - Delete only failing files when prune receives `yes: true`.
+- After confirmed deletion, scan remaining `kb/**/*.md` pages and convert wikilinks targeting deleted page slugs into plain text so pruning does not leave broken wiki graph edges.
 
 `packages/cli/src/commands/kb.ts` owns CLI formatting:
 
@@ -38,6 +39,7 @@ Previous versions could leave low-quality generated markdown physically under `k
 
 - Deletion is physically constrained to `kb/**/*.md` and resolved through `safePath`.
 - `prune` without `--yes` must never mutate.
+- `prune --yes` may mutate remaining `kb/**/*.md` only to remove wikilinks pointing at pages it deleted in the same run.
 - `rebuild` must not bypass review/promote gates by writing wiki pages itself.
 - Existing user-authored valid pages are preserved when `promotionTimeGuard` passes.
 
@@ -46,5 +48,6 @@ Previous versions could leave low-quality generated markdown physically under `k
 - A bad `kb/` markdown page is reported by `audit`.
 - `prune --dry-run` reports the same bad page and leaves it on disk.
 - `prune --yes` deletes only the failing `kb/` markdown page.
+- `prune --yes` removes wikilink markup pointing to deleted pages while preserving the visible link label as text.
 - Valid pages and `skills/**` files are not deleted.
 - CLI JSON reports are stable and machine-readable.
