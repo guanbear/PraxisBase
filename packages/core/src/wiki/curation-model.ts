@@ -190,6 +190,11 @@ export const CuratedWikiProposalSchema = z.object({
   suggested_links: z.array(WikiSuggestedLinkSchema).optional(),
   merge_candidates: z.array(WikiMergeCandidateSchema).optional(),
   relationship_reasons: z.array(z.string()).optional(),
+  lifecycle: z.enum(["active", "stale", "superseded", "archived"]).default("active"),
+  last_confirmed_at: z.string().datetime().optional(),
+  supersedes: z.array(z.string()).default([]),
+  superseded_by: z.string().nullable().default(null),
+  relationship_types: z.array(WikiRelationshipTypeSchema).default([]),
   created_at: z.string().datetime(),
 });
 

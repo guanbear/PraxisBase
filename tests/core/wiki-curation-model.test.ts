@@ -424,6 +424,42 @@ describe("RelatedWikiPageSchema", () => {
 });
 
 describe("CuratedWikiProposalSchema relationship defaults", () => {
+  it("parses lifecycle metadata on compiled wiki proposals", () => {
+    const base = {
+      id: "wiki-lifecycle",
+      protocol_version: "0.1" as const,
+      type: "wiki_curated_proposal" as const,
+      target_path: "kb/known-fixes/test.md",
+      action: "create" as const,
+      page_kind: "known_fix" as const,
+      scope: "personal" as const,
+      title: "Test",
+      summary: "Test summary",
+      body_markdown: "# Test\n\n## Fix\nApply.",
+      source_refs: ["s://1"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      evidence_ids: ["e1"],
+      confidence: 0.9,
+      maturity: "draft" as const,
+      provenance: [{ source_ref: "s://1", source_hash: "sha256:a" }],
+      review_hint: { why_review: "Test", suggested_decision: "approve" as const, risk_notes: [] },
+      guards: [],
+      created_at: "2026-05-22T00:00:00.000Z",
+      lifecycle: "active" as const,
+      last_confirmed_at: "2026-05-24T00:00:00.000Z",
+      supersedes: [],
+      superseded_by: null,
+      relationship_types: ["related"],
+    };
+    const result = CuratedWikiProposalSchema.parse(base);
+    assert.equal(result.lifecycle, "active");
+    assert.equal(result.last_confirmed_at, "2026-05-24T00:00:00.000Z");
+    assert.deepEqual(result.supersedes, []);
+    assert.equal(result.superseded_by, null);
+    assert.deepEqual(result.relationship_types, ["related"]);
+  });
+
   it("parses without relationship fields and they remain undefined", () => {
     const base = {
       id: "wiki-rel-defaults",

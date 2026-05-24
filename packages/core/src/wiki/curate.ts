@@ -897,6 +897,11 @@ function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: Wiki
       risk_notes: guards.filter((guard) => !guard.ok).map((guard) => guard.message),
     },
     guards,
+    lifecycle: "active",
+    last_confirmed_at: now,
+    supersedes: [],
+    superseded_by: null,
+    relationship_types: [],
     created_at: now,
   });
 }
@@ -1062,6 +1067,11 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
       risk_notes: [...riskNotes, ...guards.filter((guard) => !guard.ok).map((guard) => guard.message)],
     },
     guards,
+    lifecycle: "active",
+    last_confirmed_at: now,
+    supersedes: [],
+    superseded_by: null,
+    relationship_types: [],
     created_at: now,
   });
 }
@@ -1383,6 +1393,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
           ...(structuredSuggestedLinks.length > 0 ? { suggested_links: structuredSuggestedLinks } : {}),
           ...(mergeCandidates.length > 0 ? { merge_candidates: mergeCandidates } : {}),
           ...(uniqueRelationshipReasons.length > 0 ? { relationship_reasons: uniqueRelationshipReasons } : {}),
+          relationship_types: result.proposal.relationship_types ?? [],
         });
       if (limit === undefined || synthesizedProposalEntries.length < limit) {
         synthesizedProposalEntries.push({ index: planIndex, proposal });

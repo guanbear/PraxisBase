@@ -245,6 +245,15 @@ describe("assessWikiPromotionQuality - human required", () => {
     assert.equal(result.passed, false);
   });
 
+  it("human-required for non-active lifecycle proposals", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      lifecycle: "superseded",
+      superseded_by: "wiki-newer-fix",
+    }));
+    assert.ok(result.human_required.includes("destructive_action"));
+    assert.equal(result.passed, false);
+  });
+
   it("passes high-signal personal single-source with no related pages", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       source_refs: ["codex:session:1"],

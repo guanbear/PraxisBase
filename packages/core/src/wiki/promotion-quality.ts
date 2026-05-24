@@ -308,6 +308,9 @@ export function assessWikiPromotionQuality(
   if (proposal.action === "archive" || proposal.action === "supersede") {
     humanRequired.push("destructive_action");
   }
+  if (proposal.lifecycle !== undefined && proposal.lifecycle !== "active") {
+    humanRequired.push("destructive_action");
+  }
 
   // 8. Ambiguous merge target
   if (ctx.mergeCandidates && ctx.mergeCandidates.length > 1) {
