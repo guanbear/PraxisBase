@@ -193,9 +193,12 @@ describe("generateSkill", () => {
     const manifest = buildAgentToolManifest("/tmp/test", { agent: "codex" });
     const skill = generateSkill(manifest);
 
+    assert.ok(skill.includes("praxisbase personal init"), "must mention personal init");
+    assert.ok(skill.includes("praxisbase personal run"), "must mention personal run");
     assert.ok(skill.includes("praxisbase source add"), "must mention praxisbase source add");
     assert.ok(skill.includes("praxisbase daily run"), "must mention praxisbase daily run");
     assert.ok(skill.includes("praxisbase context get"), "must mention praxisbase context get");
+    assert.ok(skill.includes("--with-agentmemory"), "must mention AgentMemory sidecar retrieval");
     assert.ok(
       skill.includes("team mode rejects personal scope"),
       "must mention team mode rejects personal scope"

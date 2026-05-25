@@ -123,6 +123,10 @@
       "types": "./src/commands/bootstrap.ts",
       "default": "./dist/commands/bootstrap.js"
     },
+    "./commands/personal.js": {
+      "types": "./src/commands/personal.ts",
+      "default": "./dist/commands/personal.js"
+    },
     "./commands/harvest.js": {
       "types": "./src/commands/harvest.ts",
       "default": "./dist/commands/harvest.js"

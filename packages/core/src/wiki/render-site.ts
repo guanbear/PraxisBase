@@ -302,6 +302,7 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 
 function renderDailyUpdateSection(report: DailyReportSummary): string {
   const dateLabel = report.created_at.slice(0, 10);
+  const contextEconomy = report.context_economy;
   const dailyCards: Array<{ label: string; value: string; href?: string }> = [
     { label: "Sources", value: String(report.source_count) },
     { label: "Imported", value: String(report.imported) },
@@ -317,8 +318,22 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
     ${dailyCards.map((card) => card.href
       ? `<a class="metric-link" href="${escapeHtml(card.href)}"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></a>`
       : `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`).join("\n")}
+    ${contextEconomy ? `<article><span>Context Economy</span><strong>${escapeHtml(contextEconomy.enabled ? "On" : "Off")}</strong></article>
+    <article><span>Reduced items</span><strong>${escapeHtml(String(contextEconomy.items_reduced))}</strong></article>
+    <article><span>Saved bytes</span><strong>${escapeHtml(contextEconomy.saved_bytes.toLocaleString("en-US"))}</strong></article>` : ""}
   </div>
+  ${renderAgentMemoryStatus(report)}
 </section>`;
+}
+
+function renderAgentMemoryStatus(report: DailyReportSummary): string {
+  if (report.agentmemory_sources.length === 0) return "";
+  return `<div class="agentmemory-status">
+    <h3>AgentMemory</h3>
+    <ol class="link-list">
+      ${report.agentmemory_sources.map((source) => `<li><strong>${escapeHtml(source.name)}</strong><span>${escapeHtml(source.status)} / imported ${escapeHtml(String(source.imported))}</span>${source.warnings.length > 0 ? `<br><small>${escapeHtml(source.warnings.join("; "))}</small>` : ""}</li>`).join("\n")}
+    </ol>
+  </div>`;
 }
 
 interface ExperienceSummary {
@@ -863,6 +878,21 @@ interface DailyReportSummary {
   human_required: number;
   proposal_candidates: number;
   site_pages: number;
+  context_economy?: {
+    enabled: boolean;
+    items_seen: number;
+    items_reduced: number;
+    saved_bytes: number;
+    rule_set_hash: string;
+    report_ref?: string;
+    warnings: string[];
+  };
+  agentmemory_sources: Array<{
+    name: string;
+    status: string;
+    imported: number;
+    warnings: string[];
+  }>;
 }
 
 interface WikiCurationReportSummary {
@@ -909,7 +939,31 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
   const jsonFiles = entries.filter((name) => name.endsWith(".json"));
   if (jsonFiles.length === 0) return null;
 
-  const candidates: Array<{ created_at: string; sources?: Array<{ imported?: number; rejected?: number; human_required?: number }>; authority_mode?: string; proposal_candidates?: number; site_pages?: number; type?: string }> = [];
+  const candidates: Array<{
+    created_at: string;
+    sources?: Array<{
+      name?: string;
+      source_type?: string;
+      status?: string;
+      imported?: number;
+      rejected?: number;
+      human_required?: number;
+      warnings?: string[];
+    }>;
+    authority_mode?: string;
+    proposal_candidates?: number;
+    site_pages?: number;
+    context_economy?: {
+      enabled?: boolean;
+      items_seen?: number;
+      items_reduced?: number;
+      saved_bytes?: number;
+      rule_set_hash?: string;
+      report_ref?: string;
+      warnings?: string[];
+    };
+    type?: string;
+  }> = [];
 
   for (const file of jsonFiles) {
     try {
@@ -927,6 +981,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
   candidates.sort((a, b) => b.created_at.localeCompare(a.created_at));
   const latest = candidates[0];
   const sources = Array.isArray(latest.sources) ? latest.sources : [];
+  const contextEconomy = latest.context_economy;
 
   return {
     created_at: latest.created_at,
@@ -937,6 +992,23 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
     human_required: sources.reduce((sum, s) => sum + (s.human_required ?? 0), 0),
     proposal_candidates: typeof latest.proposal_candidates === "number" ? latest.proposal_candidates : 0,
     site_pages: typeof latest.site_pages === "number" ? latest.site_pages : 0,
+    context_economy: contextEconomy ? {
+      enabled: contextEconomy.enabled === true,
+      items_seen: typeof contextEconomy.items_seen === "number" ? contextEconomy.items_seen : 0,
+      items_reduced: typeof contextEconomy.items_reduced === "number" ? contextEconomy.items_reduced : 0,
+      saved_bytes: typeof contextEconomy.saved_bytes === "number" ? contextEconomy.saved_bytes : 0,
+      rule_set_hash: contextEconomy.rule_set_hash ?? "unknown",
+      report_ref: contextEconomy.report_ref,
+      warnings: Array.isArray(contextEconomy.warnings) ? contextEconomy.warnings : [],
+    } : undefined,
+    agentmemory_sources: sources
+      .filter((source) => source.source_type === "agentmemory")
+      .map((source) => ({
+        name: source.name ?? "agentmemory",
+        status: source.status ?? "unknown",
+        imported: source.imported ?? 0,
+        warnings: Array.isArray(source.warnings) ? source.warnings : [],
+      })),
   };
 }
 

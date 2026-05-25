@@ -1021,30 +1021,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings.push(...reviewPromote.warnings);
   }
 
-  let sitePages = 0;
-  let qualityFindings = 0;
-  if (input.buildSite && mode === "write") {
-    await writeDailyProgress(root, progressPath, {
-      now,
-      status: "running",
-      current_stage: "site-build",
-      sources: sourceReports,
-      ai_distill: aiDistill,
-      warnings,
-    });
-    const site = await buildWikiSite(root);
-    sitePages = site.pages;
-    qualityFindings = site.health.quality_findings;
-    outputs.push(...site.outputs);
-  }
-
   let git: ExecutedTeamGitAction | undefined;
   const reportId = makeId("daily-experience", runSuffix(now));
   const aiReportPath = `${protocolPaths.reportsAiDistill}/${makeId("ai-distill", runSuffix(now))}.json`;
-  if (mode === "write") outputs.push(aiReportPath);
   const reportPath = `${protocolPaths.reportsDaily}/${reportId}.json`;
   const runPath = `${protocolPaths.runsDaily}/${makeId("run", `daily-experience_${runSuffix(now)}`)}.json`;
-  const reportOutputs = mode === "write" ? Array.from(new Set([...outputs, reportPath, runPath])).sort() : outputs.sort();
   const finalAiDistill: DailyAiDistill = {
     ...aiDistill,
     production_ready: aiMode === "production" && aiDistill.failed === 0 && aiDistill.human_required === 0,
@@ -1065,23 +1046,48 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings: contextEconomyReport?.warnings ?? contextEconomyWarnings,
   } : { enabled: false, reducer_version: REDUCER_VERSION, rule_set_hash: "disabled", items_seen: 0, items_reduced: 0, items_passed_through: 0, input_bytes: 0, output_bytes: 0, saved_bytes: 0, warnings: [] as string[] };
 
-  const report = DailyExperienceReportSchema.parse({
-    id: reportId,
-    protocol_version: PROTOCOL_VERSION,
-    type: "daily_experience_report",
-    authority_mode: input.authorityMode,
-    mode,
-    ai_distill: finalAiDistill,
-    context_economy: contextEconomySummary,
-    sources: sourceReports,
-    proposal_candidates: curationReport.output_counts.curated_proposals,
-    quality_findings: qualityFindings,
-    site_pages: sitePages,
-    changed_stable_knowledge: reviewPromote.auto_promoted > 0,
-    outputs: reportOutputs,
-    warnings: Array.from(new Set(warnings)).sort(),
-    created_at: now,
-  });
+  const makeReport = (sitePages: number, qualityFindings: number, outputPaths: string[]): DailyExperienceReport => {
+    const reportOutputs = mode === "write"
+      ? Array.from(new Set([...outputPaths, aiReportPath, reportPath, runPath])).sort()
+      : [...outputPaths].sort();
+    return DailyExperienceReportSchema.parse({
+      id: reportId,
+      protocol_version: PROTOCOL_VERSION,
+      type: "daily_experience_report",
+      authority_mode: input.authorityMode,
+      mode,
+      ai_distill: finalAiDistill,
+      context_economy: contextEconomySummary,
+      sources: sourceReports,
+      proposal_candidates: curationReport.output_counts.curated_proposals,
+      quality_findings: qualityFindings,
+      site_pages: sitePages,
+      changed_stable_knowledge: reviewPromote.auto_promoted > 0,
+      outputs: reportOutputs,
+      warnings: Array.from(new Set(warnings)).sort(),
+      created_at: now,
+    });
+  };
+
+  let sitePages = 0;
+  let qualityFindings = 0;
+  if (input.buildSite && mode === "write") {
+    await writeJson(root, reportPath, makeReport(0, 0, outputs));
+    await writeDailyProgress(root, progressPath, {
+      now,
+      status: "running",
+      current_stage: "site-build",
+      sources: sourceReports,
+      ai_distill: aiDistill,
+      warnings,
+    });
+    const site = await buildWikiSite(root);
+    sitePages = site.pages;
+    qualityFindings = site.health.quality_findings;
+    outputs.push(...site.outputs);
+  }
+
+  const report = makeReport(sitePages, qualityFindings, outputs);
 
   if (mode === "write") {
     await writeJson(root, aiReportPath, {

@@ -260,7 +260,21 @@ Body.
         sources: [
           { name: "openclaw-bot", agent: "openclaw", channel: "feishu", source_type: "openclaw-api", status: "completed", scanned: 10, fetched: 8, enveloped: 8, imported: 6, rejected: 1, human_required: 1, warnings: [] },
           { name: "claude-repair", agent: "claude-code", channel: "log-system", source_type: "http", status: "completed", scanned: 5, fetched: 5, enveloped: 5, imported: 4, rejected: 0, human_required: 1, warnings: [] },
+          { name: "personal-agentmemory", agent: "agentmemory", channel: "unknown", source_type: "agentmemory", status: "partial", scanned: 4, fetched: 3, enveloped: 3, imported: 3, rejected: 0, human_required: 0, warnings: ["agentmemory_health_failed: timeout"] },
         ],
+        context_economy: {
+          enabled: true,
+          reducer_version: "context-reducer-v1",
+          rule_set_hash: "sha256:rules",
+          items_seen: 12,
+          items_reduced: 8,
+          items_passed_through: 4,
+          input_bytes: 20000,
+          output_bytes: 7000,
+          saved_bytes: 13000,
+          report_ref: ".praxisbase/reports/context-economy/context_economy_2026_05_21.json",
+          warnings: [],
+        },
         proposal_candidates: 3,
         quality_findings: 0,
         site_pages: 7,
@@ -288,12 +302,18 @@ Body.
     assert.ok(index.includes("2026-05-21"));
     assert.ok(index.includes("team-git"));
     assert.ok(index.includes("Sources"));
-    assert.match(index, /<strong>2<\/strong>/);
-    assert.match(index, /<strong>10<\/strong>/);
+    assert.match(index, /<strong>3<\/strong>/);
+    assert.match(index, /<strong>13<\/strong>/);
     assert.match(index, /<strong>1<\/strong>/);
     assert.match(index, /<strong>2<\/strong>/);
     assert.match(index, /<strong>3<\/strong>/);
     assert.match(index, /<strong>7<\/strong>/);
+    assert.ok(index.includes("Context Economy"));
+    assert.ok(index.includes("Saved bytes"));
+    assert.ok(index.includes("13,000"));
+    assert.ok(index.includes("AgentMemory"));
+    assert.ok(index.includes("personal-agentmemory"));
+    assert.ok(index.includes("agentmemory_health_failed: timeout"));
     assert.ok(index.includes("href=\"review.html#human-required\""));
     assert.ok(index.includes("href=\"review.html#pending-candidates\""));
     assert.ok(index.includes("href=\"#knowledge-pages\""));

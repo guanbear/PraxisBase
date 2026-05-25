@@ -34,6 +34,16 @@ ${toolList}
 ## First Run
 
 \`\`\`bash
+praxisbase personal init --agent codex --json
+praxisbase personal doctor --json
+praxisbase personal run --open --json
+\`\`\`
+
+The \`personal\` command group is the preferred first-run UX. It configures safe local sources, writes agent access assets, runs daily collection, builds \`dist/index.html\`, and keeps personal knowledge local by default.
+
+Legacy equivalent:
+
+\`\`\`bash
 praxisbase bootstrap personal --agent codex --install-skill --json
 praxisbase ai init --provider openai-compatible --model <model> --json
 praxisbase ai doctor --json
@@ -60,9 +70,10 @@ praxisbase harvest --openclaw-export <json-file> --build-site --json
 
 \`\`\`bash
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --with-agentmemory --json
 \`\`\`
 
-Context should come from compiled wiki pages, root wiki artifacts, graph neighbors, and provenance pointers. Do not rely on raw vault bodies as repair instructions.
+Context should come from compiled wiki pages, root wiki artifacts, graph neighbors, and provenance pointers. Use \`--with-agentmemory\` only as a sidecar for session-level recall; stable PraxisBase wiki context remains the authority and should outrank sidecar hits. Do not rely on raw vault bodies as repair instructions.
 
 ## Capture After Repair
 
@@ -109,6 +120,7 @@ praxisbase source list --json
 ## Daily Personal
 
 \`\`\`bash
+praxisbase personal run --json
 praxisbase daily run --mode personal --build-site --json
 \`\`\`
 

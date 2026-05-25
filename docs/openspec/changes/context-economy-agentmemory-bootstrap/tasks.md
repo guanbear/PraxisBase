@@ -24,12 +24,12 @@
 
 ## M18 Personal Bootstrap UX
 
-- [ ] Add `praxisbase personal init/connect/doctor/run/schedule` commands.
-- [ ] Extend generated site model and HTML with context economy and agentmemory health summaries.
-- [ ] Extend generated agent Skill/instructions with first-run and sidecar retrieval guidance.
+- [x] Add `praxisbase personal init/connect/doctor/run/schedule` commands.
+- [x] Extend generated site model and HTML with context economy and agentmemory health summaries.
+- [x] Extend generated agent Skill/instructions with first-run and sidecar retrieval guidance.
 
 ## Verification
 
-- [ ] Add unit, CLI, and e2e tests for reducer, agentmemory adapter, personal bootstrap, retrieval ranking, and site summaries.
-- [ ] Run `pnpm check`.
-- [ ] Run a real local personal smoke without committing generated `kb/`.
+- [x] Add unit, CLI, and e2e tests for reducer, agentmemory adapter, personal bootstrap, retrieval ranking, and site summaries.
+- [x] Run `pnpm check`.
+- [x] Run a real local personal smoke without committing generated `kb/`.

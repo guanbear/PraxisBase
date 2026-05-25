@@ -28,6 +28,7 @@ import { dailyCommand } from "./commands/daily.js";
 import { aiCommand } from "./commands/ai.js";
 import { privacyCommand } from "./commands/privacy.js";
 import { bootstrapCommand } from "./commands/bootstrap.js";
+import { personalCommand } from "./commands/personal.js";
 import { harvestCommand } from "./commands/harvest.js";
 import { agentToolsCommand } from "./commands/agent-tools.js";
 import { mcpCommand } from "./commands/mcp.js";
@@ -479,6 +480,59 @@ program
     }
   ) => {
     console.log(await bootstrapCommand(process.cwd(), sub, options));
+  });
+
+program
+  .command("personal")
+  .argument("<sub>", "subcommand (init|connect|doctor|run|schedule)")
+  .argument("[target]", "connect target (codex|openclaw|agentmemory)")
+  .option("--agent <agent>", "agent profile", "codex")
+  .option("--name <name>")
+  .option("--path <path>")
+  .option("--url <url>")
+  .option("--bearer-token-env <name>")
+  .option("--runner <runner>", "cron or launchd")
+  .option("--print")
+  .option("--open")
+  .option("--limit <n>")
+  .option("--degraded")
+  .option("--no-ai")
+  .option("--max-ai-chunks <n>")
+  .option("--ai-timeout-ms <n>")
+  .option("--ai-concurrency <n>")
+  .option("--max-curation-proposals <n>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    target: "codex" | "openclaw" | "agentmemory" | undefined,
+    options: {
+      agent?: "codex" | "opencode" | "claude-code" | "openclaw" | "hermes" | "openhuman" | "generic";
+      name?: string;
+      path?: string;
+      url?: string;
+      bearerTokenEnv?: string;
+      runner?: "cron" | "launchd";
+      print?: boolean;
+      open?: boolean;
+      limit?: string;
+      degraded?: boolean;
+      noAi?: boolean;
+      maxAiChunks?: string;
+      aiTimeoutMs?: string;
+      aiConcurrency?: string;
+      maxCurationProposals?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await personalCommand(process.cwd(), sub, {
+      ...options,
+      target,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      maxAiChunks: options.maxAiChunks ? parseInt(options.maxAiChunks, 10) : undefined,
+      aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
+      aiConcurrency: options.aiConcurrency ? parseInt(options.aiConcurrency, 10) : undefined,
+      maxCurationProposals: options.maxCurationProposals ? parseInt(options.maxCurationProposals, 10) : undefined,
+    }));
   });
 
 program
