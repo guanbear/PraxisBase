@@ -6,6 +6,7 @@ export interface ContextCommandOptions {
   stage: ContextStage;
   query?: string;
   maxBytes?: string;
+  withAgentMemory?: boolean;
   json?: boolean;
 }
 
@@ -21,6 +22,9 @@ export async function contextCommand(root: string, subcommand: string, options: 
     stage: options.stage,
     query: options.query ?? "",
     maxBytes: options.maxBytes ? parseInt(options.maxBytes, 10) : undefined,
+    withAgentMemory: options.withAgentMemory,
+    fetchImpl: fetch,
+    env: process.env as Record<string, string | undefined>,
   });
 
   if (options.json) {

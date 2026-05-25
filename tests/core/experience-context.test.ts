@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { buildContext } from "@praxisbase/core";
+import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
 
 describe("buildContext", () => {
   it("diagnosis context respects max bytes and keeps citations", async () => {
@@ -231,5 +232,79 @@ Refresh the OpenClaw login and retry memory sync.
 
     assert.equal(output.items.some((item) => item.path.endsWith("openclaw-run-id-abc123def456.md")), false);
     assert.equal(output.items[0]?.path, "kb/known-fixes/openclaw-auth-refresh.md");
+  });
+
+  it("includes AgentMemory sidecar hits only after stable wiki context", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-agentmemory-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-auth-refresh.md"), `---
+id: openclaw-auth-refresh
+type: procedure
+knowledge_type: procedure
+scope: personal
+maturity: verified
+---
+# OpenClaw auth refresh
+
+## When to Use
+Use this when OpenClaw auth refresh is required.
+
+## What To Do
+Refresh auth and verify the OpenClaw run.
+`);
+    await addExperienceSource(root, {
+      name: "agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:3111",
+    });
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "OpenClaw auth refresh",
+      maxBytes: 4000,
+      withAgentMemory: true,
+      fetchImpl: (async (input) => {
+        if (String(input).includes("health")) {
+          return new Response(JSON.stringify({ status: "ok" }));
+        }
+        return new Response(JSON.stringify({
+          hits: [{ id: "mem-1", title: "OpenClaw auth refresh memory", content: "AgentMemory sidecar remembered the same OpenClaw auth refresh procedure." }],
+        }));
+      }) as typeof fetch,
+    });
+
+    assert.equal(output.items[0]?.path, "kb/procedures/openclaw-auth-refresh.md");
+    assert.ok(output.items.some((item) => item.path === "agentmemory://smart-search/mem-1"));
+    assert.equal(output.warnings.includes("context_unavailable"), false);
+  });
+
+  it("warns instead of failing when requested AgentMemory sidecar is unavailable", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-agentmemory-down-"));
+    await addExperienceSource(root, {
+      name: "agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:3111",
+    });
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "diagnosis",
+      query: "OpenClaw auth refresh",
+      withAgentMemory: true,
+      fetchImpl: (async () => new Response("down", { status: 503, statusText: "Service Unavailable" })) as typeof fetch,
+    });
+
+    assert.deepEqual(output.items, []);
+    assert.ok(output.warnings.some((warning) => warning.includes("agentmemory_sidecar_unavailable")));
+    assert.ok(output.warnings.includes("context_unavailable"));
   });
 });

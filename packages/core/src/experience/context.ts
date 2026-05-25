@@ -8,6 +8,9 @@ import { readText, writeJson } from "../store/file-store.js";
 import { ContextResponseSchema, type ContextResponse, type ContextStage } from "../protocol/schemas.js";
 import { rankWikiContextItems, type WikiContextCandidate } from "../wiki/retrieval.js";
 import { promotionTimeGuard } from "../wiki/promotion-quality.js";
+import { listExperienceSources } from "./source-config.js";
+import { createAgentMemoryClient } from "./agentmemory-adapter.js";
+import type { AgentMemoryRecord } from "./agentmemory-client.js";
 
 const DEFAULT_BUDGETS: Record<ContextStage, number> = {
   diagnosis: 16 * 1024,
@@ -30,6 +33,10 @@ export interface BuildContextInput {
   stage: ContextStage;
   query?: string;
   maxBytes?: number;
+  withAgentMemory?: boolean;
+  agentMemorySourceName?: string;
+  fetchImpl?: typeof fetch;
+  env?: Record<string, string | undefined>;
 }
 
 export type BuildContextOutput = ContextResponse & {
@@ -200,6 +207,62 @@ function buildCandidate(path: string, raw: string): WikiContextCandidate | undef
   return undefined;
 }
 
+function agentMemorySummary(record: AgentMemoryRecord): string {
+  return [record.title, record.content].filter((value): value is string => typeof value === "string" && value.length > 0).join("\n") || record.id;
+}
+
+function agentMemoryCandidate(record: AgentMemoryRecord, sourceId: string): WikiContextCandidate {
+  const path = `agentmemory://smart-search/${encodeURIComponent(record.id)}`;
+  return {
+    id: `agentmemory-${record.id}`,
+    path,
+    kind: "agentmemory_sidecar",
+    title: stringValue(record.title) ?? record.id,
+    summary: agentMemorySummary(record).slice(0, 500),
+    body: stringValue(record.content),
+    scope: stringValue(record.scope),
+    source_ids: [sourceId, path, stringValue(record.source)].filter((entry): entry is string => Boolean(entry)).sort(),
+  };
+}
+
+async function agentMemorySidecarCandidates(input: BuildContextInput): Promise<{ candidates: WikiContextCandidate[]; warnings: string[] }> {
+  if (!input.withAgentMemory) return { candidates: [], warnings: [] };
+
+  const sources = (await listExperienceSources(input.root)).filter((source) => source.source_type === "agentmemory");
+  const source = input.agentMemorySourceName
+    ? sources.find((candidate) => candidate.name === input.agentMemorySourceName)
+    : sources[0];
+  if (!source) {
+    return { candidates: [], warnings: ["agentmemory_sidecar_unavailable: no configured agentmemory source"] };
+  }
+
+  try {
+    const client = createAgentMemoryClient(source, {
+      authorityMode: "personal-local",
+      fetchImpl: input.fetchImpl,
+      env: input.env,
+    });
+    const health = await client.health();
+    if (!health.ok) {
+      return { candidates: [], warnings: [`agentmemory_sidecar_unavailable: ${health.error ?? "health check failed"}`] };
+    }
+    const query = input.query?.trim() || input.stage;
+    const search = await client.smartSearch(query, 4);
+    if (!search.ok) {
+      return { candidates: [], warnings: [`agentmemory_sidecar_unavailable: ${search.error ?? "smart-search failed"}`] };
+    }
+    return {
+      candidates: (search.hits ?? []).map((record) => agentMemoryCandidate(record, source.id)),
+      warnings: [],
+    };
+  } catch (error) {
+    return {
+      candidates: [],
+      warnings: [`agentmemory_sidecar_unavailable: ${error instanceof Error ? error.message : String(error)}`],
+    };
+  }
+}
+
 function serializeSize(value: unknown): number {
   return Buffer.byteLength(JSON.stringify(value));
 }
@@ -239,12 +302,16 @@ export async function buildContext(input: BuildContextInput): Promise<BuildConte
   const maxBytes = input.maxBytes ?? DEFAULT_BUDGETS[input.stage];
   const filePaths = (await Promise.all(CONTEXT_ROOTS.map((dir) => listFiles(input.root, dir)))).flat();
   const candidates: WikiContextCandidate[] = [];
+  const warnings: string[] = [];
 
   for (const path of filePaths) {
     const raw = await readText(input.root, path);
     const candidate = buildCandidate(path, raw);
     if (candidate) candidates.push(candidate);
   }
+  const sidecar = await agentMemorySidecarCandidates(input);
+  candidates.push(...sidecar.candidates);
+  warnings.push(...sidecar.warnings);
 
   const selected = rankWikiContextItems(candidates, {
     query: input.query ?? "",
@@ -252,7 +319,7 @@ export async function buildContext(input: BuildContextInput): Promise<BuildConte
     maxItems: 8,
   });
   const id = makeId("context", `${input.agent}-${input.stage}-${input.query ?? "default"}`);
-  const warnings = selected.length === 0 ? ["context_unavailable"] : [];
+  if (selected.length === 0) warnings.push("context_unavailable");
 
   const base = ContextResponseSchema.parse({
     agent: input.agent,

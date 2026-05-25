@@ -19,8 +19,8 @@
 
 - [x] Add an agentmemory REST client with health, latest memories, smart-search, sessions, and remember operations.
 - [x] Extend source config and source CLI for `source_type=agentmemory`.
-- [ ] Add `praxisbase agentmemory doctor/import/export` commands.
-- [ ] Add optional `context get --with-agentmemory` sidecar retrieval with PraxisBase stable wiki authority ranking first.
+- [x] Add `praxisbase agentmemory doctor/import/export` commands.
+- [x] Add optional `context get --with-agentmemory` sidecar retrieval with PraxisBase stable wiki authority ranking first.
 
 ## M18 Personal Bootstrap UX
 

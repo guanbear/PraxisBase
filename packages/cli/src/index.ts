@@ -31,6 +31,7 @@ import { bootstrapCommand } from "./commands/bootstrap.js";
 import { harvestCommand } from "./commands/harvest.js";
 import { agentToolsCommand } from "./commands/agent-tools.js";
 import { mcpCommand } from "./commands/mcp.js";
+import { agentmemoryCommand } from "./commands/agentmemory.js";
 
 const program = new Command();
 
@@ -564,12 +565,36 @@ program
   });
 
 program
+  .command("agentmemory")
+  .argument("<sub>", "subcommand (doctor|import|export)")
+  .option("--source <name>", "agentmemory source name")
+  .option("--mode <mode>", "personal or team", "personal")
+  .option("--dry-run", "report without writing")
+  .option("--write", "write results to staging")
+  .option("--allow-team-export", "allow team-mode stable wiki export to AgentMemory")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      source?: string;
+      mode?: "personal" | "team";
+      dryRun?: boolean;
+      write?: boolean;
+      allowTeamExport?: boolean;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await agentmemoryCommand(process.cwd(), sub, options));
+  });
+
+program
   .command("context")
   .argument("<sub>", "subcommand (get)")
   .requiredOption("--agent <agent>")
   .requiredOption("--stage <stage>")
   .option("--query <query>")
   .option("--max-bytes <n>")
+  .option("--with-agentmemory")
   .option("--json")
   .action(async (
     sub: string,
@@ -578,6 +603,7 @@ program
       stage: "diagnosis" | "repair" | "verification" | "proposal";
       query?: string;
       maxBytes?: string;
+      withAgentMemory?: boolean;
       json?: boolean;
     }
   ) => {

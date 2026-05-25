@@ -9,6 +9,7 @@ import { captureFinishCommand, captureSubmitCommand } from "@praxisbase/cli/comm
 import { installCommand } from "@praxisbase/cli/commands/install.js";
 import { memoryCommand } from "@praxisbase/cli/commands/memory.js";
 import { contextCommand } from "@praxisbase/cli/commands/context.js";
+import { sourceCommand } from "@praxisbase/cli/commands/source.js";
 import { distillCommand } from "@praxisbase/cli/commands/distill.js";
 import { watchCommand } from "@praxisbase/cli/commands/watch.js";
 import { PROTOCOL_VERSION } from "@praxisbase/core";
@@ -306,6 +307,42 @@ describe("experience CLI commands", () => {
     assert.equal(parsed.ok, true);
     assert.equal(parsed.context.stage, "diagnosis");
     assert.ok(parsed.context.warnings.includes("context_unavailable"));
+  });
+
+  it("context get can include AgentMemory sidecar hits", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-context-agentmemory-"));
+    await sourceCommand(root, "add", {
+      name: "agentmemory",
+      agent: "agentmemory",
+      type: "agentmemory",
+      scope: "personal",
+      url: "http://localhost:3111",
+      json: true,
+    });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input) => {
+      if (String(input).includes("health")) {
+        return new Response(JSON.stringify({ status: "ok" }));
+      }
+      return new Response(JSON.stringify({
+        hits: [{ id: "mem-1", title: "OpenClaw auth refresh memory", content: "AgentMemory sidecar context." }],
+      }));
+    }) as typeof fetch;
+    try {
+      const output = await contextCommand(root, "get", {
+        agent: "codex",
+        stage: "diagnosis",
+        query: "OpenClaw auth refresh",
+        withAgentMemory: true,
+        json: true,
+      });
+      const parsed = JSON.parse(output);
+      assert.equal(parsed.ok, true);
+      assert.ok(parsed.context.items.some((item: { path: string }) => item.path === "agentmemory://smart-search/mem-1"));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("distill run returns JSON report without writing stable knowledge", async () => {

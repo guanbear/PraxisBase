@@ -103,6 +103,10 @@
       "types": "./src/commands/source.ts",
       "default": "./dist/commands/source.js"
     },
+    "./commands/agentmemory.js": {
+      "types": "./src/commands/agentmemory.ts",
+      "default": "./dist/commands/agentmemory.js"
+    },
     "./commands/daily.js": {
       "types": "./src/commands/daily.ts",
       "default": "./dist/commands/daily.js"

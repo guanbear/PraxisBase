@@ -139,6 +139,10 @@
       "types": "./src/experience/agentmemory-adapter.ts",
       "default": "./dist/experience/agentmemory-adapter.js"
     },
+    "./experience/agentmemory-export.js": {
+      "types": "./src/experience/agentmemory-export.ts",
+      "default": "./dist/experience/agentmemory-export.js"
+    },
     "./experience/daily.js": {
       "types": "./src/experience/daily.ts",
       "default": "./dist/experience/daily.js"
