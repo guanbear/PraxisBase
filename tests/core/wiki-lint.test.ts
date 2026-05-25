@@ -105,4 +105,44 @@ describe("wiki lint guards", () => {
     assert.ok(report.findings.some((finding) => finding.rule === "raw-copy-page"));
     assert.ok(report.findings.some((finding) => finding.rule === "source-summary-promoted-as-guidance"));
   });
+
+  it("flags body provenance that disagrees with frontmatter provenance", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-provenance-lint-"));
+    const report = await runWikiLint(root, {
+      pages: [
+        {
+          id: "wiki-provenance-mismatch",
+          slug: "provenance-mismatch",
+          title: "Provenance mismatch",
+          page_kind: "known_fix",
+          scope: "personal",
+          maturity: "draft",
+          lifecycle: "active",
+          source_ids: ["sha256:a"],
+          provenance_refs: [{ uri: "codex:session:1", hash: "sha256:a" }],
+          body_markdown: [
+            "# Provenance mismatch",
+            "",
+            "## When to Use",
+            "Use this when validating wiki provenance.",
+            "",
+            "## Fix",
+            "Keep body provenance aligned with frontmatter sources.",
+            "",
+            "## Verification",
+            "Lint should flag mismatched body provenance.",
+            "",
+            "## Reusable Lessons",
+            "Do not trust synthesized provenance text when structured sources disagree.",
+            "",
+            "## Provenance",
+            "- codex:session:1 (sha256:b)",
+          ].join("\n"),
+          path: "kb/known-fixes/provenance-mismatch.md",
+        },
+      ] as any,
+    });
+
+    assert.ok(report.findings.some((finding) => finding.rule === "provenance_mismatch" as any));
+  });
 });

@@ -63,6 +63,31 @@ Built-in rule families are conservative:
 - `json-jsonl`: parse structurally when possible and select known useful fields before falling back to text rules;
 - `generic`: bounded head/tail fallback with no fabricated facts.
 
+### M16.1 Experience Fidelity Compression
+
+M16.1 upgrades context economy from generic token trimming to deterministic experience-preserving compression. This is inspired by OpenHuman TokenJuice's placement and rule overlay model, but it is an independent PraxisBase implementation: no OpenHuman GPL source code or vendor rules are copied into PraxisBase.
+
+The reducer runs before AI distill and emits a smaller evidence packet. It must not synthesize lessons, rewrite outcomes, or invent causal links. It may only preserve original lines, remove repeated boilerplate, group nearby signal lines, and add explicit omission markers.
+
+Experience-fidelity compression preserves these signals with nearby context:
+
+- user/task goal and decision constraints;
+- commands, file edits, changed paths, agent/tool routing, model identifiers, and run ids;
+- symptoms, errors, failures, exceptions, tracebacks, timeouts, and rejected actions;
+- fixes, mitigations, configuration changes, restarts, retries, and rollout steps;
+- verification evidence such as smoke results, tests, lint, build, health checks, and report ids;
+- reusable lessons, preferences, operating rules, and future guardrails;
+- provenance markers, source refs, source hashes, capture ids, timestamps, and URI-like identifiers.
+
+Experience-fidelity compression drops or collapses these low-value patterns:
+
+- repeated system/developer/tool boilerplate;
+- repeated AGENTS/skill/environment instructions already represented elsewhere;
+- progress spinners, repeated status lines, adjacent duplicate lines, and repeated blocks;
+- long unchanging command output that contains no failure, fix, verification, lesson, or provenance signal.
+
+The output remains auditable text. Every preserved line must come from the original input. Omission markers must state only counts, not conclusions. The final AI distill layer remains responsible for turning the reduced evidence into candidate knowledge.
+
 Reduction is pass-through safe:
 
 - tiny inputs are skipped;
@@ -79,6 +104,8 @@ The reducer must preserve:
 - explicit lessons and verification;
 - privacy and provenance fields;
 - reducer version, rule-set hash, matched rule id, reduction hash, applied flag, byte counts, facts, and warnings.
+
+M16.1 additionally reports best-effort counters for preserved signal lines, dropped boilerplate lines, and deduplicated repeated blocks. These counters are observability only; they are not trusted facts for wiki synthesis.
 
 Daily reports include byte accounting and rule hit summaries. Debug reports contain hashes and counters, not unredacted raw source material.
 

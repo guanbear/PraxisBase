@@ -141,12 +141,112 @@ export function truncate(text: string, maxBytes: number): string {
   return utf8SafeSlice(text, maxBytes);
 }
 
+export interface ExperienceFidelityCompressionResult {
+  text: string;
+  counters: Record<string, number>;
+}
+
+const EXPERIENCE_SIGNAL_RE = /(?:\b(?:goal|task|request|command|argv|exit_code|error|fail(?:ed|ure)?|exception|traceback|timeout|fix|fixed|repair|mitigation|restart|retry|verify|verification|smoke|test(?:s)?|passed|build|lint|lesson|preference|decision|provenance|source_ref|source_hash|capture|report id|run id|model|route|agent)\b|用户|目标|需求|修复|验证|经验|教训|决策|失败|错误|重启|回滚|通过|sha256:|[a-z][a-z0-9+.-]+:\/\/|\*\*\* (?:Add|Update|Delete) File:|^\s*(?:\$|pnpm|npm|node|git|python|pytest|cargo|go test|bun)\b)/iu;
+
+const BOILERPLATE_RE = /(?:^Knowledge cutoff:|^Current date:|^You are (?:Codex|ChatGPT)|^# AGENTS\.md instructions|^Tool definitions:|^Available tools|^Filesystem sandboxing|^Approval policy|^<environment_context>|^<\/environment_context>|^<permissions instructions>|^<\/permissions instructions>|^\s*<(?:cwd|shell|current_date|timezone)>|^<!-- PRAXISBASE:|^# PraxisBase adapter instructions|^This agent is configured to work with PraxisBase|^## Capture triggers|^## Context stages|^## Privacy|^Redaction profile:)/iu;
+
+function normalizedLineKey(line: string): string {
+  return line.trim().replace(/\s+/g, " ");
+}
+
+export function preserveExperienceFidelity(
+  text: string,
+  options: { windowLines?: number; maxSections?: number } = {},
+): ExperienceFidelityCompressionResult {
+  const windowLines = options.windowLines ?? 2;
+  const maxSections = options.maxSections ?? 120;
+  const lines = text.split(/\r?\n/);
+  const cleaned: string[] = [];
+  const originalIndexes: number[] = [];
+  const seenLineKeys = new Set<string>();
+  let droppedBoilerplateLines = 0;
+  let dedupedRepeatedBlocks = 0;
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    const key = normalizedLineKey(line);
+    if (!key) {
+      cleaned.push(line);
+      originalIndexes.push(index);
+      continue;
+    }
+    if (BOILERPLATE_RE.test(line)) {
+      droppedBoilerplateLines++;
+      continue;
+    }
+    if (seenLineKeys.has(key)) {
+      dedupedRepeatedBlocks++;
+      continue;
+    }
+    seenLineKeys.add(key);
+    cleaned.push(line);
+    originalIndexes.push(index);
+  }
+
+  const signalIndexes: number[] = [];
+  for (let index = 0; index < cleaned.length; index++) {
+    if (EXPERIENCE_SIGNAL_RE.test(cleaned[index])) {
+      signalIndexes.push(index);
+    }
+  }
+
+  if (signalIndexes.length === 0) {
+    const fallback = headTail(cleaned.join("\n"), 30, 30);
+    return {
+      text: fallback,
+      counters: {
+        preserved_signal_lines: 0,
+        dropped_boilerplate_lines: droppedBoilerplateLines,
+        deduped_repeated_blocks: dedupedRepeatedBlocks,
+      },
+    };
+  }
+
+  const keep = new Set<number>();
+  for (const signalIndex of signalIndexes.slice(0, maxSections)) {
+    const start = Math.max(0, signalIndex - windowLines);
+    const end = Math.min(cleaned.length - 1, signalIndex + windowLines);
+    for (let index = start; index <= end; index++) {
+      const key = normalizedLineKey(cleaned[index]);
+      if (!key && windowLines === 0) continue;
+      keep.add(index);
+    }
+  }
+
+  const ordered = Array.from(keep).sort((a, b) => a - b);
+  const reduced: string[] = [];
+  let previousOriginalIndex = -1;
+  for (const index of ordered) {
+    const originalIndex = originalIndexes[index];
+    if (previousOriginalIndex >= 0 && originalIndex > previousOriginalIndex + 1) {
+      reduced.push(`... [${originalIndex - previousOriginalIndex - 1} lines omitted] ...`);
+    }
+    reduced.push(cleaned[index]);
+    previousOriginalIndex = originalIndex;
+  }
+
+  return {
+    text: reduced.join("\n"),
+    counters: {
+      preserved_signal_lines: signalIndexes.length,
+      dropped_boilerplate_lines: droppedBoilerplateLines,
+      deduped_repeated_blocks: dedupedRepeatedBlocks,
+    },
+  };
+}
+
 function applyActions(
   text: string,
   rule: ContextReducerRule,
   isFailure: boolean,
-): string {
+): { text: string; counters: Record<string, number> } {
   let result = text;
+  const counters: Record<string, number> = {};
 
   for (const action of rule.actions) {
     switch (action.type) {
@@ -176,6 +276,17 @@ function applyActions(
           result = preserveSectionsMatching(result, action.section_pattern);
         }
         break;
+      case "preserve_experience_fidelity": {
+        const fidelity = preserveExperienceFidelity(result, {
+          windowLines: action.window_lines,
+          maxSections: action.max_sections,
+        });
+        result = fidelity.text;
+        for (const [key, value] of Object.entries(fidelity.counters)) {
+          counters[key] = (counters[key] ?? 0) + value;
+        }
+        break;
+      }
       case "truncate":
         if (action.max_bytes) {
           result = truncate(result, action.max_bytes);
@@ -196,7 +307,7 @@ function applyActions(
     }
   }
 
-  return result;
+  return { text: result, counters };
 }
 
 export interface ReduceInputOptions {
@@ -263,7 +374,8 @@ export function reduceContext(
   }
 
   const isFailure = normalized.exit_code !== undefined && normalized.exit_code !== null && normalized.exit_code !== 0;
-  let reducedText = applyActions(originalText, match.rule, isFailure);
+  const appliedActions = applyActions(originalText, match.rule, isFailure);
+  let reducedText = appliedActions.text;
 
   if (!reducedText || reducedText.trim().length === 0) {
     const fallbackText = headTail(originalText, 40, 40);
@@ -315,6 +427,7 @@ export function reduceContext(
     counters: {
       original_lines: originalText.split(/\r?\n/).length,
       reduced_lines: reducedText.split(/\r?\n/).length,
+      ...appliedActions.counters,
     },
     warnings,
   };

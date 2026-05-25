@@ -6,6 +6,7 @@ import {
   type WikiPromotionQualityAssessment,
 } from "./curation-model.js";
 import { isAllowedWikiPatchPath, containsPrivateMaterial } from "./lint.js";
+import { assessBodyProvenanceConsistency } from "./provenance-consistency.js";
 import { appearsToBeRawLog } from "../protocol/redact.js";
 
 /** Context for quality assessment beyond the proposal itself. */
@@ -257,6 +258,17 @@ export function assessWikiPromotionQuality(
   // 1. Missing provenance
   if (proposal.source_refs.length === 0 || proposal.source_hashes.length === 0 || proposal.provenance.length === 0) {
     hardBlocks.push("missing_provenance");
+  }
+
+  const provenanceConsistency = assessBodyProvenanceConsistency(
+    body,
+    proposal.provenance.map((item) => ({
+      uri: item.source_ref,
+      hash: item.source_hash,
+    })),
+  );
+  if (!provenanceConsistency.ok) {
+    hardBlocks.push("provenance_mismatch");
   }
 
   // 2. Unsafe target path

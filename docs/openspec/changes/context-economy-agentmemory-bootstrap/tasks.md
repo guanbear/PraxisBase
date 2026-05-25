@@ -15,6 +15,15 @@
 - [x] Add a `--no-context-economy` or equivalent bypass for debugging.
 - [x] Run focused reducer/daily tests.
 
+## M16.1 Experience Fidelity Compression
+
+- [x] Add deterministic experience-fidelity reduction action that preserves goal, command, edit, error, fix, verification, lesson, and provenance lines with nearby context.
+- [x] Drop repeated system/developer/tool/AGENTS/skill/environment boilerplate before AI distill without copying OpenHuman GPL code or vendor rules.
+- [x] Dedupe repeated paragraph blocks and report counters for preserved signal lines, dropped boilerplate lines, and repeated blocks.
+- [x] Upgrade Codex, OpenClaw, and AgentMemory built-in rules to use experience-fidelity compression before bounded head/tail fallback.
+- [x] Add focused reducer tests proving reusable experience survives while low-value boilerplate is removed.
+- [x] Run focused tests, lint, and a real `daily run --progress` smoke.
+
 ## M17 AgentMemory Interop
 
 - [x] Add an agentmemory REST client with health, latest memories, smart-search, sessions, and remember operations.

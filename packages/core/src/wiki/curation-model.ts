@@ -404,6 +404,7 @@ export const WikiHardBlockReasonSchema = z.enum([
   "non_reusable_topic",
   "generic_applicability",
   "non_specific_action",
+  "provenance_mismatch",
   "incoherent_topic",
 ]);
 

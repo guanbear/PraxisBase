@@ -26,3 +26,4 @@
 - [x] Require review for single-source one-off run/report pages.
 - [x] Replace stale pending proposals for the same target path.
 - [x] Repair narrow AI markdown bullet artifacts before quality assessment.
+- [x] Reject promotion and lint stable pages when body provenance disagrees with structured source refs or hashes.

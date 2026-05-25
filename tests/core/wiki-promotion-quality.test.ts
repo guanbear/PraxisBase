@@ -101,6 +101,36 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
     assert.equal(result.passed, false);
   });
 
+  it("hard-blocks body provenance that does not match structured provenance", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: [
+        "# Test fix",
+        "",
+        "## Problem",
+        "Something broke.",
+        "",
+        "## Fix",
+        "Apply the fix.",
+        "",
+        "## Verification",
+        "Tests pass.",
+        "",
+        "## Reusable Lessons",
+        "Use the verified fix when the same signature appears.",
+        "",
+        "## Provenance",
+        "- codex:session:1 (sha256:b)",
+      ].join("\n"),
+      source_refs: ["codex:session:1"],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      provenance: [{ source_ref: "codex:session:1", source_hash: "sha256:a" }],
+    }));
+
+    assert.ok(result.hard_blocks.includes("provenance_mismatch" as any));
+    assert.equal(result.passed, false);
+  });
+
   it("hard-blocks unsafe target path", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       target_path: "../outside.md",
@@ -323,6 +353,7 @@ describe("assessWikiPromotionQuality - human required", () => {
 
   it("passes high-signal personal single-source with no related pages", () => {
     const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Provenance\n- codex:session:1 (sha256:a)",
       source_refs: ["codex:session:1"],
       source_hashes: ["sha256:a"],
       source_count: 1,

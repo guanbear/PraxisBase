@@ -26,6 +26,13 @@ Feature: Wiki synthesis quality and promotion
     Then the proposal has a hard block
     And personal auto-promotion does not promote it
 
+  Scenario: Body provenance must match structured provenance
+    Given a curated proposal body cites "codex:session:1 (sha256:b)"
+    And the structured proposal provenance says "codex:session:1" has hash "sha256:a"
+    When promotion quality is assessed
+    Then the proposal is marked "provenance_mismatch"
+    And wiki lint reports the page as an error if it reaches stable knowledge
+
   Scenario: Personal mode promotes only low-risk compiled pages
     Given a personal create proposal has problem, fix, verification, reusable lessons, provenance, confidence above 0.82, and required links
     When the personal review policy runs with promotion enabled

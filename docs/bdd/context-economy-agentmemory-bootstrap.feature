@@ -9,6 +9,19 @@ Feature: Context economy, agentmemory interop, and personal bootstrap
     And the AI distill input omits repeated progress noise
     And the daily report includes context economy saved bytes
 
+  Scenario: Preserve experience fidelity while dropping agent boilerplate
+    Given a personal Codex source containing repeated system prompts, AGENTS instructions, a failed command, a fix, a verification result, and source provenance
+    When context economy reduces the source with experience fidelity compression
+    Then the reduced text keeps the failed command, fix, verification result, reusable lesson, and provenance lines
+    And the reduced text omits repeated system, tool, and AGENTS boilerplate
+    And the reduction result reports preserved signal and dropped boilerplate counters
+
+  Scenario: Experience fidelity compression does not synthesize knowledge
+    Given a source item contains raw evidence but no explicit reusable lesson
+    When context economy reduces the source with experience fidelity compression
+    Then every non-marker line in the reduced text comes from the original source
+    And the AI distill layer remains responsible for proposing lessons or wiki candidates
+
   Scenario: Normalize source metadata before rule matching
     Given a source item contains command "pnpm test", stdout, stderr, exit code 1, source ref, and source hash
     When context economy classifies the item

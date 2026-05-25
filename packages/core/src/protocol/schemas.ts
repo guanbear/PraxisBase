@@ -904,6 +904,7 @@ export const ReducerActionTypeSchema = z.enum([
   "collapse_whitespace",
   "head_tail",
   "preserve_sections_matching",
+  "preserve_experience_fidelity",
   "truncate",
 ]);
 
@@ -927,6 +928,8 @@ export const ContextReducerRuleActionSchema = z.object({
   tail_lines: z.number().int().nonnegative().optional(),
   max_bytes: z.number().int().positive().optional(),
   section_pattern: z.string().optional(),
+  window_lines: z.number().int().nonnegative().optional(),
+  max_sections: z.number().int().positive().optional(),
 });
 
 export const ContextReducerRuleSchema = z.object({

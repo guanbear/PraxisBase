@@ -5,6 +5,7 @@ import { makeId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { appearsToBeRawLog } from "../protocol/redact.js";
 import { writeJson } from "../store/file-store.js";
+import { assessBodyProvenanceConsistency, type ProvenanceRef } from "./provenance-consistency.js";
 import { buildWikiGraph, type WikiPage } from "./resolver.js";
 
 export type WikiLintRule =
@@ -24,6 +25,7 @@ export type WikiLintRule =
   | "missing-source-summary"
   | "raw-copy-page"
   | "source-summary-promoted-as-guidance"
+  | "provenance_mismatch"
   | "missing-agent-use-section"
   | "stale-or-superseded-conflict"
   | "unresolved-typed-edge";
@@ -174,6 +176,7 @@ export async function runWikiLint(
 
   for (const page of input.pages) {
     const body = page.body_markdown ?? "";
+    const provenanceRefs = (page as WikiPage & { provenance_refs?: ProvenanceRef[] }).provenance_refs ?? [];
     if ((page.source_ids ?? []).length === 0) {
       findings.push({
         rule: "missing_source_hash",
@@ -218,6 +221,19 @@ export async function runWikiLint(
         page_id: page.id,
         message: "Source summary material must not be promoted as stable guidance",
       });
+    }
+    if (provenanceRefs.length > 0) {
+      const provenanceConsistency = assessBodyProvenanceConsistency(body, provenanceRefs);
+      if (!provenanceConsistency.ok) {
+        findings.push({
+          rule: "provenance_mismatch",
+          severity: "error",
+          path: pagePath(page),
+          page_id: page.id,
+          message: "Wiki body provenance disagrees with structured source provenance",
+          details: { mismatches: provenanceConsistency.mismatches },
+        });
+      }
     }
     if (!/^##\s+Agent Use\b/im.test(body)) {
       findings.push({

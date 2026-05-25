@@ -9,6 +9,7 @@ export interface WikiPage {
   maturity?: string;
   lifecycle?: string;
   source_ids?: string[];
+  provenance_refs?: Array<{ uri: string; hash?: string }>;
   claims?: unknown[];
   outbound_links?: string[];
   body_markdown?: string;

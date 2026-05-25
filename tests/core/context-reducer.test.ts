@@ -256,6 +256,109 @@ describe("context reducer protocol", () => {
       const input = "short";
       assert.equal(truncate(input, 1000), input);
     });
+
+    it("experience fidelity compression preserves reusable evidence while dropping agent boilerplate", () => {
+      const boilerplate = [
+        "Knowledge cutoff: 2024-06",
+        "You are Codex, a coding agent based on GPT-5.",
+        "# AGENTS.md instructions for /repo",
+        "Tool definitions: exec_command apply_patch update_plan",
+        "<environment_context>",
+        "  <cwd>/repo</cwd>",
+        "</environment_context>",
+      ].join("\n");
+      const repeatedProgress = repeatText("progress: scanned unchanged file", 80);
+      const evidence = [
+        "User goal: fix OpenClaw gateway restart after configuration changes.",
+        "Command: node packages/cli/dist/index.js daily run --mode personal --progress --json",
+        "*** Update File: packages/gateway/src/config.ts",
+        "ERROR: gateway kept old routing table after config reload",
+        "Fix: restart gateway after config changes and verify route table refresh.",
+        "Verification: smoke test passed after restart; report id run_gateway_restart_2026-05-25.",
+        "Reusable lesson: after OpenClaw config changes, restart the gateway before judging routing failures.",
+        "Provenance: openclaw-memory://memory/dreaming/rem/2026-05-25.md#abc123 sha256:feedface",
+      ].join("\n");
+      const text = [
+        boilerplate,
+        repeatedProgress,
+        evidence,
+        boilerplate,
+        repeatedProgress,
+      ].join("\n");
+
+      const result = reduceContext({
+        combined_text: text,
+        source_metadata: { agent: "codex" },
+        source_ref: "codex://session-experience",
+        source_hash: "sha256:experience",
+      }, {
+        rules: [{
+          id: "experience-fidelity-test",
+          family: "codex-session",
+          priority: 99,
+          confidence: 1,
+          pass_through_file_inspection: false,
+          preserve_failure_tail: false,
+          preserve_failure_tail_lines: 30,
+          actions: [
+            { type: "strip_ansi" },
+            { type: "preserve_experience_fidelity", window_lines: 1, max_sections: 40 },
+          ] as any,
+        }],
+        minReduceInputBytes: 100,
+      });
+
+      assert.equal(result.applied, true);
+      assert.ok(result.text.includes("User goal: fix OpenClaw gateway restart"), result.text);
+      assert.ok(result.text.includes("Command: node packages/cli/dist/index.js daily run"), result.text);
+      assert.ok(result.text.includes("*** Update File: packages/gateway/src/config.ts"), result.text);
+      assert.ok(result.text.includes("ERROR: gateway kept old routing table"), result.text);
+      assert.ok(result.text.includes("Fix: restart gateway"), result.text);
+      assert.ok(result.text.includes("Verification: smoke test passed"), result.text);
+      assert.ok(result.text.includes("Reusable lesson: after OpenClaw config changes"), result.text);
+      assert.ok(result.text.includes("Provenance: openclaw-memory://"), result.text);
+      assert.ok(!result.text.includes("Knowledge cutoff"), result.text);
+      assert.ok(!result.text.includes("Tool definitions:"), result.text);
+      assert.ok(!result.text.includes("# AGENTS.md instructions"), result.text);
+      assert.ok((result.counters.preserved_signal_lines ?? 0) >= 8);
+      assert.ok((result.counters.dropped_boilerplate_lines ?? 0) >= 6);
+      assert.ok((result.counters.deduped_repeated_blocks ?? 0) >= 1);
+    });
+
+    it("experience fidelity compression keeps only source lines and omission markers", () => {
+      const sourceLines = [
+        "ordinary setup line",
+        "ERROR: CLI timed out while waiting for wiki curate",
+        "Fix: lower concurrency and resume from cached distill chunks",
+        "Verification: daily run completed with ok=true",
+        "source_hash: sha256:abc123",
+      ];
+      const result = reduceContext({
+        combined_text: [
+          "You are Codex, a coding agent based on GPT-5.",
+          ...sourceLines,
+          repeatText("progress: no signal", 40),
+        ].join("\n"),
+      }, {
+        rules: [{
+          id: "experience-fidelity-no-synthesis",
+          family: "generic",
+          priority: 99,
+          confidence: 1,
+          pass_through_file_inspection: false,
+          preserve_failure_tail: false,
+          preserve_failure_tail_lines: 30,
+          actions: [{ type: "preserve_experience_fidelity", window_lines: 0, max_sections: 20 } as any],
+        }],
+        minReduceInputBytes: 10,
+      });
+
+      assert.equal(result.applied, true);
+      const allowed = new Set(sourceLines);
+      for (const line of result.text.split(/\r?\n/).filter(Boolean)) {
+        assert.ok(allowed.has(line) || /^\.\.\. \[\d+/.test(line), `unexpected synthesized line: ${line}`);
+      }
+    });
   });
 
   describe("specificity scoring", () => {

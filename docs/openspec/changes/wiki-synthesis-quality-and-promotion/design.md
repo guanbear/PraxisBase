@@ -78,8 +78,11 @@ If an AI response is safe but fails non-security guards such as title, body shap
 - duplicate source hash across create proposals;
 - missing required wiki structure;
 - create action when an existing page was found.
+- body `## Provenance` entries that cite a uri/hash pair not present in structured proposal provenance.
 
 Missing required structure means the body lacks one of the required section groups above. The existing `body_missing_wiki_structure` reason is used to avoid schema churn.
+
+Structured provenance is the authority. The model may render provenance text for humans, but promotion and lint must compare body provenance against structured source refs and hashes. A generated page whose body claims `source_ref (sha256:b)` while frontmatter/proposal provenance says the same `source_ref` has `sha256:a` is a hard block, not a cosmetic issue.
 
 `missing_wikilinks` means the proposal lacks a resolver-valid link to a supplied required or related stable page. A body that merely contains any `[[...]]` token does not satisfy the gate when the supplied related page slugs do not appear.
 
@@ -119,5 +122,7 @@ When related pages exist and proposals are promoted, graph links must be greater
 Broken link count must not increase because synthesis used title-only slugs where canonical stable page ids were available.
 
 The smoke also fails quality review when all or most promoted pages are single-source islands, when JSON-like list items survive into stable wiki bodies, or when Codex/OpenClaw initialization records become user-facing wiki pages.
+
+The smoke also fails when generated stable pages have body provenance that disagrees with structured sources. This protects the llm-wiki contract that raw evidence remains auditable through provenance rather than becoming untraceable prose.
 
 Personal daily `ai_distill.human_required` is an input privacy count, not a wiki review count. In personal mode it commonly means chunks were kept out of AI and wiki synthesis because deterministic pre-AI privacy checks saw concrete secret-like material. Team mode must remain strict; any future personal relaxation must redact locally before AI rather than sending suspicious text upstream.
