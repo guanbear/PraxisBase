@@ -151,7 +151,7 @@ function isReusableTopicTitle(title: string, targetPath?: string): boolean {
   if (normalized.length < 8) return false;
   const processStatus = /\b(successfully fixed|re approved|subsequent commit|follow up commit|approval passed|review passed|fixed and approved|staged sign off|signoff program|automated pr inspection run|run id|specific prs)\b/i;
   const sourceArtifact = /\b(sha256|raw vault|raw ref|wiki curated|candidate|capture codex|capture openclaw|text capture|source summary|agent distilled dreaming candidates|dreaming candidates)\b/i;
-  const oneOffRunStatus = /\b(test run|smoke report|acceptance test run)\b.*\b(occurred|completed|interacted|recorded|tracking)\b/i;
+  const oneOffRunStatus = /\b(test run|smoke report|acceptance test run|stability smoke)\b.*\b(occurred|completed|interacted|recorded|tracking|passed|succeeded|failed)\b/i;
   const runSpecificTitle = /\brun\s+[a-z0-9][a-z0-9 ]*\d[a-z0-9 ]{5,}\b/i;
   const mostlyHashOrRun = /\b[0-9a-f]{7,}\b/i.test(title) && /\b(commit|sha|run|id)\b/i.test(title);
   return !processStatus.test(normalized) && !sourceArtifact.test(normalized) && !oneOffRunStatus.test(normalized) && !runSpecificTitle.test(normalized) && !mostlyHashOrRun;
@@ -232,9 +232,10 @@ function isOneOffRunReport(proposal: CuratedWikiProposal): boolean {
   const hasExplicitRunId = /\brun[\s_-]?id\s*[:=]?\s*[a-z0-9][a-z0-9._-]{5,}\b/i.test(text);
   const hasReportTerm = /\b(?:acceptance[-_\s]?tests?|stability[-_\s]?smoke|smoke[-_\s]?tests?|run[-_\s]?report|test[-_\s]?report|replay[-_\s]?report|workflow[-_\s]?run|ci[-_\s]?run)\b/i.test(text);
   const hasSourceReportNamespace = /\b(?:report|reports|run|runs|workflow|job|build)[:/_-]+[a-z0-9._-]*\d[a-z0-9._-]{5,}\b/i.test(text);
+  const hasDatedReportArtifact = /\b(?:log|report|reports)[:/_-]+[a-z0-9._/-]*(?:20\d{2}[-_/]\d{2}[-_/]\d{2}|20\d{6})[a-z0-9._/-]*(?:report|smoke|test|run)\b/i.test(text);
   const hasMixedArtifactId = /\b[a-z][a-z0-9_-]*\d[a-z0-9_-]{5,}\b/i.test(text);
   const hasUuid = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i.test(text);
-  return hasExplicitRunId || (hasReportTerm && (hasMixedArtifactId || hasSourceReportNamespace || hasUuid));
+  return hasExplicitRunId || (hasReportTerm && (hasMixedArtifactId || hasSourceReportNamespace || hasDatedReportArtifact || hasUuid));
 }
 
 // Main assessment function.

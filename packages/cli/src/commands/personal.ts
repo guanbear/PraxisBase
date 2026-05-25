@@ -5,12 +5,12 @@ import { stat } from "node:fs/promises";
 import { bootstrapCommand } from "./bootstrap.js";
 import { runDailyExperience } from "@praxisbase/core/experience/daily.js";
 import { addExperienceSource, listExperienceSources } from "@praxisbase/core/experience/source-config.js";
-import { createAgentMemoryClient } from "@praxisbase/core/experience/agentmemory-adapter.js";
 import { buildAgentToolManifest, writeAgentToolManifest } from "@praxisbase/core/agent-access/manifest.js";
 import { generateSkill } from "@praxisbase/core/agent-access/skill.js";
 import { readAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { writeText } from "@praxisbase/core/store/file-store.js";
+import { diagnoseAgentMemorySource } from "./agentmemory-diagnostics.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -158,18 +158,15 @@ async function doctor(root: string): Promise<{ ok: boolean; checks: PersonalChec
 
   for (const source of sources.filter((candidate) => candidate.source_type === "agentmemory")) {
     try {
-      const client = createAgentMemoryClient(source, {
+      const agentMemoryChecks = await diagnoseAgentMemorySource(source, {
         authorityMode: "personal-local",
         fetchImpl: fetch,
         env: process.env as Record<string, string | undefined>,
       });
-      const health = await client.health();
-      checks.push({
-        id: `agentmemory:${source.name}`,
-        ok: health.ok,
-        severity: health.ok ? "info" : "warning",
-        message: health.ok ? `AgentMemory daemon healthy (${health.status ?? "ok"}).` : `AgentMemory daemon unhealthy: ${health.error ?? "unknown error"}`,
-      });
+      checks.push(...agentMemoryChecks.map((check) => ({
+        ...check,
+        id: `agentmemory:${source.name}:${check.id.replace(/^agentmemory_/, "")}`,
+      })));
     } catch (error) {
       checks.push({
         id: `agentmemory:${source.name}`,

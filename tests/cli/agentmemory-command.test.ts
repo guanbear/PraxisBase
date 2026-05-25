@@ -36,6 +36,8 @@ describe("agentmemory doctor", () => {
       assert.equal(parsed.checks[0].ok, true);
       assert.equal(parsed.checks[0].severity, "info");
       assert.match(parsed.checks[0].message, /healthy/i);
+      assert.equal(parsed.checks[1].id, "agentmemory_smart_search");
+      assert.equal(parsed.checks[1].ok, true);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -61,6 +63,32 @@ describe("agentmemory doctor", () => {
       assert.equal(parsed.checks[0].ok, false);
       assert.equal(parsed.checks[0].severity, "warning");
       assert.match(parsed.checks[0].message, /unhealthy/i);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("explains the common iii-without-agentmemory-routes 404 state", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-am-doctor-404-"));
+    await sourceCommand(root, "add", {
+      name: "am-routes-missing",
+      agent: "agentmemory",
+      type: "agentmemory",
+      scope: "personal",
+      url: "http://localhost:9090",
+      json: true,
+    });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response("", { status: 404, statusText: "Not Found" })) as typeof fetch;
+    try {
+      const output = await agentmemoryCommand(root, "doctor", { json: true });
+      const parsed = JSON.parse(output);
+      assert.equal(parsed.ok, true);
+      assert.equal(parsed.checks[0].ok, false);
+      assert.match(parsed.checks[0].message, /routes are not registered/i);
+      assert.match(parsed.checks[0].message, /node dist\/index\.mjs/);
+      assert.equal(parsed.checks.length, 1);
     } finally {
       globalThis.fetch = originalFetch;
     }

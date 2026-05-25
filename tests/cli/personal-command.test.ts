@@ -85,7 +85,8 @@ describe("personal command", () => {
       assert.equal(parsed.ok, true);
       assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "sources" && check.ok));
       assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "site" && check.ok));
-      assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "agentmemory:personal-agentmemory" && check.ok));
+      assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "agentmemory:personal-agentmemory:health" && check.ok));
+      assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "agentmemory:personal-agentmemory:smart_search" && check.ok));
     } finally {
       globalThis.fetch = originalFetch;
     }

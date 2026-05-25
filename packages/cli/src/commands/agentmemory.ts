@@ -1,9 +1,9 @@
 import { listExperienceSources } from "@praxisbase/core/experience/source-config.js";
-import { createAgentMemoryClient } from "@praxisbase/core/experience/agentmemory-adapter.js";
 import { resolveAgentMemorySource } from "@praxisbase/core/experience/agentmemory-adapter.js";
 import { exportAgentMemory } from "@praxisbase/core/experience/agentmemory-export.js";
 import { writeExperienceEnvelope } from "@praxisbase/core/experience/source-adapters.js";
 import type { ExperienceSourceConfig } from "@praxisbase/core";
+import { diagnoseAgentMemorySource } from "./agentmemory-diagnostics.js";
 
 export interface AgentMemoryCommandOptions {
   source?: string;
@@ -38,27 +38,24 @@ export async function agentmemoryCommand(root: string, subcommand: string, optio
   try {
     if (subcommand === "doctor") {
       const source = await findSource(root, options.source);
-      const checks: Array<{ id: string; ok: boolean; severity: "info" | "warning" | "error"; message: string }> = [];
       try {
-        const client = createAgentMemoryClient(source, {
+        const checks = await diagnoseAgentMemorySource(source, {
           authorityMode: "personal-local",
           fetchImpl: fetch,
           env: process.env as Record<string, string | undefined>,
         });
-        const health = await client.health();
-        checks.push(health.ok
-          ? { id: "agentmemory_health", ok: true, severity: "info", message: `AgentMemory daemon healthy (${health.status ?? "ok"})` }
-          : { id: "agentmemory_health", ok: false, severity: "warning", message: `AgentMemory daemon unhealthy: ${health.error ?? "unknown error"}` });
+        if (options.json) return JSON.stringify({ ok: true, source: { name: source.name, url: source.url }, checks }, null, 2);
+        return checks.map((check) => `${check.ok ? "OK" : "WARN"} ${check.id}: ${check.message}`).join("\n") || `AgentMemory ok: ${source.name}`;
       } catch (error) {
-        checks.push({
+        const checks = [{
           id: "agentmemory_health",
           ok: false,
-          severity: "warning",
+          severity: "warning" as const,
           message: `AgentMemory daemon check failed: ${error instanceof Error ? error.message : String(error)}`,
-        });
+        }];
+        if (options.json) return JSON.stringify({ ok: true, source: { name: source.name, url: source.url }, checks }, null, 2);
+        return checks.map((check) => `${check.ok ? "OK" : "WARN"} ${check.id}: ${check.message}`).join("\n");
       }
-      if (options.json) return JSON.stringify({ ok: true, source: { name: source.name, url: source.url }, checks }, null, 2);
-      return checks.map((check) => `${check.ok ? "OK" : "WARN"} ${check.id}: ${check.message}`).join("\n") || `AgentMemory ok: ${source.name}`;
     }
 
     if (subcommand === "import") {

@@ -4,6 +4,7 @@ import {
   readExperienceSource,
   removeExperienceSource,
 } from "@praxisbase/core/experience/source-config.js";
+import { diagnoseAgentMemorySource } from "./agentmemory-diagnostics.js";
 import type {
   ExperienceScopeHint,
   ExperienceSourceAgent,
@@ -76,16 +77,11 @@ export async function sourceCommand(root: string, subcommand: string, options: S
       const checks: Array<{ id: string; ok: boolean; severity: "info" | "warning" | "error"; message: string }> = [];
       if (source.source_type === "agentmemory") {
         try {
-          const { createAgentMemoryClient } = await import("@praxisbase/core/experience/agentmemory-adapter.js");
-          const client = createAgentMemoryClient(source, {
+          checks.push(...await diagnoseAgentMemorySource(source, {
             authorityMode: "personal-local",
             fetchImpl: fetch,
             env: process.env as Record<string, string | undefined>,
-          });
-          const health = await client.health();
-          checks.push(health.ok
-            ? { id: "agentmemory_health", ok: true, severity: "info", message: `AgentMemory daemon healthy (${health.status ?? "ok"})` }
-            : { id: "agentmemory_health", ok: false, severity: "warning", message: `AgentMemory daemon unhealthy: ${health.error ?? "unknown error"}` });
+          }));
         } catch (error) {
           checks.push({
             id: "agentmemory_health",

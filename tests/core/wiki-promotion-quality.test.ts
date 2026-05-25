@@ -526,6 +526,46 @@ describe("assessWikiPromotionQuality - human required", () => {
 
     assert.ok(result.human_required.includes("one_off_run_report"));
   });
+
+  it("hard-blocks one-off passed stability smoke run titles", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      title: "The test run passed, specifically noting a successful post-deploy recovery restart",
+      target_path: "kb/known-fixes/the-test-run-passed-specifically-noting-a-successful-post-deploy-recovery-restart.md",
+      summary: "One OpenClaw stability report said a post-deploy recovery restart passed.",
+      body_markdown: [
+        "# The test run passed, specifically noting a successful post-deploy recovery restart",
+        "",
+        "## When to Use",
+        "Use this guidance when verifying system stability and resilience post-deployment.",
+        "",
+        "## Context",
+        "Agent openclaw executed a stability smoke test and the test run passed.",
+        "",
+        "## What To Do",
+        "Perform a restart.post_deploy_recovery action as part of the standard stability smoke test execution.",
+        "",
+        "## Verify",
+        "Confirm the stability smoke test has executed and passed.",
+        "",
+        "## Reusable Lessons",
+        "Successful completion of this test with no failure codes indicates provider resilience.",
+        "",
+        "## Agent Use",
+        "Use this page when:\n- Reviewing this exact stability smoke report.\n\nApply it by:\n- Check the source report.\n\nVerify by:\n- Confirm the run passed.",
+        "",
+        "## Provenance",
+        "- log://openclaw/2026-05-22-10-03-52-stability-report. (sha256:a)",
+      ].join("\n"),
+      source_refs: ["log://openclaw/2026-05-22-10-03-52-stability-report."],
+      source_hashes: ["sha256:a"],
+      source_count: 1,
+      provenance: [{ source_ref: "log://openclaw/2026-05-22-10-03-52-stability-report.", source_hash: "sha256:a" }],
+    }));
+
+    assert.ok(result.hard_blocks.includes("non_reusable_topic"));
+    assert.ok(result.human_required.includes("one_off_run_report"));
+    assert.equal(result.passed, false);
+  });
 });
 
 describe("promotionTimeGuard", () => {
