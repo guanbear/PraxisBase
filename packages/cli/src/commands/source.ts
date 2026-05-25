@@ -25,6 +25,7 @@ export interface SourceCommandOptions {
   host?: string;
   url?: string;
   remote?: string;
+  bearerTokenEnv?: string;
   json?: boolean;
 }
 
@@ -53,6 +54,7 @@ export async function sourceCommand(root: string, subcommand: string, options: S
         host: options.host,
         url: options.url,
         remote: options.remote,
+        bearerTokenEnv: options.bearerTokenEnv,
       });
       return options.json ? JSON.stringify({ ok: true, source }, null, 2) : `Source added: ${source.name}`;
     }
@@ -71,7 +73,33 @@ export async function sourceCommand(root: string, subcommand: string, options: S
     if (subcommand === "doctor") {
       if (!options.name) throw new Error("SOURCE_CONFIG_INVALID: source doctor requires name.");
       const source = await readExperienceSource(root, options.name);
-      return options.json ? JSON.stringify({ ok: true, source, checks: [] }, null, 2) : `Source ok: ${source.name}`;
+      const checks: Array<{ id: string; ok: boolean; severity: "info" | "warning" | "error"; message: string }> = [];
+      if (source.source_type === "agentmemory") {
+        try {
+          const { createAgentMemoryClient } = await import("@praxisbase/core/experience/agentmemory-adapter.js");
+          const client = createAgentMemoryClient(source, {
+            authorityMode: "personal-local",
+            fetchImpl: fetch,
+            env: process.env as Record<string, string | undefined>,
+          });
+          const health = await client.health();
+          checks.push(health.ok
+            ? { id: "agentmemory_health", ok: true, severity: "info", message: `AgentMemory daemon healthy (${health.status ?? "ok"})` }
+            : { id: "agentmemory_health", ok: false, severity: "warning", message: `AgentMemory daemon unhealthy: ${health.error ?? "unknown error"}` });
+        } catch (error) {
+          checks.push({
+            id: "agentmemory_health",
+            ok: false,
+            severity: "warning",
+            message: `AgentMemory daemon check failed: ${error instanceof Error ? error.message : String(error)}`,
+          });
+        }
+      }
+      if (options.json) return JSON.stringify({ ok: true, source, checks }, null, 2);
+      if (checks.length > 0) {
+        return checks.map((check) => `${check.ok ? "OK" : "WARN"} ${check.id}: ${check.message}`).join("\n");
+      }
+      return `Source ok: ${source.name}`;
     }
 
     throw new Error(`SOURCE_CONFIG_INVALID: Unknown subcommand "source ${subcommand}".`);

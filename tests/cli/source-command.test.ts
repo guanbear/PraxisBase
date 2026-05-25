@@ -65,4 +65,79 @@ describe("source CLI command", () => {
     const listOutput = await sourceCommand(root, "list", { json: true });
     assert.equal(JSON.parse(listOutput).sources.length, 0);
   });
+
+  it("adds an AgentMemory source with bearer token env config", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-agentmemory-"));
+    const addOutput = await sourceCommand(root, "add", {
+      name: "test-agentmemory",
+      agent: "agentmemory",
+      type: "agentmemory",
+      scope: "personal",
+      url: "http://localhost:9090",
+      bearerTokenEnv: "MY_AGENTMEMORY_TOKEN",
+      json: true,
+    });
+
+    const added = JSON.parse(addOutput);
+    assert.equal(added.ok, true);
+    assert.equal(added.source.agent, "agentmemory");
+    assert.equal(added.source.source_type, "agentmemory");
+    assert.equal(added.source.bearer_token_env, "MY_AGENTMEMORY_TOKEN");
+
+    const listOutput = await sourceCommand(root, "list", { json: true });
+    const listed = JSON.parse(listOutput);
+    assert.equal(listed.sources[0].name, "test-agentmemory");
+  });
+
+  it("source doctor returns a healthy check for AgentMemory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-agentmemory-doctor-"));
+    await sourceCommand(root, "add", {
+      name: "test-am-doctor",
+      agent: "agentmemory",
+      type: "agentmemory",
+      scope: "personal",
+      url: "http://localhost:9090",
+      json: true,
+    });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(JSON.stringify({ status: "ok" }))) as typeof fetch;
+    try {
+      const doctorOutput = await sourceCommand(root, "doctor", { name: "test-am-doctor", json: true });
+      const doctor = JSON.parse(doctorOutput);
+      assert.equal(doctor.ok, true);
+      assert.equal(doctor.checks[0].id, "agentmemory_health");
+      assert.equal(doctor.checks[0].ok, true);
+      assert.equal(doctor.checks[0].severity, "info");
+      assert.match(doctor.checks[0].message, /healthy/i);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("source doctor returns an unhealthy warning for AgentMemory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-agentmemory-down-"));
+    await sourceCommand(root, "add", {
+      name: "test-am-doctor2",
+      agent: "agentmemory",
+      type: "agentmemory",
+      scope: "personal",
+      url: "http://localhost:9090",
+      json: true,
+    });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response("error", { status: 500, statusText: "Internal Server Error" })) as typeof fetch;
+    try {
+      const doctorOutput = await sourceCommand(root, "doctor", { name: "test-am-doctor2", json: true });
+      const doctor = JSON.parse(doctorOutput);
+      assert.equal(doctor.ok, true);
+      assert.equal(doctor.checks[0].id, "agentmemory_health");
+      assert.equal(doctor.checks[0].ok, false);
+      assert.equal(doctor.checks[0].severity, "warning");
+      assert.match(doctor.checks[0].message, /unhealthy/i);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });

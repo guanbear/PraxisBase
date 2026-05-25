@@ -257,4 +257,52 @@ describe("experience source adapters", () => {
     assert.equal(authEnvelope?.problem_signature, "openclaw:claude-auth-expired");
     assert.match(slackEnvelope?.redacted_summary ?? "", /Slack delivery recovered/);
   });
+
+  it("dispatches agentmemory source type to the dedicated adapter", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-agentmemory-"));
+    const source = await addExperienceSource(root, {
+      name: "test-agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:9090",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-25T01:00:00.000Z",
+      fetchImpl: (async (input) => {
+        if (String(input).includes("health")) {
+          return new Response(JSON.stringify({ status: "ok" }));
+        }
+        return new Response(JSON.stringify({
+          memories: [{ id: "mem-1", title: "AgentMemory test record", content: "Useful experience about debugging" }],
+        }));
+      }) as typeof fetch,
+    });
+
+    assert.equal(result.status, "completed");
+    assert.equal(result.envelopes.length, 1);
+    assert.equal(result.envelopes[0].agent, "agentmemory");
+    assert.match(result.envelopes[0].source_ref, /^agentmemory:\/\/memories\//);
+  });
+
+  it("blocks agentmemory personal-scope sources in team-git mode through resolveExperienceSource", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-agentmemory-team-"));
+    const source = await addExperienceSource(root, {
+      name: "test-agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:9090",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "team-git",
+    });
+
+    assert.equal(result.status, "failed");
+    assert.equal(result.envelopes.length, 0);
+    assert.ok(result.warnings.some((warning) => warning.includes("personal_agentmemory_blocked_in_team_mode")));
+  });
 });

@@ -11,6 +11,7 @@ export const AgentProfileSchema = z.enum([
   "openclaw",
   "hermes",
   "openhuman",
+  "agentmemory",
   "generic",
 ]);
 export const AgentTypeSchema = z.enum([
@@ -510,10 +511,11 @@ export const ExperienceSourceParserSchema = z.enum([
   "openclaw-export",
   "openclaw-log",
   "claude-code-repair-log",
+  "agentmemory-memory",
 ]);
 
-export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code"]);
-export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api"]);
+export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code", "agentmemory"]);
+export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api", "agentmemory"]);
 export const ExperienceScopeHintSchema = z.enum(["personal", "project", "team", "org"]);
 export const ExperiencePrivacyVerdictSchema = z.enum(["allow", "reject", "human_required"]);
 export const ExperienceOutcomeSchema = z.enum(["success", "failed", "partial", "unknown"]);
@@ -534,6 +536,7 @@ export const ExperienceSourceConfigSchema = z.object({
   host: z.string().optional(),
   url: z.string().optional(),
   remote: z.string().optional(),
+  bearer_token_env: z.string().min(1).optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });

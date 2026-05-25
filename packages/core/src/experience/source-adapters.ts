@@ -17,6 +17,7 @@ import { detectOpenClawProblemSignature } from "../repair/signature.js";
 import { evaluateExperiencePrivacy, type EvaluateExperiencePrivacyInput } from "./privacy-policy.js";
 import type { GitCommandRunner } from "./git-workflow.js";
 import { extractCodexExperienceText, isUsefulCodexExperience } from "./codex-signal.js";
+import { resolveAgentMemorySource } from "./agentmemory-adapter.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -428,6 +429,9 @@ async function resolveSourceItems(
   if (source.source_type === "openclaw-api") {
     return fetchOpenClawApiItems(source, options);
   }
+  if (source.source_type === "agentmemory") {
+    return { items: [], warnings: ["agentmemory source is resolved by the dedicated adapter"] };
+  }
   return { items: [], warnings: [`unsupported_source_type: ${source.source_type satisfies never}`] };
 }
 
@@ -436,6 +440,10 @@ export async function resolveExperienceSource(
   source: ExperienceSourceConfig,
   options: ResolveExperienceSourceOptions,
 ): Promise<ResolvedExperienceSource> {
+  if (source.source_type === "agentmemory") {
+    return resolveAgentMemorySource(root, source, options);
+  }
+
   const limit = options.limit ?? DEFAULT_LIMIT;
   const warnings: string[] = [];
   let resolvedItems: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }> = [];

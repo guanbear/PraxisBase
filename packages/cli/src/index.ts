@@ -328,15 +328,16 @@ program
   .option("--host <host>")
   .option("--url <url>")
   .option("--remote <remote>")
+  .option("--bearer-token-env <name>", "environment variable name containing bearer token")
   .option("--json")
   .action(async (
     sub: string,
     name: string | undefined,
     options: {
-      agent?: "codex" | "openclaw" | "claude-code";
-      type?: "local" | "file" | "git" | "ssh" | "http" | "openclaw-api";
+      agent?: "codex" | "openclaw" | "claude-code" | "agentmemory";
+      type?: "local" | "file" | "git" | "ssh" | "http" | "openclaw-api" | "agentmemory";
       channel?: "local" | "terminal" | "feishu" | "ci" | "gitlab" | "log-system" | "unknown";
-      parser?: "codex-session" | "openclaw-export" | "openclaw-log" | "claude-code-repair-log";
+      parser?: "codex-session" | "openclaw-export" | "openclaw-log" | "claude-code-repair-log" | "agentmemory-memory";
       scope?: "personal" | "project" | "team" | "org";
       repo?: string;
       ref?: string;
@@ -344,10 +345,11 @@ program
       host?: string;
       url?: string;
       remote?: string;
+      bearerTokenEnv?: string;
       json?: boolean;
     }
   ) => {
-    console.log(await sourceCommand(process.cwd(), sub, { ...options, name }));
+    console.log(await sourceCommand(process.cwd(), sub, { ...options, name, bearerTokenEnv: options.bearerTokenEnv }));
   });
 
 program

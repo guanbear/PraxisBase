@@ -225,6 +225,9 @@ function parseExperienceEnvelope(content: string): {
     if (!parsed.success) {
       return undefined;
     }
+    if (parsed.data.agent !== "codex" && parsed.data.agent !== "openclaw" && parsed.data.agent !== "claude-code") {
+      return undefined;
+    }
     const kind = parsed.data.agent === "codex"
       ? "codex_session"
       : parsed.data.agent === "claude-code"

@@ -17,8 +17,8 @@
 
 ## M17 AgentMemory Interop
 
-- [ ] Add an agentmemory REST client with health, latest memories, smart-search, sessions, and remember operations.
-- [ ] Extend source config and source CLI for `source_type=agentmemory`.
+- [x] Add an agentmemory REST client with health, latest memories, smart-search, sessions, and remember operations.
+- [x] Extend source config and source CLI for `source_type=agentmemory`.
 - [ ] Add `praxisbase agentmemory doctor/import/export` commands.
 - [ ] Add optional `context get --with-agentmemory` sidecar retrieval with PraxisBase stable wiki authority ranking first.
 

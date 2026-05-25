@@ -29,6 +29,8 @@ export * from "./experience/chunking.js";
 export * from "./experience/context-reducer.js";
 export * from "./experience/context-reducer-rules.js";
 export * from "./experience/source-adapters.js";
+export * from "./experience/agentmemory-client.js";
+export * from "./experience/agentmemory-adapter.js";
 export * from "./experience/daily.js";
 export * from "./experience/harvest.js";
 export * from "./experience/git-workflow.js";

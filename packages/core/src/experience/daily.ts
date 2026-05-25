@@ -874,7 +874,10 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       for (const envelope of blocked) {
         outputs.push(await writePrivacyException(root, envelope, now));
       }
-      if (writtenEnvelopePaths.length > 0) {
+      if (
+        writtenEnvelopePaths.length > 0 &&
+        (source.agent === "codex" || source.agent === "openclaw" || source.agent === "claude-code")
+      ) {
         const ingestReport = await ingestAgentMemory(root, {
           agent: source.agent,
           sources: writtenEnvelopePaths.map((path) => join(root, path)),

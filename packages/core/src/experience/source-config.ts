@@ -26,6 +26,7 @@ export interface AddExperienceSourceInput {
   host?: string;
   url?: string;
   remote?: string;
+  bearerTokenEnv?: string;
   now?: string;
 }
 
@@ -35,6 +36,12 @@ function assertNoConfigCredential(input: AddExperienceSourceInput): void {
   if (/(?:token|secret|password|authorization|bearer|cookie)(?:\s*[:=]|\s+\S+)/i.test(joined) || /https?:\/\/[^/\s]+:[^@\s]+@/i.test(joined)) {
     throw new Error("SOURCE_CONFIG_CONTAINS_CREDENTIAL: source configs must not store credentials.");
   }
+  if (input.bearerTokenEnv && !/^[A-Z_][A-Z0-9_]*$/i.test(input.bearerTokenEnv)) {
+    throw new Error("SOURCE_CONFIG_CONTAINS_CREDENTIAL: source configs may store bearer token environment variable names only.");
+  }
+  if (input.bearerTokenEnv && /^(?:Bearer\s+|eyJ|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.)/.test(input.bearerTokenEnv)) {
+    throw new Error("SOURCE_CONFIG_CONTAINS_CREDENTIAL: source configs may store bearer token environment variable names only.");
+  }
 }
 
 export function inferExperienceSourceParser(
@@ -43,6 +50,7 @@ export function inferExperienceSourceParser(
   parser?: ExperienceSourceParser
 ): ExperienceSourceParser {
   if (parser) return parser;
+  if (agent === "agentmemory") return "agentmemory-memory";
   if (agent === "codex") return "codex-session";
   if (agent === "claude-code") return "claude-code-repair-log";
   if (agent === "openclaw" && sourceType === "local") return "openclaw-log";
@@ -72,6 +80,7 @@ export async function addExperienceSource(root: string, input: AddExperienceSour
     host: input.host,
     url: input.url,
     remote: input.remote,
+    bearer_token_env: input.bearerTokenEnv,
     created_at: now,
     updated_at: now,
   });

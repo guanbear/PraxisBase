@@ -2,7 +2,7 @@ export const PROTOCOL_VERSION = "0.1" as const;
 
 export type Scope = "personal" | "project" | "team" | "global" | "org";
 export type Layer = "preference" | "convention" | "technical" | "domain" | "project";
-export type AgentProfile = "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "generic";
+export type AgentProfile = "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "agentmemory" | "generic";
 export type AgentType =
   | "temporary_repair_agent"
   | "persistent_bot"
