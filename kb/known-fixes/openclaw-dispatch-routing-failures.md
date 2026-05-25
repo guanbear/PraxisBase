@@ -103,6 +103,23 @@ When tasks fail to produce expected analysis or execution results, verify the he
 * **Structural Integrity**: Structural metadata (route, transport, session IDs) must be explicitly asserted and validated, not just the message content.
 * **Hash Consistency**: Ensure canonical hash generation is deterministic across the dispatch and spawn phases to prevent validation failures.
 
+## Agent Use
+Use this page when:
+- OpenClaw or OctoClaw dispatch fails, routes to `reply` instead of `delegate`, reports `Runner: missing`, or shows `stickyResult`/spawn hash errors.
+
+Apply it by:
+- Check dispatch/orchestration health before debugging individual task content.
+- Inspect route, transport, session ids, spawn payloads, and canonical hashes.
+- Send an ACK before any long dispatch investigation.
+
+Verify by:
+- Confirm dispatch cycles complete without `stickyResult` or parameter validation errors.
+- Confirm smoke tests pass structural route, footer, transport, and spawn assertions.
+- Confirm the task queue reflects active, queued, or recently completed work.
+
+Do not use it when:
+- The only failure is missing replay data or stale gateway configuration.
+
 ## Provenance
 
 * OpenClaw stability reports and smoke tests (2026-05-20).

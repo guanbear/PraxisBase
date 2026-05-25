@@ -7,6 +7,7 @@ import {
 } from "./curation-model.js";
 import { isAllowedWikiPatchPath, containsPrivateMaterial } from "./lint.js";
 import { assessBodyProvenanceConsistency } from "./provenance-consistency.js";
+import { hasAgentUseGuidance } from "./agent-use.js";
 import { appearsToBeRawLog } from "../protocol/redact.js";
 
 /** Context for quality assessment beyond the proposal itself. */
@@ -109,6 +110,7 @@ function hasWikiStructure(body: string): boolean {
     && hasSection(body, ["Fix", "Steps", "Procedure", "Decision", "Operating Rule", "Applicability", "What To Do"])
     && hasSection(body, ["Verification", "Verify"])
     && hasSection(body, ["Reusable Lessons"])
+    && hasSection(body, ["Agent Use"])
     && hasSection(body, ["Provenance", "Sources"]);
 }
 
@@ -329,6 +331,9 @@ export function assessWikiPromotionQuality(
   }
   if (!hasSpecificAction(body, proposal.title)) {
     hardBlocks.push("non_specific_action");
+  }
+  if (!hasAgentUseGuidance(body)) {
+    hardBlocks.push("missing_agent_use");
   }
 
   // Human-required gates can be promoted only after human review.

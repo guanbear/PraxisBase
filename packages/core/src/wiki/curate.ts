@@ -15,6 +15,7 @@ import { buildWikiCuratorPrompt, type SynthesisContext, type StructuredLink, typ
 import { decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
 import { assessWikiPromotionQuality } from "./promotion-quality.js";
 import { replaceBodyProvenanceSection } from "./provenance-consistency.js";
+import { hasAgentUseGuidance, renderAgentUseSection, replaceOrInsertAgentUseSection } from "./agent-use.js";
 import {
   CuratedWikiProposalSchema,
   WikiCurationReportSchema,
@@ -712,6 +713,13 @@ function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], t
     "## Reusable Lessons",
     ...(lessons.length > 0 ? lessons.map((item) => `- ${item}`) : ["- Keep this page updated when the same signature appears again."]),
     "",
+    renderAgentUseSection({
+      title,
+      whenToUse,
+      actions,
+      verification,
+    }),
+    "",
     "## Provenance",
     ...cluster.source_refs.map((ref, index) => `- ${ref} (${cluster.source_hashes[index] ?? "unknown-hash"})`),
     "",
@@ -839,6 +847,24 @@ function ensureReusableLessonsSection(body: string, evidence: WikiEvidenceItem[]
   return `${body.replace(/\s+$/, "")}\n${lines.join("\n")}\n`;
 }
 
+function ensureAgentUseSection(body: string, cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[]): string {
+  if (hasAgentUseGuidance(body)) return body;
+  const actions = uniq(evidence.flatMap((item) => item.actions)).slice(0, 5);
+  const verification = uniq(evidence.flatMap((item) => item.verification)).slice(0, 4);
+  const summaryLines = evidence.flatMap((item) => (item.problem ?? item.summary).split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
+  const whenToUse = summaryLines
+    .find((line) => /\b(fail|failure|error|timeout|stuck|slow|expired|missing|silent|change|restart|auth|login|sync|dispatch|配置|失败|超时|重启|认证|登录)\b/i.test(line))
+    ?? summaryLines[0]
+    ?? cluster.normalized_title;
+  const section = renderAgentUseSection({
+    title: titleFromCluster(cluster),
+    whenToUse,
+    actions,
+    verification,
+  });
+  return replaceOrInsertAgentUseSection(body, section);
+}
+
 function normalizeMarkdownBulletArtifacts(body: string): string {
   const lines = body.split("\n");
   let inCodeBlock = false;
@@ -856,8 +882,12 @@ function repairWikiBody(body: string, cluster: WikiEvidenceCluster, evidence: Wi
   if (containsPrivateMaterial(body)) return body;
   const normalizedBody = normalizeMarkdownBulletArtifacts(body);
   return ensureProvenanceSection(
-    ensureReusableLessonsSection(
-      ensureRelatedLinksSection(normalizedBody, context),
+    ensureAgentUseSection(
+      ensureReusableLessonsSection(
+        ensureRelatedLinksSection(normalizedBody, context),
+        evidence,
+      ),
+      cluster,
       evidence,
     ),
     cluster,

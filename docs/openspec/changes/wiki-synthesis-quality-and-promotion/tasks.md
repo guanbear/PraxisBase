@@ -28,3 +28,4 @@
 - [x] Repair narrow AI markdown bullet artifacts before quality assessment.
 - [x] Reject promotion and lint stable pages when body provenance disagrees with structured source refs or hashes.
 - [x] Replace AI-written provenance sections with deterministic structured provenance before proposal promotion.
+- [x] Require actionable Agent Use guidance in synthesis, deterministic repair, promotion quality, and wiki lint.

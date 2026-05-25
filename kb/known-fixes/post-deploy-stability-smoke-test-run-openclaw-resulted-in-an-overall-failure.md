@@ -44,6 +44,23 @@ The 'openclaw' stability smoke test run failed, triggered by critical runtime is
 *   Missing replay data directly compromises the ability to verify past execution behaviors, resulting in inconclusive test statuses.
 *   Live integration lanes (like Slack delivery) are sensitive to runtime bugs in core logic components, such as delegation models, which can cause immediate post-deploy stability gate failures.
 
+## Agent Use
+Use this page when:
+- An OpenClaw post-deploy stability smoke run reports `overallGate: "fail"` with Slack delivery runtime bugs and unknown replay lanes.
+
+Apply it by:
+- Investigate the named Slack delivery runtime bugs first.
+- Audit replay data availability for nightly lanes before treating unknown lanes as product regressions.
+- Rerun the smoke suite after runtime and replay-data fixes.
+
+Verify by:
+- Confirm `overallGate` becomes `pass`.
+- Confirm Slack delivery cases run without runtime errors.
+- Confirm nightly replay lanes return pass or fail instead of unknown.
+
+Do not use it when:
+- The failure is only a gateway restart issue or only a missing task runner status.
+
 ## Provenance
 - log://openclaw/2026-05-20-03-32-09-stability-report. (sha256:9eb9cf6f4acf30440426284f82965eb7b3f36cec1518fd0d0cfba384e41523f3)
 

@@ -18,7 +18,7 @@ function goodProposal(overrides: Partial<CuratedWikiProposal> = {}): CuratedWiki
     scope: "personal",
     title: "Test fix",
     summary: "A test fix with verification.",
-    body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
+    body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Agent Use\nUse this page when:\n- The same test failure recurs.\n\nApply it by:\n- Apply the verified fix.\n\nVerify by:\n- Run the failing tests again.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
     source_refs: ["codex:session:1", "codex:session:2"],
     source_hashes: ["sha256:a", "sha256:b"],
     source_count: 2,
@@ -160,6 +160,22 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
       body_markdown: "# Test\n\n## Problem\nSomething broke.\n\n## Fix\nApply.\n\n## Verification\nTests pass.\n\n## Provenance\n- codex:session:1 (sha256:a)",
     }));
     assert.ok(result.hard_blocks.includes("body_missing_wiki_structure"));
+    assert.equal(result.passed, false);
+  });
+
+  it("hard-blocks bodies missing agent-use guidance", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
+    }));
+    assert.ok(result.hard_blocks.includes("missing_agent_use"));
+    assert.equal(result.passed, false);
+  });
+
+  it("hard-blocks thin agent-use placeholders", () => {
+    const result = assessWikiPromotionQuality(goodProposal({
+      body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Agent Use\nUse this page.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
+    }));
+    assert.ok(result.hard_blocks.includes("missing_agent_use"));
     assert.equal(result.passed, false);
   });
 
@@ -353,7 +369,7 @@ describe("assessWikiPromotionQuality - human required", () => {
 
   it("passes high-signal personal single-source with no related pages", () => {
     const result = assessWikiPromotionQuality(goodProposal({
-      body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Provenance\n- codex:session:1 (sha256:a)",
+      body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Agent Use\nUse this page when:\n- The same test failure recurs.\n\nApply it by:\n- Apply the verified fix.\n\nVerify by:\n- Run the failing tests again.\n\n## Provenance\n- codex:session:1 (sha256:a)",
       source_refs: ["codex:session:1"],
       source_hashes: ["sha256:a"],
       source_count: 1,

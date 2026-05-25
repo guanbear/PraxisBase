@@ -186,6 +186,49 @@ describe("wiki lint guards", () => {
     assert.equal(report.findings.some((finding) => finding.rule === "provenance_mismatch" as any), false);
   });
 
+  it("flags thin Agent Use placeholders as missing agent-use guidance", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-agent-use-lint-"));
+    const report = await runWikiLint(root, {
+      pages: [
+        {
+          id: "wiki-thin-agent-use",
+          slug: "thin-agent-use",
+          title: "Thin Agent Use",
+          page_kind: "known_fix",
+          scope: "personal",
+          maturity: "draft",
+          lifecycle: "active",
+          source_ids: ["sha256:a"],
+          provenance_refs: [{ uri: "codex:session:1", hash: "sha256:a" }],
+          body_markdown: [
+            "# Thin Agent Use",
+            "",
+            "## When to Use",
+            "Use this when validating agent-use lint.",
+            "",
+            "## Fix",
+            "Add actionable guidance.",
+            "",
+            "## Verification",
+            "Lint should flag placeholder guidance.",
+            "",
+            "## Reusable Lessons",
+            "Agent-use sections need trigger, action, and verification guidance.",
+            "",
+            "## Agent Use",
+            "Use this page.",
+            "",
+            "## Provenance",
+            "- codex:session:1 (sha256:a)",
+          ].join("\n"),
+          path: "kb/known-fixes/thin-agent-use.md",
+        },
+      ] as any,
+    });
+
+    assert.ok(report.findings.some((finding) => finding.rule === "missing-agent-use-section" as any));
+  });
+
   it("flags the frozen task-runner provenance mismatch fixture", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-provenance-fixture-lint-"));
     const body = await readFile(join(process.cwd(), "tests/fixtures/wiki/provenance-mismatch-task-runner.md"), "utf8");

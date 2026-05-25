@@ -61,6 +61,23 @@ Perform a health check on the OpenClaw environment to ensure the gateway is oper
 * **Avoid Unnecessary Delegation**: When checking system status or responding to simple user queries, avoid unnecessary delegation to sub-agents if a direct answer is feasible, as this may confuse users.
 * **Alternative Verification**: When `exec` is blocked by tool policies, check if alternative tools (like `session_status`) can retrieve the required state without triggering the policy.
 
+## Agent Use
+Use this page when:
+- OpenClaw behavior does not reflect a recent provider, model, API key, routing, or gateway configuration change.
+
+Apply it by:
+- Verify the intended configuration is written and readable.
+- Tell the user a gateway restart is required before behavior can reflect the new config.
+- Restart the gateway and then check process, port, plugin, and active model status.
+
+Verify by:
+- Confirm the active route and model match the expected configuration.
+- Confirm gateway health and plugin readiness are good.
+- Run a small status or acceptance check that exercises the new configuration.
+
+Do not use it when:
+- The failure is caused by Slack delivery, missing replay data, dispatch routing, or task runner absence rather than stale gateway configuration.
+
 ## Provenance
 
 - openclaw-memory://memory/dreaming/light/2026-05-19.md#06b73fb9cc2df48a37867be258b5f0419385646567a63aa7fcf52ab46ed2dd79 (sha256:03c3423a1240ace18245acbf2e8d44f693f682e92f89b16d559ee7f359aacb24)

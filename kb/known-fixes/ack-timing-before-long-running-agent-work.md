@@ -67,6 +67,21 @@ This rule applies regardless of the pipeline being used, including OpenClaw/Octo
 * During periods of unresponsiveness or diagnostic debugging, acknowledging the delayed state first prevents redundant process spawning or confusion about system status.
 * Health/Version checks should be strictly isolated from complex analytical tasks in subagent dispatch architectures to prevent confusion during ACK sequences.
 
+## Agent Use
+Use this page when:
+- A task will use tools, network calls, subagents, dispatch runners, or other work that may take more than a few seconds.
+
+Apply it by:
+- Send a short ACK before starting the slow work.
+- Then continue with the tool, dispatch, or analysis work and report progress when useful.
+
+Verify by:
+- Confirm the user sees an initial response within 1-2 seconds.
+- Check that the ACK appears before tool calls or dispatch activity in the interaction log.
+
+Do not use it when:
+- The request can be answered immediately without tools, waiting, or delegation.
+
 ## Provenance
 * Derived from aggregated memory fragments reflecting user feedback on OpenClaw/OctoClaw latency.
 * Validated against specific incidents where task dispatching failed to register, highlighting the need for immediate user feedback loops.

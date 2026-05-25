@@ -48,5 +48,20 @@ Confirm the resolution by:
 *   **Data Integrity is Critical**: Stability tests are only as good as the data they produce; gaps in data directly translate to gaps in system confidence.
 *   **Monitoring is Key**: Implement alerts for data collection failures within test infrastructure to catch missing replay issues immediately rather than at the end of a test cycle.
 
+## Agent Use
+Use this page when:
+- A stability, replay, or regression lane reports `replay_missing`, `unknown`, or cannot verify a past execution window.
+
+Apply it by:
+- Check whether replay artifacts were produced, retained, and reachable before debugging product behavior.
+- Separate missing-data failures from live runtime failures in the report.
+
+Verify by:
+- Confirm replay lanes return a definitive pass or fail result.
+- Retrieve and inspect the expected replay data for the affected execution window.
+
+Do not use it when:
+- Replay artifacts exist and the failure is a live Slack delivery, routing, or model behavior regression.
+
 ## Provenance
 *   Evidence derived from `log://openclaw/2026-05-20-03-24-40-stability-summary.txt` regarding Stability Smoke v2 post-deploy failures.

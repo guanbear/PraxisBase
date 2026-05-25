@@ -5,6 +5,7 @@ import { makeId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { appearsToBeRawLog } from "../protocol/redact.js";
 import { writeJson } from "../store/file-store.js";
+import { hasAgentUseGuidance } from "./agent-use.js";
 import { assessBodyProvenanceConsistency, type ProvenanceRef } from "./provenance-consistency.js";
 import { buildWikiGraph, type WikiPage } from "./resolver.js";
 
@@ -235,7 +236,7 @@ export async function runWikiLint(
         });
       }
     }
-    if (!/^##\s+Agent Use\b/im.test(body)) {
+    if (!hasAgentUseGuidance(body)) {
       findings.push({
         rule: "missing-agent-use-section",
         severity: "warning",

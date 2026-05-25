@@ -79,12 +79,15 @@ If an AI response is safe but fails non-security guards such as title, body shap
 - missing required wiki structure;
 - create action when an existing page was found.
 - body `## Provenance` entries that cite a uri/hash pair not present in structured proposal provenance.
+- missing or placeholder `## Agent Use` guidance.
 
 Missing required structure means the body lacks one of the required section groups above. The existing `body_missing_wiki_structure` reason is used to avoid schema churn.
 
 Structured provenance is the authority. The model may render provenance text for humans, but promotion and lint must compare body provenance against structured source refs and hashes. A generated page whose body claims `source_ref (sha256:b)` while frontmatter/proposal provenance says the same `source_ref` has `sha256:a` is a hard block, not a cosmetic issue.
 
 Before a curated proposal becomes a knowledge proposal, PraxisBase replaces any AI-written `## Provenance` or `## Sources` section with a deterministic section rendered from structured proposal provenance. This keeps human-readable markdown, frontmatter sources, review evidence, and promotion-time guards aligned.
+
+Agent-facing pages must include an `## Agent Use` section with four stable cues: `Use this page when:`, `Apply it by:`, `Verify by:`, and `Do not use it when:`. AI synthesis is instructed to write this section, deterministic fallback renders it from evidence actions and verification, and repair replaces missing or placeholder sections before quality assessment. Promotion hard-blocks pages without actionable Agent Use guidance; site lint reports the same gap for historical stable pages.
 
 `missing_wikilinks` means the proposal lacks a resolver-valid link to a supplied required or related stable page. A body that merely contains any `[[...]]` token does not satisfy the gate when the supplied related page slugs do not appear.
 

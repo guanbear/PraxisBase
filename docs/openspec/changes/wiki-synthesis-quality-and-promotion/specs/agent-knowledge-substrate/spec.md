@@ -6,7 +6,7 @@
 
 Curated wiki proposals MUST contain a compiled markdown article with problem/context, action guidance, verification, reusable lessons, and provenance. They MUST NOT be raw logs, raw JSON, reference-only summaries, or copied transcripts.
 
-Stable agent-facing wiki bodies SHOULD use operational sections that make the page directly reusable: `When to Use`, `Symptoms` or `Context`, `What To Do` or the page-kind action section, `Verify`, `Reusable Lessons`, and `Provenance`. The body MUST NOT rely on long machine signature lists, repeated report boilerplate, or source metadata as the primary guidance.
+Stable agent-facing wiki bodies SHOULD use operational sections that make the page directly reusable: `When to Use`, `Symptoms` or `Context`, `What To Do` or the page-kind action section, `Verify`, `Reusable Lessons`, `Agent Use`, and `Provenance`. The body MUST NOT rely on long machine signature lists, repeated report boilerplate, or source metadata as the primary guidance.
 
 #### Scenario: Missing Core Sections Blocks Promotion
 
@@ -15,11 +15,18 @@ When its body lacks reusable lessons or an action section
 Then promotion quality assessment MUST mark `body_missing_wiki_structure`
 And the proposal MUST NOT auto-promote.
 
+#### Scenario: Missing Agent Use Blocks Promotion
+
+Given a curated wiki proposal has provenance, action guidance, verification, and reusable lessons
+When its body lacks actionable `Agent Use` guidance with trigger, application, and verification cues
+Then promotion quality assessment MUST mark `missing_agent_use`
+And the proposal MUST NOT auto-promote.
+
 #### Scenario: Deterministic Fallback Produces Agent-Usable Sections
 
 Given repeated evidence has actions, verification, and reusable lessons
 When deterministic fallback builds a curated wiki body
-Then the body SHOULD contain `When to Use`, `Symptoms`, `What To Do`, `Verify`, `Reusable Lessons`, and `Provenance`
+Then the body SHOULD contain `When to Use`, `Symptoms`, `What To Do`, `Verify`, `Reusable Lessons`, `Agent Use`, and `Provenance`
 And the body MUST NOT include a long comma-separated machine signature applicability line.
 
 ### Requirement: Wiki Evidence Must Exclude Operational Noise

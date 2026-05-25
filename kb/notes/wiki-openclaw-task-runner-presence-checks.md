@@ -51,6 +51,23 @@ Analysis of a status dashboard bug where the runner appeared as 'missing' due to
 ## Reusable Lessons
 - {"lesson":"When constructing status or health check dictionaries, ensure all top-level keys expected by the consumer (e.g., the dashboard) are explicitly included, even if their values are empty or derived from adjacent keys.","confidence":0.8}
 
+## Agent Use
+Use this page when:
+- OctoClaw shows `Runner: missing`, a dashboard shows no running or queued tasks, or a task appears completed without the intended execution.
+
+Apply it by:
+- Verify the runner presence and dispatch chain before investigating the requested task content.
+- Compare the actual execution plan against the user's requested work.
+- Check dashboard aggregation keys before assuming the runner service is down.
+
+Verify by:
+- Confirm the runner status is present and the queue reflects real work.
+- Confirm the execution plan matches user intent instead of a trivial status command.
+- Confirm status dictionaries include the top-level keys expected by the dashboard.
+
+Do not use it when:
+- The runner is present and the failure is isolated to Slack delivery, replay data, or gateway configuration.
+
 ## Provenance
 - openclaw-memory://memory/dreaming/rem/2026-05-03.md#47f01b017375198732b69d88bf3677bf5abad5f8c79d31a1bffba45a8dd88677 (sha256:17ff55c8b47a664a76f20ca32b303d38784c6400e4518ef9f21e5b86e4d27ef4)
 - openclaw-memory://memory/dreaming/rem/2026-05-17.md#2f29b922ed0bdf584e8ac349f2c2f433ee2a8616028c4abe427965399b128a06 (sha256:341a9335b3611127a63b0dc936b7bdc1541c670283fa44647fc2ad965dc5df1c)

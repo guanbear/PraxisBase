@@ -58,7 +58,8 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
     "Return only JSON.",
     "Synthesize a compiled wiki article from safe evidence; do not summarize raw material.",
     "Do not copy raw transcripts, credentials, tokens, cookies, auth headers, or private keys.",
-    "Prefer operational agent guidance sections: # Title, ## When to Use, ## Symptoms or ## Context, ## What To Do / ## Procedure / ## Fix / ## Decision / ## Operating Rule, ## Verify, ## Reusable Lessons, and ## Provenance.",
+    "Prefer operational agent guidance sections: # Title, ## When to Use, ## Symptoms or ## Context, ## What To Do / ## Procedure / ## Fix / ## Decision / ## Operating Rule, ## Verify, ## Reusable Lessons, ## Agent Use, and ## Provenance.",
+    "The ## Agent Use section must tell agents when to retrieve the page, how to apply it, how to verify it, and when not to use it.",
     "Avoid report-style narration, long machine signature lists, and source metadata as the primary guidance.",
     "When relationship links are supplied, include a ## Related Wiki Pages section using exact [[slug|label]] wiki links.",
   ];
@@ -98,6 +99,7 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
         "## What To Do / ## Procedure / ## Fix / ## Decision / ## Operating Rule",
         "## Verify",
         "## Reusable Lessons",
+        "## Agent Use with Use this page when / Apply it by / Verify by / Do not use it when",
         "## Provenance",
         "## Related Wiki Pages when links are supplied",
       ],

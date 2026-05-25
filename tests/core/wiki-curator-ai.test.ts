@@ -297,7 +297,56 @@ describe("AI wiki curator", () => {
       assert.match(result.proposal.body_markdown, /## When to Use/);
       assert.match(result.proposal.body_markdown, /## What To Do/);
       assert.match(result.proposal.body_markdown, /## Verify/);
+      assert.match(result.proposal.body_markdown, /## Agent Use/);
+      assert.match(result.proposal.body_markdown, /Use this page when:/);
+      assert.match(result.proposal.body_markdown, /Apply it by:/);
+      assert.match(result.proposal.body_markdown, /Verify by:/);
       assert.doesNotMatch(result.proposal.body_markdown, /Use this when evidence matches openclaw:runner-status-0,/);
+    }
+  });
+
+  it("repairs AI body that omits Agent Use guidance", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login before retrying memory sync.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: [
+                "# OpenClaw auth expired recovery",
+                "",
+                "## When to Use",
+                "Use this when OpenClaw memory sync fails after auth expiry.",
+                "",
+                "## Fix",
+                "Refresh login and retry sync.",
+                "",
+                "## Verification",
+                "Run memory sync again.",
+                "",
+                "## Reusable Lessons",
+                "Refresh login before retrying memory sync.",
+              ].join("\n"),
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(result.proposal.body_markdown, /## Agent Use/);
+      assert.match(result.proposal.body_markdown, /Use this page when:/);
+      assert.match(result.proposal.body_markdown, /Apply it by:/);
+      assert.match(result.proposal.body_markdown, /Verify by:/);
     }
   });
 
@@ -955,6 +1004,7 @@ describe("AI wiki curator prompt with synthesis context", () => {
     assert.ok(user.includes("OpenClaw ACK timing"), "prompt.user should contain topic title");
     assert.ok(user.includes("preference"), "prompt.user should contain page kind");
     assert.ok(user.includes("required_sections"), "prompt.user should contain required sections");
+    assert.ok(user.includes("Agent Use"), "prompt.user should require agent-use guidance");
     assert.ok(user.includes("Related Wiki Pages"), "prompt.user should contain related section contract");
     assert.ok(user.includes("User prefers ACK before long tasks"), "prompt.user should contain first observation summary");
     assert.ok(user.includes("send a short ACK first, then continue"), "prompt.user should contain raw_excerpt");

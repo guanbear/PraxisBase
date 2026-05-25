@@ -96,6 +96,23 @@ Confirm the fix by validating the following:
 *   Sub-processes like model policy resolution and prompt projection building add measurable latency and should be factored into performance expectations.
 *   Task events should be translated into user-friendly event timelines to aid debugging and user experience.
 
+## Agent Use
+Use this page when:
+- A post-deploy stability run combines Slack delivery failures, replay-missing lanes, unknown statuses, or environment dependency issues.
+
+Apply it by:
+- Split the investigation into live Slack delivery, replay availability, synthetic fixtures, and external dependency health.
+- Treat missing replay artifacts as data-pipeline failures before judging route quality.
+- Account for model policy and prompt projection latency when investigating ACK timeouts.
+
+Verify by:
+- Confirm nightly replay artifacts exist and replay lanes execute.
+- Confirm Slack delivery passes without footprint mismatches or timeouts.
+- Confirm the overall stability gate reports a clear pass or a specific failing lane.
+
+Do not use it when:
+- The report only shows a stale gateway configuration or a single isolated dispatch routing error.
+
 ## Provenance
 
 - log://openclaw/2026-05-20-03-09-16-stability-report.md (sha256:0641118511b3cb45e9e3a7597bc3aa4f3154bf896647c3802b5146a52c0c06a1)

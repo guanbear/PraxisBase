@@ -36,6 +36,23 @@ The OpenClaw agent must reliably identify the active model and execute simple te
 - The agent was successfully routed to use the zhipu/GLM-5.1 model during verification.
 - Acceptance tests initiated via Slack commands provide an effective mechanism for live environment validation.
 
+## Agent Use
+Use this page when:
+- You need to verify that OpenClaw is routed to the expected active model and can handle a simple live response.
+
+Apply it by:
+- Run the model identification acceptance case.
+- Run a simple chat or echo acceptance case through the same live entry point.
+- Prefer this as a narrow post-change smoke before deeper Slack delivery or replay debugging.
+
+Verify by:
+- Confirm the agent names the expected active model.
+- Confirm the simple response matches the requested text or status.
+- Confirm the test ran through the intended OpenClaw worker and entry point.
+
+Do not use it when:
+- The active model is already verified and the current failure is dispatch routing, replay availability, or full post-deploy stability.
+
 ## Provenance
 Evidence derived from OpenClaw acceptance test execution logs dated 2026-05-21.
 
