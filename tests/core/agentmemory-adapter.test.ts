@@ -94,6 +94,34 @@ describe("AgentMemoryClient REST", () => {
     assert.equal(seen[3].method, "POST");
   });
 
+  it("normalizes AgentMemory 0.9 smart-search result records", async () => {
+    const client = new AgentMemoryClient({
+      baseUrl: "http://localhost:3111",
+      fetchImpl: queuedFetch([
+        jsonResponse({
+          mode: "compact",
+          results: [{
+            obsId: "mem_123",
+            sessionId: "memory",
+            timestamp: "2026-05-25T05:35:30.436Z",
+            title: "# OpenClaw dispatch routing failures",
+            type: "decision",
+            score: 0.42,
+          }],
+        }),
+      ]),
+    });
+
+    const search = await client.smartSearch("openclaw dispatch", 3);
+
+    assert.equal(search.ok, true);
+    assert.equal(search.hits?.[0].id, "mem_123");
+    assert.equal(search.hits?.[0].session_id, "memory");
+    assert.equal(search.hits?.[0].created_at, "2026-05-25T05:35:30.436Z");
+    assert.equal(search.hits?.[0].title, "# OpenClaw dispatch routing failures");
+    assert.equal(search.hits?.[0].score, 0.42);
+  });
+
   it("reports failed smart-search and remember calls", async () => {
     const client = new AgentMemoryClient({
       baseUrl: "http://localhost:3111",

@@ -21,7 +21,7 @@ sources:
     hash: "sha256:a1a9ca69c40e541cd06b609396a4419256a6e4a0f826e082c8913bb11b0d1e04"
 source_count: 5
 confidence: 0.9
-updated_at: "2026-05-24T10:46:23.988Z"
+updated_at: "2026-05-25T06:29:07.726Z"
 ---
 # ACK timing before long-running agent work
 
@@ -32,6 +32,7 @@ Use this guidance when an agent is about to initiate any operation that may take
 * Making network requests or API calls.
 * Dispatching tasks to runners (e.g., OctoClaw).
 * Performing complex analysis or deep reasoning that delays response.
+* Encountering periods of system unresponsiveness or diagnostic debugging.
 
 ## Symptoms or Context
 * Users perceive the agent as "slow" or "unresponsive" even when the system is functioning correctly.
@@ -40,7 +41,7 @@ Use this guidance when an agent is about to initiate any operation that may take
 * Interactive sessions feel sluggish due to the lack of immediate feedback during task execution.
 * Subagents running at maximum depth combined with dispatch errors might fail silently if the user assumes the system has hung.
 
-## Fix / Operating Rule
+## Operating Rule
 Always send a brief, user-facing acknowledgment (ACK) immediately after receiving a request, before initiating any long-running operation.
 
 ### Procedure
@@ -52,7 +53,7 @@ Always send a brief, user-facing acknowledgment (ACK) immediately after receivin
 3. **Execute Task**: Proceed with the actual operation (tool use, network call, dispatch).
 4. **Deliver Result**: Provide the final output once the operation completes.
 
-This rule applies regardless of the pipeline being used, including OpenClaw/OctoClaw dispatch systems.
+This rule applies regardless of the pipeline being used, including OpenClaw/OctoClaw dispatch systems. Before deep-diving into network or tool failures during periods of unresponsiveness, first acknowledge the delayed state to prevent redundant process spawning.
 
 ## Verify
 * Check that the agent sends a response within 1-2 seconds of the user prompt.
@@ -64,7 +65,6 @@ This rule applies regardless of the pipeline being used, including OpenClaw/Octo
 * Sending an immediate ACK before processing prevents client-side timeouts and significantly improves perceived responsiveness.
 * Failing to ACK long-running tasks degrades user experience and perceived agent reliability.
 * During periods of unresponsiveness or diagnostic debugging, acknowledging the delayed state first prevents redundant process spawning or confusion about system status.
-* Before deep-diving into network or tool failures during periods of unresponsiveness, first acknowledge the delayed state (ACK) to prevent redundant process spawning.
 * Health/Version checks should be strictly isolated from complex analytical tasks in subagent dispatch architectures to prevent confusion during ACK sequences.
 
 ## Provenance
@@ -73,6 +73,6 @@ This rule applies regardless of the pipeline being used, including OpenClaw/Octo
 
 ## Related Wiki Pages
 * [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution-behaviors|Missing replay data compromises the ability to debug or verify past execution behaviors]]
-* OpenClaw acceptance test environment (run: octoclaw-acceptance-test-mp9ot12v) interacting via Slack
 * [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
 * [[openclaw-gateway-restart-after-configuration-changes|OpenClaw gateway restart after configuration changes]]
+* [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]

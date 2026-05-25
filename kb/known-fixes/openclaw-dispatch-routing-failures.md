@@ -14,10 +14,14 @@ sources:
   - uri: "openclaw-memory://memory/dreaming/light/2026-05-19.md#031f4a8b604fa8778b57646e840eba51792addf50b4050001c37807435a4d494"
     hash: "sha256:0410203fc5a88ac90206f74614ab70742dd7c016686a6191817ce096b18da9d1"
   - uri: "openclaw-memory://memory/dreaming/light/2026-05-19.md#7a7d6e84d2f7367b6d0c5e3284e8584f2bb30fa30a403560c737b3d715282beb"
-    hash: "sha256:16a7d4aa36eaefac34b8936e0e8da1158edbf84f09873b8b71a85e927eb7b77d"
+    hash: "sha256:09aeb510beedbbc036cb32688c6377e57274e09c9dea18e28c2fd1a35ab7c5b3"
   - uri: "openclaw-memory://memory/dreaming/light/2026-05-19.md#81bb91984d55b28bd49d21bda8eb3968620033b9d4514757de85882eed1f43ab"
-    hash: "sha256:3ac783e2cb6a839947caf16354d8665162d90960fe56fcb9fc8dfd19556c6e8c"
+    hash: "sha256:16a7d4aa36eaefac34b8936e0e8da1158edbf84f09873b8b71a85e927eb7b77d"
   - uri: "openclaw-memory://memory/dreaming/light/2026-05-21.md#00c07ef0502c3bd2641eb2b20214359277fb0eb66e904b596144cf9626832936"
+    hash: "sha256:3ac783e2cb6a839947caf16354d8665162d90960fe56fcb9fc8dfd19556c6e8c"
+  - uri: "openclaw-memory://memory/dreaming/light/2026-05-22.md#46b0d26c9af0639b668b51d5af8787cf43ed9e3a8158cf15d5c0f1cb1c66e01d"
+    hash: "sha256:47cdef0992b68e074501cfcf7b883903ab88b758826ca4615f250f63d2189130"
+  - uri: "openclaw-memory://memory/dreaming/light/2026-05-23.md#2029cc5ea05fc088c3232f0e1be7502f9e916de48fbfebebdcebfa40f65ed5a2"
     hash: "sha256:60740c81a685154bf174af2cdaf5e481ef720ac1709b1cd681a5b166687ed6cb"
   - uri: "openclaw-memory://memory/dreaming/rem/2026-04-26.md#1861802eb774243e34029c80d0498c49ba85a0af4799845f29f9288b2c94e6aa"
     hash: "sha256:67eca72ba536d31a82830a1f359d23f48b7a1e8eb8db37faa3c54bb7c238c5b4"
@@ -29,9 +33,9 @@ sources:
     hash: "sha256:d6ccf9175fad5202cc3f12088178828cc68992007b27d3bd444e7746c3eaa72a"
   - uri: "raw-vault://codex/rollout-2026-04-04T19-26-57-019d583f-02e6-74d0-9351-b636055d911c"
     hash: "sha256:d8e4f4a00e20c94f9a8116c72c73aa21cfbffc12d934158a1831e723fcb54078"
-source_count: 10
-confidence: 0.88
-updated_at: "2026-05-24T13:43:18.884Z"
+source_count: 12
+confidence: 0.875
+updated_at: "2026-05-25T06:29:07.726Z"
 ---
 # OpenClaw dispatch routing failures
 
@@ -107,6 +111,7 @@ When tasks fail to produce expected analysis or execution results, verify the he
 
 ## Related Wiki Pages
 
+* [[ack-timing-before-long-running-agent-work|ACK timing before long-running agent work]]
 * [[openclaw-gateway-restart-after-configuration-changes|OpenClaw gateway restart after configuration changes]]
 * [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
 * [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution-behaviors|Missing replay data compromises the ability to debug or verify past execution behaviors]]

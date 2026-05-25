@@ -49,11 +49,27 @@ function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function normalizeRecord(item: Record<string, unknown>): AgentMemoryRecord | null {
+  const id = stringValue(item.id) ?? stringValue(item.memory_id) ?? stringValue(item.obsId) ?? stringValue(item.observationId);
+  if (!id) return null;
+  return {
+    ...item,
+    id,
+    session_id: stringValue(item.session_id) ?? stringValue(item.sessionId),
+    created_at: stringValue(item.created_at) ?? stringValue(item.createdAt) ?? stringValue(item.timestamp),
+    title: stringValue(item.title),
+    content: stringValue(item.content) ?? stringValue(item.text) ?? stringValue(item.summary),
+    score: typeof item.score === "number" ? item.score : undefined,
+  };
+}
+
 function recordArray(value: unknown): AgentMemoryRecord[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is AgentMemoryRecord =>
-    isRecord(item) && typeof item.id === "string" && item.id.length > 0
-  );
+  return value.flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const normalized = normalizeRecord(item);
+    return normalized ? [normalized] : [];
+  });
 }
 
 function normalizeStatus(data: unknown): string | undefined {
