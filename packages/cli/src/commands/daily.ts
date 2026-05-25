@@ -1,4 +1,4 @@
-import { runDailyExperience } from "@praxisbase/core/experience/daily.js";
+import { runDailyExperience, type DailyProgressEvent } from "@praxisbase/core/experience/daily.js";
 
 export interface DailyCommandOptions {
   mode?: "personal" | "team-git";
@@ -19,6 +19,8 @@ export interface DailyCommandOptions {
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
   noContextEconomy?: boolean;
+  progress?: boolean;
+  progressSink?: (line: string) => void;
 }
 
 function authorityMode(mode?: "personal" | "team-git"): "personal-local" | "team-git" {
@@ -43,6 +45,20 @@ function personalSchedule(runner?: "cron" | "launchd" | "gitlab"): string {
     return "launchd: run `praxisbase daily run --mode personal --build-site --json` from the PraxisBase workspace once per day after `praxisbase ai doctor` passes.";
   }
   return "cron: 0 8 * * * cd /path/to/praxisbase && praxisbase daily run --mode personal --build-site --json";
+}
+
+function formatProgressLine(event: DailyProgressEvent): string {
+  const parts = [
+    `status=${event.status}`,
+    `stage=${event.current_stage ?? "starting"}`,
+    event.current_source ? `source=${event.current_source}` : undefined,
+    event.current_chunk ? `chunk=${event.current_chunk.index}/${event.current_chunk.total}` : undefined,
+    `elapsed=${Math.round(event.elapsed_ms / 1000)}s`,
+    `stage_elapsed=${Math.round(event.stage_elapsed_ms / 1000)}s`,
+    `distilled=${event.ai_distill.distilled}/${event.ai_distill.chunks}`,
+    `human_required=${event.ai_distill.human_required}`,
+  ];
+  return `[praxisbase daily] ${parts.filter((part): part is string => Boolean(part)).join(" ")}`;
 }
 
 export async function dailyCommand(root: string, subcommand: string, options: DailyCommandOptions): Promise<string> {
@@ -77,6 +93,11 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         retryFailedDistillOnly: options.retryFailedDistillOnly,
         maxCurationProposals: options.maxCurationProposals,
         noContextEconomy: options.noContextEconomy,
+        onProgress: options.progress
+          ? async (event) => {
+            (options.progressSink ?? console.error)(formatProgressLine(event));
+          }
+          : undefined,
       });
       return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Daily experience run complete: ${report.id}`;
     }

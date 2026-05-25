@@ -763,6 +763,42 @@ describe("runDailyExperience", () => {
     assert.equal(report.ai_distill.distilled, 1);
   });
 
+  it("emits stage progress events with elapsed timing for CLI observers", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-progress-events-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const events: Array<{ current_stage?: string; elapsed_ms: number; stage_elapsed_ms: number }> = [];
+    await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      degraded: true,
+      now: "2026-05-21T01:00:00.000Z",
+      onProgress: (event) => {
+        events.push({
+          current_stage: event.current_stage,
+          elapsed_ms: event.elapsed_ms,
+          stage_elapsed_ms: event.stage_elapsed_ms,
+        });
+      },
+    });
+
+    assert.ok(events.some((event) => event.current_stage === "source"));
+    assert.ok(events.some((event) => event.current_stage === "wiki-compile"));
+    assert.ok(events.some((event) => event.current_stage === "wiki-curate"));
+    assert.ok(events.some((event) => event.elapsed_ms >= 0));
+    assert.ok(events.every((event) => Number.isFinite(event.stage_elapsed_ms)));
+  });
+
   it("runs production AI distill with bounded concurrency", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-concurrency-"));
     const sessions = join(root, "sessions");

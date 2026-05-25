@@ -91,7 +91,7 @@ export function evaluatePreAiPrivacy(input: EvaluateExperiencePrivacyInput): Pre
 }
 
 export function evaluatePostAiPrivacy(input: EvaluateExperiencePrivacyInput): ExperiencePrivacyResult {
-  if (containsPrivateMaterial(input.text)) {
+  if (containsPrivateMaterial(input.text) && !shouldAllowPersonalPolicyMention(input)) {
     return { verdict: "human_required", reasons: ["private_material_detected"] };
   }
   return evaluateTeamGate(input);

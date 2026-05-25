@@ -57,6 +57,26 @@ import {
   type GitCommandRunner,
 } from "./git-workflow.js";
 
+type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "review-promote" | "site-build";
+
+export interface DailyProgressEvent {
+  status: "running" | "completed" | "partial" | "failed";
+  current_stage?: DailyProgressStage;
+  current_source?: string;
+  current_chunk?: {
+    index: number;
+    total: number;
+    chunk_id: string;
+    ai_chunks: number;
+    max_ai_chunks?: number;
+  };
+  elapsed_ms: number;
+  stage_elapsed_ms: number;
+  sources: DailyExperienceReport["sources"];
+  ai_distill: DailyAiDistill;
+  warnings: string[];
+}
+
 export interface RunDailyExperienceInput {
   authorityMode: "personal-local" | "team-git";
   mode?: "dry-run" | "write";
@@ -79,6 +99,7 @@ export interface RunDailyExperienceInput {
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
   noContextEconomy?: boolean;
+  onProgress?: (event: DailyProgressEvent) => void | Promise<void>;
 }
 
 function statusFromCounts(input: { warnings: string[]; rejected: number; humanRequired: number; enveloped: number }): "completed" | "partial" | "failed" {
@@ -374,7 +395,7 @@ async function writeDailyProgress(
   input: {
     now: string;
     status: "running" | "completed" | "partial" | "failed";
-    current_stage?: "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "review-promote" | "site-build";
+    current_stage?: DailyProgressStage;
     current_source?: string;
     current_chunk?: {
       index: number;
@@ -383,6 +404,8 @@ async function writeDailyProgress(
       ai_chunks: number;
       max_ai_chunks?: number;
     };
+    elapsed_ms?: number;
+    stage_elapsed_ms?: number;
     sources: DailyExperienceReport["sources"];
     ai_distill: DailyAiDistill;
     warnings: string[];
@@ -396,6 +419,8 @@ async function writeDailyProgress(
     current_stage: input.current_stage,
     current_source: input.current_source,
     current_chunk: input.current_chunk,
+    elapsed_ms: input.elapsed_ms ?? 0,
+    stage_elapsed_ms: input.stage_elapsed_ms ?? 0,
     sources: input.sources,
     ai_distill: input.ai_distill,
     warnings: Array.from(new Set(input.warnings)).sort(),
@@ -496,6 +521,8 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const warnings: string[] = [];
   const sourceReports: DailyExperienceReport["sources"] = [];
   const progressPath = liveDailyProgressPath(now);
+  const runStartedAtMs = Date.now();
+  const stageStartedAtMs = new Map<DailyProgressStage, number>();
   const aiMode: DailyAiDistill["mode"] = input.noAi ? "disabled" : input.degraded ? "degraded" : "production";
   const aiConfig = await readAiProviderConfig(root);
   const aiDistill: DailyAiDistill = {
@@ -562,10 +589,32 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     }
     : undefined;
 
+  const publishProgress = async (progress: Omit<DailyProgressEvent, "elapsed_ms" | "stage_elapsed_ms">): Promise<void> => {
+    const observedAtMs = Date.now();
+    let stageElapsedMs = 0;
+    if (progress.current_stage) {
+      if (!stageStartedAtMs.has(progress.current_stage)) {
+        stageStartedAtMs.set(progress.current_stage, observedAtMs);
+      }
+      stageElapsedMs = observedAtMs - (stageStartedAtMs.get(progress.current_stage) ?? observedAtMs);
+    }
+    const event: DailyProgressEvent = {
+      ...progress,
+      elapsed_ms: observedAtMs - runStartedAtMs,
+      stage_elapsed_ms: stageElapsedMs,
+    };
+    await input.onProgress?.(event);
+    if (mode === "write") {
+      await writeDailyProgress(root, progressPath, {
+        now,
+        ...event,
+      });
+    }
+  };
+
   if (mode === "write") {
     outputs.push(progressPath);
-    await writeDailyProgress(root, progressPath, {
-      now,
+    await publishProgress({
       status: "running",
       sources: sourceReports,
       ai_distill: aiDistill,
@@ -590,8 +639,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 
   for (const source of sources) {
     if (mode === "write") {
-      await writeDailyProgress(root, progressPath, {
-        now,
+      await publishProgress({
         status: "running",
         current_stage: "source",
         current_source: source.name,
@@ -725,8 +773,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           nextTaskIndex++;
           const chunk = distillTasks[taskIndex];
           if (mode === "write") {
-            await writeDailyProgress(root, progressPath, {
-              now,
+            await publishProgress({
               status: "running",
               current_stage: "ai_distill",
               current_source: source.name,
@@ -825,8 +872,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           }
 
           if (mode === "write") {
-            await writeDailyProgress(root, progressPath, {
-              now,
+            await publishProgress({
               status: "running",
               current_stage: "ai_distill",
               current_source: source.name,
@@ -912,8 +958,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     });
     warnings.push(...sourceWarnings);
     if (mode === "write") {
-      await writeDailyProgress(root, progressPath, {
-        now,
+      await publishProgress({
         status: "running",
         current_source: source.name,
         sources: sourceReports,
@@ -941,8 +986,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 
   const wikiMode = mode === "write" ? "review" as const : "dry-run" as const;
   if (mode === "write") {
-    await writeDailyProgress(root, progressPath, {
-      now,
+    await publishProgress({
       status: "running",
       current_stage: "wiki-compile",
       sources: sourceReports,
@@ -953,8 +997,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const compileReport = await compileWiki(root, { mode: wikiMode, now });
   outputs.push(`${protocolPaths.reportsWikiCompile}/${compileReport.id}.json`);
   if (mode === "write") {
-    await writeDailyProgress(root, progressPath, {
-      now,
+    await publishProgress({
       status: "running",
       current_stage: "wiki-curate",
       current_source: "wiki-curate",
@@ -975,8 +1018,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     aiTimeoutMs: input.aiTimeoutMs,
     onProgress: mode === "write"
       ? async (progress) => {
-        await writeDailyProgress(root, progressPath, {
-          now,
+        await publishProgress({
           status: "running",
           current_stage: "wiki-curate",
           current_source: "wiki-curate",
@@ -1004,8 +1046,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings: [],
   };
   if (mode === "write" && input.buildSite) {
-    await writeDailyProgress(root, progressPath, {
-      now,
+    await publishProgress({
       status: "running",
       current_stage: "review-promote",
       current_source: "review-promote",
@@ -1073,8 +1114,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   let qualityFindings = 0;
   if (input.buildSite && mode === "write") {
     await writeJson(root, reportPath, makeReport(0, 0, outputs));
-    await writeDailyProgress(root, progressPath, {
-      now,
+    await publishProgress({
       status: "running",
       current_stage: "site-build",
       sources: sourceReports,
@@ -1114,8 +1154,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       },
       errors: [],
     });
-    await writeDailyProgress(root, progressPath, {
-      now,
+    await publishProgress({
       status: report.sources.some((source) => source.status !== "completed") ? "partial" : "completed",
       sources: report.sources,
       ai_distill: report.ai_distill,

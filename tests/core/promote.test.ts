@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { describe, it } from "node:test";
@@ -93,6 +93,75 @@ describe("promotion", () => {
         review
       }),
       /raw log content/
+    );
+  });
+
+  it("rejects replacing an existing useful wiki page with a lower-quality rewrite", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-downgrade-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(
+      join(root, "kb/known-fixes/openclaw-gateway-restart.md"),
+      [
+        "# OpenClaw gateway restart after configuration changes",
+        "",
+        "## When to Use",
+        "Use this when OpenClaw configuration changes require the gateway to reload provider or routing settings.",
+        "",
+        "## Symptoms or Context",
+        "The active model or route does not match the updated configuration.",
+        "",
+        "## Procedure",
+        "1. Verify the changed configuration file.",
+        "2. Restart the OpenClaw gateway.",
+        "3. Confirm the active route and model.",
+        "",
+        "## Verify",
+        "Run the gateway status check and a minimal model identification request.",
+        "",
+        "## Reusable Lessons",
+        "Configuration edits do not affect the running gateway until the service is restarted.",
+        "",
+        "## Provenance",
+        "* openclaw-memory://example (sha256:abc)",
+        "",
+        "## Related Wiki Pages",
+        "* [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    await assert.rejects(
+      promoteApprovedProposal(root, {
+        proposal: {
+          ...proposal,
+          patch: {
+            path: "kb/known-fixes/openclaw-gateway-restart.md",
+            content: [
+              "# OpenClaw gateway restart after configuration changes",
+              "",
+              "## When to Use",
+              "Use this when OpenClaw health checks timeout.",
+              "",
+              "## What To Do",
+              "- Attempted to run `openclaw status` command.",
+              "- A gateway restart is required for changes to take effect.",
+              "",
+              "## Failed Attempts",
+              "- Assistant turn failed before producing content during an intermediate step.",
+              "",
+              "## Verify",
+              "- A health check was performed on the OpenClaw environment.",
+              "",
+              "## Provenance",
+              "* openclaw-memory://example (sha256:def)",
+              "",
+            ].join("\n"),
+          },
+        },
+        review,
+      }),
+      /lower-quality rewrite/
     );
   });
 

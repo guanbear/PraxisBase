@@ -373,6 +373,7 @@ program
   .option("--retry-failed-distill-only", "retry only chunks with cached AI distill failures")
   .option("--max-curation-proposals <n>", "maximum AI wiki curation proposals for this daily run")
   .option("--no-context-economy", "disable context economy reduction for this daily run")
+  .option("--progress", "print stage progress to stderr while the daily run is active")
   .option("--json")
   .action(async (
     sub: string,
@@ -393,6 +394,7 @@ program
       retryFailedDistillOnly?: boolean;
       maxCurationProposals?: string;
       noContextEconomy?: boolean;
+      progress?: boolean;
       json?: boolean;
     }
   ) => {
