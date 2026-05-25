@@ -45,7 +45,7 @@ The 'openclaw' stability smoke test run failed, triggered by critical runtime is
 *   Live integration lanes (like Slack delivery) are sensitive to runtime bugs in core logic components, such as delegation models, which can cause immediate post-deploy stability gate failures.
 
 ## Provenance
-*   Source: `log://openclaw/2026-05-20-03-32-09-stability-report.`
+- log://openclaw/2026-05-20-03-32-09-stability-report. (sha256:9eb9cf6f4acf30440426284f82965eb7b3f36cec1518fd0d0cfba384e41523f3)
 
 ## Related Wiki Pages
 *   [[ack-timing-before-long-running-agent-work|ACK timing before long-running agent work]]

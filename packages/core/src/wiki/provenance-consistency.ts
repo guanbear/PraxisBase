@@ -62,7 +62,7 @@ function normalizeHash(value: string | undefined): string | undefined {
 }
 
 function normalizeUri(value: string): string {
-  return value.replace(/[),.;\]]+$/g, "");
+  return value.replace(/[),;\]]+$/g, "");
 }
 
 function provenanceSection(body: string): string {

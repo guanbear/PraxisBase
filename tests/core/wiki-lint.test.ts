@@ -146,6 +146,46 @@ describe("wiki lint guards", () => {
     assert.ok(report.findings.some((finding) => finding.rule === "provenance_mismatch" as any));
   });
 
+  it("accepts structured provenance refs whose URI ends with a period", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-provenance-period-lint-"));
+    const report = await runWikiLint(root, {
+      pages: [
+        {
+          id: "wiki-provenance-period",
+          slug: "provenance-period",
+          title: "Provenance period",
+          page_kind: "known_fix",
+          scope: "personal",
+          maturity: "draft",
+          lifecycle: "active",
+          source_ids: ["sha256:a"],
+          provenance_refs: [{ uri: "log://openclaw/2026-05-20-03-32-09-stability-report.", hash: "sha256:a" }],
+          body_markdown: [
+            "# Provenance period",
+            "",
+            "## When to Use",
+            "Use this when validating provenance URI parsing.",
+            "",
+            "## Fix",
+            "Keep the full structured source URI intact.",
+            "",
+            "## Verification",
+            "Lint accepts a rendered source URI that ends with a period.",
+            "",
+            "## Reusable Lessons",
+            "Do not strip a period when it is part of the structured source URI.",
+            "",
+            "## Provenance",
+            "- log://openclaw/2026-05-20-03-32-09-stability-report. (sha256:a)",
+          ].join("\n"),
+          path: "kb/known-fixes/provenance-period.md",
+        },
+      ] as any,
+    });
+
+    assert.equal(report.findings.some((finding) => finding.rule === "provenance_mismatch" as any), false);
+  });
+
   it("flags the frozen task-runner provenance mismatch fixture", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-provenance-fixture-lint-"));
     const body = await readFile(join(process.cwd(), "tests/fixtures/wiki/provenance-mismatch-task-runner.md"), "utf8");
