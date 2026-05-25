@@ -14,6 +14,7 @@ import { makeWikiSlug, type WikiSource } from "./model.js";
 import { buildWikiCuratorPrompt, type SynthesisContext, type StructuredLink, type MergeCandidate } from "./curator-prompt.js";
 import { decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
 import { assessWikiPromotionQuality } from "./promotion-quality.js";
+import { replaceBodyProvenanceSection } from "./provenance-consistency.js";
 import {
   CuratedWikiProposalSchema,
   WikiCurationReportSchema,
@@ -813,13 +814,13 @@ function ensureRelatedLinksSection(body: string, context?: SynthesisContext): st
 }
 
 function ensureProvenanceSection(body: string, cluster: WikiEvidenceCluster): string {
-  if (/^##\s+(Provenance|Sources)\b/im.test(body)) return body;
-  const lines = [
-    "",
-    "## Provenance",
-    ...cluster.source_refs.map((ref, index) => `- ${ref} (${cluster.source_hashes[index] ?? "unknown-hash"})`),
-  ];
-  return `${body.replace(/\s+$/, "")}\n${lines.join("\n")}\n`;
+  return replaceBodyProvenanceSection(
+    body,
+    cluster.source_refs.map((ref, index) => ({
+      uri: ref,
+      hash: cluster.source_hashes[index] ?? "unknown-hash",
+    })),
+  );
 }
 
 function ensureReusableLessonsSection(body: string, evidence: WikiEvidenceItem[]): string {

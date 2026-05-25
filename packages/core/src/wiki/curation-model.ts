@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { ProposalSchema, type Proposal, ScopeSchema, TargetTypeSchema } from "../protocol/schemas.js";
 import { makeWikiSlug } from "./model.js";
+import { replaceBodyProvenanceSection } from "./provenance-consistency.js";
 
 export const WikiEvidenceKindSchema = z.enum([
   "capture",
@@ -476,7 +477,14 @@ function curatedMaturity(value: CuratedWikiProposal["maturity"]): string {
 }
 
 function withKnowledgeFrontmatter(proposal: CuratedWikiProposal, targetId: string): string {
-  if (/^---\n/.test(proposal.body_markdown)) return proposal.body_markdown;
+  const body = replaceBodyProvenanceSection(
+    proposal.body_markdown,
+    proposal.provenance.map((entry) => ({
+      uri: entry.source_ref,
+      hash: entry.source_hash,
+    })),
+  );
+  if (/^---\n/.test(proposal.body_markdown)) return body;
   const knowledgeType = knowledgeTypeForPageKind(proposal.page_kind);
   const frontmatter = [
     "---",
@@ -499,7 +507,7 @@ function withKnowledgeFrontmatter(proposal: CuratedWikiProposal, targetId: strin
     `updated_at: ${yamlQuote(proposal.created_at)}`,
     "---",
   ].join("\n");
-  return `${frontmatter}\n${proposal.body_markdown.trim()}\n`;
+  return `${frontmatter}\n${body.trim()}\n`;
 }
 
 export function curatedWikiProposalToKnowledgeProposal(value: unknown): Proposal {

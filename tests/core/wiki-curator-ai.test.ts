@@ -103,6 +103,53 @@ describe("AI wiki curator", () => {
     }
   });
 
+  it("replaces AI-written provenance with structured provenance", async () => {
+    const result = await synthesizeCuratedWikiProposal(cluster, {
+      evidence,
+      now: "2026-05-21T00:00:00.000Z",
+      client: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              title: "OpenClaw auth expired recovery",
+              summary: "Refresh login before retrying memory sync.",
+              page_kind: "known_fix",
+              target_path: "kb/known-fixes/openclaw-auth-expired.md",
+              body_markdown: [
+                "# OpenClaw auth expired recovery",
+                "",
+                "## Problem",
+                "Memory sync fails after auth expiry.",
+                "",
+                "## Fix",
+                "Refresh login and retry sync.",
+                "",
+                "## Verification",
+                "Run memory sync again.",
+                "",
+                "## Reusable Lessons",
+                "Refresh login before retrying memory sync.",
+                "",
+                "## Provenance",
+                "- codex:session:1 (sha256:wrong)",
+              ].join("\n"),
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.match(result.proposal.body_markdown, /- codex:session:1 \(sha256:a\)/);
+      assert.match(result.proposal.body_markdown, /- openclaw:memory:2 \(sha256:b\)/);
+      assert.doesNotMatch(result.proposal.body_markdown, /sha256:wrong/);
+    }
+  });
+
   it("rejects AI output with unsafe target path", async () => {
     const result = await synthesizeCuratedWikiProposal(cluster, {
       evidence,

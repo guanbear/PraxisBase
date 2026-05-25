@@ -136,7 +136,48 @@ describe("wiki curation model", () => {
     assert.match(knowledge.patch.content, /title: "OpenClaw auth expired recovery"/);
     assert.match(knowledge.patch.content, /knowledge_type: known_fix/);
     assert.match(knowledge.patch.content, /sources:\n  - uri: "codex:session:1"\n    hash: "sha256:a"/);
+    assert.match(knowledge.patch.content, /- codex:session:1 \(sha256:a\)/);
     assert.deepEqual(knowledge.evidence.source_refs, [{ uri: "codex:session:1", hash: "sha256:a" }]);
+  });
+
+  it("replaces body provenance when converting curated proposals to knowledge proposals", () => {
+    const knowledge = curatedWikiProposalToKnowledgeProposal({
+      id: "wiki-curated-openclaw-auth",
+      protocol_version: PROTOCOL_VERSION,
+      type: "wiki_curated_proposal",
+      target_path: "kb/known-fixes/openclaw-auth-expired.md",
+      action: "create",
+      page_kind: "known_fix",
+      scope: "personal",
+      title: "OpenClaw auth expired recovery",
+      summary: "Refresh OpenClaw login before retrying memory sync.",
+      body_markdown: [
+        "# OpenClaw auth expired recovery",
+        "",
+        "## Problem",
+        "Memory sync fails after auth expiry.",
+        "",
+        "## Provenance",
+        "- codex:session:1 (sha256:wrong)",
+      ].join("\n"),
+      source_refs: ["codex:session:1", "openclaw:memory:2"],
+      source_hashes: ["sha256:a", "sha256:b"],
+      source_count: 2,
+      evidence_ids: ["ev_1", "ev_2"],
+      confidence: 0.92,
+      maturity: "draft",
+      provenance: [
+        { source_ref: "codex:session:1", source_hash: "sha256:a" },
+        { source_ref: "openclaw:memory:2", source_hash: "sha256:b" },
+      ],
+      review_hint: { why_review: "Low risk personal fix", suggested_decision: "approve", risk_notes: [] },
+      guards: [{ id: "path", ok: true, message: "allowed" }],
+      created_at: "2026-05-21T00:00:00.000Z",
+    });
+
+    assert.match(knowledge.patch.content, /- codex:session:1 \(sha256:a\)/);
+    assert.match(knowledge.patch.content, /- openclaw:memory:2 \(sha256:b\)/);
+    assert.doesNotMatch(knowledge.patch.content, /sha256:wrong/);
   });
 });
 

@@ -13,6 +13,48 @@ export interface ProvenanceConsistencyResult {
   }>;
 }
 
+export function renderStructuredProvenanceSection(refs: ProvenanceRef[]): string {
+  return [
+    "## Provenance",
+    ...refs.map((ref) => `- ${ref.uri} (${ref.hash ?? "unknown-hash"})`),
+  ].join("\n");
+}
+
+export function replaceBodyProvenanceSection(body: string, refs: ProvenanceRef[]): string {
+  const section = renderStructuredProvenanceSection(refs);
+  const lines = body.trimEnd().split(/\r?\n/);
+  const output: string[] = [];
+  let replaced = false;
+  let skipping = false;
+
+  for (const line of lines) {
+    if (/^##\s+(Provenance|Sources)\b/i.test(line)) {
+      if (!replaced) {
+        if (output.length > 0 && output[output.length - 1] !== "") output.push("");
+        output.push(section);
+        replaced = true;
+      }
+      skipping = true;
+      continue;
+    }
+    if (skipping && /^##\s+/.test(line)) {
+      skipping = false;
+      if (output.length > 0 && output[output.length - 1] !== "") output.push("");
+      output.push(line);
+      continue;
+    }
+    if (skipping) continue;
+    output.push(line);
+  }
+
+  if (!replaced) {
+    if (output.length > 0 && output[output.length - 1] !== "") output.push("");
+    output.push(section);
+  }
+
+  return `${output.join("\n").trimEnd()}\n`;
+}
+
 function normalizeHash(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const match = value.match(/sha256:[a-f0-9]+/i);

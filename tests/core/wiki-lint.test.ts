@@ -145,4 +145,33 @@ describe("wiki lint guards", () => {
 
     assert.ok(report.findings.some((finding) => finding.rule === "provenance_mismatch" as any));
   });
+
+  it("flags the frozen task-runner provenance mismatch fixture", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-provenance-fixture-lint-"));
+    const body = await readFile(join(process.cwd(), "tests/fixtures/wiki/provenance-mismatch-task-runner.md"), "utf8");
+    const report = await runWikiLint(root, {
+      pages: [
+        {
+          id: "wiki-openclaw-task-runner-presence-checks",
+          slug: "wiki-openclaw-task-runner-presence-checks",
+          title: "OpenClaw task runner presence checks",
+          page_kind: "known_fix",
+          scope: "personal",
+          maturity: "draft",
+          lifecycle: "active",
+          source_ids: ["sha256:17ff55c8b47a664a76f20ca32b303d38784c6400e4518ef9f21e5b86e4d27ef4"],
+          provenance_refs: [{
+            uri: "openclaw-memory://memory/dreaming/light/2026-05-22.md#274f59a874f6147a724928e145304c0f7f0a58e0a826d0127c32bc84b7be8a53",
+            hash: "sha256:17ff55c8b47a664a76f20ca32b303d38784c6400e4518ef9f21e5b86e4d27ef4",
+          }],
+          body_markdown: body,
+          path: "kb/notes/wiki-openclaw-task-runner-presence-checks.md",
+        },
+      ] as any,
+    });
+
+    const mismatch = report.findings.find((finding) => finding.rule === "provenance_mismatch" as any);
+    assert.ok(mismatch);
+    assert.match(JSON.stringify(mismatch.details), /hash_mismatch/);
+  });
 });

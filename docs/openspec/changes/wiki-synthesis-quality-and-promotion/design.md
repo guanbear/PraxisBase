@@ -84,6 +84,8 @@ Missing required structure means the body lacks one of the required section grou
 
 Structured provenance is the authority. The model may render provenance text for humans, but promotion and lint must compare body provenance against structured source refs and hashes. A generated page whose body claims `source_ref (sha256:b)` while frontmatter/proposal provenance says the same `source_ref` has `sha256:a` is a hard block, not a cosmetic issue.
 
+Before a curated proposal becomes a knowledge proposal, PraxisBase replaces any AI-written `## Provenance` or `## Sources` section with a deterministic section rendered from structured proposal provenance. This keeps human-readable markdown, frontmatter sources, review evidence, and promotion-time guards aligned.
+
 `missing_wikilinks` means the proposal lacks a resolver-valid link to a supplied required or related stable page. A body that merely contains any `[[...]]` token does not satisfy the gate when the supplied related page slugs do not appear.
 
 Human-required reasons remain:
