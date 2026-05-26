@@ -843,4 +843,186 @@ Body.
     assert.ok(index.includes("Sources"));
     assert.ok(index.includes("0.78"));
   });
+
+  it("renders semantic review decision, score, and reason from risk_notes on proposal cards", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-semantic-review-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-curated_semantic_reject.json"),
+      JSON.stringify({
+        id: "wiki-curated_semantic_reject",
+        protocol_version: "0.1",
+        type: "wiki_curated_proposal",
+        target_path: "kb/known-fixes/openclaw-semantic-reject.md",
+        action: "create",
+        page_kind: "known_fix",
+        scope: "personal",
+        title: "OpenClaw Semantic Reject Test",
+        summary: "A proposal with a rejected semantic review.",
+        body_markdown: "# Semantic Reject Test\n\nBody.",
+        source_refs: ["raw-vault://codex/sem"],
+        source_hashes: ["sha256:sem"],
+        source_count: 2,
+        evidence_ids: ["capture_sem_1"],
+        confidence: 0.70,
+        maturity: "draft",
+        provenance: [{ source_ref: "raw-vault://codex/sem", source_hash: "sha256:sem" }],
+        review_hint: {
+          why_review: "Semantic review rejected",
+          suggested_decision: "edit",
+          risk_notes: ["semantic_review:reject", "semantic_score:0.45", "semantic_reason:Low quality, insufficient evidence"],
+        },
+        guards: [{ id: "path", ok: true, message: "allowed" }],
+        created_at: "2026-05-26T10:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("Semantic review"), "expected 'Semantic review' in review.html");
+    assert.ok(review.includes("reject"), "expected 'reject' decision in review.html");
+    assert.ok(review.includes("0.45"), "expected semantic score '0.45' in review.html");
+    assert.ok(review.includes("Low quality, insufficient evidence"), "expected semantic reason in review.html");
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Semantic review"), "expected 'Semantic review' in index.html");
+    assert.ok(index.includes("reject"), "expected 'reject' decision in index.html");
+    assert.ok(index.includes("0.45"), "expected semantic score '0.45' in index.html");
+    assert.ok(index.includes("Low quality, insufficient evidence"), "expected semantic reason in index.html");
+  });
+
+  it("renders semantic review counts in dashboard when daily report has semantic_review data", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-semantic-counts-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await writeFile(join(root, "kb/notes/a.md"), `---
+id: a
+type: note
+scope: team
+maturity: draft
+---
+# Note A
+
+Body.
+`);
+    await writeFile(
+      join(root, ".praxisbase/reports/daily/daily_semantic.json"),
+      JSON.stringify({
+        id: "daily_semantic",
+        protocol_version: "0.1",
+        type: "daily_experience_report",
+        authority_mode: "personal-local",
+        mode: "write",
+        sources: [{ name: "codex", agent: "codex", channel: "local", source_type: "local", status: "completed", scanned: 5, fetched: 5, enveloped: 5, imported: 4, rejected: 0, human_required: 0, warnings: [] }],
+        proposal_candidates: 3,
+        quality_findings: 0,
+        site_pages: 1,
+        changed_stable_knowledge: false,
+        semantic_review: {
+          enabled: true,
+          reviewed: 3,
+          promote: 1,
+          merge: 0,
+          revise: 0,
+          reject: 1,
+          needs_human: 1,
+          unavailable: 0,
+        },
+        outputs: [],
+        warnings: [],
+        created_at: "2026-05-26T12:00:00.000Z",
+      }),
+    );
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Semantic review"), "expected 'Semantic review' in dashboard");
+    assert.ok(index.includes("3 reviewed"), "expected semantic reviewed count");
+    assert.ok(index.includes("Semantic promote"), "expected 'Semantic promote' in dashboard");
+    assert.match(index, /Semantic promote[\s\S]*?<strong>1<\/strong>/);
+    assert.ok(index.includes("Semantic reject"), "expected 'Semantic reject' in dashboard");
+    assert.ok(index.includes("Semantic needs human"), "expected 'Semantic needs human' in dashboard");
+  });
+
+  it("renders skill synthesis counts in dashboard when daily report has skill_synthesis data", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-skill-counts-"));
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/reports/daily/daily_skill.json"), JSON.stringify({
+      id: "daily_skill",
+      protocol_version: "0.1",
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      skill_synthesis: {
+        enabled: true,
+        signals: 2,
+        rejected_signals: 1,
+        clusters: 1,
+        candidates: 1,
+        reviewed: 1,
+        approved: 1,
+        rejected: 0,
+        needs_human: 0,
+        promoted: 0,
+      },
+      outputs: [],
+      warnings: [],
+      created_at: "2026-05-26T12:00:00.000Z",
+    }), "utf8");
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Skill synthesis"));
+    assert.match(index, /Skill candidates[\s\S]*?<strong>1<\/strong>/);
+    assert.match(index, /Skill approved[\s\S]*?<strong>1<\/strong>/);
+    assert.match(index, /Skill rejected signals[\s\S]*?<strong>1<\/strong>/);
+  });
+
+  it("renders skill synthesis candidates in the review queue", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-skill-candidates-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/inbox/proposals/skill_candidate_1.json"), JSON.stringify({
+      id: "skill_candidate_1",
+      protocol_version: "0.1",
+      type: "skill_synthesis_candidate",
+      action: "skill_create",
+      scope: "personal",
+      target_path: "skills/openclaw/openclaw-memory-operations/SKILL.md",
+      target_skill: "OpenClaw memory operations",
+      title: "OpenClaw memory operations",
+      summary: "Skill candidate synthesized from repeated stable signals.",
+      body_markdown: "# OpenClaw memory operations\n\n## When To Use\nNeed to import OpenClaw memory.\n\n## Procedure\n1. Export memory JSON.\n\n## Verification\n- Test passed.\n\n## Pitfalls\n- Avoid raw logs.\n\n## Do Not Use When\n- One-off.\n\n## Related Wiki Pages\n- [[kb/procedures/openclaw-memory]]\n\n## Provenance\n- raw-vault://codex/session-1",
+      source_refs: ["raw-vault://codex/session-1", "raw-vault://codex/session-2"],
+      source_hashes: ["sha256:1", "sha256:2"],
+      evidence_ids: ["sha256:e1", "sha256:e2"],
+      source_count: 2,
+      confidence: 0.91,
+      ladder_choice: "skill_create",
+      existing_skill_path: null,
+      related_wiki_paths: ["kb/procedures/openclaw-memory"],
+      review_hint: {
+        suggested_decision: "approve",
+        risk_notes: ["semantic_skill_review:approve_candidate", "semantic_skill_score:0.91", "semantic_skill_reason:Durable class-level skill."],
+      },
+      created_at: "2026-05-26T00:00:00.000Z",
+    }), "utf8");
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("OpenClaw memory operations"));
+    assert.ok(review.includes("skill_create"));
+    assert.ok(review.includes("0.91"));
+    assert.ok(review.includes("praxisbase skill review --json"));
+  });
 });

@@ -33,6 +33,7 @@ import { harvestCommand } from "./commands/harvest.js";
 import { agentToolsCommand } from "./commands/agent-tools.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { agentmemoryCommand } from "./commands/agentmemory.js";
+import { skillCommand } from "./commands/skill.js";
 
 const program = new Command();
 
@@ -373,6 +374,8 @@ program
   .option("--retry-failed-distill-only", "retry only chunks with cached AI distill failures")
   .option("--max-curation-proposals <n>", "maximum AI wiki curation proposals for this daily run")
   .option("--no-context-economy", "disable context economy reduction for this daily run")
+  .option("--semantic-review", "enable semantic review for wiki curation proposals")
+  .option("--skill-synthesis", "enable skill candidate synthesis for this daily run")
   .option("--progress", "print stage progress to stderr while the daily run is active")
   .option("--json")
   .action(async (
@@ -394,6 +397,8 @@ program
       retryFailedDistillOnly?: boolean;
       maxCurationProposals?: string;
       noContextEconomy?: boolean;
+      semanticReview?: boolean;
+      skillSynthesis?: boolean;
       progress?: boolean;
       json?: boolean;
     }
@@ -405,6 +410,34 @@ program
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
       aiConcurrency: options.aiConcurrency ? parseInt(options.aiConcurrency, 10) : undefined,
       maxCurationProposals: options.maxCurationProposals ? parseInt(options.maxCurationProposals, 10) : undefined,
+    }));
+  });
+
+program
+  .command("skill")
+  .argument("<sub>", "subcommand (synthesize|curate|review|promote|export)")
+  .option("--mode <mode>", "personal, team, or team-git", "personal")
+  .option("--agent <agent>", "agent profile for skill export")
+  .option("--review")
+  .option("--dry-run")
+  .option("--proposal <id>")
+  .option("--max-clusters <n>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      mode?: "personal" | "team" | "team-git";
+      agent?: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "agentmemory" | "generic";
+      review?: boolean;
+      dryRun?: boolean;
+      proposal?: string;
+      maxClusters?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await skillCommand(process.cwd(), sub, {
+      ...options,
+      maxClusters: options.maxClusters ? parseInt(options.maxClusters, 10) : undefined,
     }));
   });
 

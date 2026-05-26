@@ -138,6 +138,10 @@
     "./commands/mcp.js": {
       "types": "./src/commands/mcp.ts",
       "default": "./dist/commands/mcp.js"
+    },
+    "./commands/skill.js": {
+      "types": "./src/commands/skill.ts",
+      "default": "./dist/commands/skill.js"
     }
   },
   "bin": {

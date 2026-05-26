@@ -9,6 +9,26 @@ import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { PROTOCOL_VERSION, protocolPaths } from "@praxisbase/core";
 
 describe("runDailyExperience", () => {
+  const passingSemanticWikiReview = {
+    type: "semantic_wiki_review",
+    candidate_id: "ignored-by-normalizer",
+    target_path: "ignored-by-normalizer",
+    decision: "promote",
+    quality_score: 0.91,
+    long_term_agent_value: true,
+    is_run_report_summary: false,
+    is_raw_or_near_raw_copy: false,
+    is_actionable: true,
+    is_reusable: true,
+    evidence_support: "strong",
+    should_merge_with: null,
+    revision_required: false,
+    fatal_issues: [],
+    missing_requirements: [],
+    reason: "Reusable procedure with concrete trigger and verification.",
+    reviewed_at: "2026-05-21T01:00:00.000Z",
+  };
+
   it("derives clear personal next actions from daily report counts", () => {
     const nextActions = deriveDailyNextActions({
       id: "daily-experience_20260521",
@@ -51,6 +71,8 @@ describe("runDailyExperience", () => {
       quality_findings: 0,
       site_pages: 5,
       changed_stable_knowledge: true,
+      semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
+      skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, promoted: 0 },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -94,6 +116,8 @@ describe("runDailyExperience", () => {
       quality_findings: 0,
       site_pages: 6,
       changed_stable_knowledge: true,
+      semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
+      skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, promoted: 0 },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -404,6 +428,7 @@ describe("runDailyExperience", () => {
       authorityMode: "personal-local",
       mode: "write",
       buildSite: true,
+      semanticReview: true,
       now: "2026-05-21T01:00:00.000Z",
       env: { PRAXISBASE_LLM_API_KEY: "test-key" },
       aiClient: {
@@ -435,6 +460,9 @@ describe("runDailyExperience", () => {
                 risk_notes: [],
               },
             };
+          }
+          if (input.schemaName === "semantic_wiki_review") {
+            return { ok: true, json: passingSemanticWikiReview };
           }
           const prompt = JSON.parse(input.user) as {
             source: {
@@ -1476,5 +1504,280 @@ describe("runDailyExperience", () => {
     assert.equal(capturedEnabled.length, 1);
     assert.equal(capturedDisabled.length, 1);
     assert.notEqual(capturedEnabled[0], capturedDisabled[0]);
+  });
+
+  it("exposes semantic_review counts from curation in the daily report", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-semantic-review-counts-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      semanticReview: true,
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return {
+              ok: true,
+              json: {
+                title: "OpenClaw auth refresh semantic review",
+                summary: "Use retry guard coverage when repairing OpenClaw auth refresh.",
+                page_kind: "known_fix",
+                target_path: "kb/known-fixes/openclaw-auth-refresh-semantic-review.md",
+                body_markdown: [
+                  "# OpenClaw auth refresh semantic review",
+                  "",
+                  "## Problem",
+                  "Auth refresh handling was incomplete.",
+                  "",
+                  "## Fix",
+                  "- Add retry guard coverage before retrying auth refresh.",
+                  "- Verify the fix with pnpm test.",
+                  "",
+                  "## Verification",
+                  "- pnpm test passed",
+                ].join("\n"),
+                confidence: 0.91,
+                risk_notes: [],
+              },
+            };
+          }
+          if (input.schemaName === "semantic_wiki_review") {
+            return { ok: true, json: passingSemanticWikiReview };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: { source_ref: string; source_hash: string; chunk_hash: string; agent: string; scope_hint: string };
+          };
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw auth refresh needs retry guard coverage.",
+              actions: ["Added retry guard."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Add retry guards around auth refresh repair paths."],
+              risks: [],
+              suggested_tags: ["openclaw", "auth"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.91,
+            },
+          };
+        },
+      },
+    });
+
+    assert.ok(report.semantic_review);
+    assert.equal(report.semantic_review.enabled, true);
+    assert.equal(report.semantic_review.reviewed, 1);
+    assert.equal(report.semantic_review.promote, 1);
+    assert.equal(typeof report.semantic_review.reject, "number");
+    assert.equal(typeof report.semantic_review.needs_human, "number");
+  });
+
+  it("can run skill synthesis as an explicit daily stage without writing stable skills", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-skill-synthesis-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "OpenClaw memory import used export, hash verification, and provenance import.", "utf8");
+    await writeFile(join(sessions, "session-2.txt"), "Repeated OpenClaw memory import used export, hash verification, and provenance import.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      path: sessions,
+      scopeDefault: "personal",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-26T00:00:00.000Z",
+      skillSynthesis: true,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "DistilledExperience") {
+            return { ok: true, json: {
+              summary: "OpenClaw memory import repair.",
+              problem: "Need to import OpenClaw memory into PraxisBase with provenance.",
+              actions: ["Exported memory JSON.", "Verified hash.", "Imported with provenance."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Export memory, verify hash, then import with provenance."],
+              risks: [],
+              suggested_tags: ["openclaw"],
+              suggested_wiki_kind: "procedure",
+              skill_candidate: {
+                should_create: true,
+                title: "OpenClaw memory import operations",
+                trigger: "Need to import OpenClaw memory into PraxisBase",
+                procedure: ["Export memory JSON.", "Verify hash.", "Import with provenance."],
+              },
+              confidence: 0.91,
+            } };
+          }
+          if (input.schemaName === "semantic_skill_review") {
+            return { ok: true, json: {
+              decision: "approve_candidate",
+              quality_score: 0.91,
+              class_level: true,
+              actionable: true,
+              reusable: true,
+              safe_for_future_agents: true,
+              evidence_support: "strong",
+              should_update_existing: null,
+              fatal_issues: [],
+              missing_requirements: [],
+              reason: "Durable class-level skill.",
+              reviewed_at: "2026-05-26T00:00:00.000Z",
+            } };
+          }
+          return { ok: true, json: {} };
+        },
+      },
+    });
+
+    assert.equal(report.skill_synthesis.enabled, true);
+    assert.equal(report.skill_synthesis.candidates, 1);
+    assert.ok(report.outputs.some((path) => path.includes(".praxisbase/reports/skill-synthesis/")));
+    await assert.rejects(() => stat(join(root, "skills/openclaw/openclaw-memory-import-operations/SKILL.md")), { code: "ENOENT" });
+  });
+
+  it("auto-promotes wiki_curated_proposal with passing semantic review", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-semantic-promote-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/reports/wiki-curation"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/staging/experience-envelopes"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/inbox/reviews"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/runs/review"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-curated_semantic_pass.json"),
+      JSON.stringify({
+        id: "wiki-curated_semantic_pass",
+        protocol_version: "0.1",
+        type: "wiki_curated_proposal",
+        target_path: "kb/known-fixes/openclaw-ack-timing.md",
+        action: "create",
+        page_kind: "known_fix",
+        scope: "personal",
+        title: "OpenClaw ACK timing",
+        summary: "Fix ACK timing.",
+        body_markdown: "# OpenClaw ACK timing\n\n## Problem\nACK timing regressed after deploy.\n\n## Fix\n- Adjust the ACK timeout to 5 seconds before retrying.\n- Verify the fix with pnpm test.\n\n## Verification\n- pnpm test passed",
+        source_refs: ["raw-vault://codex/ack"],
+        source_hashes: ["sha256:ack"],
+        source_count: 2,
+        evidence_ids: ["capture_ack_1"],
+        confidence: 0.91,
+        maturity: "draft",
+        provenance: [{ source_ref: "raw-vault://codex/ack", source_hash: "sha256:ack" }],
+        review_hint: {
+          why_review: "Semantic review passed",
+          suggested_decision: "approve",
+          risk_notes: ["semantic_review:promote", "semantic_score:0.91", "semantic_reason:High quality reusable fix"],
+        },
+        guards: [{ id: "path", ok: true, message: "allowed" }],
+        created_at: "2026-05-26T10:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      buildSite: true,
+      now: "2026-05-26T11:00:00.000Z",
+      degraded: true,
+    });
+
+    assert.equal(report.changed_stable_knowledge, true);
+    const promoted = await readFile(join(root, "kb/known-fixes/openclaw-ack-timing.md"), "utf8");
+    assert.match(promoted, /OpenClaw ACK timing/);
+  });
+
+  it("blocks auto-promotion of wiki_curated_proposal without passing semantic review", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-semantic-block-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/reports/wiki-curation"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/staging/experience-envelopes"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/inbox/reviews"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/runs/review"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+
+    await writeFile(
+      join(root, ".praxisbase/inbox/proposals/wiki-curated_no_semantic.json"),
+      JSON.stringify({
+        id: "wiki-curated_no_semantic",
+        protocol_version: "0.1",
+        type: "wiki_curated_proposal",
+        target_path: "kb/known-fixes/openclaw-no-semantic.md",
+        action: "create",
+        page_kind: "known_fix",
+        scope: "personal",
+        title: "OpenClaw no semantic review",
+        summary: "Fix without semantic review.",
+        body_markdown: "# No Semantic Review\n\n## Problem\nMissing semantic review.\n\n## Fix\n- Run semantic review before promotion.\n- Verify with pnpm test.\n\n## Verification\n- pnpm test passed",
+        source_refs: ["raw-vault://codex/nosem"],
+        source_hashes: ["sha256:nosem"],
+        source_count: 2,
+        evidence_ids: ["capture_nosem_1"],
+        confidence: 0.91,
+        maturity: "draft",
+        provenance: [{ source_ref: "raw-vault://codex/nosem", source_hash: "sha256:nosem" }],
+        review_hint: {
+          why_review: "No semantic review present",
+          suggested_decision: "approve",
+          risk_notes: [],
+        },
+        guards: [{ id: "path", ok: true, message: "allowed" }],
+        created_at: "2026-05-26T10:00:00.000Z",
+      }),
+      "utf8",
+    );
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      buildSite: true,
+      now: "2026-05-26T11:00:00.000Z",
+      degraded: true,
+    });
+
+    assert.equal(report.changed_stable_knowledge, false);
+    await assert.rejects(() => readFile(join(root, "kb/known-fixes/openclaw-no-semantic.md"), "utf8"));
+    const exceptions = await readdir(join(root, ".praxisbase/exceptions/human-required"));
+    const exceptionFiles = await Promise.all(exceptions.map(async (file) =>
+      JSON.parse(await readFile(join(root, ".praxisbase/exceptions/human-required", file), "utf8"))
+    ));
+    assert.ok(
+      exceptionFiles.some((exc) => exc.reason === "semantic_review_required_for_auto_promotion"),
+      "expected an exception with reason semantic_review_required_for_auto_promotion",
+    );
   });
 });

@@ -303,6 +303,8 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 function renderDailyUpdateSection(report: DailyReportSummary): string {
   const dateLabel = report.created_at.slice(0, 10);
   const contextEconomy = report.context_economy;
+  const semanticReview = report.semantic_review;
+  const skillSynthesis = report.skill_synthesis;
   const dailyCards: Array<{ label: string; value: string; href?: string }> = [
     { label: "Sources", value: String(report.source_count) },
     { label: "Imported", value: String(report.imported) },
@@ -321,7 +323,16 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
     ${contextEconomy ? `<article><span>Context Economy</span><strong>${escapeHtml(contextEconomy.enabled ? "On" : "Off")}</strong></article>
     <article><span>Reduced items</span><strong>${escapeHtml(String(contextEconomy.items_reduced))}</strong></article>
     <article><span>Saved bytes</span><strong>${escapeHtml(contextEconomy.saved_bytes.toLocaleString("en-US"))}</strong></article>` : ""}
-  </div>
+	    ${semanticReview && semanticReview.enabled ? `<article><span>Semantic review</span><strong>${escapeHtml(String(semanticReview.reviewed))} reviewed</strong></article>
+	    <article><span>Semantic promote</span><strong>${escapeHtml(String(semanticReview.promote))}</strong></article>
+	    <article><span>Semantic reject</span><strong>${escapeHtml(String(semanticReview.reject))}</strong></article>
+	    <article><span>Semantic needs human</span><strong>${escapeHtml(String(semanticReview.needs_human))}</strong></article>` : ""}
+	    ${skillSynthesis && skillSynthesis.enabled ? `<article><span>Skill synthesis</span><strong>${escapeHtml(String(skillSynthesis.reviewed))} reviewed</strong></article>
+	    <article><span>Skill candidates</span><strong>${escapeHtml(String(skillSynthesis.candidates))}</strong></article>
+	    <article><span>Skill approved</span><strong>${escapeHtml(String(skillSynthesis.approved))}</strong></article>
+	    <article><span>Skill rejected signals</span><strong>${escapeHtml(String(skillSynthesis.rejected_signals ?? 0))}</strong></article>
+	    <article><span>Skill needs human</span><strong>${escapeHtml(String(skillSynthesis.needs_human))}</strong></article>` : ""}
+	  </div>
   ${renderAgentMemoryStatus(report)}
 </section>`;
 }
@@ -393,6 +404,24 @@ function renderRelationshipDetails(item: PendingWikiProposalCandidate): string {
   return rows.join("\n");
 }
 
+interface SemanticReviewInfo {
+  decision: string;
+  score: string;
+  reason: string;
+}
+
+function extractSemanticReviewFromRiskNotes(riskNotes: string[]): SemanticReviewInfo | null {
+  const decision = riskNotes.find((note) => note.startsWith("semantic_review:") && note !== "semantic_review:unavailable")?.split(":")[1];
+  const score = riskNotes.find((note) => note.startsWith("semantic_score:"))?.split(":")[1];
+  const reason = riskNotes.find((note) => note.startsWith("semantic_reason:"))?.substring("semantic_reason:".length);
+  if (!decision && !score && !reason) return null;
+  return { decision: decision ?? "n/a", score: score ?? "n/a", reason: reason ?? "" };
+}
+
+function renderSemanticReviewHtml(info: SemanticReviewInfo): string {
+  return `<dt>Semantic review</dt><dd>${escapeHtml(info.decision)} &middot; score ${escapeHtml(info.score)}${info.reason ? ` &middot; ${escapeHtml(info.reason)}` : ""}</dd>`;
+}
+
 function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): string {
   if (candidates.length === 0) return "";
   return `<section class="pending-candidates">
@@ -418,6 +447,7 @@ function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): st
         ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
         ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
         ${renderRelationshipDetails(item)}
+        ${item.review_hint && item.review_hint.risk_notes.length > 0 ? (() => { const sr = extractSemanticReviewFromRiskNotes(item.review_hint.risk_notes); return sr ? renderSemanticReviewHtml(sr) : ""; })() : ""}
       </dl>
     </li>`).join("\n")}
   </ol>
@@ -467,9 +497,11 @@ function statusLabel(status: CandidateStatus): string {
   return "Human required";
 }
 
-function recommendedCandidateCommand(status: CandidateStatus): string {
+function recommendedCandidateCommand(item: ReviewQueueCandidate): string {
+  const status = item.status;
   if (status === "promoted") return "praxisbase agentmemory export --mode personal --write --json";
   if (status === "approved") return "praxisbase promote --auto";
+  if (item.kind === "skill" || item.source_kind === "skill_synthesis") return "praxisbase skill review --json";
   if (status === "needs_human") return "praxisbase review list --json";
   return "praxisbase review --auto";
 }
@@ -489,8 +521,9 @@ function renderCandidateCard(item: ReviewQueueCandidate): string {
       ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
       ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
       ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
-      <dt>Recommended</dt><dd><code>${escapeHtml(recommendedCandidateCommand(item.status))}</code></dd>
+      <dt>Recommended</dt><dd><code>${escapeHtml(recommendedCandidateCommand(item))}</code></dd>
       ${renderRelationshipDetails(item)}
+      ${item.review_hint && item.review_hint.risk_notes.length > 0 ? (() => { const sr = extractSemanticReviewFromRiskNotes(item.review_hint.risk_notes); return sr ? renderSemanticReviewHtml(sr) : ""; })() : ""}
     </dl>
     <details>
       <summary>Preview generated markdown</summary>
@@ -934,7 +967,26 @@ interface DailyReportSummary {
     report_ref?: string;
     warnings: string[];
   };
-  agentmemory_sources: Array<{
+	  semantic_review?: {
+    enabled: boolean;
+    reviewed: number;
+    promote: number;
+    reject: number;
+	    needs_human: number;
+	  };
+	  skill_synthesis?: {
+	    enabled: boolean;
+	    signals: number;
+	    rejected_signals: number;
+	    clusters: number;
+	    candidates: number;
+	    reviewed: number;
+	    approved: number;
+	    rejected: number;
+	    needs_human: number;
+	    promoted: number;
+	  };
+	  agentmemory_sources: Array<{
     name: string;
     status: string;
     imported: number;
@@ -1009,7 +1061,26 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
       report_ref?: string;
       warnings?: string[];
     };
-    type?: string;
+	    semantic_review?: {
+      enabled?: boolean;
+      reviewed?: number;
+      promote?: number;
+      reject?: number;
+	      needs_human?: number;
+	    };
+	    skill_synthesis?: {
+	      enabled?: boolean;
+	      signals?: number;
+	      rejected_signals?: number;
+	      clusters?: number;
+	      candidates?: number;
+	      reviewed?: number;
+	      approved?: number;
+	      rejected?: number;
+	      needs_human?: number;
+	      promoted?: number;
+	    };
+	    type?: string;
   }> = [];
 
   for (const file of jsonFiles) {
@@ -1048,7 +1119,26 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
       report_ref: contextEconomy.report_ref,
       warnings: Array.isArray(contextEconomy.warnings) ? contextEconomy.warnings : [],
     } : undefined,
-    agentmemory_sources: sources
+	    semantic_review: latest.semantic_review ? {
+      enabled: latest.semantic_review.enabled === true,
+      reviewed: typeof latest.semantic_review.reviewed === "number" ? latest.semantic_review.reviewed : 0,
+      promote: typeof latest.semantic_review.promote === "number" ? latest.semantic_review.promote : 0,
+      reject: typeof latest.semantic_review.reject === "number" ? latest.semantic_review.reject : 0,
+	      needs_human: typeof latest.semantic_review.needs_human === "number" ? latest.semantic_review.needs_human : 0,
+	    } : undefined,
+	    skill_synthesis: latest.skill_synthesis ? {
+	      enabled: latest.skill_synthesis.enabled === true,
+	      signals: typeof latest.skill_synthesis.signals === "number" ? latest.skill_synthesis.signals : 0,
+	      rejected_signals: typeof latest.skill_synthesis.rejected_signals === "number" ? latest.skill_synthesis.rejected_signals : 0,
+	      clusters: typeof latest.skill_synthesis.clusters === "number" ? latest.skill_synthesis.clusters : 0,
+	      candidates: typeof latest.skill_synthesis.candidates === "number" ? latest.skill_synthesis.candidates : 0,
+	      reviewed: typeof latest.skill_synthesis.reviewed === "number" ? latest.skill_synthesis.reviewed : 0,
+	      approved: typeof latest.skill_synthesis.approved === "number" ? latest.skill_synthesis.approved : 0,
+	      rejected: typeof latest.skill_synthesis.rejected === "number" ? latest.skill_synthesis.rejected : 0,
+	      needs_human: typeof latest.skill_synthesis.needs_human === "number" ? latest.skill_synthesis.needs_human : 0,
+	      promoted: typeof latest.skill_synthesis.promoted === "number" ? latest.skill_synthesis.promoted : 0,
+	    } : undefined,
+	    agentmemory_sources: sources
       .filter((source) => source.source_type === "agentmemory")
       .map((source) => ({
         name: source.name ?? "agentmemory",

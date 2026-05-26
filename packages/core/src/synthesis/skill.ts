@@ -1,7 +1,19 @@
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import type { Proposal } from "../protocol/schemas.js";
+import { ProposalSchema } from "../protocol/schemas.js";
 import { makeId, slugifyId, computeHash } from "../protocol/id.js";
 import type { DistilledExperience } from "../ai/distill.js";
+import type { AiJsonClient } from "../ai/client.js";
+import { writeJson } from "../store/file-store.js";
+import { protocolPaths } from "../protocol/paths.js";
+import { collectSkillSignalsFromDistilledExperiences, collectSkillSignalsFromStableWikiPages } from "./skill-signals.js";
+import { clusterSkillSignals } from "./skill-stability.js";
+import { loadStableSkillInventory, matchStableSkills } from "./skill-inventory.js";
+import { proposeSkillCandidate } from "./skill-proposer.js";
+import { reviewSkillCandidateSemantically } from "./skill-review.js";
+import { decideSemanticSkillAction } from "./skill-review-policy.js";
+import { SkillSynthesisReportSchema, type SkillSynthesisCandidate, type SkillSynthesisReport } from "./skill-model.js";
+import { collectWikiPages } from "../wiki/render-site.js";
 
 export interface SkillSynthesisInput {
   signature: string;
@@ -211,4 +223,131 @@ export function generateSkillDraftsFromDistilledExperiences(input: DistilledSkil
   }
 
   return proposals.sort((a, b) => a.patch.path.localeCompare(b.patch.path));
+}
+
+export interface SynthesizeSkillCandidatesInput {
+  mode: "dry-run" | "review";
+  authorityMode: "personal-local" | "team-git";
+  experiences: DistilledExperience[];
+  aiClient?: AiJsonClient;
+  now?: string;
+  maxClusters?: number;
+}
+
+export interface SynthesizeSkillCandidatesResult {
+  report: SkillSynthesisReport;
+  candidates: SkillSynthesisCandidate[];
+}
+
+export function skillCandidateToKnowledgeProposal(candidate: SkillSynthesisCandidate): Proposal {
+  return ProposalSchema.parse({
+    id: candidate.id,
+    protocol_version: PROTOCOL_VERSION,
+    type: "knowledge_proposal",
+    scope: candidate.scope,
+    action: candidate.action === "skill_update" ? "patch" : "create",
+    target_type: "skill",
+    target_id: candidate.target_skill,
+    agent_id: "skill-synthesis",
+    agent_type: "curator",
+    environment_id: "local",
+    run_id: `skill-synthesis-${candidate.created_at}`,
+    idempotency_key: candidate.id,
+    evidence: {
+      source_uri: candidate.source_refs[0],
+      source_hash: candidate.source_hashes[0],
+      excerpt: candidate.summary,
+      repair_result: "success",
+      verification: `Semantic skill review required; evidence_count=${candidate.source_count}`,
+      source_refs: candidate.source_refs.map((uri, index) => ({ uri, hash: candidate.source_hashes[index] ?? candidate.source_hashes[0] })),
+      redacted_summary: candidate.summary,
+    },
+    patch: {
+      path: candidate.target_path,
+      content: candidate.body_markdown,
+    },
+    created_at: candidate.created_at,
+  });
+}
+
+export async function synthesizeSkillCandidates(root: string, input: SynthesizeSkillCandidatesInput): Promise<SynthesizeSkillCandidatesResult> {
+  const now = input.now ?? new Date().toISOString();
+  const pages = await collectWikiPages(root);
+  const signals = [
+    ...collectSkillSignalsFromDistilledExperiences(input.experiences, { authorityMode: input.authorityMode }),
+    ...collectSkillSignalsFromStableWikiPages(pages, { authorityMode: input.authorityMode }),
+  ];
+  const clusters = clusterSkillSignals(signals, { maxClusters: input.maxClusters });
+  const clusteredSignalCount = clusters.reduce((sum, cluster) => sum + cluster.source_count, 0);
+  const rejectedSignals = Math.max(0, signals.length - clusteredSignalCount);
+  const inventory = await loadStableSkillInventory(root);
+  const candidates: SkillSynthesisCandidate[] = [];
+  let reviewed = 0;
+  let approved = 0;
+  let rejected = 0;
+  let needsHuman = 0;
+  const outputs: string[] = [];
+  const warnings: string[] = [];
+
+  for (const cluster of clusters) {
+    try {
+      const matches = matchStableSkills(cluster, inventory);
+      const candidate = await proposeSkillCandidate({ cluster, matches, aiClient: input.aiClient, now });
+      const review = await reviewSkillCandidateSemantically({ candidate, client: input.aiClient, now });
+      if (review) reviewed++;
+      const decision = decideSemanticSkillAction(candidate, review ?? undefined);
+      const reviewedCandidate: SkillSynthesisCandidate = {
+        ...candidate,
+        review_hint: {
+          suggested_decision: decision.action === "reject" ? "reject" : decision.action === "rewrite_as_update" ? "merge" : decision.action === "needs_human" ? "edit" : "approve",
+          risk_notes: decision.review_notes,
+        },
+      };
+      if (decision.action === "reject") rejected++;
+      else if (decision.action === "needs_human" || decision.action === "rewrite_as_update" || decision.action === "retry_synthesis") needsHuman++;
+      else approved++;
+      candidates.push(reviewedCandidate);
+      if (input.mode === "review" && decision.action !== "reject") {
+        const path = `${protocolPaths.inboxProposals}/${reviewedCandidate.id}.json`;
+        await writeJson(root, path, reviewedCandidate);
+        outputs.push(path);
+        if (review?.id) {
+          const reviewPath = `${protocolPaths.inboxReviews}/${review.id}.json`;
+          await writeJson(root, reviewPath, review);
+          outputs.push(reviewPath);
+        }
+      }
+    } catch (error) {
+      warnings.push(`skill_synthesis_failed:${cluster.id}:${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  const report = SkillSynthesisReportSchema.parse({
+    id: makeId("skill-synthesis", now.replace(/[^0-9]/g, "").slice(0, 14) || "run"),
+    protocol_version: PROTOCOL_VERSION,
+    type: "skill_synthesis_report",
+    authority_mode: input.authorityMode,
+    mode: input.mode,
+    enabled: true,
+    signals: signals.length,
+    rejected_signals: rejectedSignals,
+    clusters: clusters.length,
+    candidates: candidates.length,
+    reviewed,
+    approved,
+    rejected,
+    needs_human: needsHuman,
+    promoted: 0,
+    outputs,
+    warnings,
+    created_at: now,
+  });
+
+  if (input.mode === "review") {
+    const reportPath = `.praxisbase/reports/skill-synthesis/${report.id}.json`;
+    await writeJson(root, reportPath, report);
+    report.outputs.push(reportPath);
+  }
+
+  return { report, candidates };
 }

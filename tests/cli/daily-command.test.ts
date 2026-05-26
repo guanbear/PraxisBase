@@ -110,6 +110,33 @@ describe("daily CLI command", () => {
     assert.equal(parsed.report.context_economy.rule_set_hash, "disabled");
   });
 
+  it("passes semanticReview flag through to wiki curation", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-semantic-review-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await sourceCommand(root, "add", {
+      name: "local-codex",
+      agent: "codex",
+      type: "local",
+      path: sessions,
+      scope: "personal",
+      json: true,
+    });
+
+    const output = await dailyCommand(root, "run", {
+      mode: "personal",
+      degraded: true,
+      semanticReview: true,
+      json: true,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.semantic_review.enabled, true);
+  });
+
   it("streams progress lines to a sink when progress output is requested", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-progress-"));
     const sessions = join(root, "sessions");

@@ -1,8 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { generateSkillDraft, generateSkillDraftsFromDistilledExperiences } from "@praxisbase/core/synthesis/skill.js";
+import { generateSkillDraft, generateSkillDraftsFromDistilledExperiences, synthesizeSkillCandidates } from "@praxisbase/core/synthesis/skill.js";
 import { ProposalSchema } from "@praxisbase/core/protocol/schemas.js";
 import type { DistilledExperience } from "@praxisbase/core/ai/distill.js";
+import { mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const confirmedEpisodes = [
   {
@@ -143,5 +146,181 @@ describe("Skill synthesis", () => {
     assert.match(validated.patch.content, /OpenClaw auth refresh failures/);
     assert.match(validated.patch.content, /Based on 2 distilled successful experiences/);
     assert.ok(!validated.patch.content.includes("session-3"));
+  });
+
+  it("synthesizes reviewed skill candidates without writing stable skills", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-api-"));
+    await mkdir(join(root, "skills"), { recursive: true });
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "personal",
+      summary: "OpenClaw memory import repair.",
+      problem: "OpenClaw memory import needed provenance.",
+      actions: ["Exported memory JSON.", "Verified hash.", "Imported with provenance."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["pnpm test passed"],
+      reusable_lessons: ["Export memory, verify hash, then import with provenance."],
+      risks: [],
+      suggested_tags: ["openclaw"],
+      suggested_wiki_kind: "procedure",
+      skill_candidate: {
+        should_create: true,
+        title: "OpenClaw memory import operations",
+        trigger: "Need to import OpenClaw memory into PraxisBase",
+        procedure: ["Export memory JSON.", "Verify hash.", "Import with provenance."],
+      },
+      confidence: 0.91,
+    };
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "review",
+      authorityMode: "personal-local",
+      now: "2026-05-26T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+      ],
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "semantic_skill_review") {
+            return {
+              ok: true,
+              json: {
+                decision: "approve_candidate",
+                quality_score: 0.91,
+                class_level: true,
+                actionable: true,
+                reusable: true,
+                safe_for_future_agents: true,
+                evidence_support: "strong",
+                should_update_existing: null,
+                fatal_issues: [],
+                missing_requirements: [],
+                reason: "Durable class-level agent skill.",
+                reviewed_at: "2026-05-26T00:00:00.000Z",
+              },
+            };
+          }
+          return { ok: true, json: {} };
+        },
+      },
+    });
+
+    assert.equal(result.report.signals, 2);
+    assert.equal(result.report.candidates, 1);
+    assert.equal(result.report.approved, 1);
+    assert.equal(result.candidates.length, 1);
+    assert.deepEqual(await readdir(join(root, "skills")), []);
+    const proposalFiles = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(proposalFiles.length, 1);
+    const reviewFiles = await readdir(join(root, ".praxisbase/inbox/reviews"));
+    assert.equal(reviewFiles.length, 1);
+    assert.match(reviewFiles[0], /^semantic_skill_review_/);
+  });
+
+  it("reports low-signal skill signals rejected by stability clustering", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-rejected-signals-"));
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "dry-run",
+      authorityMode: "personal-local",
+      now: "2026-05-26T00:00:00.000Z",
+      experiences: [{
+        source_ref: "raw-vault://codex/session-1",
+        source_hash: "sha256:distilled1",
+        chunk_hashes: ["sha256:chunk1"],
+        agent: "codex",
+        scope_hint: "personal",
+        summary: "OpenClaw memory import repair.",
+        problem: "OpenClaw memory import needed provenance.",
+        actions: ["Exported memory JSON.", "Verified hash.", "Imported with provenance."],
+        failed_attempts: [],
+        outcome: "success",
+        verification: ["pnpm test passed"],
+        reusable_lessons: ["Export memory, verify hash, then import with provenance."],
+        risks: [],
+        suggested_tags: ["openclaw"],
+        suggested_wiki_kind: "procedure",
+        skill_candidate: {
+          should_create: true,
+          title: "OpenClaw memory import operations",
+          trigger: "Need to import OpenClaw memory into PraxisBase",
+          procedure: ["Export memory JSON.", "Verify hash.", "Import with provenance."],
+        },
+        confidence: 0.8,
+      }],
+    });
+
+    assert.equal(result.report.signals, 1);
+    assert.equal(result.report.clusters, 0);
+    assert.equal(result.report.rejected_signals, 1);
+    assert.equal(result.report.candidates, 0);
+  });
+
+  it("uses stable wiki procedures as conservative skill synthesis signals", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-wiki-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-memory-import.md"), `---
+id: openclaw-memory-import
+protocol_version: "0.1"
+type: procedure
+knowledge_type: procedure
+scope: personal
+maturity: verified
+sources:
+  - uri: raw-vault://codex/session-1
+    hash: sha256:source1
+  - uri: raw-vault://codex/session-2
+    hash: sha256:source2
+updated_at: "2026-05-26T00:00:00.000Z"
+---
+# OpenClaw memory import
+
+## When To Use
+Use when importing OpenClaw memory into PraxisBase.
+
+## Procedure
+1. Export memory JSON.
+2. Verify hash.
+3. Import with provenance.
+
+## Verification
+- Daily smoke passed.
+`, "utf8");
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "review",
+      authorityMode: "personal-local",
+      now: "2026-05-26T00:00:00.000Z",
+      experiences: [],
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "semantic_skill_review") {
+            return { ok: true, json: {
+              decision: "approve_candidate",
+              quality_score: 0.91,
+              class_level: true,
+              actionable: true,
+              reusable: true,
+              safe_for_future_agents: true,
+              evidence_support: "strong",
+              should_update_existing: null,
+              fatal_issues: [],
+              missing_requirements: [],
+              reason: "Stable wiki procedure has repeated provenance.",
+              reviewed_at: "2026-05-26T00:00:00.000Z",
+            } };
+          }
+          return { ok: true, json: {} };
+        },
+      },
+    });
+
+    assert.equal(result.report.signals, 2);
+    assert.equal(result.report.candidates, 1);
+    assert.equal(result.candidates[0].related_wiki_paths[0], "kb/procedures/openclaw-memory-import.md");
   });
 });

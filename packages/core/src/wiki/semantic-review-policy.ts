@@ -24,7 +24,8 @@ export interface SemanticArbitrationResult {
 }
 
 const PERSONAL_SCOPES = new Set(["personal"]);
-const MIN_PROMOTE_SCORE = 0.82;
+export const SEMANTIC_PROMOTE_THRESHOLD = 0.82;
+const MIN_PROMOTE_SCORE = SEMANTIC_PROMOTE_THRESHOLD;
 
 export function decideSemanticWikiAction(input: SemanticArbitrationInput): SemanticArbitrationResult {
   const { proposal, assessment, review, hasBeenRetried = false } = input;

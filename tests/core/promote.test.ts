@@ -96,6 +96,39 @@ describe("promotion", () => {
     );
   });
 
+  it("rejects stable skill promotion without a skill promotion audit", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-skill-audit-"));
+    await assert.rejects(
+      promoteApprovedProposal(root, {
+        proposal: {
+          ...proposal,
+          target_type: "skill",
+          patch: {
+            path: "skills/openclaw/openclaw-memory-operations/SKILL.md",
+            content: [
+              "# OpenClaw memory operations",
+              "",
+              "## When To Use",
+              "Use when importing OpenClaw memory into PraxisBase.",
+              "",
+              "## Procedure",
+              "1. Export memory JSON.",
+              "",
+              "## Verification",
+              "- Tests passed.",
+              "",
+              "## Provenance",
+              "- raw-vault://codex/session-1 (sha256:abc)",
+              "",
+            ].join("\n"),
+          },
+        },
+        review,
+      }),
+      /skill promotion audit/
+    );
+  });
+
   it("rejects replacing an existing useful wiki page with a lower-quality rewrite", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-downgrade-"));
     await mkdir(join(root, "kb/known-fixes"), { recursive: true });

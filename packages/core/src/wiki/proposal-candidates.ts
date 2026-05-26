@@ -7,6 +7,7 @@ import { ProposalSchema, type Proposal } from "../protocol/schemas.js";
 import { readJson } from "../store/file-store.js";
 import { makeWikiSlug } from "./model.js";
 import { CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal, type CuratedWikiProposal } from "./curation-model.js";
+import { SkillSynthesisCandidateSchema, type SkillSynthesisCandidate } from "../synthesis/skill-model.js";
 
 export interface PendingWikiProposalCandidate {
   id: string;
@@ -79,6 +80,10 @@ export function isWikiProposalCandidate(value: unknown): value is WikiProposalCa
 
 export function isCuratedWikiProposal(value: unknown): value is CuratedWikiProposal {
   return CuratedWikiProposalSchema.safeParse(value).success;
+}
+
+export function isSkillSynthesisCandidate(value: unknown): value is SkillSynthesisCandidate {
+  return SkillSynthesisCandidateSchema.safeParse(value).success;
 }
 
 function scopeValue(value: unknown): Scope {
@@ -182,6 +187,31 @@ function curatedCandidateMetadata(record: CuratedWikiProposal): PendingWikiPropo
   };
 }
 
+function skillCandidateMetadata(record: SkillSynthesisCandidate): PendingWikiProposalCandidate {
+  return {
+    id: record.id,
+    anchor: candidateAnchor(record.id),
+    title: record.title,
+    summary: `${record.action}: ${record.summary}`,
+    kind: "skill",
+    scope: record.scope,
+    confidence: record.confidence,
+    source_count: record.source_count,
+    review_hint: {
+      why_review: "Review synthesized agent skill before any stable skills/** promotion.",
+      suggested_decision: record.review_hint.suggested_decision,
+      risk_notes: record.review_hint.risk_notes,
+    },
+    related_pages: record.related_wiki_paths.map((path) => ({ slug: path.replace(/\.md$/i, "").split("/").pop() ?? path, path, title: path })),
+    patch_path: record.target_path,
+    patch_content: record.body_markdown,
+    source_id: record.source_refs.join(", "),
+    source_kind: "skill_synthesis",
+    source_hash: record.source_hashes.join(","),
+    created_at: record.created_at,
+  };
+}
+
 export async function collectPendingWikiProposalCandidates(root: string): Promise<PendingWikiProposalCandidate[]> {
   const dir = posix.resolve(root, protocolPaths.inboxProposals);
   let entries: string[];
@@ -197,6 +227,8 @@ export async function collectPendingWikiProposalCandidates(root: string): Promis
       const value = await readJson<unknown>(root, `${protocolPaths.inboxProposals}/${file}`);
       if (isCuratedWikiProposal(value)) {
         candidates.push(curatedCandidateMetadata(value));
+      } else if (isSkillSynthesisCandidate(value)) {
+        candidates.push(skillCandidateMetadata(value));
       } else if (isWikiProposalCandidate(value)) {
         candidates.push(candidateMetadata(value));
       }

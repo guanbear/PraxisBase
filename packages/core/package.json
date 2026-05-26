@@ -91,6 +91,38 @@
       "types": "./src/synthesis/skill.ts",
       "default": "./dist/synthesis/skill.js"
     },
+    "./synthesis/skill-model.js": {
+      "types": "./src/synthesis/skill-model.ts",
+      "default": "./dist/synthesis/skill-model.js"
+    },
+    "./synthesis/skill-signals.js": {
+      "types": "./src/synthesis/skill-signals.ts",
+      "default": "./dist/synthesis/skill-signals.js"
+    },
+    "./synthesis/skill-stability.js": {
+      "types": "./src/synthesis/skill-stability.ts",
+      "default": "./dist/synthesis/skill-stability.js"
+    },
+    "./synthesis/skill-inventory.js": {
+      "types": "./src/synthesis/skill-inventory.ts",
+      "default": "./dist/synthesis/skill-inventory.js"
+    },
+    "./synthesis/skill-proposer.js": {
+      "types": "./src/synthesis/skill-proposer.ts",
+      "default": "./dist/synthesis/skill-proposer.js"
+    },
+    "./synthesis/skill-review.js": {
+      "types": "./src/synthesis/skill-review.ts",
+      "default": "./dist/synthesis/skill-review.js"
+    },
+    "./synthesis/skill-review-policy.js": {
+      "types": "./src/synthesis/skill-review-policy.ts",
+      "default": "./dist/synthesis/skill-review-policy.js"
+    },
+    "./synthesis/skill-audit.js": {
+      "types": "./src/synthesis/skill-audit.ts",
+      "default": "./dist/synthesis/skill-audit.js"
+    },
     "./experience/agent-memory.js": {
       "types": "./src/experience/agent-memory.ts",
       "default": "./dist/experience/agent-memory.js"

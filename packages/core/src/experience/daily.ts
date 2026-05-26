@@ -27,6 +27,7 @@ import { recordWikiSourceSummaryContributions } from "../wiki/source-summary.js"
 import { readReviewPolicy, decideAutoReview } from "../review/policy.js";
 import { reviewProposal } from "../review/reviewer.js";
 import { promoteApprovedProposal } from "../promote/promote.js";
+import { SEMANTIC_PROMOTE_THRESHOLD } from "../wiki/semantic-review-policy.js";
 import { ingestAgentMemory } from "./agent-memory.js";
 import {
   resolveExperienceSource,
@@ -56,8 +57,10 @@ import {
   type ExecutedTeamGitAction,
   type GitCommandRunner,
 } from "./git-workflow.js";
+import { synthesizeSkillCandidates } from "../synthesis/skill.js";
+import type { SkillSynthesisReport } from "../synthesis/skill-model.js";
 
-type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "review-promote" | "site-build";
+type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "skill-synthesis" | "review-promote" | "site-build";
 
 export interface DailyProgressEvent {
   status: "running" | "completed" | "partial" | "failed";
@@ -99,7 +102,9 @@ export interface RunDailyExperienceInput {
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
   noContextEconomy?: boolean;
-  onProgress?: (event: DailyProgressEvent) => void | Promise<void>;
+	  semanticReview?: boolean;
+	  skillSynthesis?: boolean;
+	  onProgress?: (event: DailyProgressEvent) => void | Promise<void>;
 }
 
 function statusFromCounts(input: { warnings: string[]; rejected: number; humanRequired: number; enveloped: number }): "completed" | "partial" | "failed" {
@@ -624,6 +629,35 @@ async function runDailyReviewPromote(root: string, input: { enabled: boolean; no
 
       result.approved_by_policy++;
       if (decision.auto_promote) {
+        const riskNotes: string[] = curated.review_hint?.risk_notes ?? [];
+        const semanticDecision = riskNotes.find((note) => note.startsWith("semantic_review:"))?.split(":")[1];
+        const semanticScoreNote = riskNotes.find((note) => note.startsWith("semantic_score:"));
+        const semanticScore = semanticScoreNote ? Number.parseFloat(semanticScoreNote.split(":")[1]) : NaN;
+        const semanticPassing = semanticDecision === "promote" && Number.isFinite(semanticScore) && semanticScore >= SEMANTIC_PROMOTE_THRESHOLD;
+
+        if (!semanticPassing) {
+          result.needs_human++;
+          const exception = ExceptionRecordSchema.parse({
+            id: `exc_${randomUUID().slice(0, 8)}`,
+            protocol_version: PROTOCOL_VERSION,
+            type: "exception_record",
+            category: "human_required",
+            source_id: review.id,
+            reason: "semantic_review_required_for_auto_promotion",
+            details: {
+              proposal_id: curated.id,
+              auto_promote: true,
+              human_reasons: ["semantic_review_required_for_auto_promotion"],
+              risk_notes: riskNotes,
+            },
+            created_at: input.now,
+          });
+          const exceptionPath = `${protocolPaths.exceptionsHumanRequired}/${exception.id}.json`;
+          await writeJson(root, exceptionPath, exception);
+          result.outputs.push(exceptionPath);
+          continue;
+        }
+
         await promoteApprovedProposal(root, { proposal, review });
         await recordWikiSourceSummaryContributions(root, curated);
         await unlink(join(proposalDir, file)).catch(() => undefined);
@@ -731,6 +765,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       },
     }
     : undefined;
+  const distilledExperiences: DistilledExperience[] = [];
 
   const publishProgress = async (progress: Omit<DailyProgressEvent, "elapsed_ms" | "stage_elapsed_ms">): Promise<void> => {
     const observedAtMs = Date.now();
@@ -872,6 +907,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         });
         const cached = await readDistillCache(root, cachePath);
         if (cached?.status === "distilled") {
+          distilledExperiences.push(cached.experience);
           allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
             verdict: "allow",
             reasons: ["ai_distilled", "ai_distill_cache_hit"],
@@ -948,6 +984,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           });
 
           if (distilled.ok) {
+            distilledExperiences.push(distilled.experience);
             allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
               verdict: "allow",
               reasons: ["ai_distilled"],
@@ -1175,6 +1212,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     limit: input.maxCurationProposals ?? input.limit,
     concurrency: aiConcurrency,
     aiClient: input.aiClient,
+    semanticReview: input.semanticReview ? { enabled: true, client: input.aiClient } : undefined,
     env: input.env,
     fetchImpl: input.fetchImpl,
     aiTimeoutMs: input.aiTimeoutMs,
@@ -1197,7 +1235,30 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       }
       : undefined,
   });
-  outputs.push(`.praxisbase/reports/wiki-curation/${curationReport.id}.json`);
+	  outputs.push(`.praxisbase/reports/wiki-curation/${curationReport.id}.json`);
+
+	  let skillSynthesisReport: SkillSynthesisReport | undefined;
+	  if (input.skillSynthesis) {
+	    if (mode === "write") {
+	      await publishProgress({
+	        status: "running",
+	        current_stage: "skill-synthesis",
+	        current_source: "skill-synthesis",
+	        sources: sourceReports,
+	        ai_distill: aiDistill,
+	        warnings,
+	      });
+	    }
+	    const skillSynthesis = await synthesizeSkillCandidates(root, {
+	      mode: wikiMode,
+	      authorityMode: input.authorityMode,
+	      experiences: distilledExperiences,
+	      aiClient,
+	      now,
+	    });
+	    skillSynthesisReport = skillSynthesis.report;
+	    outputs.push(...skillSynthesisReport.outputs);
+	  }
 
   let reviewPromote: DailyReviewPromoteResult = {
     reviewed: 0,
@@ -1266,7 +1327,40 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       quality_findings: qualityFindings,
       site_pages: sitePages,
       changed_stable_knowledge: reviewPromote.auto_promoted > 0,
-      outputs: reportOutputs,
+	      semantic_review: curationReport.semantic_review ?? {
+        enabled: false,
+        reviewed: 0,
+        promote: 0,
+        merge: 0,
+        revise: 0,
+        reject: 0,
+        needs_human: 0,
+	        unavailable: 0,
+	      },
+	      skill_synthesis: skillSynthesisReport ? {
+	        enabled: true,
+	        signals: skillSynthesisReport.signals,
+	        rejected_signals: skillSynthesisReport.rejected_signals,
+	        clusters: skillSynthesisReport.clusters,
+	        candidates: skillSynthesisReport.candidates,
+	        reviewed: skillSynthesisReport.reviewed,
+	        approved: skillSynthesisReport.approved,
+	        rejected: skillSynthesisReport.rejected,
+	        needs_human: skillSynthesisReport.needs_human,
+	        promoted: skillSynthesisReport.promoted,
+	      } : {
+	        enabled: false,
+	        signals: 0,
+	        rejected_signals: 0,
+	        clusters: 0,
+	        candidates: 0,
+	        reviewed: 0,
+	        approved: 0,
+	        rejected: 0,
+	        needs_human: 0,
+	        promoted: 0,
+	      },
+	      outputs: reportOutputs,
       warnings: Array.from(new Set(warnings)).sort(),
       created_at: now,
     });

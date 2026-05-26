@@ -3,13 +3,18 @@ import { readText, writeText, isStableKnowledgePath, safePath } from "../store/f
 import { shouldAutoMergeReview } from "../review/risk.js";
 import { appearsToBeRawLog } from "../protocol/redact.js";
 import { promotionTimeGuard } from "../wiki/promotion-quality.js";
+import { findApprovedSkillPromotionAudit } from "../synthesis/skill-audit.js";
 
 export interface PromotionError extends Error {
-  code: "unsafe_path" | "raw_log_content" | "review_not_approved" | "quality_gate_failure";
+  code: "unsafe_path" | "raw_log_content" | "review_not_approved" | "quality_gate_failure" | "skill_promotion_audit_required";
 }
 
 function hasHeading(content: string, heading: string): boolean {
   return new RegExp(`^##\\s+${heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "im").test(content);
+}
+
+function isSkillSupportFilePath(path: string): boolean {
+  return /^skills\/[^/]+\/[^/]+\/(references\/[^/]+\.md|templates\/[^/]+\.[A-Za-z0-9._-]+|scripts\/[^/]+\.[A-Za-z0-9._-]+)$/.test(path);
 }
 
 function promotedPageQualityScore(content: string): number {
@@ -88,19 +93,32 @@ export async function promoteApprovedProposal(
 
   const content = input.proposal.patch.content;
 
-  if (patchPath.startsWith("kb/") && appearsToBeRawLog(content)) {
+  if (patchPath.startsWith("skills/")) {
+    const audit = await findApprovedSkillPromotionAudit(root, input.proposal);
+    if (!audit) {
+      const err = new Error(
+        "Stable skill promotion requires an approved skill promotion audit; proposal/review approval alone is not enough."
+      ) as PromotionError;
+      err.code = "skill_promotion_audit_required";
+      throw err;
+    }
+  }
+
+  if ((patchPath.startsWith("kb/") || patchPath.startsWith("skills/")) && appearsToBeRawLog(content)) {
     const err = new Error(
-      "Refusing to promote raw log content into kb/ — store only references, hashes, and summaries"
+      "Refusing to promote raw log content into stable knowledge — store only references, hashes, and summaries"
     ) as PromotionError;
     err.code = "raw_log_content";
     throw err;
   }
 
-  const qualityError = promotionTimeGuard(content);
-  if (qualityError) {
-    const err = new Error(qualityError) as PromotionError;
-    err.code = "quality_gate_failure";
-    throw err;
+  if (!isSkillSupportFilePath(patchPath)) {
+    const qualityError = promotionTimeGuard(content);
+    if (qualityError) {
+      const err = new Error(qualityError) as PromotionError;
+      err.code = "quality_gate_failure";
+      throw err;
+    }
   }
 
   await assertNoStableKnowledgeDowngrade(root, patchPath, content);

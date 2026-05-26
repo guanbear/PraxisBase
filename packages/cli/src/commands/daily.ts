@@ -19,6 +19,8 @@ export interface DailyCommandOptions {
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
   noContextEconomy?: boolean;
+  semanticReview?: boolean;
+  skillSynthesis?: boolean;
   progress?: boolean;
   progressSink?: (line: string) => void;
 }
@@ -102,6 +104,8 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         retryFailedDistillOnly: options.retryFailedDistillOnly,
         maxCurationProposals: options.maxCurationProposals,
         noContextEconomy: options.noContextEconomy,
+        semanticReview: options.semanticReview,
+        skillSynthesis: options.skillSynthesis,
         onProgress: options.progress
           ? async (event) => {
             (options.progressSink ?? console.error)(formatProgressLine(event));
