@@ -124,6 +124,31 @@ praxisbase personal run --json
 praxisbase daily run --mode personal --build-site --json
 \`\`\`
 
+Read the JSON \`next_actions\` field after every personal or daily run. Follow the loop in this order:
+
+1. If \`next_actions.status\` is \`needs_privacy_triage\`, run:
+
+\`\`\`bash
+praxisbase privacy triage --mode personal --auto-release --json
+praxisbase personal run --open --json
+\`\`\`
+
+2. If \`next_actions.status\` is \`needs_review\`, inspect \`dist/review.html\` and run:
+
+\`\`\`bash
+praxisbase review --auto
+praxisbase promote --auto
+praxisbase wiki build-site --json
+\`\`\`
+
+3. If \`next_actions.status\` is \`ready_to_export_agentmemory\`, share only stable wiki lessons back to session memory:
+
+\`\`\`bash
+praxisbase agentmemory export --mode personal --write --json
+\`\`\`
+
+Do not export raw evidence, review candidates, rejected material, or human-required material to AgentMemory.
+
 For offline smoke only:
 
 \`\`\`bash

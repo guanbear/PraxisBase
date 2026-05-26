@@ -159,7 +159,10 @@ describe("agentmemory export", () => {
     assert.ok(parsed.payloads.some((p: { title: string }) => p.title === "Auth Expired"));
     assert.ok(parsed.payloads.some((p: { title: string }) => p.title === "Race Condition"));
     assert.equal(parsed.exported, 0);
+    assert.equal(parsed.already_present, 0);
+    assert.equal(parsed.summary.idempotency, "provenance_hash");
     assert.match(parsed.payloads[0].provenanceHash, /^sha256:/);
+    assert.match(parsed.payloads[0].idempotencyKey, /^sha256:/);
   });
 
   it("does not export review candidates or rejected material", async () => {
@@ -213,6 +216,7 @@ describe("agentmemory export", () => {
       const writeParsed = JSON.parse(writeOutput);
       assert.equal(writeParsed.ok, true);
       assert.equal(writeParsed.exported, 1);
+      assert.equal(writeParsed.already_present, 0);
       assert.ok(calls.some((call) => call.includes("POST") && call.includes("agentmemory/remember")));
     } finally {
       globalThis.fetch = originalFetch;

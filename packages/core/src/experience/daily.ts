@@ -111,6 +111,94 @@ function statusFromCounts(input: { warnings: string[]; rejected: number; humanRe
 type DailyAiDistill = DailyExperienceReport["ai_distill"];
 const DISTILL_CACHE_VERSION = "ai-distill-v1";
 
+export type DailyNextActionStatus =
+  | "needs_privacy_triage"
+  | "needs_review"
+  | "ready_to_export_agentmemory"
+  | "no_stable_changes"
+  | "ready";
+
+export interface DailyNextActions {
+  status: DailyNextActionStatus;
+  counts: {
+    sources: number;
+    chunks: number;
+    distilled: number;
+    privacy_required: number;
+    review_required: number;
+    rejected: number;
+    rejected_low_signal: number;
+    rejected_quality: number;
+    proposal_candidates: number;
+    site_pages: number;
+    changed_stable_knowledge: boolean;
+  };
+  agentmemory_export_recommended: boolean;
+  messages: string[];
+  commands: string[];
+}
+
+export function deriveDailyNextActions(report: DailyExperienceReport): DailyNextActions {
+  const sourceHumanRequired = report.sources.reduce((sum, source) => sum + source.human_required, 0);
+  const privacyRequired = Math.max(report.ai_distill.privacy_required, sourceHumanRequired);
+  const reviewRequired = report.ai_distill.review_required + report.proposal_candidates;
+  const rejected = report.sources.reduce((sum, source) => sum + source.rejected, 0);
+  const counts = {
+    sources: report.sources.length,
+    chunks: report.ai_distill.chunks,
+    distilled: report.ai_distill.distilled,
+    privacy_required: privacyRequired,
+    review_required: reviewRequired,
+    rejected,
+    rejected_low_signal: report.ai_distill.rejected_low_signal,
+    rejected_quality: report.ai_distill.rejected_quality,
+    proposal_candidates: report.proposal_candidates,
+    site_pages: report.site_pages,
+    changed_stable_knowledge: report.changed_stable_knowledge,
+  };
+
+  if (privacyRequired > 0) {
+    return {
+      status: "needs_privacy_triage",
+      counts,
+      agentmemory_export_recommended: false,
+      messages: [`${privacyRequired} item(s) need privacy triage before they can become wiki evidence.`],
+      commands: ["praxisbase privacy triage --mode personal --auto-release --json"],
+    };
+  }
+
+  if (reviewRequired > 0) {
+    return {
+      status: "needs_review",
+      counts,
+      agentmemory_export_recommended: false,
+      messages: [`${reviewRequired} wiki candidate(s) need review or another personal run with site auto-governance.`],
+      commands: [
+        "praxisbase personal run --open --json",
+        "praxisbase review list --json",
+      ],
+    };
+  }
+
+  if (report.changed_stable_knowledge) {
+    return {
+      status: "ready_to_export_agentmemory",
+      counts,
+      agentmemory_export_recommended: report.authority_mode === "personal-local",
+      messages: ["Stable wiki changed and is ready to share with local agents through AgentMemory."],
+      commands: ["praxisbase agentmemory export --mode personal --write --json"],
+    };
+  }
+
+  return {
+    status: report.ai_distill.distilled > 0 || report.proposal_candidates > 0 ? "ready" : "no_stable_changes",
+    counts,
+    agentmemory_export_recommended: false,
+    messages: ["No stable wiki changes were produced in this run."],
+    commands: ["praxisbase personal run --open --json"],
+  };
+}
+
 interface DailyReviewPromoteResult {
   reviewed: number;
   approved_by_policy: number;
@@ -350,13 +438,68 @@ function reduceEnvelopeSummary(
   };
 }
 
+function privacyExceptionPathForEnvelope(envelope: ExperienceEnvelope): string {
+  const suffix = computeHash(`${envelope.id}:${envelope.privacy.verdict}:${envelope.privacy.reasons.join(",")}`).slice(7, 23);
+  const id = makeId("exception", `daily-experience_${suffix}`);
+  return `${protocolPaths.exceptionsHumanRequired}/${id}.json`;
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function autoReleasedEvidenceSummary(text: string): string {
+  return redactSensitiveValues(text, 1200)
+    .replace(/\b(?:token|cookie|secret|password|credential)s?\b/gi, "sensitive value");
+}
+
+async function autoReleasedPrivacyEnvelope(root: string, envelope: ExperienceEnvelope): Promise<ExperienceEnvelope | undefined> {
+  if (envelope.privacy.verdict !== "human_required") return undefined;
+  let existing: unknown;
+  try {
+    existing = await readJson(root, privacyExceptionPathForEnvelope(envelope));
+  } catch {
+    return undefined;
+  }
+  const parsed = ExceptionRecordSchema.safeParse(existing);
+  if (!parsed.success) return undefined;
+  const triage = recordValue(recordValue(parsed.data.details).triage);
+  if (stringValue(triage.decision) !== "auto_released") return undefined;
+  if (stringValue(triage.classification) !== "safe_personal_experience") return undefined;
+  const confidence = typeof triage.confidence === "number" ? triage.confidence : Number.parseFloat(String(triage.confidence ?? ""));
+  if (!Number.isFinite(confidence) || confidence < 0.75) return undefined;
+
+  return ExperienceEnvelopeSchema.parse({
+    ...envelope,
+    redacted_summary: autoReleasedEvidenceSummary(envelope.redacted_summary),
+    privacy: {
+      ...envelope.privacy,
+      verdict: "allow",
+      reasons: ["privacy_triage_auto_released", ...envelope.privacy.reasons],
+    },
+    warnings: Array.from(new Set([...(envelope.warnings ?? []), "privacy_triage_auto_released"])).sort(),
+  });
+}
+
 async function writePrivacyException(
   root: string,
   envelope: ExperienceEnvelope,
   now: string,
 ): Promise<string> {
-  const suffix = computeHash(`${envelope.id}:${envelope.privacy.verdict}:${envelope.privacy.reasons.join(",")}`).slice(7, 23);
-  const id = makeId("exception", `daily-experience_${suffix}`);
+  const path = privacyExceptionPathForEnvelope(envelope);
+  const id = path.split("/").pop()?.replace(/\.json$/, "") ?? makeId("exception", "daily-experience");
+  let existingTriage: Record<string, unknown> | undefined;
+  try {
+    const existing = ExceptionRecordSchema.safeParse(await readJson(root, path));
+    const triage = existing.success ? recordValue(recordValue(existing.data.details).triage) : {};
+    existingTriage = Object.keys(triage).length > 0 ? triage : undefined;
+  } catch {
+    existingTriage = undefined;
+  }
   const exception = ExceptionRecordSchema.parse({
     id,
     protocol_version: PROTOCOL_VERSION,
@@ -373,10 +516,10 @@ async function writePrivacyException(
       source_hash: envelope.source_hash,
       redacted_summary: redactSensitiveValues(envelope.redacted_summary, 1200),
       privacy: envelope.privacy,
+      ...(existingTriage ? { triage: existingTriage } : {}),
     },
     created_at: now,
   });
-  const path = `${protocolPaths.exceptionsHumanRequired}/${id}.json`;
   await writeJson(root, path, exception);
   return path;
 }
@@ -909,6 +1052,25 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       rejected = resolved.rejected;
       humanRequired = resolved.humanRequired;
       sourceWarnings = resolved.warnings;
+    }
+
+    if (mode === "write" && blocked.length > 0) {
+      const stillBlocked: ExperienceEnvelope[] = [];
+      for (const envelope of blocked) {
+        const released = await autoReleasedPrivacyEnvelope(root, envelope);
+        if (released) {
+          allowed.push(released);
+          if (envelope.privacy.verdict === "human_required") {
+            humanRequired = Math.max(0, humanRequired - 1);
+            aiDistill.human_required = Math.max(0, aiDistill.human_required - 1);
+            aiDistill.privacy_required = Math.max(0, aiDistill.privacy_required - 1);
+          }
+          continue;
+        }
+        stillBlocked.push(envelope);
+      }
+      blocked = stillBlocked;
+      enveloped = allowed.length + blocked.length;
     }
 
     if (mode === "write") {

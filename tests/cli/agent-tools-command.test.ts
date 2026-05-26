@@ -49,6 +49,9 @@ describe("agent-tools generate", () => {
     assert.ok(skillContent.includes("capture finish"), "Skill must reference capture finish");
     assert.ok(skillContent.includes("wiki build-site"), "Skill must reference wiki build-site");
     assert.ok(skillContent.includes("review") && skillContent.includes("promote"), "Skill must mention review/promote gate");
+    assert.ok(skillContent.includes("next_actions"), "Skill must tell agents how to follow daily next actions");
+    assert.ok(skillContent.includes("privacy triage --mode personal --auto-release"), "Skill must mention personal privacy triage");
+    assert.ok(skillContent.includes("agentmemory export --mode personal --write"), "Skill must mention stable wiki AgentMemory export");
   });
 
   it("generates Skill for opencode agent", async () => {

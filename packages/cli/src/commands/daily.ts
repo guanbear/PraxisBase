@@ -1,4 +1,4 @@
-import { runDailyExperience, type DailyProgressEvent } from "@praxisbase/core/experience/daily.js";
+import { deriveDailyNextActions, runDailyExperience, type DailyNextActions, type DailyProgressEvent } from "@praxisbase/core/experience/daily.js";
 
 export interface DailyCommandOptions {
   mode?: "personal" | "team-git";
@@ -61,6 +61,15 @@ function formatProgressLine(event: DailyProgressEvent): string {
   return `[praxisbase daily] ${parts.filter((part): part is string => Boolean(part)).join(" ")}`;
 }
 
+function formatNextActions(nextActions: DailyNextActions): string {
+  const lines = [
+    `Next action: ${nextActions.status}`,
+    ...nextActions.messages,
+    ...nextActions.commands.map((command) => `Run: ${command}`),
+  ];
+  return lines.join("\n");
+}
+
 export async function dailyCommand(root: string, subcommand: string, options: DailyCommandOptions): Promise<string> {
   try {
     if (subcommand === "init") {
@@ -99,7 +108,10 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
           }
           : undefined,
       });
-      return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Daily experience run complete: ${report.id}`;
+      const nextActions = deriveDailyNextActions(report);
+      return options.json
+        ? JSON.stringify({ ok: true, report, next_actions: nextActions }, null, 2)
+        : `Daily experience run complete: ${report.id}\n${formatNextActions(nextActions)}`;
     }
 
     if (subcommand === "doctor") {

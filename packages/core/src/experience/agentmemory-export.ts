@@ -15,6 +15,7 @@ export interface AgentMemoryExportPayload {
   payload: AgentMemoryRememberPayload;
   pagePath: string;
   provenanceHash: string;
+  idempotencyKey: string;
 }
 
 export type ExportPayload = AgentMemoryExportPayload;
@@ -34,9 +35,18 @@ export interface ExportAgentMemoryResult {
   pages: number;
   payloads: AgentMemoryExportPayload[];
   exported: number;
+  already_present: number;
   skipped: number;
   errors: string[];
   warnings: string[];
+  summary: {
+    pages_scanned: number;
+    payloads_generated: number;
+    exported: number;
+    already_present: number;
+    skipped: number;
+    idempotency: "provenance_hash";
+  };
 }
 
 interface StablePage {
@@ -57,9 +67,35 @@ function emptyResult(mode: "personal" | "team", errors: string[] = [], warnings:
     pages: 0,
     payloads: [],
     exported: 0,
+    already_present: 0,
     skipped: 0,
     errors,
     warnings,
+    summary: {
+      pages_scanned: 0,
+      payloads_generated: 0,
+      exported: 0,
+      already_present: 0,
+      skipped: 0,
+      idempotency: "provenance_hash",
+    },
+  };
+}
+
+function exportSummary(input: {
+  pages: number;
+  payloads: number;
+  exported: number;
+  alreadyPresent: number;
+  skipped: number;
+}): ExportAgentMemoryResult["summary"] {
+  return {
+    pages_scanned: input.pages,
+    payloads_generated: input.payloads,
+    exported: input.exported,
+    already_present: input.alreadyPresent,
+    skipped: input.skipped,
+    idempotency: "provenance_hash",
   };
 }
 
@@ -207,7 +243,18 @@ function pageToExportPayload(page: StablePage): AgentMemoryExportPayload {
     payload: kbPageToRememberPayload(page, provenanceHash),
     pagePath: page.relativePath,
     provenanceHash,
+    idempotencyKey: provenanceHash,
   };
+}
+
+function hitContainsProvenanceHash(hit: { id?: string; title?: string; content?: string; [key: string]: unknown }, provenanceHash: string): boolean {
+  return [
+    hit.id,
+    hit.title,
+    hit.content,
+    typeof hit.text === "string" ? hit.text : undefined,
+    typeof hit.summary === "string" ? hit.summary : undefined,
+  ].filter((value): value is string => typeof value === "string").some((value) => value.includes(provenanceHash));
 }
 
 export async function findAgentMemorySource(root: string, sourceName?: string): Promise<ExperienceSourceConfig | undefined> {
@@ -244,9 +291,17 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
       pages: pages.length,
       payloads,
       exported: 0,
+      already_present: 0,
       skipped: payloads.length,
       errors: [],
       warnings: [],
+      summary: exportSummary({
+        pages: pages.length,
+        payloads: payloads.length,
+        exported: 0,
+        alreadyPresent: 0,
+        skipped: payloads.length,
+      }),
     };
   }
 
@@ -260,9 +315,17 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
       pages: pages.length,
       payloads,
       exported: 0,
+      already_present: 0,
       skipped: payloads.length,
       errors: ["AGENTMEMORY_NO_SOURCE"],
       warnings,
+      summary: exportSummary({
+        pages: pages.length,
+        payloads: payloads.length,
+        exported: 0,
+        alreadyPresent: 0,
+        skipped: payloads.length,
+      }),
     };
   }
 
@@ -276,14 +339,31 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
       pages: pages.length,
       payloads,
       exported: 0,
+      already_present: 0,
       skipped: payloads.length,
       errors: [error instanceof Error ? error.message : String(error)],
       warnings,
+      summary: exportSummary({
+        pages: pages.length,
+        payloads: payloads.length,
+        exported: 0,
+        alreadyPresent: 0,
+        skipped: payloads.length,
+      }),
     };
   }
 
   let exported = 0;
+  let alreadyPresent = 0;
   for (const exportPayload of payloads) {
+    const existing = await client.smartSearch(exportPayload.provenanceHash, 5);
+    if (existing.ok && (existing.hits ?? []).some((hit) => hitContainsProvenanceHash(hit, exportPayload.provenanceHash))) {
+      alreadyPresent += 1;
+      continue;
+    }
+    if (!existing.ok) {
+      warnings.push(`${exportPayload.pagePath}: agentmemory_idempotency_check_failed:${existing.error ?? "unknown"}`);
+    }
     const result = await client.remember(exportPayload.payload);
     if (result.ok) {
       exported += 1;
@@ -298,8 +378,16 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
     pages: pages.length,
     payloads,
     exported,
+    already_present: alreadyPresent,
     skipped: payloads.length - exported,
     errors,
     warnings,
+    summary: exportSummary({
+      pages: pages.length,
+      payloads: payloads.length,
+      exported,
+      alreadyPresent,
+      skipped: payloads.length - exported,
+    }),
   };
 }

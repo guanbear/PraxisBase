@@ -148,6 +148,10 @@ describe("exportAgentMemory", () => {
     assert.equal(result.pages, 3);
     assert.equal(result.exported, 0);
     assert.equal(result.skipped, 3);
+    assert.equal(result.already_present, 0);
+    assert.equal(result.summary.pages_scanned, 3);
+    assert.equal(result.summary.payloads_generated, 3);
+    assert.equal(result.summary.idempotency, "provenance_hash");
     assert.deepEqual(result.errors, []);
     assert.deepEqual(result.payloads.map((p) => p.pagePath).sort(), [
       "kb/known-fixes/auth.md",
@@ -217,11 +221,48 @@ describe("exportAgentMemory", () => {
     assert.equal(result.ok, true);
     assert.equal(result.exported, 1);
     assert.equal(result.skipped, 0);
-    assert.equal(calls.length, 1);
-    assert.ok(calls[0].url.includes("agentmemory/remember"));
-    assert.ok(calls[0].body?.includes("Fix"));
-    assert.ok(calls[0].authorization?.includes("Bearer super-secret-token"));
+    const rememberCalls = calls.filter((call) => call.url.includes("agentmemory/remember"));
+    assert.equal(rememberCalls.length, 1);
+    assert.ok(rememberCalls[0].body?.includes("Fix"));
+    assert.ok(rememberCalls[0].authorization?.includes("Bearer super-secret-token"));
     assert.ok(!JSON.stringify(result).includes("super-secret-token"));
+  });
+
+  it("skips export when AgentMemory already has the same PraxisBase provenance hash", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-export-idempotent-"));
+    await createKbWithPages(root, { "kb/known-fixes/fix.md": "# Fix\n\nThe fix content." });
+    await addExperienceSource(root, {
+      name: "test-am",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:3111",
+    });
+
+    const dryRun = await exportAgentMemory(root, { mode: "personal", dryRun: true });
+    const hash = dryRun.payloads[0].provenanceHash;
+    const calls: string[] = [];
+    const result = await exportAgentMemory(root, {
+      mode: "personal",
+      dryRun: false,
+      fetchImpl: (async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        calls.push(`${init?.method ?? "GET"} ${url}`);
+        if (url.includes("smart-search")) {
+          return jsonResponse({ hits: [{ id: "existing", title: "Fix", content: `PraxisBase provenance:\n- hash: ${hash}` }] });
+        }
+        return jsonResponse({ id: "new-mem-1" });
+      }) as typeof fetch,
+      env: {},
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.exported, 0);
+    assert.equal(result.already_present, 1);
+    assert.equal(result.skipped, 1);
+    assert.equal(result.summary.already_present, 1);
+    assert.ok(calls.some((call) => call.includes("agentmemory/smart-search")));
+    assert.equal(calls.some((call) => call.includes("agentmemory/remember")), false);
   });
 
   it("reports errors when daemon POST fails", async () => {

@@ -1336,11 +1336,15 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   const observationById = new Map(observations.map((observation) => [observation.id, observation]));
   const evidenceById = new Map(pool.items.map((item) => [item.id, item]));
   const sortedPlans = pagePlans.slice().sort((a, b) => a.topic_key.localeCompare(b.topic_key));
+  const concurrency = normalizeConcurrency(options.concurrency);
+  const maxSynthesisAttempts = limit === undefined
+    ? sortedPlans.length
+    : Math.min(sortedPlans.length, limit + Math.max(limit, concurrency, 4));
+  const synthesisPlans = sortedPlans.slice(0, maxSynthesisAttempts);
   const synthesizedProposalEntries: Array<{ index: number; proposal: CuratedWikiProposal }> = [];
   let conflicts = 0;
   let completedSyntheses = 0;
   let nextPlanIndex = 0;
-  const concurrency = normalizeConcurrency(options.concurrency);
 
   const processPlan = async (plan: WikiPagePlan, planIndex: number): Promise<void> => {
     if (limit !== undefined && synthesizedProposalEntries.length >= limit) return;
@@ -1454,7 +1458,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
     await options.onProgress?.({
       stage: "synthesis",
       completed: completedSyntheses,
-      total: sortedPlans.length,
+      total: synthesisPlans.length,
       proposals: Math.min(synthesizedProposalEntries.length, limit ?? Number.POSITIVE_INFINITY),
       conflicts,
       topic_key: plan.topic_key,
@@ -1462,17 +1466,20 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
   };
 
   const runWorker = async (): Promise<void> => {
-    while (nextPlanIndex < sortedPlans.length) {
+    while (nextPlanIndex < synthesisPlans.length) {
       if (limit !== undefined && synthesizedProposalEntries.length >= limit) return;
       const planIndex = nextPlanIndex;
       nextPlanIndex++;
-      await processPlan(sortedPlans[planIndex], planIndex);
+      await processPlan(synthesisPlans[planIndex], planIndex);
     }
   };
 
   if (limit !== 0) {
+    const workerCount = limit === undefined
+      ? Math.min(concurrency, synthesisPlans.length)
+      : Math.min(concurrency, limit, synthesisPlans.length);
     await Promise.all(Array.from(
-      { length: Math.min(concurrency, sortedPlans.length) },
+      { length: workerCount },
       () => runWorker(),
     ));
   }

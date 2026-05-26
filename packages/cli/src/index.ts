@@ -448,7 +448,10 @@ program
   .option("--mode <mode>", "personal or team-git", "personal")
   .option("--auto-release", "auto-release high-confidence safe personal triage items")
   .option("--limit <n>")
+  .option("--ai-concurrency <n>", "maximum concurrent privacy triage AI calls")
   .option("--ai-timeout-ms <n>")
+  .option("--include-triaged", "reprocess already triaged privacy exceptions")
+  .option("--progress", "print privacy triage progress to stderr")
   .option("--json")
   .action(async (
     sub: string,
@@ -456,13 +459,17 @@ program
       mode?: "personal" | "team-git";
       autoRelease?: boolean;
       limit?: string;
+      aiConcurrency?: string;
       aiTimeoutMs?: string;
+      includeTriaged?: boolean;
+      progress?: boolean;
       json?: boolean;
     }
   ) => {
     console.log(await privacyCommand(process.cwd(), sub, {
       ...options,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      aiConcurrency: options.aiConcurrency ? parseInt(options.aiConcurrency, 10) : undefined,
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
     }));
   });

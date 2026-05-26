@@ -245,6 +245,8 @@ export const PrivacyTriageReportSchema = z.object({
   })),
   summary: z.object({
     scanned: z.number().int().nonnegative(),
+    skipped_already_triaged: z.number().int().nonnegative().default(0),
+    skipped_non_privacy: z.number().int().nonnegative().default(0),
     auto_released: z.number().int().nonnegative(),
     keep_human_required: z.number().int().nonnegative(),
     team_review_only: z.number().int().nonnegative(),

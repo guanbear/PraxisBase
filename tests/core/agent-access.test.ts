@@ -199,6 +199,10 @@ describe("generateSkill", () => {
     assert.ok(skill.includes("praxisbase daily run"), "must mention praxisbase daily run");
     assert.ok(skill.includes("praxisbase context get"), "must mention praxisbase context get");
     assert.ok(skill.includes("--with-agentmemory"), "must mention AgentMemory sidecar retrieval");
+    assert.ok(skill.includes("next_actions"), "must teach agents to read daily next_actions");
+    assert.ok(skill.includes("praxisbase privacy triage --mode personal --auto-release --json"), "must mention personal privacy triage");
+    assert.ok(skill.includes("praxisbase agentmemory export --mode personal --write --json"), "must mention stable wiki AgentMemory export");
+    assert.ok(skill.includes("Do not export raw evidence"), "must keep AgentMemory export boundary clear");
     assert.ok(
       skill.includes("team mode rejects personal scope"),
       "must mention team mode rejects personal scope"

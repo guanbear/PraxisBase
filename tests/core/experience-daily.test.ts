@@ -4,11 +4,106 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
-import { runDailyExperience } from "@praxisbase/core/experience/daily.js";
+import { deriveDailyNextActions, runDailyExperience } from "@praxisbase/core/experience/daily.js";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
-import { protocolPaths } from "@praxisbase/core";
+import { PROTOCOL_VERSION, protocolPaths } from "@praxisbase/core";
 
 describe("runDailyExperience", () => {
+  it("derives clear personal next actions from daily report counts", () => {
+    const nextActions = deriveDailyNextActions({
+      id: "daily-experience_20260521",
+      protocol_version: PROTOCOL_VERSION,
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: false,
+        provider: "openai-compatible",
+        model: "test-model",
+        chunks: 12,
+        distilled: 8,
+        failed: 1,
+        human_required: 3,
+        privacy_required: 2,
+        review_required: 1,
+        rejected_low_signal: 4,
+        rejected_quality: 1,
+        cache_hits: 5,
+        warnings: [],
+      },
+      sources: [{
+        name: "codex",
+        agent: "codex",
+        channel: "local",
+        source_type: "local",
+        status: "partial",
+        scanned: 3,
+        fetched: 3,
+        enveloped: 3,
+        imported: 0,
+        rejected: 0,
+        human_required: 3,
+        warnings: [],
+      }],
+      proposal_candidates: 2,
+      quality_findings: 0,
+      site_pages: 5,
+      changed_stable_knowledge: true,
+      outputs: ["dist/index.html"],
+      warnings: [],
+      created_at: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(nextActions.status, "needs_privacy_triage");
+    assert.equal(nextActions.counts.privacy_required, 3);
+    assert.equal(nextActions.counts.review_required, 3);
+    assert.equal(nextActions.counts.rejected_low_signal, 4);
+    assert.equal(nextActions.counts.rejected_quality, 1);
+    assert.equal(nextActions.counts.changed_stable_knowledge, true);
+    assert.equal(nextActions.agentmemory_export_recommended, false);
+    assert.ok(nextActions.commands.some((command) => command.includes("privacy triage")));
+    assert.ok(nextActions.messages.some((message) => message.includes("privacy")));
+  });
+
+  it("recommends AgentMemory export only after stable wiki changes without pending gates", () => {
+    const nextActions = deriveDailyNextActions({
+      id: "daily-experience_20260521",
+      protocol_version: PROTOCOL_VERSION,
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: true,
+        chunks: 4,
+        distilled: 4,
+        failed: 0,
+        human_required: 0,
+        privacy_required: 0,
+        review_required: 0,
+        rejected_low_signal: 0,
+        rejected_quality: 0,
+        cache_hits: 0,
+        warnings: [],
+      },
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 6,
+      changed_stable_knowledge: true,
+      outputs: ["dist/index.html"],
+      warnings: [],
+      created_at: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(nextActions.status, "ready_to_export_agentmemory");
+    assert.equal(nextActions.agentmemory_export_recommended, true);
+    assert.ok(nextActions.commands.some((command) => command.includes("agentmemory export")));
+  });
+
   it("runs the personal daily loop from configured sources into wiki proposals", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-personal-"));
     const sessions = join(root, "sessions");
@@ -105,6 +200,80 @@ describe("runDailyExperience", () => {
     assert.match(exception.details.redacted_summary, /OpenClaw auth/);
     assert.equal(exception.details.redacted_summary.includes("abc123456789"), false);
     assert.match(exception.details.redacted_summary, /\[REDACTED\]/);
+  });
+
+  it("turns auto-released privacy triage exceptions into redacted evidence on the next daily run", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-triage-release-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw auth after token=abc123456789 was printed.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      maxCurationProposals: 0,
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson() {
+          return { ok: false, error: "distill should be blocked by pre-AI privacy" };
+        },
+      },
+    });
+    const exceptionFiles = await readdir(join(root, ".praxisbase/exceptions/human-required"));
+    assert.equal(exceptionFiles.length, 1);
+    const exceptionPath = join(root, ".praxisbase/exceptions/human-required", exceptionFiles[0]);
+    const exception = JSON.parse(await readFile(exceptionPath, "utf8"));
+    await writeFile(exceptionPath, JSON.stringify({
+      ...exception,
+      details: {
+        ...exception.details,
+        triage: {
+          classification: "safe_personal_experience",
+          confidence: 0.88,
+          rationale: "The reusable lesson is safe after redaction.",
+          suggested_redactions: [],
+          hard_block_reasons: [],
+          decision: "auto_released",
+          triaged_at: "2026-05-21T01:30:00.000Z",
+        },
+      },
+    }, null, 2), "utf8");
+
+    const second = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      maxCurationProposals: 0,
+      now: "2026-05-21T02:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson() {
+          return { ok: false, error: "auto-released privacy evidence should not call distill" };
+        },
+      },
+    });
+
+    assert.equal(second.sources[0].human_required, 0);
+    assert.equal(second.sources[0].imported, 1);
+    const envelopes = await readdir(join(root, ".praxisbase/staging/experience-envelopes"));
+    assert.equal(envelopes.length, 1);
+    const envelope = JSON.parse(await readFile(join(root, ".praxisbase/staging/experience-envelopes", envelopes[0]), "utf8"));
+    assert.equal(envelope.privacy.verdict, "allow");
+    assert.ok(envelope.privacy.reasons.includes("privacy_triage_auto_released"));
+    assert.match(envelope.redacted_summary, /OpenClaw auth/);
+    assert.equal(envelope.redacted_summary.includes("abc123456789"), false);
+    assert.equal(/\btoken\b/i.test(envelope.redacted_summary), false);
+    const preservedException = JSON.parse(await readFile(exceptionPath, "utf8"));
+    assert.equal(preservedException.details.triage.decision, "auto_released");
   });
 
   it("requires AI config for production daily by default", async () => {

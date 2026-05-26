@@ -467,6 +467,13 @@ function statusLabel(status: CandidateStatus): string {
   return "Human required";
 }
 
+function recommendedCandidateCommand(status: CandidateStatus): string {
+  if (status === "promoted") return "praxisbase agentmemory export --mode personal --write --json";
+  if (status === "approved") return "praxisbase promote --auto";
+  if (status === "needs_human") return "praxisbase review list --json";
+  return "praxisbase review --auto";
+}
+
 function renderCandidateCard(item: ReviewQueueCandidate): string {
   return `<li id="${escapeHtml(item.anchor)}" class="review-card">
     <p><strong>${escapeHtml(item.title)}</strong> <span class="status-pill">${escapeHtml(statusLabel(item.status))}</span></p>
@@ -482,6 +489,7 @@ function renderCandidateCard(item: ReviewQueueCandidate): string {
       ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
       ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
       ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
+      <dt>Recommended</dt><dd><code>${escapeHtml(recommendedCandidateCommand(item.status))}</code></dd>
       ${renderRelationshipDetails(item)}
     </dl>
     <details>
@@ -491,16 +499,25 @@ function renderCandidateCard(item: ReviewQueueCandidate): string {
   </li>`;
 }
 
-function renderCandidateSection(input: { id: string; title: string; status: CandidateStatus; candidates: ReviewQueueCandidate[]; empty: string }): string {
+function renderCandidateSection(input: {
+  id: string;
+  aliasId?: string;
+  title: string;
+  status: CandidateStatus;
+  candidates: ReviewQueueCandidate[];
+  empty: string;
+  commands: string[];
+}): string {
   const candidates = input.candidates.filter((item) => item.status === input.status);
   return `<section id="${escapeHtml(input.id)}" class="review-section" data-status="${escapeHtml(input.status)}">
   <div class="section-heading">
     <div>
-      <h2>${escapeHtml(input.title)}</h2>
+      <h2>${input.aliasId ? `<span id="${escapeHtml(input.aliasId)}"></span>` : ""}${escapeHtml(input.title)}</h2>
       <p>${escapeHtml(candidates.length === 0 ? input.empty : `${candidates.length} item(s)`)}</p>
     </div>
     <strong>${escapeHtml(String(candidates.length))}</strong>
   </div>
+  ${input.commands.length > 0 ? `<div class="command-strip">${input.commands.map((command) => `<code>${escapeHtml(command)}</code>`).join("\n")}</div>` : ""}
   ${candidates.length > 0 ? `<ol class="experience-list">${candidates.map(renderCandidateCard).join("\n")}</ol>` : ""}
 </section>`;
 }
@@ -509,14 +526,18 @@ function renderHumanRequired(records: HumanRequiredRecord[]): string {
   return `<section id="human-required" class="review-section" data-status="needs_human">
   <div class="section-heading">
     <div>
-      <h2>Human Required</h2>
-      <p>Items blocked by privacy, weak evidence, conflicts, or checks that should not be automated.</p>
+      <h2><span id="privacy-required"></span>Privacy Required</h2>
+      <p>Items blocked before reuse because privacy or scope is uncertain.</p>
     </div>
     <strong>${escapeHtml(String(records.length))}</strong>
   </div>
+  <div class="command-strip">
+    <code>praxisbase privacy triage --mode personal --auto-release --json</code>
+    <code>praxisbase personal run --open --json</code>
+  </div>
   ${records.length > 0 ? `<ol class="experience-list">
     ${records.map((item) => `<li id="${escapeHtml(item.id)}" class="review-card">
-      <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">Human required</span></p>
+      <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">Privacy required</span></p>
       <dl>
         <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
         <dt>Agent</dt><dd>${escapeHtml(item.agent ?? "unknown")}</dd>
@@ -524,6 +545,7 @@ function renderHumanRequired(records: HumanRequiredRecord[]): string {
         <dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>
         <dt>File</dt><dd><code>${escapeHtml(item.path)}</code></dd>
         <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --json</code></dd>
         ${item.triage ? `
         <dt>Triage</dt><dd>${escapeHtml(item.triage.classification ?? "unknown")} / ${escapeHtml(item.triage.decision ?? "unknown")}</dd>
         <dt>Confidence</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
@@ -532,16 +554,39 @@ function renderHumanRequired(records: HumanRequiredRecord[]): string {
         ` : ""}
       </dl>
     </li>`).join("\n")}
-  </ol>` : "<p>No human-required records.</p>"}
+  </ol>` : "<p>No privacy-required records.</p>"}
 </section>`;
 }
 
-function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: ReviewQueue, curationReport: WikiCurationReportSummary | null): string {
+function renderRejectedSection(dailyReport: DailyReportSummary | null, curationReport: WikiCurationReportSummary | null): string {
+  const dailyRejected = dailyReport?.rejected ?? 0;
+  const curationRejected = curationReport?.input_rejected ?? 0;
+  const hardBlocks = curationReport?.compiler_hard_blocks ?? 0;
+  const total = dailyRejected + curationRejected + hardBlocks;
+  return `<section id="rejected" class="review-section" data-status="rejected">
+  <div class="section-heading">
+    <div>
+      <h2>Rejected</h2>
+      <p>Low-signal, duplicate, private, or quality-blocked material that intentionally did not become wiki.</p>
+    </div>
+    <strong>${escapeHtml(String(total))}</strong>
+  </div>
+  <dl class="queue-summary">
+    <dt>Daily rejected</dt><dd>${escapeHtml(String(dailyRejected))}</dd>
+    <dt>Curation rejected</dt><dd>${escapeHtml(String(curationRejected))}</dd>
+    <dt>Hard blocks</dt><dd>${escapeHtml(String(hardBlocks))}</dd>
+    <dt>Recommended</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
+  </dl>
+</section>`;
+}
+
+function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: ReviewQueue, curationReport: WikiCurationReportSummary | null, dailyReport: DailyReportSummary | null): string {
   const counts = {
     pending: queue.candidates.filter((item) => item.status === "pending").length,
     approved: queue.candidates.filter((item) => item.status === "approved").length,
     promoted: queue.candidates.filter((item) => item.status === "promoted").length,
     human: queue.human_required.length + queue.candidates.filter((item) => item.status === "needs_human").length,
+    rejected: (dailyReport?.rejected ?? 0) + (curationReport?.input_rejected ?? 0) + (curationReport?.compiler_hard_blocks ?? 0),
   };
 
   return renderLayout({
@@ -557,9 +602,10 @@ function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: Review
     </div>
   </section>
   <section class="metrics">
-    <a class="metric-link" href="#pending-candidates"><span>Pending candidates</span><strong>${escapeHtml(String(counts.pending))}</strong></a>
+    <a class="metric-link" href="#pending-candidates"><span>Review required</span><strong>${escapeHtml(String(counts.pending))}</strong></a>
     <a class="metric-link" href="#approved-candidates"><span>Approved</span><strong>${escapeHtml(String(counts.approved))}</strong></a>
     <a class="metric-link" href="#human-required"><span>Human required</span><strong>${escapeHtml(String(counts.human))}</strong></a>
+    <a class="metric-link" href="#rejected"><span>Rejected</span><strong>${escapeHtml(String(counts.rejected))}</strong></a>
     <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
   </section>
   ${curationReport ? renderWikiCompilerSection(curationReport) : ""}
@@ -572,10 +618,11 @@ function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: Review
       <code>praxisbase wiki build-site --json</code>
     </div>
   </section>
-  ${renderCandidateSection({ id: "pending-candidates", title: "Pending Candidates", status: "pending", candidates: queue.candidates, empty: "No pending candidates." })}
-  ${renderCandidateSection({ id: "approved-candidates", title: "Reviewed / Approved", status: "approved", candidates: queue.candidates, empty: "No approved candidates waiting for promotion." })}
+  ${renderCandidateSection({ id: "pending-candidates", aliasId: "review-required", title: "Review Required", status: "pending", candidates: queue.candidates, empty: "No review-required candidates.", commands: ["praxisbase review --auto", "praxisbase promote --auto", "praxisbase wiki build-site --json"] })}
+  ${renderCandidateSection({ id: "approved-candidates", title: "Reviewed / Approved", status: "approved", candidates: queue.candidates, empty: "No approved candidates waiting for promotion.", commands: ["praxisbase promote --auto", "praxisbase wiki build-site --json"] })}
   ${renderHumanRequired(queue.human_required)}
-  ${renderCandidateSection({ id: "promoted-candidates", title: "Promoted", status: "promoted", candidates: queue.candidates, empty: "No promoted candidates from the current inbox." })}
+  ${renderRejectedSection(dailyReport, curationReport)}
+  ${renderCandidateSection({ id: "promoted-candidates", title: "Promoted", status: "promoted", candidates: queue.candidates, empty: "No promoted candidates from the current inbox.", commands: ["praxisbase agentmemory export --mode personal --write --json"] })}
 </main>`,
   });
 }
@@ -1232,7 +1279,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   outputs.push(...rootArtifactOutputs);
 
   await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates, curationReport));
-  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport));
+  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: [

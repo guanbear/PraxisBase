@@ -33,6 +33,9 @@ describe("daily CLI command", () => {
     assert.equal(parsed.report.type, "daily_experience_report");
     assert.equal(parsed.report.sources[0].imported, 1);
     assert.equal(parsed.report.ai_distill.production_ready, false);
+    assert.equal(parsed.next_actions.status, "needs_review");
+    assert.equal(parsed.next_actions.counts.review_required, 1);
+    assert.ok(parsed.next_actions.commands.some((command: string) => command.includes("personal run --open")));
   });
 
   it("returns a JSON error when production AI is not configured", async () => {
@@ -136,5 +139,33 @@ describe("daily CLI command", () => {
     assert.ok(lines.some((line) => line.includes("stage=source")));
     assert.ok(lines.some((line) => line.includes("stage=wiki-curate")));
     assert.ok(lines.every((line) => line.includes("elapsed=")));
+  });
+
+  it("prints next actions in non-json output without exposing internal report paths", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-next-actions-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw auth after token=abc123456789 was printed.", "utf8");
+    await sourceCommand(root, "add", {
+      name: "local-codex",
+      agent: "codex",
+      type: "local",
+      path: sessions,
+      scope: "personal",
+      json: true,
+    });
+
+    const output = await dailyCommand(root, "run", {
+      mode: "personal",
+      degraded: true,
+      json: false,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.match(output, /Daily experience run complete:/);
+    assert.match(output, /Next action:/);
+    assert.match(output, /privacy triage/);
+    assert.doesNotMatch(output, /\.praxisbase\/reports\//);
+    assert.doesNotMatch(output, /\.praxisbase\/raw-vault\//);
   });
 });

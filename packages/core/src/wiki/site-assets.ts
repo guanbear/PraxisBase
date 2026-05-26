@@ -72,6 +72,9 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .section-heading strong { min-width: 42px; border: 1px solid var(--line); border-radius: 8px; background: white; padding: .35rem .6rem; text-align: center; font-size: 1.15rem; }
 .command-strip { display: flex; gap: .55rem; flex-wrap: wrap; margin-top: .9rem; }
 .command-strip code { border: 1px solid var(--line); border-radius: 6px; background: white; padding: .45rem .6rem; color: var(--ink); overflow-wrap: anywhere; }
+.queue-summary { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: .45rem .8rem; border: 1px solid var(--line); border-radius: 8px; background: white; padding: .9rem; }
+.queue-summary dt { color: var(--muted); }
+.queue-summary dd { margin: 0; overflow-wrap: anywhere; }
 .status-pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: .15rem .5rem; color: var(--muted); font-size: .78rem; }
 .review-card pre { max-height: 320px; overflow: auto; border-radius: 6px; background: #18231d; color: #f2f7f2; padding: .85rem; white-space: pre-wrap; }
 .review-card details { margin-top: .7rem; }

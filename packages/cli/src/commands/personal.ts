@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import { join } from "node:path";
 import { stat } from "node:fs/promises";
 import { bootstrapCommand } from "./bootstrap.js";
-import { runDailyExperience } from "@praxisbase/core/experience/daily.js";
+import { deriveDailyNextActions, runDailyExperience, type DailyNextActions } from "@praxisbase/core/experience/daily.js";
 import { addExperienceSource, listExperienceSources } from "@praxisbase/core/experience/source-config.js";
 import { buildAgentToolManifest, writeAgentToolManifest } from "@praxisbase/core/agent-access/manifest.js";
 import { generateSkill } from "@praxisbase/core/agent-access/skill.js";
@@ -122,6 +122,15 @@ function personalNext(agent: PersonalAgent): string[] {
   ];
 }
 
+function formatNextActions(nextActions: DailyNextActions): string {
+  const lines = [
+    `Next action: ${nextActions.status}`,
+    ...nextActions.messages,
+    ...nextActions.commands.map((command) => `Run: ${command}`),
+  ];
+  return lines.join("\n");
+}
+
 async function doctor(root: string): Promise<{ ok: boolean; checks: PersonalCheck[] }> {
   const checks: PersonalCheck[] = [];
   const ai = await readAiProviderConfig(root);
@@ -229,8 +238,9 @@ export async function personalCommand(root: string, subcommand: string, options:
       if (options.open) {
         await (options.openImpl ?? defaultOpen)(sitePath);
       }
-      const result = { ok: true, report, agent_access: agentAccess, opened: options.open === true, site: "dist/index.html" };
-      return options.json ? JSON.stringify(result, null, 2) : `Personal run complete: ${report.id}\n${sitePath}`;
+      const nextActions = deriveDailyNextActions(report);
+      const result = { ok: true, report, next_actions: nextActions, agent_access: agentAccess, opened: options.open === true, site: "dist/index.html" };
+      return options.json ? JSON.stringify(result, null, 2) : `Personal run complete: ${report.id}\n${sitePath}\n${formatNextActions(nextActions)}`;
     }
 
     if (subcommand === "schedule") {

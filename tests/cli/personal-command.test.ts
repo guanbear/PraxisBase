@@ -111,6 +111,9 @@ describe("personal command", () => {
 
     assert.equal(parsed.ok, true);
     assert.equal(parsed.report.authority_mode, "personal-local");
+    assert.equal(parsed.next_actions.status, "no_stable_changes");
+    assert.equal(parsed.next_actions.counts.privacy_required, 0);
+    assert.ok(parsed.next_actions.commands.some((command: string) => command.includes("personal run --open")));
     assert.ok(parsed.report.outputs.includes("dist/index.html"));
     assert.equal(parsed.opened, true);
     assert.equal(opened.length, 1);

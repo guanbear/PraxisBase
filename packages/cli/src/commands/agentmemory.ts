@@ -105,15 +105,18 @@ export async function agentmemoryCommand(root: string, subcommand: string, optio
           title: payload.payload.title,
           pagePath: payload.pagePath,
           provenanceHash: payload.provenanceHash,
+          idempotencyKey: payload.idempotencyKey,
           concepts: payload.payload.concepts,
         })),
         exported: result.exported,
+        already_present: result.already_present,
         skipped: result.skipped,
+        summary: result.summary,
         errors: result.errors,
         warnings: result.warnings,
       }, null, 2);
       if (!result.ok) return `Export failed: ${result.errors.join(", ")}`;
-      return `Export ${mode}: ${result.pages} pages, ${result.payloads.length} payloads${dryRun ? " (dry-run)" : `, ${result.exported} exported`}${result.warnings.length > 0 ? ` (${result.warnings.length} warnings)` : ""}`;
+      return `Export ${mode}: ${result.pages} pages, ${result.payloads.length} payloads${dryRun ? " (dry-run)" : `, ${result.exported} exported, ${result.already_present} already present`}${result.warnings.length > 0 ? ` (${result.warnings.length} warnings)` : ""}`;
     }
 
     throw new Error(`AGENTMEMORY_ERROR: Unknown subcommand "agentmemory ${subcommand}". Use "agentmemory doctor", "agentmemory import", or "agentmemory export".`);

@@ -13,11 +13,29 @@ export interface RunPrivacyTriageInput {
   mode?: "dry-run" | "write";
   autoRelease?: boolean;
   limit?: number;
+  aiConcurrency?: number;
+  includeTriaged?: boolean;
   now?: string;
   aiTimeoutMs?: number;
+  onProgress?: (event: PrivacyTriageProgressEvent) => void | Promise<void>;
   aiClient?: AiJsonClient;
   fetchImpl?: typeof fetch;
   env?: Record<string, string | undefined>;
+}
+
+export interface PrivacyTriageProgressEvent {
+  status: "running" | "completed";
+  total: number;
+  completed: number;
+  skipped_already_triaged: number;
+  skipped_non_privacy: number;
+  current_exception_id?: string;
+  summary: {
+    auto_released: number;
+    keep_human_required: number;
+    team_review_only: number;
+  };
+  warnings: string[];
 }
 
 type ExceptionRecord = ReturnType<typeof ExceptionRecordSchema.parse>;
@@ -236,6 +254,25 @@ async function listExceptionPaths(root: string, limit?: number): Promise<string[
   return typeof limit === "number" && Number.isFinite(limit) && limit >= 0 ? paths.slice(0, Math.floor(limit)) : paths;
 }
 
+function normalizeConcurrency(value: unknown): number {
+  const parsed = typeof value === "number" && Number.isFinite(value) ? Math.floor(value) : 1;
+  return Math.max(1, Math.min(16, parsed));
+}
+
+function alreadyTriaged(exception: ExceptionRecord): boolean {
+  const triage = record(record(exception.details).triage);
+  return Boolean(stringValue(triage.decision) || stringValue(triage.classification));
+}
+
+function isPrivacyTriageCandidate(rawException: Record<string, unknown>): boolean {
+  const reason = stringValue(rawException.reason) ?? "";
+  const details = record(rawException.details);
+  const privacy = record(details.privacy);
+  return /^Experience privacy verdict human_required\b/i.test(reason)
+    || stringValue(privacy.verdict) === "human_required"
+    || stringValue(details.privacy_verdict) === "human_required";
+}
+
 export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInput): Promise<PrivacyTriageReport> {
   const mode = input.mode ?? "write";
   const now = input.now ?? new Date().toISOString();
@@ -258,23 +295,152 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
   const items: PrivacyTriageReport["items"] = [];
   const outputs: string[] = [];
   const warnings: string[] = [];
-  const paths = await listExceptionPaths(root, input.limit);
+  const paths = await listExceptionPaths(root);
+  const queued: Array<{ exceptionPath: string; exception: ExceptionRecord }> = [];
+  let skippedAlreadyTriaged = 0;
+  let skippedNonPrivacy = 0;
+  const processLimit = typeof input.limit === "number" && Number.isFinite(input.limit) && input.limit >= 0
+    ? Math.floor(input.limit)
+    : Number.POSITIVE_INFINITY;
 
   for (const exceptionPath of paths) {
     let exception: ExceptionRecord;
     try {
-      exception = ExceptionRecordSchema.parse(await readJson(root, exceptionPath));
+      const rawException = record(await readJson(root, exceptionPath));
+      if (!isPrivacyTriageCandidate(rawException)) {
+        skippedNonPrivacy++;
+        continue;
+      }
+      exception = ExceptionRecordSchema.parse(rawException);
     } catch (error) {
       warnings.push(`privacy_triage_invalid_exception:${exceptionPath}:${error instanceof Error ? error.message : String(error)}`);
       continue;
     }
+    if (!input.includeTriaged && alreadyTriaged(exception)) {
+      skippedAlreadyTriaged++;
+      continue;
+    }
+    if (queued.length >= processLimit) continue;
+    queued.push({ exceptionPath, exception });
+  }
+
+  const publishProgress = async (event: Omit<PrivacyTriageProgressEvent, "summary" | "warnings" | "skipped_already_triaged" | "skipped_non_privacy">): Promise<void> => {
+    if (!input.onProgress) return;
+    await input.onProgress({
+      ...event,
+      skipped_already_triaged: skippedAlreadyTriaged,
+      skipped_non_privacy: skippedNonPrivacy,
+      summary: {
+        auto_released: items.filter((item) => item.decision === "auto_released").length,
+        keep_human_required: items.filter((item) => item.decision === "keep_human_required").length,
+        team_review_only: items.filter((item) => item.decision === "team_review_only").length,
+      },
+      warnings,
+    });
+  };
+
+  await publishProgress({
+    status: "running",
+    total: queued.length,
+    completed: 0,
+  });
+
+  let nextTaskIndex = 0;
+  const runTriageWorker = async (): Promise<void> => {
+    while (nextTaskIndex < queued.length) {
+      const taskIndex = nextTaskIndex;
+      nextTaskIndex++;
+      const { exceptionPath, exception } = queued[taskIndex];
+      await publishProgress({
+        status: "running",
+        total: queued.length,
+        completed: items.length,
+        current_exception_id: exception.id,
+      });
+      const item = await triageException({
+        root,
+        exceptionPath,
+        exception,
+        now,
+        mode,
+        authorityMode: input.authorityMode,
+        autoRelease: Boolean(input.autoRelease),
+        aiClient,
+        warnings,
+      });
+      items.push(item);
+      await publishProgress({
+        status: "running",
+        total: queued.length,
+        completed: items.length,
+        current_exception_id: exception.id,
+      });
+    }
+  };
+
+  const concurrency = normalizeConcurrency(input.aiConcurrency);
+  await Promise.all(Array.from({ length: Math.min(concurrency, queued.length) }, () => runTriageWorker()));
+  items.sort((left, right) => left.exception_path.localeCompare(right.exception_path));
+
+  await publishProgress({
+    status: "completed",
+    total: queued.length,
+    completed: items.length,
+  });
+
+  const reportId = makeId("privacy-triage", runSuffix(now));
+  const reportPath = `${protocolPaths.reportsPrivacyTriage}/${reportId}.json`;
+  if (mode === "write") outputs.push(reportPath);
+
+  const report = PrivacyTriageReportSchema.parse({
+    id: reportId,
+    protocol_version: PROTOCOL_VERSION,
+    type: "privacy_triage_report",
+    authority_mode: input.authorityMode,
+    mode,
+    ai: {
+      configured: Boolean(aiConfig || input.aiClient),
+      provider: aiConfig?.provider,
+      model: runtimeAiConfig?.model,
+    },
+    items,
+    summary: {
+      scanned: items.length,
+      skipped_already_triaged: skippedAlreadyTriaged,
+      skipped_non_privacy: skippedNonPrivacy,
+      auto_released: items.filter((item) => item.decision === "auto_released").length,
+      keep_human_required: items.filter((item) => item.decision === "keep_human_required").length,
+      team_review_only: items.filter((item) => item.decision === "team_review_only").length,
+    },
+    changed_stable_knowledge: false,
+    outputs,
+    warnings,
+    created_at: now,
+  });
+
+  if (mode === "write") await writeJson(root, reportPath, report);
+  return report;
+}
+
+async function triageException(input: {
+  root: string;
+  exceptionPath: string;
+  exception: ExceptionRecord;
+  now: string;
+  mode: "dry-run" | "write";
+  authorityMode: RunPrivacyTriageInput["authorityMode"];
+  autoRelease: boolean;
+  aiClient: AiJsonClient;
+  warnings: string[];
+}): Promise<PrivacyTriageReport["items"][number]> {
+    const { exceptionPath, exception } = input;
     const details = record(exception.details);
     const scope = stringValue(details.scope_hint) ?? stringValue(details.scope);
     const hardBlockReasons = containsConcretePrivateValue(exceptionTriageText(exception))
       ? ["private_material_detected"]
       : [];
     const prompt = buildPrompt(exception);
-    const aiResult = await aiClient.generateJson({
+    const aiResult = await input.aiClient.generateJson({
       ...prompt,
       schemaName: "PrivacyTriageDecision",
       maxOutputBytes: 2048,
@@ -282,19 +448,19 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
     let ai: TriageAiDecision;
     if (!aiResult.ok) {
       ai = fallbackAiDecision(aiResult.error);
-      warnings.push(`privacy_triage_ai_error:${exception.id}:${aiResult.error}`);
+      input.warnings.push(`privacy_triage_ai_error:${exception.id}:${aiResult.error}`);
     } else {
       const parsedAi = PrivacyTriageAiDecisionSchema.safeParse(normalizeAiDecision(aiResult.json));
       if (parsedAi.success) {
         ai = parsedAi.data;
       } else {
         ai = fallbackAiDecision("AI triage output did not match schema.");
-        warnings.push(`privacy_triage_schema_error:${exception.id}:${shapeSummary(normalizeAiDecision(aiResult.json))}:${parsedAi.error.message}`);
+        input.warnings.push(`privacy_triage_schema_error:${exception.id}:${shapeSummary(normalizeAiDecision(aiResult.json))}:${parsedAi.error.message}`);
       }
     }
     const decision = releaseDecision({
       authorityMode: input.authorityMode,
-      autoRelease: Boolean(input.autoRelease),
+      autoRelease: input.autoRelease,
       scope,
       hardBlockReasons,
       ai,
@@ -315,10 +481,9 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
       hard_block_reasons: hardBlockReasons,
       decision,
     };
-    items.push(item);
 
-    if (mode === "write") {
-      await writeJson(root, exceptionPath, {
+    if (input.mode === "write") {
+      await writeJson(input.root, exceptionPath, {
         ...exception,
         details: {
           ...record(exception.details),
@@ -329,41 +494,10 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
             suggested_redactions: item.suggested_redactions,
             hard_block_reasons: item.hard_block_reasons,
             decision: item.decision,
-            triaged_at: now,
+            triaged_at: input.now,
           },
         },
       });
     }
-  }
-
-  const reportId = makeId("privacy-triage", runSuffix(now));
-  const reportPath = `${protocolPaths.reportsPrivacyTriage}/${reportId}.json`;
-  if (mode === "write") outputs.push(reportPath);
-
-  const report = PrivacyTriageReportSchema.parse({
-    id: reportId,
-    protocol_version: PROTOCOL_VERSION,
-    type: "privacy_triage_report",
-    authority_mode: input.authorityMode,
-    mode,
-    ai: {
-      configured: Boolean(aiConfig || input.aiClient),
-      provider: aiConfig?.provider,
-      model: runtimeAiConfig?.model,
-    },
-    items,
-    summary: {
-      scanned: items.length,
-      auto_released: items.filter((item) => item.decision === "auto_released").length,
-      keep_human_required: items.filter((item) => item.decision === "keep_human_required").length,
-      team_review_only: items.filter((item) => item.decision === "team_review_only").length,
-    },
-    changed_stable_knowledge: false,
-    outputs,
-    warnings,
-    created_at: now,
-  });
-
-  if (mode === "write") await writeJson(root, reportPath, report);
-  return report;
+  return item;
 }

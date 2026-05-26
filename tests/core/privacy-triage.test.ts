@@ -311,4 +311,149 @@ describe("privacy triage", () => {
     assert.match(report.warnings.join("\n"), /privacy_triage_schema_error/);
     assert.match(report.warnings.join("\n"), /keys=message/);
   });
+
+  it("skips already triaged exceptions by default and reports progress", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-skip-progress-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, { id: "already-triaged" });
+    await writeException(root, { id: "needs-triage" });
+    const alreadyPath = join(root, ".praxisbase/exceptions/human-required/already-triaged.json");
+    const already = JSON.parse(await readFile(alreadyPath, "utf8"));
+    await writeFile(alreadyPath, JSON.stringify({
+      ...already,
+      details: {
+        ...already.details,
+        triage: {
+          classification: "safe_personal_experience",
+          confidence: 0.9,
+          rationale: "Already triaged.",
+          suggested_redactions: [],
+          hard_block_reasons: [],
+          decision: "auto_released",
+          triaged_at: "2026-05-22T00:30:00.000Z",
+        },
+      },
+    }, null, 2), "utf8");
+
+    const progress: string[] = [];
+    let calls = 0;
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      autoRelease: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson() {
+          calls++;
+          return {
+            ok: true,
+            json: {
+              classification: "safe_personal_experience",
+              confidence: 0.9,
+              rationale: "Safe personal workflow experience.",
+              suggested_redactions: [],
+            },
+          };
+        },
+      },
+      onProgress(event) {
+        progress.push(event.status);
+      },
+    });
+
+    assert.equal(calls, 1);
+    assert.equal(report.summary.scanned, 1);
+    assert.equal(report.summary.skipped_already_triaged, 1);
+    assert.equal(report.items[0].exception_id, "needs-triage");
+    assert.ok(progress.includes("running"));
+    assert.equal(progress.at(-1), "completed");
+  });
+
+  it("skips non-privacy human-required exceptions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-skip-quality-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, { id: "privacy-item" });
+    const dir = join(root, ".praxisbase/exceptions/human-required");
+    await writeFile(join(dir, "quality-item.json"), JSON.stringify({
+      id: "quality-item",
+      protocol_version: "0.1",
+      type: "exception_record",
+      category: "human_required",
+      source_id: "source_quality",
+      reason: "Quality gate human required: low_confidence, quality_human_required",
+      details: {
+        candidate_path: ".praxisbase/review/wiki-candidates/example.json",
+      },
+      created_at: "2026-05-22T00:00:00.000Z",
+    }, null, 2), "utf8");
+    let calls = 0;
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      autoRelease: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson() {
+          calls++;
+          return {
+            ok: true,
+            json: {
+              classification: "safe_personal_experience",
+              confidence: 0.9,
+              rationale: "Safe personal workflow experience.",
+              suggested_redactions: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(calls, 1);
+    assert.equal(report.summary.scanned, 1);
+    assert.equal(report.summary.skipped_non_privacy, 1);
+    assert.deepEqual(report.items.map((item) => item.exception_id), ["privacy-item"]);
+  });
+
+  it("runs privacy triage AI calls with bounded concurrency", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-concurrency-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, { id: "item-a" });
+    await writeException(root, { id: "item-b" });
+    await writeException(root, { id: "item-c" });
+    let active = 0;
+    let maxActive = 0;
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      autoRelease: true,
+      aiConcurrency: 2,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson() {
+          active++;
+          maxActive = Math.max(maxActive, active);
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          active--;
+          return {
+            ok: true,
+            json: {
+              classification: "safe_personal_experience",
+              confidence: 0.9,
+              rationale: "Safe personal workflow experience.",
+              suggested_redactions: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.summary.scanned, 3);
+    assert.equal(report.summary.auto_released, 3);
+    assert.equal(maxActive, 2);
+  });
 });

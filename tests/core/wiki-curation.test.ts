@@ -491,6 +491,70 @@ describe("wiki evidence curation", () => {
     assert.equal(report.output_counts.curated_proposals, 0);
   });
 
+  it("uses limit as a synthesis budget instead of processing every page plan", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curate-limit-budget-"));
+    await writeCapture(root, "capture_auth", "OpenClaw auth expired. Action: refresh login. Verification passed. Reusable lesson: refresh login before retrying sync.");
+    await writeCapture(root, "capture_ack", "OpenClaw dispatch looked silent. Action: send ACK before long dispatch. Verification passed. Reusable lesson: ACK before long OpenClaw work.");
+    await writeCapture(root, "capture_memory", "OpenClaw memory sync stalled. Action: restart sync worker. Verification passed. Reusable lesson: restart sync worker after stalled memory sync.");
+    await writeCapture(root, "capture_runner", "OpenClaw runner status disappeared. Action: verify runner registration. Verification passed. Reusable lesson: check runner registration before dispatch debugging.");
+    await writeCapture(root, "capture_replay", "OpenClaw replay timed out. Action: increase final assertion timeout. Verification passed. Reusable lesson: use a longer timeout for delegated replay checks.");
+    await writeCapture(root, "capture_stdin", "Codex stdin closed during long work. Action: resume from the latest report. Verification passed. Reusable lesson: persist progress before long-running commands.");
+    await writeCapture(root, "capture_git", "GitLab writeback conflicted during daily harvest. Action: pull and retry the serialized writeback. Verification passed. Reusable lesson: serialize team knowledge writebacks.");
+    await writeCapture(root, "capture_site", "PraxisBase site build missed review cards. Action: rebuild the wiki site after curation. Verification passed. Reusable lesson: rebuild site artifacts after review queue changes.");
+    let calls = 0;
+    const totals: number[] = [];
+
+    const report = await curateWiki(root, {
+      mode: "review",
+      limit: 1,
+      concurrency: 4,
+      now: "2026-05-21T00:00:00.000Z",
+      onProgress(event) {
+        totals.push(event.total);
+      },
+      aiClient: {
+        async generateJson(args: { user: string }) {
+          calls++;
+          const user = JSON.parse(args.user) as { compiler_context?: { topic_title?: string } };
+          const title = user.compiler_context?.topic_title ?? "OpenClaw repair";
+          return {
+            ok: true,
+            json: {
+              title,
+              summary: "Reusable OpenClaw repair guidance.",
+              page_kind: "known_fix",
+              target_path: `kb/known-fixes/${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.md`,
+              body_markdown: [
+                `# ${title}`,
+                "",
+                "## Problem",
+                "OpenClaw workflow failed.",
+                "",
+                "## Fix",
+                "Apply the repair.",
+                "",
+                "## Verification",
+                "Verification passed.",
+                "",
+                "## Reusable Lessons",
+                "Reuse this OpenClaw repair guidance.",
+              ].join("\n"),
+              confidence: 0.91,
+              risk_notes: [],
+            },
+          };
+        },
+      },
+    });
+
+    const planCount = Object.values(report.compiler_counts?.page_plans_by_action ?? {}).reduce((sum, count) => sum + count, 0);
+    assert.equal(planCount >= 3, true);
+    assert.equal(calls, 1);
+    assert.deepEqual(Array.from(new Set(totals)), [5]);
+    assert.equal(calls < planCount, true);
+    assert.equal(report.output_counts.curated_proposals, 1);
+  });
+
   it("deduplicates same-run proposals that target the same stable path", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-dedup-target-"));
     await writeCapture(root, "capture_ack_1", "ACK timing was slow. Action: send a short ACK before long dispatch. Verification passed. Reusable lesson: ACK before long OpenClaw work.");

@@ -4,7 +4,11 @@ export interface PrivacyCommandOptions {
   mode?: "personal" | "team-git";
   autoRelease?: boolean;
   limit?: number;
+  aiConcurrency?: number;
   aiTimeoutMs?: number;
+  includeTriaged?: boolean;
+  progress?: boolean;
+  progressSink?: (line: string) => void;
   json?: boolean;
   now?: string;
   env?: Record<string, string | undefined>;
@@ -21,6 +25,32 @@ function errorCode(error: unknown): string {
   return match?.[1] ?? "PRIVACY_COMMAND_FAILED";
 }
 
+function formatProgressLine(event: {
+  status: "running" | "completed";
+  total: number;
+  completed: number;
+  skipped_already_triaged: number;
+  skipped_non_privacy: number;
+  current_exception_id?: string;
+  summary: {
+    auto_released: number;
+    keep_human_required: number;
+    team_review_only: number;
+  };
+}): string {
+  const parts = [
+    `[praxisbase privacy] status=${event.status}`,
+    `completed=${event.completed}/${event.total}`,
+    `skipped_already_triaged=${event.skipped_already_triaged}`,
+    `skipped_non_privacy=${event.skipped_non_privacy}`,
+    `auto_released=${event.summary.auto_released}`,
+    `keep_human_required=${event.summary.keep_human_required}`,
+    `team_review_only=${event.summary.team_review_only}`,
+  ];
+  if (event.current_exception_id) parts.splice(2, 0, `exception=${event.current_exception_id}`);
+  return parts.join(" ");
+}
+
 export async function privacyCommand(root: string, subcommand: string, options: PrivacyCommandOptions): Promise<string> {
   try {
     if (subcommand === "triage") {
@@ -29,7 +59,14 @@ export async function privacyCommand(root: string, subcommand: string, options: 
         mode: "write",
         autoRelease: options.autoRelease,
         limit: options.limit,
+        aiConcurrency: options.aiConcurrency,
         aiTimeoutMs: options.aiTimeoutMs,
+        includeTriaged: options.includeTriaged,
+        onProgress: options.progress
+          ? (event) => {
+              (options.progressSink ?? console.error)(formatProgressLine(event));
+            }
+          : undefined,
         now: options.now,
         env: options.env,
         aiClient: options.aiClient,
