@@ -1,4 +1,5 @@
 import { runHarvest } from "@praxisbase/core/experience/harvest.js";
+import type { RemoteCommandRunner } from "@praxisbase/core/experience/remote-adapters.js";
 
 export interface HarvestCommandOptions {
   all?: boolean;
@@ -18,6 +19,7 @@ export interface HarvestCommandOptions {
   autoReview?: boolean;
   autoPromote?: boolean;
   dryRun?: boolean;
+  runRemoteCommandForTests?: RemoteCommandRunner;
   json?: boolean;
 }
 
@@ -47,6 +49,7 @@ export async function harvestCommand(root: string, options: HarvestCommandOption
       dryRun: options.dryRun,
       autoReview: options.autoReview,
       autoPromote: options.autoPromote,
+      runRemoteCommandForTests: options.runRemoteCommandForTests,
     });
     return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Harvest complete: ${report.id}`;
   } catch (error) {

@@ -391,6 +391,7 @@ program
       pr?: boolean;
       degraded?: boolean;
       noAi?: boolean;
+      ai?: boolean;
       maxAiChunks?: string;
       aiTimeoutMs?: string;
       aiConcurrency?: string;
@@ -405,6 +406,7 @@ program
   ) => {
     console.log(await dailyCommand(process.cwd(), sub, {
       ...options,
+      noAi: options.noAi ?? options.ai === false,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
       maxAiChunks: options.maxAiChunks ? parseInt(options.maxAiChunks, 10) : undefined,
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
@@ -559,6 +561,7 @@ program
       limit?: string;
       degraded?: boolean;
       noAi?: boolean;
+      ai?: boolean;
       maxAiChunks?: string;
       aiTimeoutMs?: string;
       aiConcurrency?: string;
@@ -569,6 +572,7 @@ program
     console.log(await personalCommand(process.cwd(), sub, {
       ...options,
       target,
+      noAi: options.noAi ?? options.ai === false,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
       maxAiChunks: options.maxAiChunks ? parseInt(options.maxAiChunks, 10) : undefined,
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
@@ -765,6 +769,7 @@ program
       pr?: boolean;
       degraded?: boolean;
       noAi?: boolean;
+      ai?: boolean;
       maxAiChunks?: string;
       aiTimeoutMs?: string;
       aiConcurrency?: string;
@@ -775,6 +780,7 @@ program
   ) => {
     console.log(await kbCommand(process.cwd(), sub, {
       ...options,
+      noAi: options.noAi ?? options.ai === false,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
       maxAiChunks: options.maxAiChunks ? parseInt(options.maxAiChunks, 10) : undefined,
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,

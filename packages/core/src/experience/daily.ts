@@ -815,6 +815,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     aiDistill.warnings.push(warning);
   }
 
+  const sourceRunner = input.runCommand ?? createDefaultGitRunner(root);
   for (const source of sources) {
     if (mode === "write") {
       await publishProgress({
@@ -832,7 +833,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       limit: input.limit,
       now,
       fetchImpl: input.fetchImpl,
-      runCommand: input.runCommand,
+      runCommand: sourceRunner,
       env: input.env,
     };
     let scanned = 0;

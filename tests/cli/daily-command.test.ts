@@ -38,6 +38,40 @@ describe("daily CLI command", () => {
     assert.ok(parsed.next_actions.commands.some((command: string) => command.includes("personal run --open")));
   });
 
+  it("runs a personal daily loop from an SSH OpenClaw source", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-ssh-"));
+    await sourceCommand(root, "add", {
+      name: "remote-openclaw",
+      agent: "openclaw",
+      type: "ssh",
+      host: "root@example.com",
+      path: "/root/.openclaw/praxisbase/latest.json",
+      scope: "personal",
+      json: true,
+    });
+
+    const output = await dailyCommand(root, "run", {
+      mode: "personal",
+      degraded: true,
+      limit: 1,
+      runCommand: async (command, args) => {
+        assert.equal(command, "ssh");
+        assert.deepEqual(args, ["root@example.com", "cat", "/root/.openclaw/praxisbase/latest.json"]);
+        return JSON.stringify({
+          items: [{ id: "ssh-one", summary: "Remote OpenClaw repaired gateway auth failure and verified the agent reply.", signature: "openclaw:ssh-one" }],
+        });
+      },
+      json: true,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.sources[0].name, "remote-openclaw");
+    assert.equal(parsed.report.sources[0].source_type, "ssh");
+    assert.equal(parsed.report.sources[0].imported, 1);
+  });
+
   it("returns a JSON error when production AI is not configured", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-ai-required-"));
     const output = await dailyCommand(root, "run", {

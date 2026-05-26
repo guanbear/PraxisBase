@@ -285,11 +285,12 @@ export async function runHarvest(root: string, input: RunHarvestInput): Promise<
     await ingestOpenClawExport(root, source, "file", [source], runInput, sources, outputs);
   }
 
+  const remoteRunner = input.runRemoteCommandForTests ?? createDefaultGitRunner(root);
   for (const remoteName of discovered.remoteNames) {
     const config = await readRemoteSource(root, remoteName);
     const resolved = await resolveRemoteSource(root, config, {
       fetchImpl: input.fetchImpl,
-      runCommand: input.runRemoteCommandForTests,
+      runCommand: remoteRunner,
     });
     if (resolved.kind === "openclaw-api") {
       const fetchReport = await fetchOpenClawRemoteMemory(root, {

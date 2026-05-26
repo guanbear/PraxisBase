@@ -1,4 +1,5 @@
 import { deriveDailyNextActions, runDailyExperience, type DailyNextActions, type DailyProgressEvent } from "@praxisbase/core/experience/daily.js";
+import type { GitCommandRunner } from "@praxisbase/core/experience/git-workflow.js";
 
 export interface DailyCommandOptions {
   mode?: "personal" | "team-git";
@@ -21,6 +22,7 @@ export interface DailyCommandOptions {
   noContextEconomy?: boolean;
   semanticReview?: boolean;
   skillSynthesis?: boolean;
+  runCommand?: GitCommandRunner;
   progress?: boolean;
   progressSink?: (line: string) => void;
 }
@@ -106,6 +108,7 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         noContextEconomy: options.noContextEconomy,
         semanticReview: options.semanticReview,
         skillSynthesis: options.skillSynthesis,
+        runCommand: options.runCommand,
         onProgress: options.progress
           ? async (event) => {
             (options.progressSink ?? console.error)(formatProgressLine(event));

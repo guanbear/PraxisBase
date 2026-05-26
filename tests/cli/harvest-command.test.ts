@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { harvestCommand } from "@praxisbase/cli/commands/harvest.js";
+import { addRemoteSource } from "@praxisbase/core/experience/remote-sources.js";
 
 describe("harvest CLI command", () => {
   it("harvests an OpenClaw export and builds the site", async () => {
@@ -49,5 +50,35 @@ describe("harvest CLI command", () => {
     const parsed = JSON.parse(output);
     assert.equal(parsed.ok, false);
     assert.equal(parsed.code, "HARVEST_BRANCH_REQUIRED");
+  });
+
+  it("harvests a registered SSH OpenClaw remote through the CLI", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-harvest-ssh-"));
+    await addRemoteSource(root, {
+      name: "openclaw-ssh",
+      sourceType: "ssh",
+      agent: "openclaw",
+      host: "root@example.com",
+      path: "~/.openclaw/exports/latest.json",
+      now: "2026-05-26T00:00:00.000Z",
+    });
+
+    const output = await harvestCommand(root, {
+      remote: ["openclaw-ssh"],
+      runRemoteCommandForTests: async (command, args) => {
+        assert.equal(command, "ssh");
+        assert.deepEqual(args, ["root@example.com", "cat", "~/.openclaw/exports/latest.json"]);
+        return JSON.stringify({
+          items: [{ id: "ssh-one", summary: "SSH remote OpenClaw export summary", signature: "openclaw:ssh-one" }],
+        });
+      },
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.report.sources[0].name, "openclaw-ssh");
+    assert.equal(parsed.report.sources[0].source_type, "ssh");
+    assert.equal(parsed.report.sources[0].imported, 1);
   });
 });
