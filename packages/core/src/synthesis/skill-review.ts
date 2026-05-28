@@ -56,18 +56,51 @@ export function buildSemanticSkillReviewPrompt(candidate: SkillSynthesisCandidat
   });
 }
 
+export type SemanticSkillReviewResult =
+  | { ok: true; review: SemanticSkillReview }
+  | { ok: false; reason: string };
+
+function sanitizeReviewFailureReason(value: unknown): string {
+  const raw = value instanceof Error ? value.message : String(value ?? "unknown_error");
+  const compact = raw
+    .replace(/sk-[A-Za-z0-9_-]{8,}/g, "[redacted]")
+    .replace(/\s+/g, " ")
+    .trim();
+  return (compact || "unknown_error").slice(0, 200);
+}
+
+function skillReviewUnavailableReason(kind: "no_client" | "client_exception" | "provider_error" | "invalid_response", value?: unknown): string {
+  if (value === undefined) return `semantic_skill_review_unavailable:${kind}`;
+  return `semantic_skill_review_unavailable:${kind}:${sanitizeReviewFailureReason(value)}`;
+}
+
+export async function reviewSkillCandidateSemanticallyDetailed(input: {
+  candidate: SkillSynthesisCandidate;
+  client?: AiJsonClient;
+  now: string;
+}): Promise<SemanticSkillReviewResult> {
+  if (!input.client) return { ok: false, reason: skillReviewUnavailableReason("no_client") };
+  let response: { ok: true; json: unknown } | { ok: false; error: string };
+  try {
+    response = await input.client.generateJson({
+      schemaName: "semantic_skill_review",
+      system: "You review PraxisBase skill candidates for safe future-agent use. Return strict JSON.",
+      user: buildSemanticSkillReviewPrompt(input.candidate),
+      maxOutputBytes: 4096,
+    });
+  } catch (error) {
+    return { ok: false, reason: skillReviewUnavailableReason("client_exception", error) };
+  }
+  if (!response.ok) return { ok: false, reason: skillReviewUnavailableReason("provider_error", response.error) };
+  const review = normalizeSemanticSkillReview(response.json, input.candidate, input.now);
+  return review ? { ok: true, review } : { ok: false, reason: skillReviewUnavailableReason("invalid_response") };
+}
+
 export async function reviewSkillCandidateSemantically(input: {
   candidate: SkillSynthesisCandidate;
   client?: AiJsonClient;
   now: string;
 }): Promise<SemanticSkillReview | null> {
-  if (!input.client) return null;
-  const response = await input.client.generateJson({
-    schemaName: "semantic_skill_review",
-    system: "You review PraxisBase skill candidates for safe future-agent use. Return strict JSON.",
-    user: buildSemanticSkillReviewPrompt(input.candidate),
-    maxOutputBytes: 4096,
-  });
-  if (!response.ok) return null;
-  return normalizeSemanticSkillReview(response.json, input.candidate, input.now);
+  const result = await reviewSkillCandidateSemanticallyDetailed(input);
+  return result.ok ? result.review : null;
 }

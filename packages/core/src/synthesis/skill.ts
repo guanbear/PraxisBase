@@ -10,7 +10,7 @@ import { collectSkillSignalsFromDistilledExperiences, collectSkillSignalsFromSta
 import { clusterSkillSignals } from "./skill-stability.js";
 import { loadStableSkillInventory, matchStableSkills } from "./skill-inventory.js";
 import { proposeSkillCandidate } from "./skill-proposer.js";
-import { reviewSkillCandidateSemantically } from "./skill-review.js";
+import { reviewSkillCandidateSemanticallyDetailed } from "./skill-review.js";
 import { decideSemanticSkillAction } from "./skill-review-policy.js";
 import { SkillSynthesisReportSchema, type SkillSynthesisCandidate, type SkillSynthesisReport } from "./skill-model.js";
 import { collectWikiPages } from "../wiki/render-site.js";
@@ -293,9 +293,10 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
     try {
       const matches = matchStableSkills(cluster, inventory);
       const candidate = await proposeSkillCandidate({ cluster, matches, aiClient: input.aiClient, now });
-      const review = await reviewSkillCandidateSemantically({ candidate, client: input.aiClient, now });
+      const reviewResult = await reviewSkillCandidateSemanticallyDetailed({ candidate, client: input.aiClient, now });
+      const review = reviewResult.ok ? reviewResult.review : null;
       if (review) reviewed++;
-      const decision = decideSemanticSkillAction(candidate, review ?? undefined);
+      const decision = decideSemanticSkillAction(candidate, review ?? undefined, reviewResult.ok ? undefined : reviewResult.reason);
       const reviewedCandidate: SkillSynthesisCandidate = {
         ...candidate,
         review_hint: {

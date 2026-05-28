@@ -180,6 +180,7 @@ describe("curateWiki semantic review integration", () => {
     const proposals = await readWrittenProposals(root);
     assert.equal(proposals[0].review_hint.suggested_decision, "edit");
     assert.ok(proposals[0].review_hint.risk_notes.includes("semantic_review:unavailable"));
+    assert.ok(proposals[0].review_hint.risk_notes.includes("semantic_review_unavailable:provider_error:semantic reviewer unavailable"));
     assert.ok(proposals[0].review_hint.risk_notes.includes("semantic_review:needs_human"));
   });
 

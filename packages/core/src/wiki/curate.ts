@@ -34,7 +34,7 @@ import {
 } from "./curation-model.js";
 import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-planner.js";
 import { buildWikiRelationshipPlans, type WikiRelationshipPlan, type RelationshipWikiPage } from "./relationship-planner.js";
-import { reviewWikiCandidateSemantically, type ExistingWikiPageRef } from "./semantic-review.js";
+import { reviewWikiCandidateSemanticallyDetailed, type ExistingWikiPageRef, type SemanticWikiReview } from "./semantic-review.js";
 import { decideSemanticWikiAction } from "./semantic-review-policy.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
@@ -1583,9 +1583,10 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
         continue;
       }
 
-      let review = null;
+      let review: SemanticWikiReview | null = null;
+      let unavailableReason: string | null = null;
       if (reviewClient) {
-        review = await reviewWikiCandidateSemantically(proposal, {
+        const result = await reviewWikiCandidateSemanticallyDetailed(proposal, {
           client: reviewClient,
           existingPages: existingPageRefs,
           qualityAssessment: assessment ?? {
@@ -1596,6 +1597,10 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
           },
           maxOutputBytes,
         });
+        if (result.ok) review = result.review;
+        else unavailableReason = result.reason;
+      } else {
+        unavailableReason = "semantic_review_unavailable:no_client";
       }
 
       if (review) {
@@ -1629,6 +1634,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
         semanticRiskNotes.push(`semantic_reason:${review.reason}`);
       } else {
         semanticRiskNotes.push("semantic_review:unavailable");
+        if (unavailableReason) semanticRiskNotes.push(unavailableReason);
       }
 
       switch (arbitration.action) {

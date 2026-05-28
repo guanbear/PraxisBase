@@ -9,7 +9,7 @@ export interface SemanticSkillPolicyDecision {
   review_notes: string[];
 }
 
-export function decideSemanticSkillAction(candidate: SkillSynthesisCandidate, review?: SemanticSkillReview): SemanticSkillPolicyDecision {
+export function decideSemanticSkillAction(candidate: SkillSynthesisCandidate, review?: SemanticSkillReview, unavailableReason?: string): SemanticSkillPolicyDecision {
   const notes = [...candidate.review_hint.risk_notes];
   if (!candidate.target_path.startsWith("skills/") || candidate.target_path.includes("..")) {
     return { action: "reject", promotion_eligible: false, reason: "Unsafe skill target path.", review_notes: [...notes, "unsafe_target_path"] };
@@ -21,7 +21,12 @@ export function decideSemanticSkillAction(candidate: SkillSynthesisCandidate, re
     return { action: "needs_human", promotion_eligible: false, reason: "Skill candidate markdown shape requires human edit before future-agent use.", review_notes: notes };
   }
   if (!review) {
-    return { action: "needs_human", promotion_eligible: false, reason: "Semantic skill review unavailable.", review_notes: [...notes, "semantic_skill_review:unavailable"] };
+    return {
+      action: "needs_human",
+      promotion_eligible: false,
+      reason: "Semantic skill review unavailable.",
+      review_notes: [...notes, "semantic_skill_review:unavailable", ...(unavailableReason ? [unavailableReason] : [])],
+    };
   }
   notes.push(`semantic_skill_review:${review.decision}`, `semantic_skill_score:${review.quality_score}`, `semantic_skill_reason:${review.reason}`);
   if (review.fatal_issues.length > 0 || !review.safe_for_future_agents) {

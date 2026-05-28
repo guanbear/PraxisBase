@@ -1,6 +1,10 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeSemanticSkillReview, reviewSkillCandidateSemantically } from "@praxisbase/core/synthesis/skill-review.js";
+import {
+  normalizeSemanticSkillReview,
+  reviewSkillCandidateSemantically,
+  reviewSkillCandidateSemanticallyDetailed,
+} from "@praxisbase/core/synthesis/skill-review.js";
 import type { SkillSynthesisCandidate } from "@praxisbase/core/synthesis/skill-model.js";
 import { PROTOCOL_VERSION } from "@praxisbase/core";
 
@@ -62,5 +66,17 @@ describe("semantic skill review", () => {
       client: { async generateJson() { return { ok: false, error: "timeout" }; } },
     });
     assert.equal(review, null);
+  });
+
+  it("preserves AI client error reason in detailed unavailable result", async () => {
+    const review = await reviewSkillCandidateSemanticallyDetailed({
+      candidate,
+      now,
+      client: { async generateJson() { return { ok: false, error: "timeout" }; } },
+    });
+    assert.equal(review.ok, false);
+    if (!review.ok) {
+      assert.equal(review.reason, "semantic_skill_review_unavailable:provider_error:timeout");
+    }
   });
 });

@@ -260,6 +260,57 @@ describe("Skill synthesis", () => {
     assert.equal(result.report.candidates, 0);
   });
 
+  it("keeps semantic skill review failure reason on human-required candidates", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-unavailable-"));
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "personal",
+      summary: "OpenClaw memory import repair.",
+      problem: "OpenClaw memory import needed provenance.",
+      actions: ["Exported memory JSON.", "Verified hash.", "Imported with provenance."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["pnpm test passed"],
+      reusable_lessons: ["Export memory, verify hash, then import with provenance."],
+      risks: [],
+      suggested_tags: ["openclaw"],
+      suggested_wiki_kind: "procedure",
+      skill_candidate: {
+        should_create: true,
+        title: "OpenClaw memory import operations",
+        trigger: "Need to import OpenClaw memory into PraxisBase",
+        procedure: ["Export memory JSON.", "Verify hash.", "Import with provenance."],
+      },
+      confidence: 0.91,
+    };
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "review",
+      authorityMode: "personal-local",
+      now: "2026-05-26T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+      ],
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "semantic_skill_review") {
+            return { ok: false, error: "review model unavailable" };
+          }
+          return { ok: true, json: {} };
+        },
+      },
+    });
+
+    assert.equal(result.report.reviewed, 0);
+    assert.equal(result.report.needs_human, 1);
+    assert.ok(result.candidates[0].review_hint.risk_notes.includes("semantic_skill_review:unavailable"));
+    assert.ok(result.candidates[0].review_hint.risk_notes.includes("semantic_skill_review_unavailable:provider_error:review model unavailable"));
+  });
+
   it("uses stable wiki procedures as conservative skill synthesis signals", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-wiki-"));
     await mkdir(join(root, "kb/procedures"), { recursive: true });

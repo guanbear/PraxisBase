@@ -174,10 +174,28 @@ export interface ReviewWikiCandidateOptions {
   maxOutputBytes?: number;
 }
 
-export async function reviewWikiCandidateSemantically(
+export type SemanticWikiReviewResult =
+  | { ok: true; review: SemanticWikiReview }
+  | { ok: false; reason: string };
+
+function sanitizeReviewFailureReason(value: unknown): string {
+  const raw = value instanceof Error ? value.message : String(value ?? "unknown_error");
+  const compact = raw
+    .replace(/sk-[A-Za-z0-9_-]{8,}/g, "[redacted]")
+    .replace(/\s+/g, " ")
+    .trim();
+  return (compact || "unknown_error").slice(0, 200);
+}
+
+function wikiReviewUnavailableReason(kind: "client_exception" | "provider_error" | "invalid_response", value?: unknown): string {
+  if (value === undefined) return `semantic_review_unavailable:${kind}`;
+  return `semantic_review_unavailable:${kind}:${sanitizeReviewFailureReason(value)}`;
+}
+
+export async function reviewWikiCandidateSemanticallyDetailed(
   proposal: CuratedWikiProposal,
   options: ReviewWikiCandidateOptions,
-): Promise<SemanticWikiReview | null> {
+): Promise<SemanticWikiReviewResult> {
   const { client, existingPages, qualityAssessment, maxOutputBytes = 4096 } = options;
   const prompt = buildSemanticWikiReviewPrompt(proposal, existingPages, qualityAssessment);
 
@@ -189,13 +207,22 @@ export async function reviewWikiCandidateSemantically(
       schemaName: "semantic_wiki_review",
       maxOutputBytes,
     });
-  } catch {
-    return null;
+  } catch (error) {
+    return { ok: false, reason: wikiReviewUnavailableReason("client_exception", error) };
   }
 
-  if (!result.ok) return null;
+  if (!result.ok) return { ok: false, reason: wikiReviewUnavailableReason("provider_error", result.error) };
 
   const rawJson = result.json;
   const rawStr = typeof rawJson === "string" ? rawJson : JSON.stringify(rawJson);
-  return normalizeSemanticWikiReview(rawStr, proposal.id, proposal.target_path);
+  const review = normalizeSemanticWikiReview(rawStr, proposal.id, proposal.target_path);
+  return review ? { ok: true, review } : { ok: false, reason: wikiReviewUnavailableReason("invalid_response") };
+}
+
+export async function reviewWikiCandidateSemantically(
+  proposal: CuratedWikiProposal,
+  options: ReviewWikiCandidateOptions,
+): Promise<SemanticWikiReview | null> {
+  const result = await reviewWikiCandidateSemanticallyDetailed(proposal, options);
+  return result.ok ? result.review : null;
 }

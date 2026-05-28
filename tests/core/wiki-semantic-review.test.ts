@@ -5,6 +5,7 @@ import {
   normalizeSemanticWikiReview,
   buildSemanticWikiReviewPrompt,
   reviewWikiCandidateSemantically,
+  reviewWikiCandidateSemanticallyDetailed,
   type SemanticWikiReview,
 } from "@praxisbase/core";
 import type { AiJsonClient } from "@praxisbase/core/ai/client.js";
@@ -369,6 +370,38 @@ describe("reviewWikiCandidateSemantically", () => {
       existingPages: [],
     });
     assert.equal(result, null);
+  });
+
+  it("preserves AI client error reason in detailed unavailable result", async () => {
+    const client: AiJsonClient = {
+      async generateJson() {
+        return { ok: false, error: "AI provider request timed out after 90000ms" };
+      },
+    };
+    const result = await reviewWikiCandidateSemanticallyDetailed(baseProposal, {
+      client,
+      existingPages: [],
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.reason, "semantic_review_unavailable:provider_error:AI provider request timed out after 90000ms");
+    }
+  });
+
+  it("preserves invalid response reason in detailed unavailable result", async () => {
+    const client: AiJsonClient = {
+      async generateJson() {
+        return { ok: true, json: { decision: "approve", quality_score: 0.9 } };
+      },
+    };
+    const result = await reviewWikiCandidateSemanticallyDetailed(baseProposal, {
+      client,
+      existingPages: [],
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.reason, "semantic_review_unavailable:invalid_response");
+    }
   });
 
   it("returns unavailable when AI client throws", async () => {
