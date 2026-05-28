@@ -307,4 +307,93 @@ Refresh auth and verify the OpenClaw run.
     assert.ok(output.warnings.some((warning) => warning.includes("agentmemory_sidecar_unavailable")));
     assert.ok(output.warnings.includes("context_unavailable"));
   });
+
+  it("includes GBrain sidecar hits after stable wiki context", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-gbrain-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-auth-refresh.md"), `---
+id: openclaw-auth-refresh
+type: procedure
+knowledge_type: procedure
+scope: personal
+maturity: verified
+---
+# OpenClaw auth refresh
+
+## When to Use
+Use this when OpenClaw auth refresh is required.
+
+## What To Do
+Refresh auth and verify the OpenClaw run.
+`);
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "OpenClaw auth refresh",
+      maxBytes: 4000,
+      withGbrain: true,
+      gbrainRunCommand: async () => ({
+        stdout: "[0.9300] gbrain-openclaw-auth -- GBrain sidecar remembered an older OpenClaw auth repair note.",
+        stderr: "",
+      }),
+    });
+
+    assert.equal(output.items[0]?.path, "kb/procedures/openclaw-auth-refresh.md");
+    assert.ok(output.items.some((item) => item.path === "gbrain://query/gbrain-openclaw-auth"));
+    assert.equal(output.warnings.includes("context_unavailable"), false);
+  });
+
+  it("lets AgentMemory and GBrain sidecars coexist without blocking PB context", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-multi-backend-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-auth-refresh.md"), `---
+id: openclaw-auth-refresh
+type: procedure
+knowledge_type: procedure
+scope: personal
+maturity: verified
+---
+# OpenClaw auth refresh
+
+## When to Use
+Use this when OpenClaw auth refresh is required.
+
+## What To Do
+Refresh auth and verify the run.
+`);
+    await addExperienceSource(root, {
+      name: "agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:3111",
+    });
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "OpenClaw auth refresh",
+      maxBytes: 4000,
+      withBackends: ["agentmemory", "gbrain"],
+      fetchImpl: (async (input) => {
+        if (String(input).includes("health")) return new Response(JSON.stringify({ status: "ok" }));
+        return new Response(JSON.stringify({
+          hits: [{ id: "mem-1", title: "AgentMemory auth", content: "AgentMemory sidecar auth note." }],
+        }));
+      }) as typeof fetch,
+      gbrainRunCommand: async () => ({
+        stdout: "[0.8700] gbrain-auth -- GBrain sidecar auth note.",
+        stderr: "",
+      }),
+    });
+
+    assert.equal(output.items[0]?.path, "kb/procedures/openclaw-auth-refresh.md");
+    assert.ok(output.items.some((item) => item.path === "agentmemory://smart-search/mem-1"));
+    assert.ok(output.items.some((item) => item.path === "gbrain://query/gbrain-auth"));
+  });
 });

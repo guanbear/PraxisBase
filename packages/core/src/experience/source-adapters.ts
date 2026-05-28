@@ -18,6 +18,7 @@ import { evaluateExperiencePrivacy, type EvaluateExperiencePrivacyInput } from "
 import type { GitCommandRunner } from "./git-workflow.js";
 import { extractCodexExperienceText, isUsefulCodexExperience } from "./codex-signal.js";
 import { resolveAgentMemorySource } from "./agentmemory-adapter.js";
+import { GBrainClient, type GBrainQueryHit, type GBrainCommandRunner } from "./gbrain-client.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -33,6 +34,7 @@ export interface ResolveExperienceSourceOptions {
   now?: string;
   fetchImpl?: typeof fetch;
   runCommand?: GitCommandRunner;
+  gbrainRunCommand?: GBrainCommandRunner;
   env?: Record<string, string | undefined>;
 }
 
@@ -387,6 +389,45 @@ async function fetchOpenClawApiItems(
   };
 }
 
+function rawItemFromGBrainHit(hit: GBrainQueryHit): RawExperienceItem {
+  return {
+    id: hit.slug,
+    source_ref: `gbrain://${hit.source ?? "praxisbase"}/${hit.slug}`,
+    summary: hit.chunk_text,
+    text: hit.chunk_text,
+    signature: hit.title ?? hit.slug,
+    problem_signature: hit.title ?? hit.slug,
+  };
+}
+
+async function fetchGBrainItems(
+  source: ExperienceSourceConfig,
+  options: ResolveExperienceSourceOptions,
+): Promise<{ items: Array<{ item: RawExperienceItem; rawText: string }>; warnings: string[] }> {
+  const query = source.remote ?? source.path;
+  if (!query) {
+    return { items: [], warnings: ["gbrain source requires remote query or path query"] };
+  }
+  const client = new GBrainClient({
+    runCommand: options.gbrainRunCommand,
+    preferJson: true,
+  });
+  const result = await client.query(query, {
+    limit: options.limit ?? DEFAULT_LIMIT,
+    sourceId: source.name,
+  });
+  if (!result.ok) {
+    return { items: [], warnings: [`gbrain_fetch_failed: ${result.error ?? "query failed"}`] };
+  }
+  return {
+    items: result.hits.map((hit) => {
+      const item = rawItemFromGBrainHit(hit);
+      return { item, rawText: JSON.stringify(hit) };
+    }),
+    warnings: [],
+  };
+}
+
 async function resolveSourceItems(
   root: string,
   source: ExperienceSourceConfig,
@@ -432,6 +473,9 @@ async function resolveSourceItems(
   if (source.source_type === "agentmemory") {
     return { items: [], warnings: ["agentmemory source is resolved by the dedicated adapter"] };
   }
+  if (source.source_type === "gbrain") {
+    return fetchGBrainItems(source, options);
+  }
   return { items: [], warnings: [`unsupported_source_type: ${source.source_type satisfies never}`] };
 }
 
@@ -446,6 +490,9 @@ export async function resolveExperienceSource(
 
   const limit = options.limit ?? DEFAULT_LIMIT;
   const warnings: string[] = [];
+  if (source.source_type === "gbrain") {
+    warnings.push("gbrain_source_imported_as_evidence: sidecar pages only become PB evidence after explicit source configuration.");
+  }
   let resolvedItems: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }> = [];
 
   try {

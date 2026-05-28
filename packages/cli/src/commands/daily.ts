@@ -1,5 +1,6 @@
 import { deriveDailyNextActions, runDailyExperience, type DailyNextActions, type DailyProgressEvent } from "@praxisbase/core/experience/daily.js";
 import type { GitCommandRunner } from "@praxisbase/core/experience/git-workflow.js";
+import type { GBrainCommandRunner } from "@praxisbase/core/experience/gbrain-client.js";
 
 export interface DailyCommandOptions {
   mode?: "personal" | "team-git";
@@ -22,6 +23,10 @@ export interface DailyCommandOptions {
   noContextEconomy?: boolean;
   semanticReview?: boolean;
   skillSynthesis?: boolean;
+  publishGbrain?: boolean;
+  allowTeamGbrainExport?: boolean;
+  gbrainExecutable?: string;
+  gbrainRunCommand?: GBrainCommandRunner;
   runCommand?: GitCommandRunner;
   progress?: boolean;
   progressSink?: (line: string) => void;
@@ -108,6 +113,10 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         noContextEconomy: options.noContextEconomy,
         semanticReview: options.semanticReview,
         skillSynthesis: options.skillSynthesis,
+        publishGbrain: options.publishGbrain,
+        allowTeamGbrainExport: options.allowTeamGbrainExport,
+        gbrainExecutable: options.gbrainExecutable,
+        gbrainRunCommand: options.gbrainRunCommand,
         runCommand: options.runCommand,
         onProgress: options.progress
           ? async (event) => {

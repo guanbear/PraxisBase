@@ -50,6 +50,7 @@ export function inferExperienceSourceParser(
   parser?: ExperienceSourceParser
 ): ExperienceSourceParser {
   if (parser) return parser;
+  if (sourceType === "gbrain") return "gbrain-memory";
   if (agent === "agentmemory") return "agentmemory-memory";
   if (agent === "codex") return "codex-session";
   if (agent === "claude-code") return "claude-code-repair-log";

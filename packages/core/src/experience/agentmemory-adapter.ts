@@ -10,6 +10,8 @@ import { redactSensitiveValues } from "../protocol/redact.js";
 import { evaluateExperiencePrivacy } from "./privacy-policy.js";
 import { AgentMemoryClient, type AgentMemoryRecord } from "./agentmemory-client.js";
 import type { ResolveExperienceSourceOptions, ResolvedExperienceSource } from "./source-adapters.js";
+import type { BrainBackend, BrainBackendDoctorResult, BrainBackendRetrievalInput, BrainBackendRetrievalResult } from "./brain-backend.js";
+import type { WikiContextCandidate } from "../wiki/retrieval.js";
 
 const DEFAULT_LIMIT = 20;
 const MAX_SUMMARY_LENGTH = 1200;
@@ -126,6 +128,107 @@ export function createAgentMemoryClient(
     env: options.env,
     timeoutMs: 10_000,
   });
+}
+
+function agentMemorySummary(record: AgentMemoryRecord): string {
+  return [record.title, record.content].filter((value): value is string => typeof value === "string" && value.length > 0).join("\n") || record.id;
+}
+
+function agentMemoryContextCandidate(record: AgentMemoryRecord, sourceId: string): WikiContextCandidate {
+  const path = `agentmemory://smart-search/${encodeURIComponent(record.id)}`;
+  return {
+    id: `agentmemory-${record.id}`,
+    path,
+    kind: "agentmemory_sidecar",
+    title: stringValue(record.title) ?? record.id,
+    summary: agentMemorySummary(record).slice(0, 500),
+    body: stringValue(record.content),
+    scope: stringValue(record.scope),
+    source_ids: [sourceId, path, stringValue(record.source)].filter((entry): entry is string => Boolean(entry)).sort(),
+  };
+}
+
+export class AgentMemoryBackend implements BrainBackend {
+  readonly name = "agentmemory" as const;
+  private readonly source: ExperienceSourceConfig;
+  private readonly options: ResolveExperienceSourceOptions;
+
+  constructor(source: ExperienceSourceConfig, options: ResolveExperienceSourceOptions) {
+    this.source = source;
+    this.options = options;
+  }
+
+  async doctor(): Promise<BrainBackendDoctorResult> {
+    try {
+      const client = createAgentMemoryClient(this.source, this.options);
+      const health = await client.health();
+      const ok = health.ok;
+      return {
+        backend: "agentmemory",
+        ok,
+        checks: [{
+          id: "agentmemory_health",
+          ok,
+          severity: ok ? "info" : "warning",
+          message: ok ? `AgentMemory daemon healthy (${health.status ?? "ok"}).` : `AgentMemory daemon unhealthy: ${health.error ?? "unknown error"}`,
+        }],
+        warnings: ok ? [] : [health.error ?? "agentmemory health check failed"],
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        backend: "agentmemory",
+        ok: false,
+        checks: [{
+          id: "agentmemory_health",
+          ok: false,
+          severity: "warning",
+          message,
+        }],
+        warnings: [message],
+      };
+    }
+  }
+
+  async retrieve(input: BrainBackendRetrievalInput): Promise<BrainBackendRetrievalResult> {
+    try {
+      const client = createAgentMemoryClient(this.source, this.options);
+      const health = await client.health();
+      if (!health.ok) {
+        return {
+          backend: "agentmemory",
+          candidates: [],
+          warnings: [`agentmemory_sidecar_unavailable: ${health.error ?? "health check failed"}`],
+        };
+      }
+      const search = await client.smartSearch(input.query || input.stage, input.limit);
+      if (!search.ok) {
+        return {
+          backend: "agentmemory",
+          candidates: [],
+          warnings: [`agentmemory_sidecar_unavailable: ${search.error ?? "smart-search failed"}`],
+        };
+      }
+      return {
+        backend: "agentmemory",
+        candidates: (search.hits ?? []).map((record) => agentMemoryContextCandidate(record, this.source.id)),
+        warnings: [],
+      };
+    } catch (error) {
+      return {
+        backend: "agentmemory",
+        candidates: [],
+        warnings: [`agentmemory_sidecar_unavailable: ${error instanceof Error ? error.message : String(error)}`],
+      };
+    }
+  }
+}
+
+export function createAgentMemoryBackend(
+  source: ExperienceSourceConfig,
+  options: ResolveExperienceSourceOptions,
+): AgentMemoryBackend {
+  return new AgentMemoryBackend(source, options);
 }
 
 export async function resolveAgentMemorySource(

@@ -70,10 +70,11 @@ praxisbase harvest --openclaw-export <json-file> --build-site --json
 
 \`\`\`bash
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --with-gbrain --json
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --with-agentmemory --json
 \`\`\`
 
-Context should come from compiled wiki pages, root wiki artifacts, graph neighbors, and provenance pointers. Use \`--with-agentmemory\` only as a sidecar for session-level recall; stable PraxisBase wiki context remains the authority and should outrank sidecar hits. Do not rely on raw vault bodies as repair instructions.
+Context should come from compiled wiki pages, root wiki artifacts, graph neighbors, and provenance pointers. Use GBrain MCP for broad brain lookup across personal or team memory. Use \`--with-gbrain\` and \`--with-agentmemory\` only as sidecars for recall; stable PraxisBase wiki context remains the authority and should outrank sidecar hits. Use PraxisBase CLI for governed capture, review, promotion, and privacy gates. Do not rely on raw vault bodies as repair instructions.
 
 ## Capture After Repair
 
@@ -144,10 +145,11 @@ praxisbase wiki build-site --json
 3. If \`next_actions.status\` is \`ready_to_export_agentmemory\`, share only stable wiki lessons back to session memory:
 
 \`\`\`bash
+praxisbase gbrain export --mode personal --write --json
 praxisbase agentmemory export --mode personal --write --json
 \`\`\`
 
-Do not export raw evidence, review candidates, rejected material, or human-required material to AgentMemory.
+Do not export raw evidence, review candidates, rejected material, or human-required material to GBrain or AgentMemory.
 
 For offline smoke only:
 

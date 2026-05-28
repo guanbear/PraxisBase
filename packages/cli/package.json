@@ -107,6 +107,10 @@
       "types": "./src/commands/agentmemory.ts",
       "default": "./dist/commands/agentmemory.js"
     },
+    "./commands/gbrain.js": {
+      "types": "./src/commands/gbrain.ts",
+      "default": "./dist/commands/gbrain.js"
+    },
     "./commands/daily.js": {
       "types": "./src/commands/daily.ts",
       "default": "./dist/commands/daily.js"

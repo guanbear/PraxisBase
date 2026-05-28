@@ -59,8 +59,10 @@ import {
 } from "./git-workflow.js";
 import { synthesizeSkillCandidates } from "../synthesis/skill.js";
 import type { SkillSynthesisReport } from "../synthesis/skill-model.js";
+import { exportGBrain } from "./gbrain-export.js";
+import type { GBrainCommandRunner } from "./gbrain-client.js";
 
-type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "skill-synthesis" | "review-promote" | "site-build";
+type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "skill-synthesis" | "review-promote" | "backend-publish" | "site-build";
 
 export interface DailyProgressEvent {
   status: "running" | "completed" | "partial" | "failed";
@@ -104,6 +106,10 @@ export interface RunDailyExperienceInput {
   noContextEconomy?: boolean;
 	  semanticReview?: boolean;
 	  skillSynthesis?: boolean;
+  publishGbrain?: boolean;
+  allowTeamGbrainExport?: boolean;
+  gbrainExecutable?: string;
+  gbrainRunCommand?: GBrainCommandRunner;
 	  onProgress?: (event: DailyProgressEvent) => void | Promise<void>;
 }
 
@@ -139,6 +145,7 @@ export interface DailyNextActions {
     changed_stable_knowledge: boolean;
   };
   agentmemory_export_recommended: boolean;
+  gbrain_export_recommended: boolean;
   messages: string[];
   commands: string[];
 }
@@ -167,6 +174,7 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
       status: "needs_privacy_triage",
       counts,
       agentmemory_export_recommended: false,
+      gbrain_export_recommended: false,
       messages: [`${privacyRequired} item(s) need privacy triage before they can become wiki evidence.`],
       commands: ["praxisbase privacy triage --mode personal --auto-release --json"],
     };
@@ -177,6 +185,7 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
       status: "needs_review",
       counts,
       agentmemory_export_recommended: false,
+      gbrain_export_recommended: false,
       messages: [`${reviewRequired} wiki candidate(s) need review or another personal run with site auto-governance.`],
       commands: [
         "praxisbase personal run --open --json",
@@ -190,8 +199,12 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
       status: "ready_to_export_agentmemory",
       counts,
       agentmemory_export_recommended: report.authority_mode === "personal-local",
-      messages: ["Stable wiki changed and is ready to share with local agents through AgentMemory."],
-      commands: ["praxisbase agentmemory export --mode personal --write --json"],
+      gbrain_export_recommended: report.authority_mode === "personal-local",
+      messages: ["Stable wiki changed and is ready to share with local agents through GBrain and AgentMemory."],
+      commands: [
+        "praxisbase gbrain export --mode personal --write --json",
+        "praxisbase agentmemory export --mode personal --write --json",
+      ],
     };
   }
 
@@ -199,6 +212,7 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
     status: report.ai_distill.distilled > 0 || report.proposal_candidates > 0 ? "ready" : "no_stable_changes",
     counts,
     agentmemory_export_recommended: false,
+    gbrain_export_recommended: false,
     messages: ["No stable wiki changes were produced in this run."],
     commands: ["praxisbase personal run --open --json"],
   };
@@ -834,6 +848,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       now,
       fetchImpl: input.fetchImpl,
       runCommand: sourceRunner,
+      gbrainRunCommand: input.gbrainRunCommand,
       env: input.env,
     };
     let scanned = 0;
@@ -1286,6 +1301,62 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings.push(...reviewPromote.warnings);
   }
 
+  const changedStableKnowledge = reviewPromote.auto_promoted > 0;
+  const brainBackends: DailyExperienceReport["brain_backends"] = {};
+  if (input.publishGbrain) {
+    await publishProgress({
+      status: "running",
+      current_stage: "backend-publish",
+      current_source: "gbrain",
+      sources: sourceReports,
+      ai_distill: aiDistill,
+      warnings,
+    });
+    if (input.authorityMode === "personal-local" && !changedStableKnowledge) {
+      brainBackends.gbrain = {
+        enabled: true,
+        doctor_status: "unknown",
+        publish_status: "skipped",
+        pages: 0,
+        exported: 0,
+        skipped: 0,
+        imported: 0,
+        warnings: ["gbrain_publish_skipped:no_stable_changes"],
+        errors: [],
+      };
+    } else {
+      const gbrainExport = await exportGBrain(root, {
+        mode: input.authorityMode === "team-git" ? "team" : "personal",
+        dryRun: false,
+        allowTeamExport: input.allowTeamGbrainExport,
+        executable: input.gbrainExecutable,
+        runCommand: input.gbrainRunCommand,
+        fetchImpl: input.fetchImpl,
+      });
+      const blocked = gbrainExport.errors.some((error) => error.startsWith("GBRAIN_TEAM_EXPORT_BLOCKED"));
+      const publishStatus = blocked
+        ? "blocked"
+        : gbrainExport.errors.length === 0
+          ? "completed"
+          : gbrainExport.exported > 0
+            ? "partial"
+            : "failed";
+      brainBackends.gbrain = {
+        enabled: true,
+        doctor_status: gbrainExport.ok ? "ok" : "warning",
+        publish_status: publishStatus,
+        pages: gbrainExport.pages,
+        exported: gbrainExport.exported,
+        skipped: gbrainExport.skipped,
+        imported: 0,
+        warnings: gbrainExport.warnings,
+        errors: gbrainExport.errors,
+      };
+      warnings.push(...gbrainExport.warnings);
+      warnings.push(...gbrainExport.errors.map((error) => `gbrain_publish:${error}`));
+    }
+  }
+
   let git: ExecutedTeamGitAction | undefined;
   const reportId = makeId("daily-experience", runSuffix(now));
   const aiReportPath = `${protocolPaths.reportsAiDistill}/${makeId("ai-distill", runSuffix(now))}.json`;
@@ -1327,7 +1398,8 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       proposal_candidates: curationReport.output_counts.curated_proposals,
       quality_findings: qualityFindings,
       site_pages: sitePages,
-      changed_stable_knowledge: reviewPromote.auto_promoted > 0,
+      changed_stable_knowledge: changedStableKnowledge,
+      brain_backends: brainBackends,
 	      semantic_review: curationReport.semantic_review ?? {
         enabled: false,
         reviewed: 0,

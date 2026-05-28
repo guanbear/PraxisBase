@@ -334,6 +334,7 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 	    <article><span>Skill needs human</span><strong>${escapeHtml(String(skillSynthesis.needs_human))}</strong></article>` : ""}
 	  </div>
   ${renderAgentMemoryStatus(report)}
+  ${renderGBrainStatus(report)}
 </section>`;
 }
 
@@ -343,6 +344,19 @@ function renderAgentMemoryStatus(report: DailyReportSummary): string {
     <h3>AgentMemory</h3>
     <ol class="link-list">
       ${report.agentmemory_sources.map((source) => `<li><strong>${escapeHtml(source.name)}</strong><span>${escapeHtml(source.status)} / imported ${escapeHtml(String(source.imported))}</span>${source.warnings.length > 0 ? `<br><small>${escapeHtml(source.warnings.join("; "))}</small>` : ""}</li>`).join("\n")}
+    </ol>
+  </div>`;
+}
+
+function renderGBrainStatus(report: DailyReportSummary): string {
+  const gbrain = report.brain_backends?.gbrain;
+  if (!gbrain?.enabled) return "";
+  const detail = `${gbrain.publish_status} / exported ${gbrain.exported}`;
+  const notes = [...gbrain.warnings, ...gbrain.errors];
+  return `<div class="agentmemory-status">
+    <h3>GBrain</h3>
+    <ol class="link-list">
+      <li><strong>${escapeHtml(gbrain.doctor_status)}</strong><span>${escapeHtml(detail)}</span>${notes.length > 0 ? `<br><small>${escapeHtml(notes.join("; "))}</small>` : ""}</li>
     </ol>
   </div>`;
 }
@@ -992,6 +1006,19 @@ interface DailyReportSummary {
     imported: number;
     warnings: string[];
   }>;
+  brain_backends?: {
+    gbrain?: {
+      enabled: boolean;
+      doctor_status: string;
+      publish_status: string;
+      pages: number;
+      exported: number;
+      skipped: number;
+      imported: number;
+      warnings: string[];
+      errors: string[];
+    };
+  };
 }
 
 interface WikiCurationReportSummary {
@@ -1080,6 +1107,19 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	      needs_human?: number;
 	      promoted?: number;
 	    };
+    brain_backends?: {
+      gbrain?: {
+        enabled?: boolean;
+        doctor_status?: string;
+        publish_status?: string;
+        pages?: number;
+        exported?: number;
+        skipped?: number;
+        imported?: number;
+        warnings?: string[];
+        errors?: string[];
+      };
+    };
 	    type?: string;
   }> = [];
 
@@ -1100,6 +1140,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
   const latest = candidates[0];
   const sources = Array.isArray(latest.sources) ? latest.sources : [];
   const contextEconomy = latest.context_economy;
+  const gbrain = latest.brain_backends?.gbrain;
 
   return {
     created_at: latest.created_at,
@@ -1146,6 +1187,19 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
         imported: source.imported ?? 0,
         warnings: Array.isArray(source.warnings) ? source.warnings : [],
       })),
+    brain_backends: gbrain ? {
+      gbrain: {
+        enabled: gbrain.enabled === true,
+        doctor_status: typeof gbrain.doctor_status === "string" ? gbrain.doctor_status : "unknown",
+        publish_status: typeof gbrain.publish_status === "string" ? gbrain.publish_status : "not_requested",
+        pages: typeof gbrain.pages === "number" ? gbrain.pages : 0,
+        exported: typeof gbrain.exported === "number" ? gbrain.exported : 0,
+        skipped: typeof gbrain.skipped === "number" ? gbrain.skipped : 0,
+        imported: typeof gbrain.imported === "number" ? gbrain.imported : 0,
+        warnings: Array.isArray(gbrain.warnings) ? gbrain.warnings : [],
+        errors: Array.isArray(gbrain.errors) ? gbrain.errors : [],
+      },
+    } : undefined,
   };
 }
 

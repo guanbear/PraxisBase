@@ -514,10 +514,11 @@ export const ExperienceSourceParserSchema = z.enum([
   "openclaw-log",
   "claude-code-repair-log",
   "agentmemory-memory",
+  "gbrain-memory",
 ]);
 
-export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code", "agentmemory"]);
-export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api", "agentmemory"]);
+export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code", "agentmemory", "generic"]);
+export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api", "agentmemory", "gbrain"]);
 export const ExperienceScopeHintSchema = z.enum(["personal", "project", "team", "org"]);
 export const ExperiencePrivacyVerdictSchema = z.enum(["allow", "reject", "human_required"]);
 export const ExperienceOutcomeSchema = z.enum(["success", "failed", "partial", "unknown"]);
@@ -677,6 +678,19 @@ export const DailyExperienceReportSchema = z.object({
   quality_findings: z.number().int().nonnegative().default(0),
   site_pages: z.number().int().nonnegative(),
   changed_stable_knowledge: z.boolean(),
+  brain_backends: z.object({
+    gbrain: z.object({
+      enabled: z.boolean(),
+      doctor_status: z.enum(["unknown", "ok", "warning", "failed"]).default("unknown"),
+      publish_status: z.enum(["not_requested", "skipped", "completed", "partial", "failed", "blocked"]),
+      pages: z.number().int().nonnegative(),
+      exported: z.number().int().nonnegative(),
+      skipped: z.number().int().nonnegative(),
+      imported: z.number().int().nonnegative().default(0),
+      warnings: z.array(z.string()).default([]),
+      errors: z.array(z.string()).default([]),
+    }).optional(),
+  }).optional(),
   git: z.object({
     branch: z.string().optional(),
     committed: z.boolean(),

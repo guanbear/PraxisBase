@@ -175,6 +175,34 @@
       "types": "./src/experience/agentmemory-export.ts",
       "default": "./dist/experience/agentmemory-export.js"
     },
+    "./experience/brain-backend.js": {
+      "types": "./src/experience/brain-backend.ts",
+      "default": "./dist/experience/brain-backend.js"
+    },
+    "./experience/gbrain-client.js": {
+      "types": "./src/experience/gbrain-client.ts",
+      "default": "./dist/experience/gbrain-client.js"
+    },
+    "./experience/gbrain-adapter.js": {
+      "types": "./src/experience/gbrain-adapter.ts",
+      "default": "./dist/experience/gbrain-adapter.js"
+    },
+    "./experience/gbrain-config.js": {
+      "types": "./src/experience/gbrain-config.ts",
+      "default": "./dist/experience/gbrain-config.js"
+    },
+    "./experience/gbrain-export.js": {
+      "types": "./src/experience/gbrain-export.ts",
+      "default": "./dist/experience/gbrain-export.js"
+    },
+    "./experience/gbrain-import.js": {
+      "types": "./src/experience/gbrain-import.ts",
+      "default": "./dist/experience/gbrain-import.js"
+    },
+    "./experience/gbrain-remote.js": {
+      "types": "./src/experience/gbrain-remote.ts",
+      "default": "./dist/experience/gbrain-remote.js"
+    },
     "./experience/daily.js": {
       "types": "./src/experience/daily.ts",
       "default": "./dist/experience/daily.js"

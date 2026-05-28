@@ -279,6 +279,19 @@ Body.
         quality_findings: 0,
         site_pages: 7,
         changed_stable_knowledge: false,
+        brain_backends: {
+          gbrain: {
+            enabled: true,
+            doctor_status: "warning",
+            publish_status: "partial",
+            pages: 2,
+            exported: 1,
+            skipped: 1,
+            imported: 0,
+            warnings: ["gbrain_capture_failed: retry later"],
+            errors: [],
+          },
+        },
         outputs: [],
         warnings: [],
         created_at: "2026-05-21T12:00:00.000Z",
@@ -314,6 +327,9 @@ Body.
     assert.ok(index.includes("AgentMemory"));
     assert.ok(index.includes("personal-agentmemory"));
     assert.ok(index.includes("agentmemory_health_failed: timeout"));
+    assert.ok(index.includes("GBrain"));
+    assert.ok(index.includes("partial / exported 1"));
+    assert.ok(index.includes("gbrain_capture_failed: retry later"));
     assert.ok(index.includes("href=\"review.html#human-required\""));
     assert.ok(index.includes("href=\"review.html#pending-candidates\""));
     assert.ok(index.includes("href=\"#knowledge-pages\""));

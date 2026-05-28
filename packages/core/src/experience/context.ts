@@ -9,8 +9,11 @@ import { ContextResponseSchema, type ContextResponse, type ContextStage } from "
 import { rankWikiContextItems, type WikiContextCandidate } from "../wiki/retrieval.js";
 import { promotionTimeGuard } from "../wiki/promotion-quality.js";
 import { listExperienceSources } from "./source-config.js";
-import { createAgentMemoryClient } from "./agentmemory-adapter.js";
-import type { AgentMemoryRecord } from "./agentmemory-client.js";
+import { createAgentMemoryBackend } from "./agentmemory-adapter.js";
+import { createGBrainBackend, createGBrainBackendFromConfig } from "./gbrain-adapter.js";
+import { readGBrainConfig } from "./gbrain-config.js";
+import type { BrainBackendName } from "./brain-backend.js";
+import type { GBrainCommandRunner } from "./gbrain-client.js";
 
 const DEFAULT_BUDGETS: Record<ContextStage, number> = {
   diagnosis: 16 * 1024,
@@ -34,7 +37,11 @@ export interface BuildContextInput {
   query?: string;
   maxBytes?: number;
   withAgentMemory?: boolean;
+  withGbrain?: boolean;
+  withBackends?: string[];
   agentMemorySourceName?: string;
+  gbrainExecutable?: string;
+  gbrainRunCommand?: GBrainCommandRunner;
   fetchImpl?: typeof fetch;
   env?: Record<string, string | undefined>;
 }
@@ -207,26 +214,14 @@ function buildCandidate(path: string, raw: string): WikiContextCandidate | undef
   return undefined;
 }
 
-function agentMemorySummary(record: AgentMemoryRecord): string {
-  return [record.title, record.content].filter((value): value is string => typeof value === "string" && value.length > 0).join("\n") || record.id;
-}
-
-function agentMemoryCandidate(record: AgentMemoryRecord, sourceId: string): WikiContextCandidate {
-  const path = `agentmemory://smart-search/${encodeURIComponent(record.id)}`;
-  return {
-    id: `agentmemory-${record.id}`,
-    path,
-    kind: "agentmemory_sidecar",
-    title: stringValue(record.title) ?? record.id,
-    summary: agentMemorySummary(record).slice(0, 500),
-    body: stringValue(record.content),
-    scope: stringValue(record.scope),
-    source_ids: [sourceId, path, stringValue(record.source)].filter((entry): entry is string => Boolean(entry)).sort(),
-  };
+function wantsBackend(input: BuildContextInput, name: BrainBackendName): boolean {
+  if (name === "agentmemory" && input.withAgentMemory) return true;
+  if (name === "gbrain" && input.withGbrain) return true;
+  return (input.withBackends ?? []).includes(name);
 }
 
 async function agentMemorySidecarCandidates(input: BuildContextInput): Promise<{ candidates: WikiContextCandidate[]; warnings: string[] }> {
-  if (!input.withAgentMemory) return { candidates: [], warnings: [] };
+  if (!wantsBackend(input, "agentmemory")) return { candidates: [], warnings: [] };
 
   const sources = (await listExperienceSources(input.root)).filter((source) => source.source_type === "agentmemory");
   const source = input.agentMemorySourceName
@@ -236,31 +231,43 @@ async function agentMemorySidecarCandidates(input: BuildContextInput): Promise<{
     return { candidates: [], warnings: ["agentmemory_sidecar_unavailable: no configured agentmemory source"] };
   }
 
-  try {
-    const client = createAgentMemoryClient(source, {
-      authorityMode: "personal-local",
-      fetchImpl: input.fetchImpl,
-      env: input.env,
+  const backend = createAgentMemoryBackend(source, {
+    authorityMode: "personal-local",
+    fetchImpl: input.fetchImpl,
+    env: input.env,
+  });
+  return backend.retrieve({
+    query: input.query?.trim() || input.stage,
+    stage: input.stage,
+    limit: 4,
+  });
+}
+
+async function gbrainSidecarCandidates(input: BuildContextInput): Promise<{ candidates: WikiContextCandidate[]; warnings: string[] }> {
+  if (!wantsBackend(input, "gbrain")) return { candidates: [], warnings: [] };
+
+  const backend = createGBrainBackend({
+    executable: input.gbrainExecutable,
+    runCommand: input.gbrainRunCommand,
+  });
+  const config = await readGBrainConfig(input.root);
+  if (config) {
+    const configuredBackend = createGBrainBackendFromConfig(config, {
+      executable: input.gbrainExecutable,
+      runCommand: input.gbrainRunCommand,
+      fetch: input.fetchImpl,
     });
-    const health = await client.health();
-    if (!health.ok) {
-      return { candidates: [], warnings: [`agentmemory_sidecar_unavailable: ${health.error ?? "health check failed"}`] };
-    }
-    const query = input.query?.trim() || input.stage;
-    const search = await client.smartSearch(query, 4);
-    if (!search.ok) {
-      return { candidates: [], warnings: [`agentmemory_sidecar_unavailable: ${search.error ?? "smart-search failed"}`] };
-    }
-    return {
-      candidates: (search.hits ?? []).map((record) => agentMemoryCandidate(record, source.id)),
-      warnings: [],
-    };
-  } catch (error) {
-    return {
-      candidates: [],
-      warnings: [`agentmemory_sidecar_unavailable: ${error instanceof Error ? error.message : String(error)}`],
-    };
+    return configuredBackend.retrieve({
+      query: input.query?.trim() || input.stage,
+      stage: input.stage,
+      limit: 4,
+    });
   }
+  return backend.retrieve({
+    query: input.query?.trim() || input.stage,
+    stage: input.stage,
+    limit: 4,
+  });
 }
 
 function serializeSize(value: unknown): number {
@@ -309,15 +316,24 @@ export async function buildContext(input: BuildContextInput): Promise<BuildConte
     const candidate = buildCandidate(path, raw);
     if (candidate) candidates.push(candidate);
   }
-  const sidecar = await agentMemorySidecarCandidates(input);
-  candidates.push(...sidecar.candidates);
-  warnings.push(...sidecar.warnings);
+  const sidecars = await Promise.all([
+    agentMemorySidecarCandidates(input),
+    gbrainSidecarCandidates(input),
+  ]);
+  const sidecarCandidates = sidecars.flatMap((sidecar) => sidecar.candidates);
+  warnings.push(...sidecars.flatMap((sidecar) => sidecar.warnings));
 
-  const selected = rankWikiContextItems(candidates, {
+  const selectedStable = rankWikiContextItems(candidates, {
     query: input.query ?? "",
     stage: input.stage,
     maxItems: 8,
   });
+  const selectedSidecars = rankWikiContextItems(sidecarCandidates, {
+    query: input.query ?? "",
+    stage: input.stage,
+    maxItems: Math.max(0, 8 - selectedStable.length),
+  });
+  const selected = [...selectedStable, ...selectedSidecars];
   const id = makeId("context", `${input.agent}-${input.stage}-${input.query ?? "default"}`);
   if (selected.length === 0) warnings.push("context_unavailable");
 

@@ -34,6 +34,7 @@ import { agentToolsCommand } from "./commands/agent-tools.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { agentmemoryCommand } from "./commands/agentmemory.js";
 import { skillCommand } from "./commands/skill.js";
+import { gbrainCommand } from "./commands/gbrain.js";
 
 const program = new Command();
 
@@ -337,10 +338,10 @@ program
     sub: string,
     name: string | undefined,
     options: {
-      agent?: "codex" | "openclaw" | "claude-code" | "agentmemory";
-      type?: "local" | "file" | "git" | "ssh" | "http" | "openclaw-api" | "agentmemory";
+      agent?: "codex" | "openclaw" | "claude-code" | "agentmemory" | "generic";
+      type?: "local" | "file" | "git" | "ssh" | "http" | "openclaw-api" | "agentmemory" | "gbrain";
       channel?: "local" | "terminal" | "feishu" | "ci" | "gitlab" | "log-system" | "unknown";
-      parser?: "codex-session" | "openclaw-export" | "openclaw-log" | "claude-code-repair-log" | "agentmemory-memory";
+      parser?: "codex-session" | "openclaw-export" | "openclaw-log" | "claude-code-repair-log" | "agentmemory-memory" | "gbrain-memory";
       scope?: "personal" | "project" | "team" | "org";
       repo?: string;
       ref?: string;
@@ -376,6 +377,9 @@ program
   .option("--no-context-economy", "disable context economy reduction for this daily run")
   .option("--semantic-review", "enable semantic review for wiki curation proposals")
   .option("--skill-synthesis", "enable skill candidate synthesis for this daily run")
+  .option("--publish-gbrain", "publish changed stable PraxisBase knowledge to GBrain")
+  .option("--allow-team-gbrain-export", "allow team-mode stable wiki export to GBrain")
+  .option("--gbrain-executable <path>", "gbrain executable path or command")
   .option("--progress", "print stage progress to stderr while the daily run is active")
   .option("--json")
   .action(async (
@@ -400,6 +404,9 @@ program
       noContextEconomy?: boolean;
       semanticReview?: boolean;
       skillSynthesis?: boolean;
+      publishGbrain?: boolean;
+      allowTeamGbrainExport?: boolean;
+      gbrainExecutable?: string;
       progress?: boolean;
       json?: boolean;
     }
@@ -688,6 +695,56 @@ program
   });
 
 program
+  .command("gbrain")
+  .argument("<sub>", "subcommand (init|doctor|import|export)")
+  .option("--executable <path>", "gbrain executable path or command")
+  .option("--mode <mode>", "personal or team", "personal")
+  .option("--source <source>", "GBrain source id")
+  .option("--query <query>", "GBrain query for explicit import")
+  .option("--limit <n>", "maximum GBrain hits to import")
+  .option("--dry-run", "report without writing")
+  .option("--write", "write stable PB pages to GBrain")
+  .option("--allow-team-export", "allow team-mode stable wiki export to GBrain")
+  .option("--timeout-ms <n>", "GBrain command or MCP timeout in ms")
+  .option("--publish-mode <mode>", "local publish mode: capture or mcp_put_page")
+  .option("--remote", "write remote MCP config instead of local CLI config")
+  .option("--issuer-url <url>", "remote OAuth issuer URL")
+  .option("--mcp-url <url>", "remote GBrain MCP endpoint")
+  .option("--oauth-client-id <id>", "remote OAuth client id")
+  .option("--secret-env <name>", "environment variable containing remote bearer/client secret")
+  .option("--federated-read <sources>", "comma-separated source ids allowed for remote diagnostics")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      executable?: string;
+      mode?: "personal" | "team";
+      source?: string;
+      query?: string;
+      limit?: string;
+      dryRun?: boolean;
+      write?: boolean;
+      allowTeamExport?: boolean;
+      timeoutMs?: string;
+      publishMode?: "capture" | "mcp_put_page";
+      remote?: boolean;
+      issuerUrl?: string;
+      mcpUrl?: string;
+      oauthClientId?: string;
+      secretEnv?: string;
+      federatedRead?: string;
+      json?: boolean;
+    }
+  ) => {
+    console.log(await gbrainCommand(process.cwd(), sub, {
+      ...options,
+      limit: options.limit ? parseInt(options.limit, 10) : undefined,
+      timeoutMs: options.timeoutMs ? parseInt(options.timeoutMs, 10) : undefined,
+      federatedRead: options.federatedRead?.split(",").map((source) => source.trim()).filter(Boolean),
+    }));
+  });
+
+program
   .command("context")
   .argument("<sub>", "subcommand (get)")
   .requiredOption("--agent <agent>")
@@ -695,6 +752,8 @@ program
   .option("--query <query>")
   .option("--max-bytes <n>")
   .option("--with-agentmemory")
+  .option("--with-gbrain")
+  .option("--with-backend <name>", "optional sidecar backend (agentmemory|gbrain)", collectOptionValue, [])
   .option("--json")
   .action(async (
     sub: string,
@@ -704,6 +763,8 @@ program
       query?: string;
       maxBytes?: string;
       withAgentMemory?: boolean;
+      withGbrain?: boolean;
+      withBackend?: string[];
       json?: boolean;
     }
   ) => {
