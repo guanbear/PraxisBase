@@ -369,11 +369,12 @@ program
   .option("--pr")
   .option("--degraded", "run deterministic fallback without production AI distill")
   .option("--no-ai", "disable AI distill for this run")
-  .option("--max-ai-chunks <n>", "maximum production AI distill chunks for the whole run")
+  .option("--max-ai-chunks <n>", "maximum uncached production AI distill calls for the whole run")
   .option("--ai-timeout-ms <n>", "override AI provider timeout for this daily run")
   .option("--ai-concurrency <n>", "maximum concurrent AI distill and curation calls")
   .option("--retry-failed-distill-only", "retry only chunks with cached AI distill failures")
   .option("--max-curation-proposals <n>", "maximum AI wiki curation proposals for this daily run")
+  .option("--max-skill-candidates <n>", "maximum skill synthesis candidates for this daily run")
   .option("--no-context-economy", "disable context economy reduction for this daily run")
   .option("--semantic-review", "enable semantic review for wiki curation proposals")
   .option("--skill-synthesis", "enable skill candidate synthesis for this daily run")
@@ -401,6 +402,7 @@ program
       aiConcurrency?: string;
       retryFailedDistillOnly?: boolean;
       maxCurationProposals?: string;
+      maxSkillCandidates?: string;
       noContextEconomy?: boolean;
       semanticReview?: boolean;
       skillSynthesis?: boolean;
@@ -419,6 +421,7 @@ program
       aiTimeoutMs: options.aiTimeoutMs ? parseInt(options.aiTimeoutMs, 10) : undefined,
       aiConcurrency: options.aiConcurrency ? parseInt(options.aiConcurrency, 10) : undefined,
       maxCurationProposals: options.maxCurationProposals ? parseInt(options.maxCurationProposals, 10) : undefined,
+      maxSkillCandidates: options.maxSkillCandidates ? parseInt(options.maxSkillCandidates, 10) : undefined,
     }));
   });
 
@@ -548,7 +551,7 @@ program
   .option("--limit <n>")
   .option("--degraded")
   .option("--no-ai")
-  .option("--max-ai-chunks <n>")
+  .option("--max-ai-chunks <n>", "maximum uncached production AI distill calls")
   .option("--ai-timeout-ms <n>")
   .option("--ai-concurrency <n>")
   .option("--max-curation-proposals <n>")
@@ -810,7 +813,7 @@ program
   .option("--pr")
   .option("--degraded", "run deterministic fallback without production AI distill")
   .option("--no-ai", "disable AI distill for this run")
-  .option("--max-ai-chunks <n>", "maximum production AI distill chunks for this run")
+  .option("--max-ai-chunks <n>", "maximum uncached production AI distill calls for this run")
   .option("--ai-timeout-ms <n>", "override AI provider timeout for this run")
   .option("--ai-concurrency <n>", "maximum concurrent AI distill and curation calls")
   .option("--retry-failed-distill-only", "retry only chunks with cached AI distill failures")

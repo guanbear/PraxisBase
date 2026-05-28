@@ -71,4 +71,16 @@ describe("decideSemanticSkillAction", () => {
   it("rewrites as update when reviewer suggests existing skill", () => {
     assert.equal(decideSemanticSkillAction(candidate(), review({ should_update_existing: "skills/openclaw/existing/SKILL.md" })).action, "rewrite_as_update");
   });
+
+  it("does not allow shape-invalid candidates even when semantic review approves", () => {
+    const decision = decideSemanticSkillAction(candidate({
+      review_hint: {
+        suggested_decision: "edit",
+        risk_notes: ["skill_shape_invalid:malformed_procedure_heading"],
+      },
+    }), review());
+    assert.equal(decision.action, "needs_human");
+    assert.equal(decision.promotion_eligible, false);
+    assert.ok(decision.review_notes.includes("skill_shape_invalid:malformed_procedure_heading"));
+  });
 });

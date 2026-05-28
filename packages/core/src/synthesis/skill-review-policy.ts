@@ -17,6 +17,9 @@ export function decideSemanticSkillAction(candidate: SkillSynthesisCandidate, re
   if (notes.includes("ambiguous_existing_skill_match")) {
     return { action: "needs_human", promotion_eligible: false, reason: "Ambiguous existing skill match requires human merge/update decision.", review_notes: notes };
   }
+  if (notes.some((note) => note.startsWith("skill_shape_invalid"))) {
+    return { action: "needs_human", promotion_eligible: false, reason: "Skill candidate markdown shape requires human edit before future-agent use.", review_notes: notes };
+  }
   if (!review) {
     return { action: "needs_human", promotion_eligible: false, reason: "Semantic skill review unavailable.", review_notes: [...notes, "semantic_skill_review:unavailable"] };
   }

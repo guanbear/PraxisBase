@@ -61,13 +61,15 @@
     那么 当前 AI item 失败并记录 timeout diagnostic
     并且 命令不会无限等待 provider 响应
 
-  场景: 用户可以限制 daily run 的 AI chunk 总量并查看 chunk 级进度
+  场景: 用户可以限制 daily run 的 uncached AI 调用总量并查看 chunk 级进度
     假如 AI provider 已配置
     当 用户运行 "praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --ai-concurrency 2 --max-curation-proposals 5 --build-site --json"
-    那么 系统最多向 AI distill 发送 20 个 chunk
+    那么 系统最多向 AI distill provider 发送 20 个 uncached chunk
+    并且 cache hit 不消耗 uncached AI 调用预算
+    并且 daily report 暴露 uncached AI 调用预算和已使用数量
     并且 daily report 的 ai_distill.warnings 包含 "max_ai_chunks_reached:20"
     并且 系统写入 ".praxisbase/runs/live/<run-id>.json" 进度文件
-    并且 进度文件包含 current_stage、current_source 和 current_chunk
+    并且 进度文件包含 current_stage、current_source、current_chunk 和 uncached budget counters
 
   场景: 本地 Codex 全量历史不会在 source 解析阶段卡死
     假如 Codex session 目录包含长中文和英文混合 transcript
@@ -119,6 +121,12 @@
     当 skill synthesis 运行
     那么 系统生成 skill proposal candidate
     并且 proposal 仍需 review/promote 才能写入 "skills/"
+
+  场景: daily 可以限制 skill synthesis 候选数量
+    假如 distill cache 中有多个稳定 skill 信号 cluster
+    当 用户运行 "praxisbase daily run --mode personal --skill-synthesis --max-skill-candidates 1 --json"
+    那么 系统最多生成 1 个 skill candidate
+    并且 该限制不改变 distill lane 的 "--max-ai-chunks" 语义
 
   场景: 首次使用 agent 能读懂 bootstrap skill
     当 用户运行 "praxisbase bootstrap personal --agent codex --install-skill --json"

@@ -20,6 +20,7 @@ export interface DailyCommandOptions {
   aiConcurrency?: number;
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
+  maxSkillCandidates?: number;
   noContextEconomy?: boolean;
   semanticReview?: boolean;
   skillSynthesis?: boolean;
@@ -62,6 +63,12 @@ function formatProgressLine(event: DailyProgressEvent): string {
     `stage=${event.current_stage ?? "starting"}`,
     event.current_source ? `source=${event.current_source}` : undefined,
     event.current_chunk ? `chunk=${event.current_chunk.index}/${event.current_chunk.total}` : undefined,
+    event.current_chunk?.max_uncached_ai_chunks !== undefined
+      ? `uncached=${event.current_chunk.uncached_ai_chunks ?? 0}/${event.current_chunk.max_uncached_ai_chunks}`
+      : undefined,
+    event.current_chunk?.skipped_by_budget
+      ? `skipped_by_budget=${event.current_chunk.skipped_by_budget}`
+      : undefined,
     `elapsed=${Math.round(event.elapsed_ms / 1000)}s`,
     `stage_elapsed=${Math.round(event.stage_elapsed_ms / 1000)}s`,
     `distilled=${event.ai_distill.distilled}/${event.ai_distill.chunks}`,
@@ -110,6 +117,7 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         aiConcurrency: options.aiConcurrency,
         retryFailedDistillOnly: options.retryFailedDistillOnly,
         maxCurationProposals: options.maxCurationProposals,
+        maxSkillCandidates: options.maxSkillCandidates,
         noContextEconomy: options.noContextEconomy,
         semanticReview: options.semanticReview,
         skillSynthesis: options.skillSynthesis,

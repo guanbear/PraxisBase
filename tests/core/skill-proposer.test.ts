@@ -58,4 +58,62 @@ describe("proposeSkillCandidate", () => {
     const candidate = await proposeSkillCandidate({ cluster, matches: [match, { ...match, skill: { ...match.skill, path: "skills/openclaw/other/SKILL.md" } }], now });
     assert.ok(candidate.review_hint.risk_notes.includes("ambiguous_existing_skill_match"));
   });
+
+  it("normalizes malformed generated procedure markdown before review", async () => {
+    const candidate = await proposeSkillCandidate({
+      cluster,
+      matches: [],
+      now,
+      aiClient: {
+        async generateJson() {
+          return {
+            ok: true as const,
+            json: {
+              action: "skill_create",
+              title: "OpenClaw dispatch routing failures",
+              body_markdown: [
+                "---",
+                "name: OpenClaw dispatch routing failures",
+                "description: Fix dispatch failures",
+                "scope: personal",
+                "status: draft",
+                "source_count: 2",
+                "---",
+                "# OpenClaw dispatch routing failures",
+                "",
+                "## When To Use",
+                "Use when dispatch routing fails.",
+                "",
+                "## Procedure",
+                "1. ### Diagnose the dispatch layer Check logs for stickyResult errors.",
+                "2. Inspect route and transport metadata.",
+                "3. Re-run the smoke test.",
+                "",
+                "## Verification",
+                "- Smoke test passes.",
+                "",
+                "## Pitfalls",
+                "- Do not debug product logic before dispatch health.",
+                "",
+                "## Do Not Use When",
+                "- Failure is unrelated to dispatch.",
+                "",
+                "## Related Wiki Pages",
+                "- [[kb/known-fixes/openclaw-dispatch-routing-failures.md]]",
+                "",
+                "## Provenance",
+                "- raw-vault://codex/1 (sha256:1)",
+              ].join("\n"),
+            },
+          };
+        },
+      },
+    });
+
+    assert.doesNotMatch(candidate.body_markdown, /^\d+\.\s+#{2,}/m);
+    assert.match(candidate.body_markdown, /^### Diagnose the dispatch layer$/m);
+    assert.match(candidate.body_markdown, /^\d+\.\s+Check logs for stickyResult errors\.$/m);
+    assert.equal(candidate.review_hint.suggested_decision, "approve");
+    assert.ok(!candidate.review_hint.risk_notes.some((note) => note.startsWith("skill_shape_invalid")));
+  });
 });

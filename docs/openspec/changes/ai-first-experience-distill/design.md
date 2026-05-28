@@ -108,7 +108,7 @@ Daily runs may also bound total AI work with:
 praxisbase daily run --mode personal --max-ai-chunks 20 --ai-timeout-ms 30000 --ai-concurrency 2 --max-curation-proposals 5 --build-site --json
 ```
 
-`--max-ai-chunks` caps production AI distill across all configured sources for that run. When the cap is reached, the daily report records `max_ai_chunks_reached:<n>` in `ai_distill.warnings`. This is an operational budget, not a quality gate; later runs can raise the cap or narrow sources.
+`--max-ai-chunks` caps uncached production AI distill provider calls across all configured sources for that run. Cached distill results may still be counted as observed chunks and cache hits, but they do not spend the uncached call budget. When the cap is reached, the daily report records the compatibility warning `max_ai_chunks_reached:<n>` and the precise warning `max_uncached_ai_chunks_reached:<n>` in `ai_distill.warnings`. Reports and progress output expose total observed chunks, cache hits, uncached calls used, uncached budget, and chunks skipped by budget. This is an operational budget, not a quality gate; later runs can raise the cap or narrow sources.
 
 Local transcript chunking uses the same budget as an upstream source scan bound when no explicit `--limit` is set. Candidate files are read newest-first, large files are skipped by the configured byte cap, and multibyte text is split with a linear byte-aware scanner. Full local Codex/OpenClaw history must not block before the AI stage starts.
 
@@ -117,6 +117,8 @@ Local transcript chunking uses the same budget as an upstream source scan bound 
 `--ai-concurrency` controls concurrent AI distill calls. The runtime clamps this to a small bounded value so full local runs can make progress without opening unbounded provider requests.
 
 `--max-curation-proposals` caps the number of AI wiki curation proposals synthesized after source distill. This prevents a successful full harvest from being followed by an unbounded curation stage.
+
+`--max-skill-candidates` caps the number of skill synthesis clusters/candidates evaluated during `daily run --skill-synthesis`. This is separate from `--max-ai-chunks` because each skill candidate may spend one proposer call and one semantic skill review call.
 
 Input object:
 

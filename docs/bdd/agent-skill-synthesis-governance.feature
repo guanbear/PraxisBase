@@ -8,6 +8,15 @@ Feature: Agent skill synthesis governance
     Then PraxisBase writes a skill candidate
     And the candidate is semantically reviewed
     And stable skills are not changed
+    And the candidate SKILL.md body contains all required agent-use sections
+    And malformed generated markdown is either repaired or marked edit-required
+
+  Scenario: Shape-invalid skill candidate cannot be promotion eligible
+    Given an LLM proposes a skill candidate with malformed Procedure markdown
+    And semantic skill review returns approve_candidate
+    When PraxisBase applies skill review policy
+    Then the candidate is marked needs_human
+    And the review notes include "skill_shape_invalid"
 
   Scenario: Team mode generates a Git-reviewable skill candidate
     Given team-safe experiences contain repeated Claude Code repair workflow lessons

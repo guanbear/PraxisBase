@@ -74,6 +74,9 @@ export interface DailyProgressEvent {
     chunk_id: string;
     ai_chunks: number;
     max_ai_chunks?: number;
+    uncached_ai_chunks?: number;
+    max_uncached_ai_chunks?: number;
+    skipped_by_budget?: number;
   };
   elapsed_ms: number;
   stage_elapsed_ms: number;
@@ -103,6 +106,7 @@ export interface RunDailyExperienceInput {
   aiConcurrency?: number;
   retryFailedDistillOnly?: boolean;
   maxCurationProposals?: number;
+  maxSkillCandidates?: number;
   noContextEconomy?: boolean;
 	  semanticReview?: boolean;
 	  skillSynthesis?: boolean;
@@ -731,6 +735,9 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     rejected_low_signal: 0,
     rejected_quality: 0,
     cache_hits: 0,
+    budget_max_uncached: undefined,
+    budget_used_uncached: 0,
+    skipped_by_budget: 0,
     warnings: [],
   };
   const runtimeAiConfig = aiConfig && typeof input.aiTimeoutMs === "number" && Number.isFinite(input.aiTimeoutMs) && input.aiTimeoutMs > 0
@@ -751,11 +758,15 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   let maxAiChunksWarned = false;
   const recordMaxAiChunksWarning = () => {
     if (!Number.isFinite(maxAiChunks) || maxAiChunksWarned) return;
-    const warning = `max_ai_chunks_reached:${maxAiChunks}`;
-    warnings.push(warning);
-    aiDistill.warnings.push(warning);
+    const compatibilityWarning = `max_ai_chunks_reached:${maxAiChunks}`;
+    const preciseWarning = `max_uncached_ai_chunks_reached:${maxAiChunks}`;
+    warnings.push(compatibilityWarning, preciseWarning);
+    aiDistill.warnings.push(compatibilityWarning, preciseWarning);
     maxAiChunksWarned = true;
   };
+  if (Number.isFinite(maxAiChunks)) {
+    aiDistill.budget_max_uncached = maxAiChunks;
+  }
 
   const contextEconomyEnabled = !input.noContextEconomy;
   const projectRulesResult = contextEconomyEnabled ? await loadProjectRules(root) : { rules: [], warnings: [] };
@@ -867,7 +878,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       if (source.source_type === "local" || source.source_type === "file") {
         try {
           const remainingAiBudget = Number.isFinite(maxAiChunks)
-            ? Math.max(0, maxAiChunks - aiDistill.chunks)
+            ? Math.max(0, maxAiChunks - uncachedAiChunks)
             : undefined;
           chunks = await chunkExperienceSource(root, source, {
             limit: input.limit ?? remainingAiBudget,
@@ -894,7 +905,8 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       fetched = chunks.length + blocked.length;
 
       const distillTasks: ExperienceChunk[] = [];
-      for (const chunk of chunks) {
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
         const prePrivacy = evaluatePreAiPrivacy({
           mode: input.authorityMode,
           scopeHint: chunk.scope_hint,
@@ -952,11 +964,13 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         }
 
         if (uncachedAiChunks >= maxAiChunks) {
+          aiDistill.skipped_by_budget += chunks.length - chunkIndex;
           recordMaxAiChunksWarning();
           break;
         }
 
         uncachedAiChunks++;
+        aiDistill.budget_used_uncached = uncachedAiChunks;
         aiDistill.chunks++;
         distillTasks.push(chunk);
       }
@@ -978,6 +992,9 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
                 chunk_id: chunk.chunk_id,
                 ai_chunks: aiDistill.chunks,
                 max_ai_chunks: Number.isFinite(maxAiChunks) ? maxAiChunks : undefined,
+                uncached_ai_chunks: aiDistill.budget_used_uncached,
+                max_uncached_ai_chunks: Number.isFinite(maxAiChunks) ? maxAiChunks : undefined,
+                skipped_by_budget: aiDistill.skipped_by_budget,
               },
               sources: sourceReports,
               ai_distill: aiDistill,
@@ -1078,6 +1095,9 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
                 chunk_id: chunk.chunk_id,
                 ai_chunks: aiDistill.chunks,
                 max_ai_chunks: Number.isFinite(maxAiChunks) ? maxAiChunks : undefined,
+                uncached_ai_chunks: aiDistill.budget_used_uncached,
+                max_uncached_ai_chunks: Number.isFinite(maxAiChunks) ? maxAiChunks : undefined,
+                skipped_by_budget: aiDistill.skipped_by_budget,
               },
               sources: sourceReports,
               ai_distill: aiDistill,
@@ -1271,6 +1291,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	      experiences: distilledExperiences,
 	      aiClient,
 	      now,
+	      maxClusters: input.maxSkillCandidates,
 	    });
 	    skillSynthesisReport = skillSynthesis.report;
 	    outputs.push(...skillSynthesisReport.outputs);

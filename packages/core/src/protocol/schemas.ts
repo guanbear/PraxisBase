@@ -644,6 +644,9 @@ export const DailyExperienceReportSchema = z.object({
     rejected_low_signal: z.number().int().nonnegative().default(0),
     rejected_quality: z.number().int().nonnegative().default(0),
     cache_hits: z.number().int().nonnegative().default(0),
+    budget_max_uncached: z.number().int().nonnegative().optional(),
+    budget_used_uncached: z.number().int().nonnegative().default(0),
+    skipped_by_budget: z.number().int().nonnegative().default(0),
     warnings: z.array(z.string()).default([]),
   }).default({
     configured: false,
@@ -658,6 +661,8 @@ export const DailyExperienceReportSchema = z.object({
     rejected_low_signal: 0,
     rejected_quality: 0,
     cache_hits: 0,
+    budget_used_uncached: 0,
+    skipped_by_budget: 0,
     warnings: [],
   }),
   sources: z.array(z.object({

@@ -144,6 +144,10 @@ Each candidate SHALL include:
 - `## Related Wiki Pages`
 - `## Provenance`
 
+Before semantic skill review, PraxisBase SHALL normalize and validate generated `SKILL.md` markdown. The normalizer repairs quote-sensitive frontmatter, missing required sections, headings accidentally embedded in list items, and procedure list formatting. The validator marks candidates as edit-required when required sections remain missing, the procedure has fewer than three concrete steps, malformed embedded headings remain, or the body appears to be a raw wiki/report copy instead of synthesized future-agent instructions.
+
+Shape-invalid candidates MAY still be written to the proposal queue for human editing, but their `review_hint.suggested_decision` SHALL be `edit`, their `review_hint.risk_notes` SHALL include `skill_shape_invalid:*`, and semantic policy SHALL NOT make them promotion eligible even if the LLM reviewer returns `approve_candidate`.
+
 Support file candidates SHALL write only under `references/`, `templates/`, or `scripts/`, and SHALL update `SKILL.md` with a pointer.
 
 ## Skill Semantic Review

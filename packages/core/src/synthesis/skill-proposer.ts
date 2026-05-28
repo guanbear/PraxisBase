@@ -5,9 +5,74 @@ import type { StableSkillMatch } from "./skill-inventory.js";
 import { SkillSynthesisCandidateSchema, type SkillSynthesisCandidate } from "./skill-model.js";
 import type { SkillSignalCluster } from "./skill-stability.js";
 
+const REQUIRED_SECTIONS = ["When To Use", "Procedure", "Verification", "Pitfalls", "Do Not Use When", "Related Wiki Pages", "Provenance"];
+
 function requiredSections(body: string): string[] {
-  return ["When To Use", "Procedure", "Verification", "Pitfalls", "Do Not Use When", "Related Wiki Pages", "Provenance"]
-    .filter((heading) => !new RegExp(`^##\\s+${heading}\\s*$`, "im").test(body));
+  return REQUIRED_SECTIONS.filter((heading) => !new RegExp(`^##\\s+${heading}\\s*$`, "im").test(body));
+}
+
+function normalizeFrontmatterLine(line: string): string {
+  const match = line.match(/^(name|description|scope|status):\s*(.*)$/);
+  if (!match) return line;
+  const [, key, rawValue] = match;
+  const value = rawValue.trim();
+  if (!value || value.startsWith("\"") || value.startsWith("'") || /^(true|false|\d+(?:\.\d+)?)$/i.test(value)) return line;
+  if (!/[#:,[\]{}]|^\s|\s$/.test(value)) return line;
+  return `${key}: ${JSON.stringify(value)}`;
+}
+
+function normalizeSkillMarkdown(body: string): string {
+  const lines = body.trim().split(/\r?\n/);
+  let inFrontmatter = lines[0]?.trim() === "---";
+  let frontmatterClosed = false;
+  const normalized: string[] = [];
+
+  for (const line of lines) {
+    if (inFrontmatter && !frontmatterClosed) {
+      if (line.trim() === "---" && normalized.length > 0) {
+        frontmatterClosed = true;
+        inFrontmatter = false;
+        normalized.push(line);
+        continue;
+      }
+      normalized.push(normalized.length === 0 ? line : normalizeFrontmatterLine(line));
+      continue;
+    }
+
+    const embeddedHeading = line.match(/^(\s*)(\d+)\.\s+(#{2,6})\s+(.+?)\s+((?:check|inspect|verify|run|re-run|restart|update|patch|apply|confirm|review|audit|execute|send|ensure|validate)\b.*)$/i);
+    if (embeddedHeading) {
+      const [, indent, number, hashes, title, step] = embeddedHeading;
+      normalized.push(`${indent}${hashes} ${title.trim()}`);
+      normalized.push(`${indent}${number}. ${step.trim()}`);
+      continue;
+    }
+
+    normalized.push(line);
+  }
+
+  return normalized.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function sectionBody(body: string, heading: string): string {
+  const lines = body.split(/\r?\n/);
+  const start = lines.findIndex((line) => new RegExp(`^##\\s+${heading}\\s*$`, "i").test(line));
+  if (start < 0) return "";
+  const collected: string[] = [];
+  for (let index = start + 1; index < lines.length; index++) {
+    if (/^##\s+\S/.test(lines[index])) break;
+    collected.push(lines[index]);
+  }
+  return collected.join("\n").trim();
+}
+
+function skillShapeRiskNotes(body: string): string[] {
+  const notes: string[] = [];
+  if (/^\s*\d+\.\s+#{2,}/m.test(body)) notes.push("skill_shape_invalid:malformed_procedure_heading");
+  const procedure = sectionBody(body, "Procedure");
+  const procedureSteps = procedure.split(/\r?\n/).filter((line) => /^\s*\d+\.\s+\S/.test(line)).length;
+  if (procedureSteps < 3) notes.push("skill_shape_invalid:short_procedure");
+  if (/^(?:#\s+)?(?:run|session|build|job|ticket|pr|issue)[-_: #]?\d{2,}\b/im.test(body)) notes.push("skill_shape_invalid:run_specific_body");
+  return notes;
 }
 
 function defaultSkillBody(cluster: SkillSignalCluster, matches: StableSkillMatch[]): string {
@@ -65,13 +130,16 @@ function normalizeCandidate(raw: Record<string, unknown>, cluster: SkillSignalCl
   let body = typeof raw.body_markdown === "string" && raw.body_markdown.trim()
     ? raw.body_markdown.trim()
     : defaultSkillBody(cluster, matches);
+  body = normalizeSkillMarkdown(body);
   const missing = requiredSections(body);
   const riskNotes: string[] = Array.isArray(raw.risk_notes) ? raw.risk_notes.map(String) : [];
   if (missing.length > 0) {
-    riskNotes.push(`shape_missing_sections:${missing.join(",")}`);
+    riskNotes.push(`shape_missing_sections:${missing.join(",")}`, `skill_shape_invalid:missing_sections:${missing.join(",")}`);
     body = `${body.trim()}\n\n${missing.map((heading) => `## ${heading}\n- Needs reviewer completion.`).join("\n\n")}\n`;
   }
+  riskNotes.push(...skillShapeRiskNotes(body));
   if (strongMatches.length > 1) riskNotes.push("ambiguous_existing_skill_match");
+  const hasShapeInvalid = riskNotes.some((note) => note.startsWith("skill_shape_invalid"));
 
   return SkillSynthesisCandidateSchema.parse({
     id: typeof raw.id === "string" ? raw.id : `skill_candidate_${computeHash(`${cluster.id}:${targetPath}`).slice(7, 19)}`,
@@ -93,7 +161,7 @@ function normalizeCandidate(raw: Record<string, unknown>, cluster: SkillSignalCl
     existing_skill_path: best?.skill.path ?? null,
     related_wiki_paths: cluster.related_wiki_paths,
     review_hint: {
-      suggested_decision: strongMatches.length > 1 ? "merge" : "approve",
+      suggested_decision: hasShapeInvalid ? "edit" : strongMatches.length > 1 ? "merge" : "approve",
       risk_notes: riskNotes,
     },
     created_at: now,
