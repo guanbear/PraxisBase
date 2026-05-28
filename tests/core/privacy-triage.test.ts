@@ -9,6 +9,7 @@ import {
   runPrivacyTriage,
   writeAiProviderConfig,
 } from "@praxisbase/core";
+import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
 import type { AiJsonClient } from "@praxisbase/core";
 
 async function writeException(root: string, input: {
@@ -18,6 +19,8 @@ async function writeException(root: string, input: {
   sourceRef?: string;
   sourceHash?: string;
   summary?: string;
+  channel?: string;
+  agent?: string;
 }) {
   const dir = join(root, ".praxisbase/exceptions/human-required");
   await mkdir(dir, { recursive: true });
@@ -30,8 +33,8 @@ async function writeException(root: string, input: {
     reason: input.reason ?? "Experience privacy verdict human_required: private_material_detected",
     details: {
       source_id: `experience_${input.id}`,
-      agent: "codex",
-      channel: "local",
+      agent: input.agent ?? "codex",
+      channel: input.channel ?? "local",
       scope_hint: input.scope ?? "personal",
       source_ref: input.sourceRef ?? `raw-vault://codex/${input.id}`,
       source_hash: input.sourceHash ?? `sha256:${input.id}`,
@@ -168,6 +171,102 @@ describe("privacy triage", () => {
     assert.equal(report.summary.auto_released, 0);
     assert.equal(report.summary.team_review_only, 1);
     assert.equal(report.items[0].decision, "team_review_only");
+  });
+
+  it("keeps ambiguous remote personal evidence human-required until explicitly reviewed", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-remote-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, {
+      id: "remote-openclaw",
+      channel: "ssh",
+      sourceRef: "ssh://root@example.com/.openclaw/memory.json",
+      summary: "Remote OpenClaw memory repair was useful and verified.",
+    });
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      autoRelease: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: triageClient(),
+    });
+
+    assert.equal(report.summary.auto_released, 0);
+    assert.equal(report.summary.keep_human_required, 1);
+    assert.equal(report.items[0].decision, "keep_human_required");
+    assert.ok(report.items[0].hard_block_reasons.includes("remote_source_requires_review"));
+  });
+
+  it("auto-releases safe personal evidence from explicitly trusted remote OpenClaw sources", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-trusted-remote-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "remote-openclaw",
+      agent: "openclaw",
+      sourceType: "ssh",
+      channel: "unknown",
+      scopeDefault: "personal",
+      host: "root@example.com",
+      path: "/root/.openclaw/praxisbase/latest.json",
+      privacyTrust: "trusted_personal_remote",
+    });
+    await writeException(root, {
+      id: "trusted-remote-openclaw",
+      agent: "openclaw",
+      channel: "ssh",
+      sourceRef: "ssh://root@example.com/.openclaw/memory.json",
+      summary: "Remote OpenClaw memory repair was useful and verified with pnpm test.",
+    });
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      autoRelease: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: triageClient(),
+    });
+
+    assert.equal(report.summary.auto_released, 1);
+    assert.equal(report.items[0].decision, "auto_released");
+    assert.deepEqual(report.items[0].hard_block_reasons, []);
+  });
+
+  it("keeps trusted remote OpenClaw evidence human-required when concrete private values are present", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-trusted-remote-secret-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "remote-openclaw",
+      agent: "openclaw",
+      sourceType: "ssh",
+      channel: "unknown",
+      scopeDefault: "personal",
+      host: "root@example.com",
+      path: "/root/.openclaw/praxisbase/latest.json",
+      privacyTrust: "trusted_personal_remote",
+    });
+    await writeException(root, {
+      id: "trusted-remote-secret",
+      agent: "openclaw",
+      channel: "ssh",
+      sourceRef: "ssh://root@example.com/.openclaw/memory.json",
+      summary: "Remote OpenClaw repair used token=abc123456789 during debugging.",
+    });
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      autoRelease: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: triageClient(),
+    });
+
+    assert.equal(report.summary.auto_released, 0);
+    assert.equal(report.summary.keep_human_required, 1);
+    assert.equal(report.items[0].decision, "keep_human_required");
+    assert.ok(report.items[0].hard_block_reasons.includes("private_material_detected"));
   });
 
   it("writes a privacy triage report", async () => {

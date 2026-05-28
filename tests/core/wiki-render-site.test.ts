@@ -430,7 +430,8 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("kb/notes/wiki-openclaw-auth.md"));
     assert.ok(review.includes("praxisbase review --auto"));
     assert.ok(review.includes("praxisbase promote --auto"));
-    assert.ok(review.includes("praxisbase privacy triage --mode personal --auto-release --json"));
+    assert.ok(review.includes("praxisbase privacy triage --mode personal --auto-release --progress --json"));
+    assert.ok(review.includes("praxisbase gbrain export --mode personal --write --json"));
     assert.ok(review.includes("praxisbase agentmemory export --mode personal --write --json"));
     assert.ok(review.includes("id=\"human-required\""));
     assert.ok(review.includes("id=\"privacy-required\""));
@@ -456,6 +457,7 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
           scope_hint: "personal",
           source_ref: "raw-vault://codex/private-auth",
           source_hash: "sha256:private-auth",
+          redacted_summary: "Refresh OpenClaw auth before retrying memory sync.",
           triage: {
             classification: "safe_personal_experience",
             decision: "auto_released",
@@ -476,6 +478,7 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("auto_released"));
     assert.ok(review.includes("0.91"));
     assert.ok(review.includes("The item describes project workflow without credentials."));
+    assert.ok(review.includes("Refresh OpenClaw auth before retrying memory sync."));
   });
 
   it("uses curated wiki proposals as the primary pending review queue", async () => {
@@ -777,10 +780,11 @@ Body.
     await buildWikiSite(root);
 
     const review = await readFile(join(root, "dist/review.html"), "utf8");
-    // The main "Human required" metric link should show 0
-    const humanRequiredMatch = review.match(/href="#human-required"[^>]*><span>Human required<\/span><strong>(\d+)<\/strong>/);
-    assert.ok(humanRequiredMatch, "Human required metric link should exist");
-    assert.equal(humanRequiredMatch[1], "0", "Human required count should be 0 since no exception records exist");
+    // The current privacy metric should show 0. Historical curation input counts are reported
+    // separately and should not inflate the actionable daily privacy queue.
+    const currentPrivacyMatch = review.match(/href="#human-required"[^>]*><span>Current privacy<\/span><strong>(\d+)<\/strong>/);
+    assert.ok(currentPrivacyMatch, "Current privacy metric link should exist");
+    assert.equal(currentPrivacyMatch[1], "0", "Current privacy count should be 0 since no exception records exist");
 
     // Quality review needed should show 3 (from compiler_counts)
     assert.ok(review.includes("Quality review needed"));
@@ -1040,5 +1044,84 @@ Body.
     assert.ok(review.includes("skill_create"));
     assert.ok(review.includes("0.91"));
     assert.ok(review.includes("praxisbase skill review --json"));
+  });
+
+  it("separates latest daily privacy blockers from historical privacy backlog", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-privacy-backlog-"));
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/reports/privacy-triage"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+
+    await writeFile(join(root, ".praxisbase/reports/daily/daily_privacy.json"), JSON.stringify({
+      id: "daily_privacy",
+      protocol_version: "0.1",
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      sources: [
+        { name: "remote-openclaw", source_type: "openclaw", status: "partial", imported: 1, rejected: 0, human_required: 28, warnings: [] },
+      ],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      ai_distill: { privacy_required: 8, review_required: 0, rejected_low_signal: 0, rejected_quality: 0 },
+      outputs: [],
+      warnings: [],
+      created_at: "2026-05-28T12:00:00.000Z",
+    }), "utf8");
+
+    await writeFile(join(root, ".praxisbase/reports/privacy-triage/privacy.json"), JSON.stringify({
+      id: "privacy",
+      protocol_version: "0.1",
+      type: "privacy_triage_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai: { configured: true, provider: "openai-compatible", model: "test" },
+      items: [],
+      summary: {
+        scanned: 5,
+        skipped_already_triaged: 299,
+        skipped_non_privacy: 780,
+        auto_released: 0,
+        keep_human_required: 5,
+        team_review_only: 0,
+      },
+      changed_stable_knowledge: false,
+      outputs: [],
+      warnings: [],
+      created_at: "2026-05-28T12:01:00.000Z",
+    }), "utf8");
+
+    for (let index = 0; index < 55; index += 1) {
+      await writeFile(join(root, `.praxisbase/exceptions/human-required/privacy-${index}.json`), JSON.stringify({
+        id: `privacy-${index}`,
+        protocol_version: "0.1",
+        type: "exception_record",
+        category: "human_required",
+        source_id: `source-${index}`,
+        reason: "Experience privacy verdict human_required: private_material_detected",
+        details: {
+          agent: "openclaw",
+          scope_hint: "personal",
+          source_ref: `openclaw-ssh://host/memory/${index}.md`,
+          redacted_summary: `Remote personal repair summary ${index}`,
+          triage: { classification: "safe_personal_experience", decision: "keep_human_required", confidence: 0.9, rationale: "remote source requires review", suggested_redactions: [] },
+        },
+        created_at: `2026-05-28T11:${String(index).padStart(2, "0")}:00.000Z`,
+      }), "utf8");
+    }
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("Current privacy"));
+    assert.match(review, /Current privacy[\s\S]*?<strong>28<\/strong>/);
+    assert.ok(review.includes("Privacy backlog"));
+    assert.match(review, /Privacy backlog[\s\S]*?<strong>55<\/strong>/);
+    assert.ok(review.includes("Latest daily blocked 28 item(s); historical backlog has 55 record(s)."));
+    assert.ok(review.includes("Showing the latest 50 privacy records."));
+    assert.ok(review.includes("Skipped already triaged"));
+    assert.ok(review.includes("praxisbase privacy triage --mode personal --auto-release --progress --json"));
   });
 });

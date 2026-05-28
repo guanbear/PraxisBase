@@ -6,7 +6,9 @@ import { ExceptionRecordSchema, PrivacyTriageAiDecisionSchema, PrivacyTriageRepo
 import { redactExcerpt } from "../protocol/redact.js";
 import { readAiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "../ai/client.js";
+import { listExperienceSources } from "./source-config.js";
 import { readJson, safePath, writeJson } from "../store/file-store.js";
+import type { ExperienceSourceConfig } from "../protocol/schemas.js";
 
 export interface RunPrivacyTriageInput {
   authorityMode: "personal-local" | "team-git";
@@ -240,6 +242,42 @@ function releaseDecision(input: {
   return "keep_human_required";
 }
 
+function remoteSourceNeedsReview(details: Record<string, unknown>): boolean {
+  const channel = stringValue(details.channel)?.toLowerCase();
+  const sourceRef = stringValue(details.source_ref)?.toLowerCase() ?? "";
+  return Boolean(channel && channel !== "local")
+    || sourceRef.startsWith("ssh://")
+    || sourceRef.startsWith("http://")
+    || sourceRef.startsWith("https://")
+    || sourceRef.includes("openclaw-api://");
+}
+
+function sourceRefAliases(source: ExperienceSourceConfig): string[] {
+  const values = [source.id, source.name, source.host, source.remote, source.url, source.path, source.repo]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .map((value) => value.toLowerCase());
+  if (source.host?.includes("@")) {
+    values.push(source.host.split("@").slice(1).join("@").toLowerCase());
+  }
+  return values;
+}
+
+function trustedPersonalRemoteSourceMatches(details: Record<string, unknown>, sources: ExperienceSourceConfig[]): boolean {
+  const sourceId = stringValue(details.source_id)?.toLowerCase() ?? "";
+  const sourceRef = stringValue(details.source_ref)?.toLowerCase() ?? "";
+  const agent = stringValue(details.agent);
+  const scope = stringValue(details.scope_hint) ?? stringValue(details.scope);
+  if (scope && scope !== "personal") return false;
+
+  return sources.some((source) => {
+    if (source.privacy_trust !== "trusted_personal_remote") return false;
+    if (source.scope_default !== "personal") return false;
+    if (!["ssh", "http", "openclaw-api", "file"].includes(source.source_type)) return false;
+    if (agent && source.agent !== agent) return false;
+    return sourceRefAliases(source).some((alias) => alias.length > 0 && (sourceId.includes(alias) || sourceRef.includes(alias)));
+  });
+}
+
 async function listExceptionPaths(root: string, limit?: number): Promise<string[]> {
   let entries: string[];
   try {
@@ -295,6 +333,7 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
   const items: PrivacyTriageReport["items"] = [];
   const outputs: string[] = [];
   const warnings: string[] = [];
+  const sources = await listExperienceSources(root);
   const paths = await listExceptionPaths(root);
   const queued: Array<{ exceptionPath: string; exception: ExceptionRecord }> = [];
   let skippedAlreadyTriaged = 0;
@@ -367,6 +406,7 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
         autoRelease: Boolean(input.autoRelease),
         aiClient,
         warnings,
+        trustedRemoteSource: trustedPersonalRemoteSourceMatches(record(exception.details), sources),
       });
       items.push(item);
       await publishProgress({
@@ -432,13 +472,15 @@ async function triageException(input: {
   autoRelease: boolean;
   aiClient: AiJsonClient;
   warnings: string[];
+  trustedRemoteSource: boolean;
 }): Promise<PrivacyTriageReport["items"][number]> {
     const { exceptionPath, exception } = input;
     const details = record(exception.details);
     const scope = stringValue(details.scope_hint) ?? stringValue(details.scope);
-    const hardBlockReasons = containsConcretePrivateValue(exceptionTriageText(exception))
-      ? ["private_material_detected"]
-      : [];
+    const hardBlockReasons = [
+      ...(containsConcretePrivateValue(exceptionTriageText(exception)) ? ["private_material_detected"] : []),
+      ...(remoteSourceNeedsReview(details) && !input.trustedRemoteSource ? ["remote_source_requires_review"] : []),
+    ];
     const prompt = buildPrompt(exception);
     const aiResult = await input.aiClient.generateJson({
       ...prompt,

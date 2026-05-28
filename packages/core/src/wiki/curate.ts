@@ -1,7 +1,7 @@
 import { readFile, readdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
-import { makeId, computeHash } from "../protocol/id.js";
+import { makeId, computeHash, slugifyId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { readAiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient } from "../ai/client.js";
@@ -902,6 +902,13 @@ function proposalAction(pageKind: WikiEvidenceCluster["page_kind"], planAction?:
   return pageKind === "skill" ? "skill_create" : "create";
 }
 
+function wikiCuratedProposalId(...parts: string[]): string {
+  const material = parts.join(":");
+  const digest = computeHash(material).replace(/^sha256:/, "").slice(0, 16);
+  const slug = slugifyId(material).slice(0, 96).replace(/-+$/g, "") || "proposal";
+  return makeId("wiki-curated", `${slug}-${digest}`);
+}
+
 function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], now: string, planAction?: WikiPagePlanAction, context?: SynthesisContext): CuratedWikiProposal {
   const title = titleFromCluster(cluster);
   const targetPath = cluster.target_path_hint ?? targetPathForCluster(cluster.page_kind, title);
@@ -913,7 +920,7 @@ function synthesizeDegradedProposal(cluster: WikiEvidenceCluster, evidence: Wiki
     ...proposalQualityGuards(body, evidence),
   ];
   return CuratedWikiProposalSchema.parse({
-    id: makeId("wiki-curated", `${targetPath}:${computeHash(cluster.source_hashes.join("|"))}`),
+    id: wikiCuratedProposalId(targetPath, cluster.source_hashes.join("|")),
     protocol_version: PROTOCOL_VERSION,
     type: "wiki_curated_proposal",
     target_path: targetPath,
@@ -1083,7 +1090,7 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
   ];
 
   return CuratedWikiProposalSchema.parse({
-    id: makeId("wiki-curated", `${targetPath}:${computeHash(cluster.source_hashes.join("|"))}`),
+    id: wikiCuratedProposalId(targetPath, cluster.source_hashes.join("|")),
     protocol_version: PROTOCOL_VERSION,
     type: "wiki_curated_proposal",
     target_path: targetPath,
@@ -1666,15 +1673,46 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
           break;
         }
         case "rewrite_as_merge": {
+          const targetPath = review?.should_merge_with?.trim();
+          const target = targetPath ? existingPageRefs.find((page) => page.path === targetPath || page.slug === targetPath) : undefined;
+          if (!targetPath || !target) {
+            semanticReviewCounts.needs_human++;
+            semanticReviewedProposals.push({
+              ...proposal,
+              review_hint: {
+                ...proposal.review_hint,
+                risk_notes: [
+                  ...proposal.review_hint.risk_notes,
+                  ...semanticRiskNotes,
+                  "semantic_review:needs_human",
+                  `semantic_merge_target_unresolved:${targetPath ?? "missing"}`,
+                ],
+                suggested_decision: "edit",
+              },
+            });
+            break;
+          }
           semanticReviewCounts.merge++;
-          semanticReviewedProposals.push({
+          semanticReviewedProposals.push(CuratedWikiProposalSchema.parse({
             ...proposal,
+            id: wikiCuratedProposalId(target.path, "semantic-merge", proposal.id),
+            target_path: target.path,
+            action: proposal.page_kind === "skill" ? "skill_update" : "update",
+            merge_candidates: [
+              ...(proposal.merge_candidates ?? []),
+              { title: target.title, path: target.path, reason: "semantic_review_merge" },
+            ],
             review_hint: {
               ...proposal.review_hint,
-              risk_notes: [...proposal.review_hint.risk_notes, ...semanticRiskNotes, "semantic_review:merge"],
-              suggested_decision: "edit",
+              risk_notes: [
+                ...proposal.review_hint.risk_notes,
+                ...semanticRiskNotes,
+                "semantic_review:merge",
+                `semantic_merge_target:${target.path}`,
+              ],
+              suggested_decision: "merge",
             },
-          });
+          }));
           break;
         }
         case "retry_synthesis": {

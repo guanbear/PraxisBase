@@ -38,6 +38,20 @@ async function writeOpenClawAuthCaptures(root: string): Promise<void> {
   await writeCapture(root, "capture_2", "OpenClaw auth expired again; refreshing login fixed sync. Verification passed after retrying memory sync. Reusable lesson: refresh login before retrying OpenClaw memory sync.");
 }
 
+async function writeStablePage(root: string, relativePath: string, title = "Existing OpenClaw Auth"): Promise<void> {
+  const full = join(root, relativePath);
+  await mkdir(join(full, ".."), { recursive: true });
+  await writeFile(full, `---
+id: existing-openclaw-auth
+type: known_fix
+scope: personal
+---
+# ${title}
+
+Refresh login before retrying OpenClaw memory sync.
+`, "utf8");
+}
+
 function semanticReview(overrides: Partial<SemanticWikiReview> = {}): SemanticWikiReview {
   return {
     type: "semantic_wiki_review",
@@ -103,6 +117,7 @@ function reviewClient(review: SemanticWikiReview | null, calls?: { count: number
 async function readWrittenProposals(root: string): Promise<Array<{
   review_hint: { suggested_decision: string; risk_notes: string[] };
   target_path: string;
+  action: string;
 }>> {
   const dir = join(root, ".praxisbase/inbox/proposals");
   const files = await readdir(dir);
@@ -184,9 +199,10 @@ describe("curateWiki semantic review integration", () => {
     assert.ok(proposals[0].review_hint.risk_notes.includes("semantic_review:needs_human"));
   });
 
-  it("marks a semantic merge as human-required instead of auto-promoting a new page", async () => {
+  it("materializes a semantic merge as an update candidate when the target is known", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-semantic-merge-"));
     await writeOpenClawAuthCaptures(root);
+    await writeStablePage(root, "kb/known-fixes/existing-openclaw-auth.md");
 
     const report = await curateWiki(root, {
       mode: "review",
@@ -206,8 +222,69 @@ describe("curateWiki semantic review integration", () => {
     assert.equal(report.semantic_review?.merge, 1);
 
     const proposals = await readWrittenProposals(root);
-    assert.equal(proposals[0].review_hint.suggested_decision, "edit");
+    assert.equal(proposals[0].target_path, "kb/known-fixes/existing-openclaw-auth.md");
+    assert.equal(proposals[0].action, "update");
+    assert.equal(proposals[0].review_hint.suggested_decision, "merge");
     assert.ok(proposals[0].review_hint.risk_notes.includes("semantic_review:merge"));
+    assert.ok(proposals[0].review_hint.risk_notes.includes("semantic_merge_target:kb/known-fixes/existing-openclaw-auth.md"));
+  });
+
+  it("keeps semantic merge proposal file names bounded for long target paths", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-semantic-merge-long-id-"));
+    await writeOpenClawAuthCaptures(root);
+    const longLeaf = "existing-openclaw-auth-with-a-very-long-but-valid-stable-page-name-for-regression-coverage-and-filesystem-safety";
+    const targetPath = `kb/known-fixes/${longLeaf}.md`;
+    await writeStablePage(root, targetPath, "Existing OpenClaw Auth With Long Name");
+
+    const report = await curateWiki(root, {
+      mode: "review",
+      degraded: true,
+      now: NOW,
+      semanticReview: {
+        enabled: true,
+        client: reviewClient(semanticReview({
+          decision: "merge",
+          should_merge_with: targetPath,
+          reason: "Near-duplicate of existing page with a long canonical path.",
+        })),
+      },
+    });
+
+    assert.equal(report.output_counts.written_proposals, 1);
+    const files = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    assert.equal(files.length, 1);
+    assert.ok(files[0].length < 180);
+
+    const proposals = await readWrittenProposals(root);
+    assert.equal(proposals[0].target_path, targetPath);
+    assert.equal(proposals[0].action, "update");
+  });
+
+  it("keeps a semantic merge human-required when the target is not in stable wiki", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-semantic-merge-missing-target-"));
+    await writeOpenClawAuthCaptures(root);
+
+    const report = await curateWiki(root, {
+      mode: "review",
+      degraded: true,
+      now: NOW,
+      semanticReview: {
+        enabled: true,
+        client: reviewClient(semanticReview({
+          decision: "merge",
+          should_merge_with: "kb/known-fixes/missing-openclaw-auth.md",
+          reason: "Near-duplicate of an existing page.",
+        })),
+      },
+    });
+
+    assert.equal(report.output_counts.written_proposals, 1);
+    assert.equal(report.semantic_review?.needs_human, 1);
+
+    const proposals = await readWrittenProposals(root);
+    assert.equal(proposals[0].target_path, "kb/known-fixes/openclaw-auth-expired.md");
+    assert.equal(proposals[0].review_hint.suggested_decision, "edit");
+    assert.ok(proposals[0].review_hint.risk_notes.includes("semantic_review:needs_human"));
   });
 
   it("skips semantic client calls for deterministic hard-blocked proposals", async () => {

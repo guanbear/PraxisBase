@@ -485,6 +485,7 @@ interface HumanRequiredRecord {
   path: string;
   source_id: string;
   reason: string;
+  redacted_summary?: string;
   agent?: string;
   scope?: string;
   source_ref?: string;
@@ -513,7 +514,7 @@ function statusLabel(status: CandidateStatus): string {
 
 function recommendedCandidateCommand(item: ReviewQueueCandidate): string {
   const status = item.status;
-  if (status === "promoted") return "praxisbase agentmemory export --mode personal --write --json";
+  if (status === "promoted") return "praxisbase gbrain export --mode personal --write --json";
   if (status === "approved") return "praxisbase promote --auto";
   if (item.kind === "skill" || item.source_kind === "skill_synthesis") return "praxisbase skill review --json";
   if (status === "needs_human") return "praxisbase review list --json";
@@ -569,30 +570,46 @@ function renderCandidateSection(input: {
 </section>`;
 }
 
-function renderHumanRequired(records: HumanRequiredRecord[]): string {
+function renderHumanRequired(
+  records: HumanRequiredRecord[],
+  dailyReport: DailyReportSummary | null,
+  privacyTriageReport: PrivacyTriageReportSummary | null
+): string {
+  const latestPrivacyRequired = dailyReport?.privacy_required ?? records.length;
+  const visibleRecords = records.slice(0, 50);
   return `<section id="human-required" class="review-section" data-status="needs_human">
   <div class="section-heading">
     <div>
       <h2><span id="privacy-required"></span>Privacy Required</h2>
-      <p>Items blocked before reuse because privacy or scope is uncertain.</p>
+      <p>Latest daily blocked ${escapeHtml(String(latestPrivacyRequired))} item(s); historical backlog has ${escapeHtml(String(records.length))} record(s).</p>
     </div>
-    <strong>${escapeHtml(String(records.length))}</strong>
+    <strong>${escapeHtml(String(latestPrivacyRequired))}</strong>
   </div>
   <div class="command-strip">
-    <code>praxisbase privacy triage --mode personal --auto-release --json</code>
+    <code>praxisbase privacy triage --mode personal --auto-release --progress --json</code>
     <code>praxisbase personal run --open --json</code>
   </div>
-  ${records.length > 0 ? `<ol class="experience-list">
-    ${records.map((item) => `<li id="${escapeHtml(item.id)}" class="review-card">
+  ${privacyTriageReport ? `<dl class="queue-summary">
+    <dt>Latest triage</dt><dd>${escapeHtml(privacyTriageReport.created_at)}</dd>
+    <dt>Scanned</dt><dd>${escapeHtml(String(privacyTriageReport.scanned))}</dd>
+    <dt>Auto released</dt><dd>${escapeHtml(String(privacyTriageReport.auto_released))}</dd>
+    <dt>Kept human-required</dt><dd>${escapeHtml(String(privacyTriageReport.keep_human_required))}</dd>
+    <dt>Skipped already triaged</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_already_triaged))}</dd>
+    <dt>Skipped non-privacy</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_non_privacy))}</dd>
+  </dl>` : ""}
+  ${records.length > visibleRecords.length ? `<p class="muted">Showing the latest ${escapeHtml(String(visibleRecords.length))} privacy records. Older backlog is intentionally hidden from the default page to keep current daily work readable.</p>` : ""}
+  ${visibleRecords.length > 0 ? `<ol class="experience-list">
+    ${visibleRecords.map((item) => `<li id="${escapeHtml(item.id)}" class="review-card">
       <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">Privacy required</span></p>
       <dl>
         <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
         <dt>Agent</dt><dd>${escapeHtml(item.agent ?? "unknown")}</dd>
         <dt>Scope</dt><dd>${escapeHtml(item.scope ?? "unknown")}</dd>
         <dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>
+        ${item.redacted_summary ? `<dt>Summary</dt><dd>${escapeHtml(item.redacted_summary)}</dd>` : ""}
         <dt>File</dt><dd><code>${escapeHtml(item.path)}</code></dd>
         <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
-        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --json</code></dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
         ${item.triage ? `
         <dt>Triage</dt><dd>${escapeHtml(item.triage.classification ?? "unknown")} / ${escapeHtml(item.triage.decision ?? "unknown")}</dd>
         <dt>Confidence</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
@@ -607,6 +624,9 @@ function renderHumanRequired(records: HumanRequiredRecord[]): string {
 
 function renderRejectedSection(dailyReport: DailyReportSummary | null, curationReport: WikiCurationReportSummary | null): string {
   const dailyRejected = dailyReport?.rejected ?? 0;
+  const lowSignal = dailyReport?.rejected_low_signal ?? 0;
+  const qualityRejected = (dailyReport?.rejected_quality ?? 0) + (curationReport?.compiler_hard_blocks ?? 0);
+  const duplicates = curationReport?.compiler_duplicate_source_hash_groups ?? 0;
   const curationRejected = curationReport?.input_rejected ?? 0;
   const hardBlocks = curationReport?.compiler_hard_blocks ?? 0;
   const total = dailyRejected + curationRejected + hardBlocks;
@@ -620,6 +640,9 @@ function renderRejectedSection(dailyReport: DailyReportSummary | null, curationR
   </div>
   <dl class="queue-summary">
     <dt>Daily rejected</dt><dd>${escapeHtml(String(dailyRejected))}</dd>
+    <dt>Low signal</dt><dd>${escapeHtml(String(lowSignal))}</dd>
+    <dt>Quality rejected</dt><dd>${escapeHtml(String(qualityRejected))}</dd>
+    <dt>Duplicate groups</dt><dd>${escapeHtml(String(duplicates))}</dd>
     <dt>Curation rejected</dt><dd>${escapeHtml(String(curationRejected))}</dd>
     <dt>Hard blocks</dt><dd>${escapeHtml(String(hardBlocks))}</dd>
     <dt>Recommended</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
@@ -627,12 +650,23 @@ function renderRejectedSection(dailyReport: DailyReportSummary | null, curationR
 </section>`;
 }
 
-function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: ReviewQueue, curationReport: WikiCurationReportSummary | null, dailyReport: DailyReportSummary | null): string {
+function renderReviewPage(
+  pages: WikiSitePage[],
+  graph: WikiGraph,
+  queue: ReviewQueue,
+  curationReport: WikiCurationReportSummary | null,
+  dailyReport: DailyReportSummary | null,
+  privacyTriageReport: PrivacyTriageReportSummary | null
+): string {
+  const candidateHuman = queue.candidates.filter((item) => item.status === "needs_human").length;
+  const currentPrivacyRequired = dailyReport?.privacy_required ?? queue.human_required.length;
   const counts = {
     pending: queue.candidates.filter((item) => item.status === "pending").length,
     approved: queue.candidates.filter((item) => item.status === "approved").length,
     promoted: queue.candidates.filter((item) => item.status === "promoted").length,
-    human: queue.human_required.length + queue.candidates.filter((item) => item.status === "needs_human").length,
+    current_privacy: currentPrivacyRequired,
+    backlog_privacy: queue.human_required.length,
+    candidate_human: candidateHuman,
     rejected: (dailyReport?.rejected ?? 0) + (curationReport?.input_rejected ?? 0) + (curationReport?.compiler_hard_blocks ?? 0),
   };
 
@@ -651,7 +685,9 @@ function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: Review
   <section class="metrics">
     <a class="metric-link" href="#pending-candidates"><span>Review required</span><strong>${escapeHtml(String(counts.pending))}</strong></a>
     <a class="metric-link" href="#approved-candidates"><span>Approved</span><strong>${escapeHtml(String(counts.approved))}</strong></a>
-    <a class="metric-link" href="#human-required"><span>Human required</span><strong>${escapeHtml(String(counts.human))}</strong></a>
+    <a class="metric-link" href="#human-required"><span>Current privacy</span><strong>${escapeHtml(String(counts.current_privacy))}</strong></a>
+    <a class="metric-link" href="#human-required"><span>Privacy backlog</span><strong>${escapeHtml(String(counts.backlog_privacy))}</strong></a>
+    ${counts.candidate_human > 0 ? `<a class="metric-link" href="#human-required"><span>Candidate human</span><strong>${escapeHtml(String(counts.candidate_human))}</strong></a>` : ""}
     <a class="metric-link" href="#rejected"><span>Rejected</span><strong>${escapeHtml(String(counts.rejected))}</strong></a>
     <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
   </section>
@@ -667,9 +703,9 @@ function renderReviewPage(pages: WikiSitePage[], graph: WikiGraph, queue: Review
   </section>
   ${renderCandidateSection({ id: "pending-candidates", aliasId: "review-required", title: "Review Required", status: "pending", candidates: queue.candidates, empty: "No review-required candidates.", commands: ["praxisbase review --auto", "praxisbase promote --auto", "praxisbase wiki build-site --json"] })}
   ${renderCandidateSection({ id: "approved-candidates", title: "Reviewed / Approved", status: "approved", candidates: queue.candidates, empty: "No approved candidates waiting for promotion.", commands: ["praxisbase promote --auto", "praxisbase wiki build-site --json"] })}
-  ${renderHumanRequired(queue.human_required)}
+  ${renderHumanRequired(queue.human_required, dailyReport, privacyTriageReport)}
   ${renderRejectedSection(dailyReport, curationReport)}
-  ${renderCandidateSection({ id: "promoted-candidates", title: "Promoted", status: "promoted", candidates: queue.candidates, empty: "No promoted candidates from the current inbox.", commands: ["praxisbase agentmemory export --mode personal --write --json"] })}
+  ${renderCandidateSection({ id: "promoted-candidates", title: "Promoted", status: "promoted", candidates: queue.candidates, empty: "No promoted candidates from the current inbox.", commands: ["praxisbase gbrain export --mode personal --write --json", "praxisbase agentmemory export --mode personal --write --json"] })}
 </main>`,
   });
 }
@@ -970,6 +1006,9 @@ interface DailyReportSummary {
   imported: number;
   rejected: number;
   human_required: number;
+  privacy_required: number;
+  rejected_low_signal: number;
+  rejected_quality: number;
   proposal_candidates: number;
   site_pages: number;
   context_economy?: {
@@ -1019,6 +1058,16 @@ interface DailyReportSummary {
       errors: string[];
     };
   };
+}
+
+interface PrivacyTriageReportSummary {
+  created_at: string;
+  scanned: number;
+  skipped_already_triaged: number;
+  skipped_non_privacy: number;
+  auto_released: number;
+  keep_human_required: number;
+  team_review_only: number;
 }
 
 interface WikiCurationReportSummary {
@@ -1071,14 +1120,20 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
       name?: string;
       source_type?: string;
       status?: string;
-      imported?: number;
-      rejected?: number;
-      human_required?: number;
-      warnings?: string[];
-    }>;
-    authority_mode?: string;
-    proposal_candidates?: number;
-    site_pages?: number;
+	      imported?: number;
+	      rejected?: number;
+	      human_required?: number;
+	      warnings?: string[];
+	    }>;
+	    authority_mode?: string;
+	    proposal_candidates?: number;
+	    site_pages?: number;
+    ai_distill?: {
+      rejected_low_signal?: number;
+      rejected_quality?: number;
+      review_required?: number;
+      privacy_required?: number;
+    };
     context_economy?: {
       enabled?: boolean;
       items_seen?: number;
@@ -1149,6 +1204,12 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
     imported: sources.reduce((sum, s) => sum + (s.imported ?? 0), 0),
     rejected: sources.reduce((sum, s) => sum + (s.rejected ?? 0), 0),
     human_required: sources.reduce((sum, s) => sum + (s.human_required ?? 0), 0),
+    privacy_required: Math.max(
+      sources.reduce((sum, s) => sum + (s.human_required ?? 0), 0),
+      typeof latest.ai_distill?.privacy_required === "number" ? latest.ai_distill.privacy_required : 0,
+    ),
+    rejected_low_signal: typeof latest.ai_distill?.rejected_low_signal === "number" ? latest.ai_distill.rejected_low_signal : 0,
+    rejected_quality: typeof latest.ai_distill?.rejected_quality === "number" ? latest.ai_distill.rejected_quality : 0,
     proposal_candidates: typeof latest.proposal_candidates === "number" ? latest.proposal_candidates : 0,
     site_pages: typeof latest.site_pages === "number" ? latest.site_pages : 0,
     context_economy: contextEconomy ? {
@@ -1200,6 +1261,43 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
         errors: Array.isArray(gbrain.errors) ? gbrain.errors : [],
       },
     } : undefined,
+  };
+}
+
+async function collectLatestPrivacyTriageReport(root: string): Promise<PrivacyTriageReportSummary | null> {
+  const dir = safePathForReaddir(root, protocolPaths.reportsPrivacyTriage);
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return null;
+  }
+
+  const candidates: Array<Record<string, unknown>> = [];
+  for (const file of entries.filter((name) => name.endsWith(".json"))) {
+    try {
+      const report = await readJson<Record<string, unknown>>(root, `${protocolPaths.reportsPrivacyTriage}/${file}`);
+      if (report && report.type === "privacy_triage_report" && typeof report.created_at === "string") {
+        candidates.push(report);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const latest = candidates[0];
+  const summary = detailsRecord(latest.summary);
+
+  return {
+    created_at: String(latest.created_at),
+    scanned: numberValue(summary.scanned) ?? 0,
+    skipped_already_triaged: numberValue(summary.skipped_already_triaged) ?? 0,
+    skipped_non_privacy: numberValue(summary.skipped_non_privacy) ?? 0,
+    auto_released: numberValue(summary.auto_released) ?? 0,
+    keep_human_required: numberValue(summary.keep_human_required) ?? 0,
+    team_review_only: numberValue(summary.team_review_only) ?? 0,
   };
 }
 
@@ -1340,6 +1438,7 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
         path,
         source_id: stringValue(value.source_id) ?? stringValue(details.source_id) ?? "unknown",
         reason: stringValue(value.reason) ?? "Human review required",
+        redacted_summary: stringValue(details.redacted_summary),
         agent: stringValue(details.agent),
         scope: stringValue(details.scope_hint) ?? stringValue(details.scope) ?? stringValue(privacy.mode),
         source_ref: stringValue(details.source_ref),
@@ -1415,6 +1514,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const qualityReport = await buildWikiQualityReport(root, { pages, graph });
   const outputs = [...SITE_OUTPUTS];
   const dailyReport = await collectLatestDailyReport(root);
+  const privacyTriageReport = await collectLatestPrivacyTriageReport(root);
   const curationReport = await collectLatestWikiCurationReport(root);
   const experienceSummaries = await collectLatestExperienceSummaries(root);
   const bundleStatus = await exists(root, "dist/repair-bundles/manifest.json") ? "ready" : "not built";
@@ -1423,7 +1523,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   outputs.push(...rootArtifactOutputs);
 
   await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates, curationReport));
-  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport));
+  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport, privacyTriageReport));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: [
