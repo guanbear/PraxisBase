@@ -16,9 +16,76 @@ function score(value: unknown): number {
   return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
 }
 
+function compactDecision(value: unknown): SemanticSkillReview["decision"] | unknown {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "approve" || normalized === "approved" || normalized === "approve_candidate") return "approve_candidate";
+  if (normalized === "edit" || normalized === "revise" || normalized === "needs_changes") return "revise";
+  if (normalized === "merge" || normalized === "update" || normalized === "merge_or_update_existing") return "merge_or_update_existing";
+  if (normalized === "reject" || normalized === "rejected") return "reject";
+  if (normalized === "needs_human" || normalized === "human" || normalized === "manual_review") return "needs_human";
+  return undefined;
+}
+
+function defaultScoreForDecision(decision: unknown, hasChecks: boolean, failedChecks: string[]): number {
+  if (typeof decision === "string") {
+    if (decision === "reject") return 0.25;
+    if (decision === "needs_human" || decision === "revise" || decision === "merge_or_update_existing") return 0.68;
+    if (decision === "approve_candidate") return failedChecks.length === 0 ? 0.86 : 0.68;
+  }
+  if (!hasChecks) return 0.5;
+  return failedChecks.length === 0 ? 0.86 : 0.68;
+}
+
+function checkValue(checks: Record<string, unknown>, keys: string[]): boolean | undefined {
+  for (const key of keys) {
+    if (typeof checks[key] === "boolean") return checks[key];
+  }
+  return undefined;
+}
+
+function failedCompactChecks(checks: Record<string, unknown>): string[] {
+  return Object.entries(checks)
+    .filter(([, value]) => value === false)
+    .map(([key]) => key);
+}
+
+function semanticFieldsFromCompactReview(raw: Record<string, unknown>): Record<string, unknown> {
+  const checks = raw.checks && typeof raw.checks === "object" && !Array.isArray(raw.checks)
+    ? raw.checks as Record<string, unknown>
+    : {};
+  const failedChecks = failedCompactChecks(checks);
+  const hasChecks = Object.keys(checks).length > 0;
+  const classLevel = checkValue(checks, ["class_level", "durable_class-level_skill", "durable_class_level_skill"]);
+  const actionable = checkValue(checks, ["actionable", "actionable_procedure"]);
+  const reusable = checkValue(checks, ["reusable", "verified_and_reusable"]);
+  const safe = checkValue(checks, ["safe_for_future_agents"]);
+  const decision = raw.decision ?? compactDecision(raw.answer);
+  const evidenceSupport = typeof raw.evidence_support === "string"
+    ? raw.evidence_support
+    : Object.keys(checks).length > 0
+      ? failedChecks.length === 0 ? "strong" : "partial"
+      : undefined;
+
+  return {
+    ...raw,
+    decision,
+    quality_score: raw.quality_score ?? defaultScoreForDecision(decision, hasChecks, failedChecks),
+    class_level: raw.class_level ?? classLevel,
+    actionable: raw.actionable ?? actionable,
+    reusable: raw.reusable ?? reusable,
+    safe_for_future_agents: raw.safe_for_future_agents ?? safe,
+    evidence_support: evidenceSupport,
+    fatal_issues: raw.fatal_issues ?? [],
+    missing_requirements: raw.missing_requirements ?? failedChecks,
+    reason: raw.reason ?? (raw.answer ? `Compact answer-only semantic skill review: ${String(raw.answer)}.` : undefined),
+    should_update_existing: raw.should_update_existing ?? null,
+  };
+}
+
 export function normalizeSemanticSkillReview(value: unknown, candidate: SkillSynthesisCandidate, now: string): SemanticSkillReview | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const raw = value as Record<string, unknown>;
+  const raw = semanticFieldsFromCompactReview(value as Record<string, unknown>);
   const parsed = SemanticSkillReviewSchema.safeParse({
     id: typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : `semantic_skill_review_${candidate.id}`,
     type: "semantic_skill_review",
@@ -42,7 +109,30 @@ export function normalizeSemanticSkillReview(value: unknown, candidate: SkillSyn
 
 export function buildSemanticSkillReviewPrompt(candidate: SkillSynthesisCandidate): string {
   return JSON.stringify({
-    role: "PraxisBase semantic skill reviewer",
+    task: "Review one PraxisBase skill candidate for safe future-agent use.",
+    output_rules: [
+      "Return only the review JSON object.",
+      "Do not include this task, output_rules, expected_schema, checks, or candidate in the output.",
+      "Do not echo or rewrite the candidate.",
+      "Use one concrete decision enum value, not a pipe-separated description.",
+    ],
+    expected_schema: {
+      type: "semantic_skill_review",
+      candidate_id: candidate.id,
+      target_path: candidate.target_path,
+      decision: "revise",
+      quality_score: 0.68,
+      class_level: true,
+      actionable: true,
+      reusable: true,
+      safe_for_future_agents: true,
+      evidence_support: "partial",
+      should_update_existing: null,
+      fatal_issues: [],
+      missing_requirements: [],
+      reason: "One or two sentences explaining the decision.",
+      reviewed_at: new Date().toISOString(),
+    },
     checks: [
       "durable class-level skill",
       "concrete trigger",
@@ -52,7 +142,7 @@ export function buildSemanticSkillReviewPrompt(candidate: SkillSynthesisCandidat
       "safe for future agents",
       "scope matches evidence",
     ],
-    candidate,
+    candidate_to_review: candidate,
   });
 }
 
@@ -84,7 +174,12 @@ export async function reviewSkillCandidateSemanticallyDetailed(input: {
   try {
     response = await input.client.generateJson({
       schemaName: "semantic_skill_review",
-      system: "You review PraxisBase skill candidates for safe future-agent use. Return strict JSON.",
+      system: [
+        "You review PraxisBase skill candidates for safe future-agent use.",
+        "Return only one strict JSON review object.",
+        "The top-level output keys must be: type, candidate_id, target_path, decision, quality_score, class_level, actionable, reusable, safe_for_future_agents, evidence_support, should_update_existing, fatal_issues, missing_requirements, reason, reviewed_at.",
+        "Do not echo the prompt, expected schema, checks, or candidate.",
+      ].join(" "),
       user: buildSemanticSkillReviewPrompt(input.candidate),
       maxOutputBytes: 4096,
     });

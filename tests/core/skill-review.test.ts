@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  buildSemanticSkillReviewPrompt,
   normalizeSemanticSkillReview,
   reviewSkillCandidateSemantically,
   reviewSkillCandidateSemanticallyDetailed,
@@ -51,12 +52,57 @@ function raw(overrides = {}) {
 }
 
 describe("semantic skill review", () => {
+  it("includes the expected semantic review schema in the prompt", () => {
+    const prompt = JSON.parse(buildSemanticSkillReviewPrompt(candidate)) as Record<string, unknown>;
+    assert.ok(prompt.expected_schema);
+    assert.equal((prompt.expected_schema as { type: string }).type, "semantic_skill_review");
+    assert.ok(prompt.candidate_to_review);
+  });
+
   it("normalizes valid decisions and rejects malformed payloads", () => {
     assert.equal(normalizeSemanticSkillReview(raw({ decision: "revise" }), candidate, now)?.decision, "revise");
     assert.equal(normalizeSemanticSkillReview(raw({ decision: "merge_or_update_existing" }), candidate, now)?.decision, "merge_or_update_existing");
     assert.equal(normalizeSemanticSkillReview(raw({ decision: "reject" }), candidate, now)?.decision, "reject");
     assert.equal(normalizeSemanticSkillReview(raw({ decision: "needs_human" }), candidate, now)?.decision, "needs_human");
     assert.equal(normalizeSemanticSkillReview({ decision: "bad" }, candidate, now), null);
+  });
+
+  it("normalizes compact GLM review answers into the semantic review schema", () => {
+    const review = normalizeSemanticSkillReview({
+      answer: "edit",
+      reason: "Procedure step is incomplete and verification is too generic.",
+      checks: {
+        "durable_class-level_skill": true,
+        concrete_trigger: true,
+        actionable_procedure: false,
+        verified_and_reusable: true,
+        synthesized_rather_than_raw_transcript_copy: true,
+        safe_for_future_agents: true,
+        scope_matches_evidence: true,
+      },
+    }, candidate, now);
+
+    assert.ok(review);
+    assert.equal(review.decision, "revise");
+    assert.equal(review.class_level, true);
+    assert.equal(review.actionable, false);
+    assert.equal(review.reusable, true);
+    assert.equal(review.safe_for_future_agents, true);
+    assert.equal(review.evidence_support, "partial");
+    assert.deepEqual(review.missing_requirements, ["actionable_procedure"]);
+  });
+
+  it("maps answer-only compact reject reviews to conservative defaults", () => {
+    const review = normalizeSemanticSkillReview({ answer: "reject" }, candidate, now);
+
+    assert.ok(review);
+    assert.equal(review.decision, "reject");
+    assert.equal(review.quality_score, 0.25);
+    assert.equal(review.class_level, false);
+    assert.equal(review.actionable, false);
+    assert.equal(review.reusable, false);
+    assert.equal(review.evidence_support, "none");
+    assert.match(review.reason, /compact answer-only/i);
   });
 
   it("returns null when the AI client fails", async () => {

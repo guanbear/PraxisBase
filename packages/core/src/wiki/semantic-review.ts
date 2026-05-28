@@ -54,6 +54,18 @@ function toEvidenceSupport(value: unknown): SemanticWikiReview["evidence_support
   return "none";
 }
 
+function reviewObjectFromProviderResponse(value: Record<string, unknown>): Record<string, unknown> {
+  if (toDecision(value.decision)) return value;
+  for (const key of ["expected_schema", "answer"] as const) {
+    const nested = value[key];
+    if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+      const candidate = reviewObjectFromProviderResponse(nested as Record<string, unknown>);
+      if (toDecision(candidate.decision)) return candidate;
+    }
+  }
+  return value;
+}
+
 export function normalizeSemanticWikiReview(
   raw: string,
   candidateId: string,
@@ -68,7 +80,7 @@ export function normalizeSemanticWikiReview(
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
 
-  const obj = parsed as Record<string, unknown>;
+  const obj = reviewObjectFromProviderResponse(parsed as Record<string, unknown>);
   const decision = toDecision(obj.decision);
   if (!decision) return null;
 

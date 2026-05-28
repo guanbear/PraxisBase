@@ -202,6 +202,54 @@ describe("normalizeSemanticWikiReview", () => {
     assert.deepEqual(result.missing_requirements, []);
   });
 
+  it("normalizes GLM nested expected_schema review output", () => {
+    const raw = {
+      expected_schema: {
+        ...makeValidReview({
+          decision: "reject",
+          quality_score: 0.2,
+          long_term_agent_value: false,
+          is_run_report_summary: true,
+          is_raw_or_near_raw_copy: true,
+          is_actionable: false,
+          is_reusable: false,
+          evidence_support: "weak",
+          fatal_issues: ["Run report summary without reusable guidance"],
+          missing_requirements: ["Generalized fix steps"],
+          reason: "Specific run report rather than reusable known fix.",
+        }),
+      },
+    };
+    const result = normalizeSemanticWikiReview(JSON.stringify(raw), "proposal_1", "kb/test.md");
+    assert.ok(result);
+    assert.equal(result.decision, "reject");
+    assert.equal(result.quality_score, 0.2);
+    assert.equal(result.is_run_report_summary, true);
+    assert.deepEqual(result.fatal_issues, ["Run report summary without reusable guidance"]);
+  });
+
+  it("normalizes GLM answer-wrapped nested review output", () => {
+    const raw = {
+      answer: {
+        expected_schema: {
+          ...makeValidReview({
+            decision: "reject",
+            quality_score: 0.2,
+            long_term_agent_value: false,
+            evidence_support: "none",
+            fatal_issues: ["No actionable fix steps"],
+            reason: "Run report, not reusable knowledge.",
+          }),
+        },
+      },
+    };
+    const result = normalizeSemanticWikiReview(JSON.stringify(raw), "proposal_1", "kb/test.md");
+    assert.ok(result);
+    assert.equal(result.decision, "reject");
+    assert.equal(result.evidence_support, "none");
+    assert.deepEqual(result.fatal_issues, ["No actionable fix steps"]);
+  });
+
   it("returns null for completely unparseable JSON", () => {
     const result = normalizeSemanticWikiReview("not json at all", "proposal_1", "kb/known-fixes/test.md");
     assert.equal(result, null);
