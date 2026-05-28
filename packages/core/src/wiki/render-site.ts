@@ -303,6 +303,7 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 function renderDailyUpdateSection(report: DailyReportSummary): string {
   const dateLabel = report.created_at.slice(0, 10);
   const contextEconomy = report.context_economy;
+  const contextJuice = report.context_juice;
   const semanticReview = report.semantic_review;
   const skillSynthesis = report.skill_synthesis;
   const dailyCards: Array<{ label: string; value: string; href?: string }> = [
@@ -323,6 +324,10 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
     ${contextEconomy ? `<article><span>Context Economy</span><strong>${escapeHtml(contextEconomy.enabled ? "On" : "Off")}</strong></article>
     <article><span>Reduced items</span><strong>${escapeHtml(String(contextEconomy.items_reduced))}</strong></article>
     <article><span>Saved bytes</span><strong>${escapeHtml(contextEconomy.saved_bytes.toLocaleString("en-US"))}</strong></article>` : ""}
+    ${contextJuice ? `<article><span>Context Juice</span><strong>${escapeHtml(contextJuice.enabled ? "On" : "Off")}</strong></article>
+    <article><span>Budgeted items</span><strong>${escapeHtml(String(contextJuice.items_budgeted))}</strong></article>
+    <article><span>Juice saved bytes</span><strong>${escapeHtml(contextJuice.saved_bytes.toLocaleString("en-US"))}</strong></article>
+    <article><span>Pre-summaries</span><strong>${escapeHtml(String(contextJuice.presummary_summarized))}</strong></article>` : ""}
 	    ${semanticReview && semanticReview.enabled ? `<article><span>Semantic review</span><strong>${escapeHtml(String(semanticReview.reviewed))} reviewed</strong></article>
 	    <article><span>Semantic promote</span><strong>${escapeHtml(String(semanticReview.promote))}</strong></article>
 	    <article><span>Semantic reject</span><strong>${escapeHtml(String(semanticReview.reject))}</strong></article>
@@ -335,6 +340,57 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 	  </div>
   ${renderAgentMemoryStatus(report)}
   ${renderGBrainStatus(report)}
+  ${contextJuice && contextJuice.warnings.length > 0 ? `<p class="muted">Context juice warnings: ${escapeHtml(contextJuice.warnings.join("; "))}</p>` : ""}
+</section>`;
+}
+
+interface AgentBundleReportSummary {
+  id: string;
+  mode: string;
+  query?: string;
+  total_bytes: number;
+  budget_bytes: number;
+  trust_summary: Record<string, number>;
+  skill_matched: number;
+  skill_skipped: number;
+  skill_reasons: string[];
+  omitted_item_count: number;
+  created_at: string;
+}
+
+interface PersonalFacetCounts {
+  active: number;
+  provisional: number;
+  candidate: number;
+  pinned: number;
+  forgotten: number;
+}
+
+function renderRuntimeContextSection(bundle: AgentBundleReportSummary | null, personal: PersonalFacetCounts): string {
+  if (!bundle && Object.values(personal).every((count) => count === 0)) return "";
+  const trust = bundle ? Object.entries(bundle.trust_summary)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([tier, count]) => `${tier}:${count}`)
+    .join(" ") : "none";
+  const skillReasons = bundle?.skill_reasons.slice(0, 5) ?? [];
+  return `<section class="daily-update" id="runtime-context">
+  <h2>Runtime Context</h2>
+  <div class="metrics">
+    ${bundle ? `<article><span>Bundle bytes</span><strong>${escapeHtml(`${bundle.total_bytes}/${bundle.budget_bytes}`)}</strong></article>
+    <article><span>Trust tiers</span><strong>${escapeHtml(trust)}</strong></article>
+    <article><span>Skill matched</span><strong>${escapeHtml(String(bundle.skill_matched))}</strong></article>
+    <article><span>Skill skipped</span><strong>${escapeHtml(String(bundle.skill_skipped))}</strong></article>
+    <article><span>Bundle omitted</span><strong>${escapeHtml(String(bundle.omitted_item_count))}</strong></article>` : ""}
+    <article><span>Personal active</span><strong>${escapeHtml(String(personal.active + personal.pinned))}</strong></article>
+    <article><span>Personal provisional</span><strong>${escapeHtml(String(personal.provisional))}</strong></article>
+    <article><span>Personal forgotten</span><strong>${escapeHtml(String(personal.forgotten))}</strong></article>
+  </div>
+  ${skillReasons.length > 0 ? `<ol class="link-list">${skillReasons.map((reason) => `<li><span>${escapeHtml(reason)}</span></li>`).join("\n")}</ol>` : ""}
+  <div class="command-strip">
+    <code>praxisbase context bundle --query &lt;task&gt; --mode personal --json</code>
+    <code>praxisbase skill inject-preview --query &lt;task&gt; --json</code>
+    <code>praxisbase personal profile rebuild --json</code>
+  </div>
 </section>`;
 }
 
@@ -717,6 +773,8 @@ function renderDashboard(
   stalePages: number,
   qualityFindings: number,
   dailyReport: DailyReportSummary | null,
+  agentBundleReport: AgentBundleReportSummary | null,
+  personalFacetCounts: PersonalFacetCounts,
   experienceSummaries: ExperienceSummary[],
   pendingCandidates: PendingWikiProposalCandidate[],
   curationReport: WikiCurationReportSummary | null
@@ -752,6 +810,7 @@ function renderDashboard(
     ${cards.map(renderMetricCard).join("\n")}
   </section>
   ${dailyReport ? renderDailyUpdateSection(dailyReport) : ""}
+  ${renderRuntimeContextSection(agentBundleReport, personalFacetCounts)}
   ${curationReport ? renderWikiCompilerSection(curationReport) : ""}
   ${renderPendingCandidates(pendingCandidates)}
   <section class="dashboard-grid">
@@ -1020,6 +1079,17 @@ interface DailyReportSummary {
     report_ref?: string;
     warnings: string[];
   };
+  context_juice?: {
+    enabled: boolean;
+    items_seen: number;
+    items_budgeted: number;
+    items_microcompacted: number;
+    saved_bytes: number;
+    presummary_summarized: number;
+    presummary_saved_bytes: number;
+    report_ref?: string;
+    warnings: string[];
+  };
 	  semantic_review?: {
     enabled: boolean;
     reviewed: number;
@@ -1143,6 +1213,17 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
       report_ref?: string;
       warnings?: string[];
     };
+    context_juice?: {
+      enabled?: boolean;
+      items_seen?: number;
+      items_budgeted?: number;
+      items_microcompacted?: number;
+      saved_bytes?: number;
+      presummary_summarized?: number;
+      presummary_saved_bytes?: number;
+      report_ref?: string;
+      warnings?: string[];
+    };
 	    semantic_review?: {
       enabled?: boolean;
       reviewed?: number;
@@ -1195,6 +1276,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
   const latest = candidates[0];
   const sources = Array.isArray(latest.sources) ? latest.sources : [];
   const contextEconomy = latest.context_economy;
+  const contextJuice = latest.context_juice;
   const gbrain = latest.brain_backends?.gbrain;
 
   return {
@@ -1220,6 +1302,17 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
       rule_set_hash: contextEconomy.rule_set_hash ?? "unknown",
       report_ref: contextEconomy.report_ref,
       warnings: Array.isArray(contextEconomy.warnings) ? contextEconomy.warnings : [],
+    } : undefined,
+    context_juice: contextJuice ? {
+      enabled: contextJuice.enabled === true,
+      items_seen: typeof contextJuice.items_seen === "number" ? contextJuice.items_seen : 0,
+      items_budgeted: typeof contextJuice.items_budgeted === "number" ? contextJuice.items_budgeted : 0,
+      items_microcompacted: typeof contextJuice.items_microcompacted === "number" ? contextJuice.items_microcompacted : 0,
+      saved_bytes: typeof contextJuice.saved_bytes === "number" ? contextJuice.saved_bytes : 0,
+      presummary_summarized: typeof contextJuice.presummary_summarized === "number" ? contextJuice.presummary_summarized : 0,
+      presummary_saved_bytes: typeof contextJuice.presummary_saved_bytes === "number" ? contextJuice.presummary_saved_bytes : 0,
+      report_ref: contextJuice.report_ref,
+      warnings: Array.isArray(contextJuice.warnings) ? contextJuice.warnings : [],
     } : undefined,
 	    semantic_review: latest.semantic_review ? {
       enabled: latest.semantic_review.enabled === true,
@@ -1262,6 +1355,78 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
       },
     } : undefined,
   };
+}
+
+async function collectLatestAgentBundleReport(root: string): Promise<AgentBundleReportSummary | null> {
+  const dir = safePathForReaddir(root, protocolPaths.reportsAgentBundles);
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return null;
+  }
+
+  const reports: AgentBundleReportSummary[] = [];
+  for (const file of entries.filter((name) => name.endsWith(".json")).sort()) {
+    try {
+      const value = await readJson<Record<string, unknown>>(root, `${protocolPaths.reportsAgentBundles}/${file}`);
+      if (value.type !== "agent_context_bundle") continue;
+      const skillDecisions = Array.isArray(value.skill_decisions)
+        ? value.skill_decisions.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+        : [];
+      const trust = value.trust_summary && typeof value.trust_summary === "object" && !Array.isArray(value.trust_summary)
+        ? value.trust_summary as Record<string, unknown>
+        : {};
+      reports.push({
+        id: stringValue(value.id) ?? file.replace(/\.json$/i, ""),
+        mode: stringValue(value.mode) ?? "unknown",
+        query: stringValue(value.query),
+        total_bytes: numberValue(value.total_bytes) ?? 0,
+        budget_bytes: numberValue(value.budget_bytes) ?? 0,
+        trust_summary: Object.fromEntries(Object.entries(trust).map(([key, count]) => [key, typeof count === "number" ? count : 0])),
+        skill_matched: skillDecisions.filter((decision) => decision.decision === "matched").length,
+        skill_skipped: skillDecisions.filter((decision) => decision.decision === "skipped").length,
+        skill_reasons: skillDecisions.map((decision) => `${stringValue(decision.skill_id) ?? "skill"}: ${stringValue(decision.reason) ?? "no reason"}`),
+        omitted_item_count: numberValue(value.omitted_item_count) ?? 0,
+        created_at: stringValue(value.created_at) ?? "",
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  if (reports.length === 0) return null;
+  return reports.sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id))[0];
+}
+
+async function collectPersonalFacetCounts(root: string): Promise<PersonalFacetCounts> {
+  const counts: PersonalFacetCounts = {
+    active: 0,
+    provisional: 0,
+    candidate: 0,
+    pinned: 0,
+    forgotten: 0,
+  };
+  let raw = "";
+  try {
+    raw = await readText(root, protocolPaths.personalFacets);
+  } catch {
+    return counts;
+  }
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      const value = JSON.parse(trimmed) as Record<string, unknown>;
+      const state = stringValue(value.state);
+      if (state === "active" || state === "provisional" || state === "candidate" || state === "pinned" || state === "forgotten") {
+        counts[state]++;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return counts;
 }
 
 async function collectLatestPrivacyTriageReport(root: string): Promise<PrivacyTriageReportSummary | null> {
@@ -1514,6 +1679,8 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   const qualityReport = await buildWikiQualityReport(root, { pages, graph });
   const outputs = [...SITE_OUTPUTS];
   const dailyReport = await collectLatestDailyReport(root);
+  const agentBundleReport = await collectLatestAgentBundleReport(root);
+  const personalFacetCounts = await collectPersonalFacetCounts(root);
   const privacyTriageReport = await collectLatestPrivacyTriageReport(root);
   const curationReport = await collectLatestWikiCurationReport(root);
   const experienceSummaries = await collectLatestExperienceSummaries(root);
@@ -1522,7 +1689,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
   outputs.push(...rootArtifactOutputs);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, experienceSummaries, pendingCandidates, curationReport));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, agentBundleReport, personalFacetCounts, experienceSummaries, pendingCandidates, curationReport));
   await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport, privacyTriageReport));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",

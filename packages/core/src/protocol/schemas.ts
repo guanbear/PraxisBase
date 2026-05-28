@@ -719,6 +719,21 @@ export const DailyExperienceReportSchema = z.object({
     report_ref: z.string().min(1).optional(),
     warnings: z.array(z.string()).default([]),
   }).optional(),
+  context_juice: z.object({
+    enabled: z.boolean(),
+    context_juice_version: z.string().min(1),
+    budget_id: z.string().min(1),
+    items_seen: z.number().int().nonnegative(),
+    items_budgeted: z.number().int().nonnegative(),
+    items_microcompacted: z.number().int().nonnegative(),
+    original_bytes: z.number().int().nonnegative(),
+    kept_bytes: z.number().int().nonnegative(),
+    saved_bytes: z.number().int().nonnegative(),
+    presummary_summarized: z.number().int().nonnegative().default(0),
+    presummary_saved_bytes: z.number().int().nonnegative().default(0),
+    report_ref: z.string().min(1).optional(),
+    warnings: z.array(z.string()).default([]),
+  }).optional(),
 	  semantic_review: z.object({
     enabled: z.boolean().default(false),
     reviewed: z.number().int().min(0).default(0),
@@ -1057,6 +1072,142 @@ export const ContextEconomyReportSchema = z.object({
   created_at: z.string(),
 });
 
+export const TrustTierSchema = z.enum([
+  "pb_stable",
+  "pb_personal_facet",
+  "pb_candidate",
+  "gbrain_sidecar",
+  "agentmemory_sidecar",
+  "remote_personal_agent",
+  "external_untrusted",
+]);
+
+export const TrustBoundaryItemSchema = z.object({
+  source_kind: z.string().min(1),
+  authority: z.string().min(1),
+  tier: TrustTierSchema,
+  injectable: z.boolean(),
+  source_hint: z.string().min(1).optional(),
+  metadata: z.record(z.unknown()).default({}),
+}).strict();
+
+export const ContextJuiceBudgetResultSchema = z.object({
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1).optional(),
+  budget_id: z.string().min(1),
+  original_bytes: z.number().int().nonnegative(),
+  kept_bytes: z.number().int().nonnegative(),
+  saved_bytes: z.number().int().nonnegative(),
+  truncated: z.boolean(),
+  marker: z.string().optional(),
+  full_body_available: z.boolean().default(true),
+  warnings: z.array(z.string()).default([]),
+}).strict();
+
+export const TrajectoryMicrocompactResultSchema = z.object({
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1).optional(),
+  budget_id: z.string().min(1),
+  original_entries: z.number().int().nonnegative(),
+  kept_entries: z.number().int().nonnegative(),
+  cleared_entries: z.number().int().nonnegative(),
+  protected_signal_count: z.number().int().nonnegative(),
+  recent_results_kept: z.number().int().nonnegative(),
+  idempotent: z.boolean(),
+  warnings: z.array(z.string()).default([]),
+}).strict();
+
+export const ContextJuiceReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("context_juice_report"),
+  budget_id: z.string().min(1),
+  context_juice_version: z.string().min(1).default("context-juice-v1"),
+  items_seen: z.number().int().nonnegative(),
+  items_budgeted: z.number().int().nonnegative(),
+  items_microcompacted: z.number().int().nonnegative(),
+  original_bytes: z.number().int().nonnegative(),
+  kept_bytes: z.number().int().nonnegative(),
+  saved_bytes: z.number().int().nonnegative(),
+  warnings: z.number().int().nonnegative(),
+  protected_signal_count: z.number().int().nonnegative(),
+  budget_results: z.array(ContextJuiceBudgetResultSchema).default([]),
+  microcompact_results: z.array(TrajectoryMicrocompactResultSchema).default([]),
+  created_at: z.string(),
+}).strict();
+
+export const SkillInjectionDecisionSchema = z.object({
+  skill_id: z.string().min(1),
+  decision: z.enum(["matched", "skipped"]),
+  reason: z.string().min(1),
+  injected_bytes: z.number().int().nonnegative(),
+  truncated: z.boolean(),
+  scope: ScopeSchema,
+  authority: TrustTierSchema,
+  promotion_id: z.string().min(1).optional(),
+  audit_id: z.string().min(1).optional(),
+}).strict();
+
+export const AgentContextBundleSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("agent_context_bundle"),
+  mode: z.enum(["personal", "team"]),
+  query: z.string().optional(),
+  total_bytes: z.number().int().nonnegative(),
+  budget_bytes: z.number().int().nonnegative(),
+  sections: z.array(z.object({
+    kind: z.enum([
+      "safety",
+      "personal_facets",
+      "stable_knowledge",
+      "promoted_skills",
+      "catalog",
+      "graph_neighbors",
+      "sidecar_hits",
+      "citations",
+      "omitted_summary",
+    ]),
+    tier: TrustTierSchema,
+    items: z.number().int().nonnegative(),
+    bytes: z.number().int().nonnegative(),
+  }).strict()).default([]),
+  skill_decisions: z.array(SkillInjectionDecisionSchema).default([]),
+  trust_summary: z.record(z.number().int().nonnegative()).default({}),
+  omitted_item_count: z.number().int().nonnegative().default(0),
+  warnings: z.array(z.string()).default([]),
+  created_at: z.string(),
+}).strict();
+
+export const PersonalLearningFacetSchema = z.object({
+  id: z.string().min(1),
+  facet_class: z.enum(["style", "tooling", "veto", "goal", "identity", "channel"]),
+  key: z.string().min(1),
+  value: z.string().min(1),
+  state: z.enum(["active", "provisional", "candidate", "dropped", "pinned", "forgotten"]),
+  stability: z.number().min(0).max(1),
+  evidence_count: z.number().int().nonnegative(),
+  evidence_refs: z.array(z.string().min(1)).default([]),
+  cue_family: z.string().min(1).optional(),
+  first_seen: z.string(),
+  last_seen: z.string(),
+  user_override: z.enum(["none", "pinned", "forgotten"]).default("none"),
+}).strict();
+
+export const PersonalLearningReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("personal_learning_report"),
+  active_count: z.number().int().nonnegative(),
+  provisional_count: z.number().int().nonnegative(),
+  candidate_count: z.number().int().nonnegative(),
+  pinned_count: z.number().int().nonnegative(),
+  forgotten_count: z.number().int().nonnegative(),
+  facets: z.array(PersonalLearningFacetSchema).default([]),
+  warnings: z.array(z.string()).default([]),
+  created_at: z.string(),
+}).strict();
+
 export const StructuredErrorSchema = z.object({
   ok: z.literal(false),
   code: z.string().min(1),
@@ -1136,3 +1287,12 @@ export type ContextReducerRuleAction = z.infer<typeof ContextReducerRuleActionSc
 export type ContextReducerRule = z.input<typeof ContextReducerRuleSchema>;
 export type ContextReductionResult = z.infer<typeof ContextReductionResultSchema>;
 export type ContextEconomyReport = z.infer<typeof ContextEconomyReportSchema>;
+export type TrustTier = z.infer<typeof TrustTierSchema>;
+export type TrustBoundaryItem = z.infer<typeof TrustBoundaryItemSchema>;
+export type ContextJuiceBudgetResult = z.infer<typeof ContextJuiceBudgetResultSchema>;
+export type TrajectoryMicrocompactResult = z.infer<typeof TrajectoryMicrocompactResultSchema>;
+export type ContextJuiceReport = z.infer<typeof ContextJuiceReportSchema>;
+export type SkillInjectionDecision = z.infer<typeof SkillInjectionDecisionSchema>;
+export type AgentContextBundle = z.infer<typeof AgentContextBundleSchema>;
+export type PersonalLearningFacet = z.infer<typeof PersonalLearningFacetSchema>;
+export type PersonalLearningReport = z.infer<typeof PersonalLearningReportSchema>;

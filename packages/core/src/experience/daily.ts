@@ -10,6 +10,7 @@ import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "../ai/clien
 import { distillExperience, DistilledExperienceSchema, type DistilledExperience } from "../ai/distill.js";
 import {
   DailyExperienceReportSchema,
+  ContextJuiceReportSchema,
   ExceptionRecordSchema,
   ExperienceEnvelopeSchema,
   type DailyExperienceReport,
@@ -17,6 +18,7 @@ import {
   type ExperiencePrivacyVerdict,
   type ContextReducerRule,
   type ContextReductionResult,
+  type TrajectoryMicrocompactResult,
 } from "../protocol/schemas.js";
 import { readJson, writeJson } from "../store/file-store.js";
 import { compileWiki } from "../wiki/compile.js";
@@ -66,6 +68,21 @@ import { synthesizeSkillCandidates } from "../synthesis/skill.js";
 import type { SkillSynthesisReport } from "../synthesis/skill-model.js";
 import { exportGBrain } from "./gbrain-export.js";
 import type { GBrainCommandRunner } from "./gbrain-client.js";
+import {
+  applySourceItemBudget,
+  CONTEXT_JUICE_VERSION,
+  DEFAULT_SESSION_TOOL_OUTPUT_CAP_BYTES,
+  MICROCOMPACT_PLACEHOLDER,
+  trajectoryMicrocompact,
+  type TrajectoryEntry,
+  type SourceItemBudgetResult,
+} from "./context-juice.js";
+import {
+  createPayloadPreSummarySession,
+  preSummarizePayload,
+  type PayloadPreSummaryPolicy,
+  type PayloadPreSummaryResult,
+} from "./payload-presummary.js";
 
 type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "skill-synthesis" | "review-promote" | "backend-publish" | "site-build";
 
@@ -113,6 +130,8 @@ export interface RunDailyExperienceInput {
   maxCurationProposals?: number;
   maxSkillCandidates?: number;
   noContextEconomy?: boolean;
+  noContextJuice?: boolean;
+  payloadPreSummary?: PayloadPreSummaryPolicy;
 	  semanticReview?: boolean;
 	  skillSynthesis?: boolean;
   publishGbrain?: boolean;
@@ -130,6 +149,14 @@ function statusFromCounts(input: { warnings: string[]; rejected: number; humanRe
 
 type DailyAiDistill = DailyExperienceReport["ai_distill"];
 const DISTILL_CACHE_VERSION = "ai-distill-v1";
+const DAILY_CONTEXT_JUICE_BUDGET_ID = `${CONTEXT_JUICE_VERSION}:daily-session-tool-output-${DEFAULT_SESSION_TOOL_OUTPUT_CAP_BYTES}`;
+
+interface DailyContextJuiceState {
+  budgetResults: SourceItemBudgetResult[];
+  microcompactResults: TrajectoryMicrocompactResult[];
+  preSummaryResults: PayloadPreSummaryResult[];
+  warnings: string[];
+}
 
 export type DailyNextActionStatus =
   | "needs_privacy_triage"
@@ -466,6 +493,155 @@ function reduceEnvelopeSummary(
   };
 }
 
+function combineIdentitySalts(...salts: Array<string | undefined>): string | undefined {
+  const values = salts.filter((value): value is string => Boolean(value && value.trim()));
+  return values.length > 0 ? values.join("|") : undefined;
+}
+
+function contextJuiceIdentitySalt(result: SourceItemBudgetResult): string {
+  return [
+    CONTEXT_JUICE_VERSION,
+    result.budget_id,
+    `microcompact=${MICROCOMPACT_PLACEHOLDER}`,
+    `source_ref=${result.source_ref}`,
+    `source_hash=${result.source_hash ?? "none"}`,
+    `truncated=${result.truncated}`,
+    `kept=${result.kept_bytes}`,
+  ].join(":");
+}
+
+function parseTrajectoryEntries(text: string): TrajectoryEntry[] | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+
+  const candidate = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === "object" && Array.isArray((parsed as { entries?: unknown }).entries)
+      ? (parsed as { entries: unknown[] }).entries
+      : parsed && typeof parsed === "object" && Array.isArray((parsed as { trajectory?: unknown }).trajectory)
+        ? (parsed as { trajectory: unknown[] }).trajectory
+        : undefined;
+
+  if (!candidate || candidate.length === 0) return undefined;
+  if (!candidate.every((entry) => entry && typeof entry === "object" && typeof (entry as { kind?: unknown }).kind === "string")) {
+    return undefined;
+  }
+  return candidate as TrajectoryEntry[];
+}
+
+function microcompactChunkForDaily(chunk: ExperienceChunk, state: DailyContextJuiceState): ExperienceChunk {
+  const entries = parseTrajectoryEntries(chunk.text);
+  if (!entries) return chunk;
+
+  const compacted = trajectoryMicrocompact(entries, {
+    budgetId: DAILY_CONTEXT_JUICE_BUDGET_ID,
+    sourceRef: chunk.source_ref,
+    sourceHash: chunk.source_hash,
+  });
+  state.microcompactResults.push(compacted.report);
+  state.warnings.push(...compacted.report.warnings);
+  if (compacted.report.cleared_entries === 0) return chunk;
+
+  const text = JSON.stringify(compacted.entries);
+  const identitySalt = combineIdentitySalts(
+    chunk.reducer_identity_salt,
+    `${CONTEXT_JUICE_VERSION}:microcompact:${compacted.report.cleared_entries}:${compacted.report.protected_signal_count}:${compacted.report.recent_results_kept}`,
+  );
+  const chunkHash = computeHash(JSON.stringify({
+    source_ref: chunk.source_ref,
+    source_hash: chunk.source_hash,
+    original_chunk_hash: chunk.chunk_hash,
+    context_juice_identity_salt: identitySalt,
+    text,
+  }));
+
+  return {
+    ...chunk,
+    text,
+    chunk_hash: chunkHash,
+    chunk_id: makeId("experience-chunk", `${chunk.source_id}_${chunkHash.slice(7, 23)}_microcompact`),
+    reducer_identity_salt: identitySalt,
+  };
+}
+
+function budgetChunkForDaily(chunk: ExperienceChunk, state: DailyContextJuiceState): ExperienceChunk {
+  const budgeted = applySourceItemBudget(chunk.text, {
+    maxBytes: DEFAULT_SESSION_TOOL_OUTPUT_CAP_BYTES,
+    budgetId: DAILY_CONTEXT_JUICE_BUDGET_ID,
+    fullBodyAvailable: true,
+  }, {
+    sourceRef: chunk.source_ref,
+    sourceHash: chunk.source_hash,
+  });
+  state.budgetResults.push(budgeted);
+  state.warnings.push(...budgeted.warnings);
+  const identitySalt = combineIdentitySalts(chunk.reducer_identity_salt, contextJuiceIdentitySalt(budgeted));
+  const chunkHash = computeHash(JSON.stringify({
+    source_ref: chunk.source_ref,
+    source_hash: chunk.source_hash,
+    original_chunk_hash: chunk.chunk_hash,
+    context_juice_identity_salt: identitySalt,
+    text: budgeted.text,
+  }));
+  return {
+    ...chunk,
+    text: budgeted.text,
+    chunk_hash: chunkHash,
+    chunk_id: makeId("experience-chunk", `${chunk.source_id}_${chunkHash.slice(7, 23)}_context_juice`),
+    reducer_identity_salt: identitySalt,
+  };
+}
+
+async function preSummarizeChunkForDaily(
+  chunk: ExperienceChunk,
+  input: {
+    authorityMode: RunDailyExperienceInput["authorityMode"];
+    aiClient?: AiJsonClient;
+    policy?: PayloadPreSummaryPolicy;
+    session: ReturnType<typeof createPayloadPreSummarySession>;
+    modelId: string;
+    state: DailyContextJuiceState;
+  },
+): Promise<ExperienceChunk> {
+  const result = await preSummarizePayload({
+    text: chunk.text,
+    sourceRef: chunk.source_ref,
+    sourceHash: chunk.source_hash,
+    authorityMode: input.authorityMode,
+    client: input.aiClient,
+    policy: input.policy,
+    session: input.session,
+    modelId: input.modelId,
+    promptId: "praxisbase-payload-presummary-v1",
+  });
+  input.state.preSummaryResults.push(result);
+  input.state.warnings.push(...result.warnings);
+  if (result.status !== "summarized") return chunk;
+
+  const identitySalt = combineIdentitySalts(
+    chunk.reducer_identity_salt,
+    `${CONTEXT_JUICE_VERSION}:payload-presummary:${result.model_id ?? "unknown"}:${result.prompt_id ?? "unknown"}:${result.summary_bytes}`,
+  );
+  const chunkHash = computeHash(JSON.stringify({
+    source_ref: chunk.source_ref,
+    source_hash: chunk.source_hash,
+    original_chunk_hash: chunk.chunk_hash,
+    context_juice_identity_salt: identitySalt,
+    text: result.text,
+  }));
+  return {
+    ...chunk,
+    text: result.text,
+    chunk_hash: chunkHash,
+    chunk_id: makeId("experience-chunk", `${chunk.source_id}_${chunkHash.slice(7, 23)}_presummary`),
+    reducer_identity_salt: identitySalt,
+  };
+}
+
 function privacyExceptionPathForEnvelope(envelope: ExperienceEnvelope): string {
   const suffix = computeHash(`${envelope.id}:${envelope.privacy.verdict}:${envelope.privacy.reasons.join(",")}`).slice(7, 23);
   const id = makeId("exception", `daily-experience_${suffix}`);
@@ -775,6 +951,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   }
 
   const contextEconomyEnabled = !input.noContextEconomy;
+  const contextJuiceEnabled = !input.noContextJuice;
   const projectRulesResult = contextEconomyEnabled ? await loadProjectRules(root) : { rules: [], warnings: [] };
   const reductionResults: ContextReductionResult[] = [];
   const effectiveReducerRules = contextEconomyEnabled
@@ -796,6 +973,13 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       },
     }
     : undefined;
+  const contextJuiceState: DailyContextJuiceState = {
+    budgetResults: [],
+    microcompactResults: [],
+    preSummaryResults: [],
+    warnings: [],
+  };
+  const payloadPreSummarySession = createPayloadPreSummarySession();
   const distilledExperiences: DistilledExperience[] = [];
 
   const publishProgress = async (progress: Omit<DailyProgressEvent, "elapsed_ms" | "stage_elapsed_ms">): Promise<void> => {
@@ -905,6 +1089,26 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           contextReducerForSource,
         );
         sourceWarnings = sourceWarnings.concat(resolved.warnings);
+      }
+
+      if (contextJuiceEnabled) {
+        chunks = chunks
+          .map((chunk) => microcompactChunkForDaily(chunk, contextJuiceState))
+          .map((chunk) => budgetChunkForDaily(chunk, contextJuiceState));
+      }
+      if (contextJuiceEnabled && input.payloadPreSummary?.enabled) {
+        const summarizedChunks: ExperienceChunk[] = [];
+        for (const chunk of chunks) {
+          summarizedChunks.push(await preSummarizeChunkForDaily(chunk, {
+            authorityMode: input.authorityMode,
+            aiClient,
+            policy: input.payloadPreSummary,
+            session: payloadPreSummarySession,
+            modelId: distillModelName,
+            state: contextJuiceState,
+          }));
+        }
+        chunks = summarizedChunks;
       }
 
       scanned = chunks.length + blocked.length;
@@ -1319,6 +1523,38 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     outputs.push(contextEconomyRef);
   }
 
+  let contextJuiceRef: string | undefined;
+  const contextJuiceWarnings = Array.from(new Set(contextJuiceState.warnings)).sort();
+  const contextJuiceOriginalBytes = contextJuiceState.budgetResults.reduce((sum, result) => sum + result.original_bytes, 0);
+  const contextJuiceKeptBytes = contextJuiceState.budgetResults.reduce((sum, result) => sum + result.kept_bytes, 0);
+  const contextJuiceSavedBytes = contextJuiceState.budgetResults.reduce((sum, result) => sum + result.saved_bytes, 0);
+  const preSummarySavedBytes = contextJuiceState.preSummaryResults.reduce((sum, result) => sum + result.saved_bytes, 0);
+  const contextJuiceReport = contextJuiceState.budgetResults.length > 0 || contextJuiceState.preSummaryResults.length > 0 || contextJuiceWarnings.length > 0
+    ? ContextJuiceReportSchema.parse({
+      id: makeId("context-juice", runSuffix(now)),
+      protocol_version: PROTOCOL_VERSION,
+      type: "context_juice_report",
+      budget_id: DAILY_CONTEXT_JUICE_BUDGET_ID,
+      context_juice_version: CONTEXT_JUICE_VERSION,
+      items_seen: contextJuiceState.budgetResults.length,
+      items_budgeted: contextJuiceState.budgetResults.length,
+      items_microcompacted: contextJuiceState.microcompactResults.length,
+      original_bytes: contextJuiceOriginalBytes,
+      kept_bytes: contextJuiceKeptBytes,
+      saved_bytes: contextJuiceSavedBytes,
+      warnings: contextJuiceWarnings.length,
+      protected_signal_count: contextJuiceState.microcompactResults.reduce((sum, result) => sum + result.protected_signal_count, 0),
+      budget_results: contextJuiceState.budgetResults.map(({ text: _text, ...result }) => result),
+      microcompact_results: contextJuiceState.microcompactResults,
+      created_at: now,
+    })
+    : undefined;
+  if (contextJuiceReport && mode === "write") {
+    contextJuiceRef = `${protocolPaths.reportsContextJuice}/${contextJuiceReport.id}.json`;
+    await writeJson(root, contextJuiceRef, contextJuiceReport);
+    outputs.push(contextJuiceRef);
+  }
+
   const wikiMode = mode === "write" ? "review" as const : "dry-run" as const;
   if (mode === "write") {
     await publishProgress({
@@ -1503,6 +1739,22 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings: contextEconomyReport?.warnings ?? contextEconomyWarnings,
   } : { enabled: false, reducer_version: REDUCER_VERSION, rule_set_hash: "disabled", items_seen: 0, items_reduced: 0, items_passed_through: 0, input_bytes: 0, output_bytes: 0, saved_bytes: 0, warnings: [] as string[] };
 
+  const contextJuiceSummary = {
+    enabled: contextJuiceEnabled,
+    context_juice_version: CONTEXT_JUICE_VERSION,
+    budget_id: DAILY_CONTEXT_JUICE_BUDGET_ID,
+    items_seen: contextJuiceState.budgetResults.length,
+    items_budgeted: contextJuiceState.budgetResults.length,
+    items_microcompacted: contextJuiceState.microcompactResults.length,
+    original_bytes: contextJuiceOriginalBytes,
+    kept_bytes: contextJuiceKeptBytes,
+    saved_bytes: contextJuiceSavedBytes,
+    presummary_summarized: contextJuiceState.preSummaryResults.filter((result) => result.status === "summarized").length,
+    presummary_saved_bytes: preSummarySavedBytes,
+    report_ref: contextJuiceRef,
+    warnings: contextJuiceWarnings,
+  };
+
   const makeReport = (sitePages: number, qualityFindings: number, outputPaths: string[]): DailyExperienceReport => {
     const reportOutputs = mode === "write"
       ? Array.from(new Set([...outputPaths, aiReportPath, reportPath, runPath])).sort()
@@ -1515,6 +1767,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       mode,
       ai_distill: finalAiDistill,
       context_economy: contextEconomySummary,
+      context_juice: contextJuiceSummary,
       sources: sourceReports,
       proposal_candidates: curationReport.output_counts.curated_proposals,
       quality_findings: qualityFindings,

@@ -275,6 +275,21 @@ Body.
           report_ref: ".praxisbase/reports/context-economy/context_economy_2026_05_21.json",
           warnings: [],
         },
+        context_juice: {
+          enabled: true,
+          context_juice_version: "context-juice-v1",
+          budget_id: "context-juice-v1:daily-session-tool-output-16384",
+          items_seen: 5,
+          items_budgeted: 5,
+          items_microcompacted: 0,
+          original_bytes: 30000,
+          kept_bytes: 18000,
+          saved_bytes: 12000,
+          presummary_summarized: 1,
+          presummary_saved_bytes: 4000,
+          report_ref: ".praxisbase/reports/context-juice/context_juice_2026_05_21.json",
+          warnings: [],
+        },
         proposal_candidates: 3,
         quality_findings: 0,
         site_pages: 7,
@@ -324,6 +339,10 @@ Body.
     assert.ok(index.includes("Context Economy"));
     assert.ok(index.includes("Saved bytes"));
     assert.ok(index.includes("13,000"));
+    assert.ok(index.includes("Context Juice"));
+    assert.ok(index.includes("Budgeted items"));
+    assert.ok(index.includes("12,000"));
+    assert.ok(index.includes("Pre-summaries"));
     assert.ok(index.includes("AgentMemory"));
     assert.ok(index.includes("personal-agentmemory"));
     assert.ok(index.includes("agentmemory_health_failed: timeout"));
@@ -1123,5 +1142,54 @@ Body.
     assert.ok(review.includes("Showing the latest 50 privacy records."));
     assert.ok(review.includes("Skipped already triaged"));
     assert.ok(review.includes("praxisbase privacy triage --mode personal --auto-release --progress --json"));
+  });
+
+  it("renders runtime context health without raw private facet evidence or sidecar bodies", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-runtime-context-"));
+    await mkdir(join(root, ".praxisbase/reports/agent-bundles"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/personal"), { recursive: true });
+
+    await writeFile(join(root, ".praxisbase/reports/agent-bundles/bundle.json"), JSON.stringify({
+      id: "bundle",
+      protocol_version: "0.1",
+      type: "agent_context_bundle",
+      mode: "personal",
+      query: "OpenClaw auth",
+      total_bytes: 1200,
+      budget_bytes: 24576,
+      sections: [],
+      skill_decisions: [
+        { skill_id: "openclaw-auth", decision: "matched", reason: "matched tags", injected_bytes: 512, truncated: false, scope: "personal", authority: "pb_stable" },
+        { skill_id: "draft-skill", decision: "skipped", reason: "skill is not promoted", injected_bytes: 0, truncated: false, scope: "personal", authority: "pb_candidate" },
+      ],
+      trust_summary: { pb_stable: 1, gbrain_sidecar: 1 },
+      omitted_item_count: 1,
+      warnings: [],
+      created_at: "2026-05-28T12:00:00.000Z",
+    }), "utf8");
+    await writeFile(join(root, ".praxisbase/personal/facets.jsonl"), `${JSON.stringify({
+      id: "facet-style",
+      facet_class: "style",
+      key: "verbosity",
+      value: "secret private facet evidence should not render",
+      state: "active",
+      stability: 0.9,
+      evidence_count: 2,
+      evidence_refs: ["raw-vault://private"],
+      first_seen: "2026-05-28T00:00:00.000Z",
+      last_seen: "2026-05-28T00:00:00.000Z",
+      user_override: "none",
+    })}\n`, "utf8");
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("Runtime Context"));
+    assert.ok(index.includes("pb_stable:1"));
+    assert.ok(index.includes("gbrain_sidecar:1"));
+    assert.ok(index.includes("draft-skill: skill is not promoted"));
+    assert.ok(index.includes("Personal active"));
+    assert.doesNotMatch(index, /secret private facet evidence/);
+    assert.doesNotMatch(index, /raw-vault:\/\/private/);
   });
 });

@@ -1,4 +1,5 @@
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { readJson } from "@praxisbase/core/store/file-store.js";
 import { DistilledExperienceSchema, type DistilledExperience } from "@praxisbase/core/ai/distill.js";
@@ -11,6 +12,7 @@ import { SemanticSkillReviewSchema, SkillPromotionAuditSchema, SkillSynthesisCan
 import { buildWikiSite } from "@praxisbase/core/wiki/render-site.js";
 import { PROTOCOL_VERSION } from "@praxisbase/core/protocol/types.js";
 import type { AgentProfile } from "@praxisbase/core/protocol/types.js";
+import { renderSkillInjectionBundle, type PromotedSkill } from "@praxisbase/core/agent-access/skill-injection.js";
 import { agentToolsCommand } from "./agent-tools.js";
 
 export interface SkillCommandOptions {
@@ -22,9 +24,79 @@ export interface SkillCommandOptions {
   maxClusters?: number;
   proposal?: string;
   agent?: AgentProfile;
+  query?: string;
   aiClient?: AiJsonClient;
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
+}
+
+async function listFilesRecursively(root: string, relativeDir: string): Promise<string[]> {
+  const dir = join(root, relativeDir);
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const files: string[] = [];
+  for (const entry of entries) {
+    const relativePath = `${relativeDir}/${entry.name}`;
+    if (entry.isDirectory()) files.push(...await listFilesRecursively(root, relativePath));
+    else if (entry.isFile() && entry.name === "SKILL.md") files.push(relativePath);
+  }
+  return files.sort();
+}
+
+function stringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+  if (typeof value === "string" && value.length > 0) return [value];
+  return [];
+}
+
+export async function loadPromotedSkills(root: string): Promise<PromotedSkill[]> {
+  const paths = await listFilesRecursively(root, "skills");
+  const skills: PromotedSkill[] = [];
+  for (const path of paths) {
+    const raw = await readFile(join(root, path), "utf8");
+    const parsed = parseFrontmatter(raw);
+    const data = parsed.data;
+    const id = typeof data.name === "string" && data.name ? data.name : path.split("/").slice(-2, -1)[0] ?? path;
+    skills.push({
+      id,
+      path,
+      title: typeof data.description === "string" ? data.description : id,
+      origin: typeof data.origin === "string" ? data.origin : "praxisbase_synthesized",
+      status: typeof data.status === "string" ? data.status : "promoted",
+      scope: data.scope === "team" || data.scope === "org" || data.scope === "project" ? data.scope : "personal",
+      body: parsed.content.trim(),
+      when_to_use: parsed.content.match(/## When To Use\s+([\s\S]*?)(?:\n## |\n# |$)/i)?.[1]?.trim(),
+      tags: stringArray(data.tags),
+      related_wiki_paths: stringArray(data.related_wiki_paths),
+      promotion_id: typeof data.promotion_id === "string" ? data.promotion_id : undefined,
+      audit_id: typeof data.audit_id === "string" ? data.audit_id : undefined,
+    });
+  }
+  return skills;
+}
+
+function parseFrontmatter(raw: string): { data: Record<string, unknown>; content: string } {
+  if (!raw.startsWith("---\n")) return { data: {}, content: raw };
+  const end = raw.indexOf("\n---", 4);
+  if (end < 0) return { data: {}, content: raw };
+  const block = raw.slice(4, end).trim();
+  const data: Record<string, unknown> = {};
+  for (const line of block.split(/\r?\n/)) {
+    const match = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (!match) continue;
+    const key = match[1];
+    const value = match[2].trim();
+    if (value.startsWith("[") && value.endsWith("]")) {
+      data[key] = value.slice(1, -1).split(",").map((item) => item.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+    } else {
+      data[key] = value.replace(/^["']|["']$/g, "");
+    }
+  }
+  return { data, content: raw.slice(end + 4).trimStart() };
 }
 
 function authorityMode(mode?: "personal" | "team" | "team-git"): "personal-local" | "team-git" {
@@ -188,5 +260,13 @@ export async function skillCommand(root: string, subcommand: string, options: Sk
     return agentToolsCommand(root, "generate", { agent: options.agent, json: options.json });
   }
 
-  throw new Error(`Unknown subcommand "skill ${subcommand}". Use "skill synthesize", "skill curate", "skill review", "skill promote", or "skill export".`);
+  if (subcommand === "inject-preview") {
+    const result = renderSkillInjectionBundle({
+      query: options.query ?? "",
+      skills: await loadPromotedSkills(root),
+    });
+    return options.json ? JSON.stringify({ ok: true, ...result }, null, 2) : result.text;
+  }
+
+  throw new Error(`Unknown subcommand "skill ${subcommand}". Use "skill synthesize", "skill curate", "skill review", "skill promote", "skill inject-preview", or "skill export".`);
 }

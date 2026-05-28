@@ -378,6 +378,7 @@ program
   .option("--max-curation-proposals <n>", "maximum AI wiki curation proposals for this daily run")
   .option("--max-skill-candidates <n>", "maximum skill synthesis candidates for this daily run")
   .option("--no-context-economy", "disable context economy reduction for this daily run")
+  .option("--no-context-juice", "disable M24 context juice budgeting for this daily run")
   .option("--semantic-review", "enable semantic review for wiki curation proposals")
   .option("--skill-synthesis", "enable skill candidate synthesis for this daily run")
   .option("--publish-gbrain", "publish changed stable PraxisBase knowledge to GBrain")
@@ -406,6 +407,9 @@ program
       maxCurationProposals?: string;
       maxSkillCandidates?: string;
       noContextEconomy?: boolean;
+      contextEconomy?: boolean;
+      noContextJuice?: boolean;
+      contextJuice?: boolean;
       semanticReview?: boolean;
       skillSynthesis?: boolean;
       publishGbrain?: boolean;
@@ -424,14 +428,17 @@ program
       aiConcurrency: options.aiConcurrency ? parseInt(options.aiConcurrency, 10) : undefined,
       maxCurationProposals: options.maxCurationProposals ? parseInt(options.maxCurationProposals, 10) : undefined,
       maxSkillCandidates: options.maxSkillCandidates ? parseInt(options.maxSkillCandidates, 10) : undefined,
+      noContextEconomy: options.noContextEconomy ?? options.contextEconomy === false,
+      noContextJuice: options.noContextJuice ?? options.contextJuice === false,
     }));
   });
 
 program
   .command("skill")
-  .argument("<sub>", "subcommand (synthesize|curate|review|promote|export)")
+  .argument("<sub>", "subcommand (synthesize|curate|review|promote|inject-preview|export)")
   .option("--mode <mode>", "personal, team, or team-git", "personal")
   .option("--agent <agent>", "agent profile for skill export")
+  .option("--query <query>", "query for skill injection preview")
   .option("--review")
   .option("--dry-run")
   .option("--proposal <id>")
@@ -442,6 +449,7 @@ program
     options: {
       mode?: "personal" | "team" | "team-git";
       agent?: "codex" | "claude-code" | "opencode" | "openclaw" | "hermes" | "openhuman" | "agentmemory" | "generic";
+      query?: string;
       review?: boolean;
       dryRun?: boolean;
       proposal?: string;
@@ -540,8 +548,9 @@ program
 
 program
   .command("personal")
-  .argument("<sub>", "subcommand (init|connect|doctor|run|schedule)")
-  .argument("[target]", "connect target (codex|openclaw|agentmemory)")
+  .argument("<sub>", "subcommand (init|connect|doctor|run|schedule|profile)")
+  .argument("[target]", "connect target or profile action")
+  .argument("[value]", "profile key or instruction")
   .option("--agent <agent>", "agent profile", "codex")
   .option("--name <name>")
   .option("--path <path>")
@@ -560,7 +569,8 @@ program
   .option("--json")
   .action(async (
     sub: string,
-    target: "codex" | "openclaw" | "agentmemory" | undefined,
+    target: string | undefined,
+    value: string | undefined,
     options: {
       agent?: "codex" | "opencode" | "claude-code" | "openclaw" | "hermes" | "openhuman" | "generic";
       name?: string;
@@ -583,7 +593,10 @@ program
   ) => {
     console.log(await personalCommand(process.cwd(), sub, {
       ...options,
-      target,
+      target: sub === "connect" ? target as "codex" | "openclaw" | "agentmemory" | "claude-code" | "opencode" | undefined : undefined,
+      profileAction: sub === "profile" ? target as "list" | "pin" | "forget" | "rebuild" | "add" | undefined : undefined,
+      profileKey: sub === "profile" && target !== "add" ? value : undefined,
+      profileValue: sub === "profile" && target === "add" ? value : undefined,
       noAi: options.noAi ?? options.ai === false,
       limit: options.limit ? parseInt(options.limit, 10) : undefined,
       maxAiChunks: options.maxAiChunks ? parseInt(options.maxAiChunks, 10) : undefined,
@@ -751,11 +764,13 @@ program
 
 program
   .command("context")
-  .argument("<sub>", "subcommand (get)")
+  .argument("<sub>", "subcommand (get|bundle|juice)")
   .requiredOption("--agent <agent>")
   .requiredOption("--stage <stage>")
   .option("--query <query>")
   .option("--max-bytes <n>")
+  .option("--mode <mode>", "personal or team")
+  .option("--source <path>", "source path for context juice preview")
   .option("--with-agentmemory")
   .option("--with-gbrain")
   .option("--with-backend <name>", "optional sidecar backend (agentmemory|gbrain)", collectOptionValue, [])
@@ -767,6 +782,8 @@ program
       stage: "diagnosis" | "repair" | "verification" | "proposal";
       query?: string;
       maxBytes?: string;
+      mode?: "personal" | "team";
+      source?: string;
       withAgentMemory?: boolean;
       withGbrain?: boolean;
       withBackend?: string[];

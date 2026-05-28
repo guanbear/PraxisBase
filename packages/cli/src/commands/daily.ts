@@ -22,6 +22,7 @@ export interface DailyCommandOptions {
   maxCurationProposals?: number;
   maxSkillCandidates?: number;
   noContextEconomy?: boolean;
+  noContextJuice?: boolean;
   semanticReview?: boolean;
   skillSynthesis?: boolean;
   publishGbrain?: boolean;
@@ -119,6 +120,7 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         maxCurationProposals: options.maxCurationProposals,
         maxSkillCandidates: options.maxSkillCandidates,
         noContextEconomy: options.noContextEconomy,
+        noContextJuice: options.noContextJuice,
         semanticReview: options.semanticReview,
         skillSynthesis: options.skillSynthesis,
         publishGbrain: options.publishGbrain,

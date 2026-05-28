@@ -1,12 +1,23 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { join } from "node:path";
-import { stat } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { bootstrapCommand } from "./bootstrap.js";
 import { deriveDailyNextActions, runDailyExperience, type DailyNextActions } from "@praxisbase/core/experience/daily.js";
 import { addExperienceSource, listExperienceSources } from "@praxisbase/core/experience/source-config.js";
 import { buildAgentToolManifest, writeAgentToolManifest } from "@praxisbase/core/agent-access/manifest.js";
 import { generateSkill } from "@praxisbase/core/agent-access/skill.js";
+import {
+  applyPersonalFacetOverride,
+  normalizePersonalFacets,
+  personalFacetCandidatesFromDistilledExperience,
+  personalFacetCandidatesFromManualInstruction,
+  renderManagedPersonalProfile,
+  scorePersonalFacet,
+  type PersonalFacetCandidate,
+} from "@praxisbase/core/experience/personal-learning.js";
+import { DistilledExperienceSchema } from "@praxisbase/core/ai/distill.js";
+import type { PersonalLearningFacet } from "@praxisbase/core/protocol/schemas.js";
 import { readAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { readGBrainConfig, gbrainExecutable } from "@praxisbase/core/experience/gbrain-config.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
@@ -39,6 +50,9 @@ export interface PersonalCommandOptions {
   aiConcurrency?: number;
   maxCurationProposals?: number;
   openImpl?: (path: string) => Promise<void>;
+  profileAction?: "list" | "pin" | "forget" | "rebuild" | "add";
+  profileKey?: string;
+  profileValue?: string;
 }
 
 interface PersonalCheck {
@@ -144,6 +158,150 @@ function formatNextActions(nextActions: DailyNextActions): string {
     ...nextActions.commands.map((command) => `Run: ${command}`),
   ];
   return lines.join("\n");
+}
+
+async function readPersonalFacets(root: string, now?: string): Promise<PersonalLearningFacet[]> {
+  const path = join(root, protocolPaths.personalFacets);
+  let raw = "";
+  try {
+    raw = await readFile(path, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+
+  const facets: PersonalLearningFacet[] = [];
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const value = JSON.parse(trimmed) as PersonalFacetCandidate;
+    facets.push(scorePersonalFacet(value, { now }));
+  }
+  return normalizePersonalFacets(facets);
+}
+
+async function writePersonalFacets(root: string, facets: readonly PersonalLearningFacet[]): Promise<void> {
+  const lines = facets.map((facet) => JSON.stringify(facet)).join("\n");
+  const path = join(root, protocolPaths.personalFacets);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, lines ? `${lines}\n` : "", "utf8");
+}
+
+function facetHandle(facet: Pick<PersonalLearningFacet, "facet_class" | "key">): string {
+  return `${facet.facet_class}/${facet.key}`;
+}
+
+async function rebuildPersonalProfile(root: string, facets: readonly PersonalLearningFacet[], now?: string): Promise<string> {
+  let existing = "";
+  try {
+    existing = await readFile(join(root, protocolPaths.personalProfile), "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  const path = join(root, protocolPaths.personalProfile);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, renderManagedPersonalProfile(existing, facets, now), "utf8");
+  return protocolPaths.personalProfile;
+}
+
+async function personalFacetsFromDistillCache(root: string, now?: string): Promise<PersonalLearningFacet[]> {
+  let files: string[];
+  try {
+    files = await readdir(join(root, protocolPaths.cacheAiDistill));
+  } catch {
+    return [];
+  }
+
+  const facets: PersonalLearningFacet[] = [];
+  for (const file of files.filter((name) => name.endsWith(".json")).sort()) {
+    try {
+      const raw = JSON.parse(await readFile(join(root, protocolPaths.cacheAiDistill, file), "utf8")) as Record<string, unknown>;
+      if (raw.type !== "ai_distill_cache_entry" || raw.status !== "distilled") continue;
+      const parsed = DistilledExperienceSchema.safeParse(raw.experience);
+      if (!parsed.success) continue;
+      const candidates = personalFacetCandidatesFromDistilledExperience(parsed.data, { now });
+      facets.push(...candidates.map((candidate) => scorePersonalFacet(candidate, { now })));
+    } catch {
+      continue;
+    }
+  }
+  return facets;
+}
+
+async function profile(root: string, options: PersonalCommandOptions): Promise<Record<string, unknown>> {
+  const action = options.profileAction ?? "list";
+  let facets = await readPersonalFacets(root, options.now);
+
+  if (action === "list") {
+    return {
+      ok: true,
+      facets,
+      next: "Run praxisbase personal profile add <instruction>, praxisbase personal profile pin <class/key>, praxisbase personal profile forget <class/key>, or praxisbase personal profile rebuild --json.",
+    };
+  }
+
+  if (action === "add") {
+    const instruction = options.profileValue ?? options.profileKey;
+    if (!instruction) {
+      return {
+        ok: false,
+        code: "PROFILE_VALUE_REQUIRED",
+        message: "personal profile add requires an instruction string.",
+      };
+    }
+    const added = personalFacetCandidatesFromManualInstruction(instruction, { now: options.now })
+      .map((candidate) => scorePersonalFacet(candidate, { now: options.now }));
+    facets = normalizePersonalFacets([...facets, ...added]);
+    await writePersonalFacets(root, facets);
+    const profilePath = await rebuildPersonalProfile(root, facets, options.now);
+    return {
+      ok: true,
+      added: added.length,
+      facets_count: facets.length,
+      profile_path: profilePath,
+      next: "Run praxisbase context bundle --query <task> --mode personal --json to preview injection.",
+    };
+  }
+
+  if (action === "rebuild") {
+    facets = normalizePersonalFacets([...facets, ...await personalFacetsFromDistillCache(root, options.now)]);
+    await writePersonalFacets(root, facets);
+    const profilePath = await rebuildPersonalProfile(root, facets, options.now);
+    return {
+      ok: true,
+      facets_count: facets.length,
+      profile_path: profilePath,
+      next: "Run praxisbase context bundle --query <task> --mode personal --json to preview personal runtime context.",
+    };
+  }
+
+  if (!options.profileKey) {
+    return {
+      ok: false,
+      code: "PROFILE_KEY_REQUIRED",
+      message: `personal profile ${action} requires <class/key>.`,
+    };
+  }
+
+  const index = facets.findIndex((facet) => facetHandle(facet) === options.profileKey);
+  if (index < 0) {
+    return {
+      ok: false,
+      code: "FACET_NOT_FOUND",
+      message: `Personal facet not found: ${options.profileKey}`,
+    };
+  }
+
+  const override = action === "pin" ? "pinned" : "forgotten";
+  facets[index] = applyPersonalFacetOverride(facets[index], override);
+  await writePersonalFacets(root, facets);
+  const profilePath = await rebuildPersonalProfile(root, facets, options.now);
+  return {
+    ok: true,
+    [action === "pin" ? "pinned" : "forgotten"]: options.profileKey,
+    profile_path: profilePath,
+    next: "Run praxisbase personal profile rebuild --json or praxisbase context bundle --query <task> --mode personal --json.",
+  };
 }
 
 async function doctor(root: string): Promise<{ ok: boolean; checks: PersonalCheck[] }> {
@@ -276,6 +434,11 @@ export async function personalCommand(root: string, subcommand: string, options:
         launchd: launchdLine(root),
       };
       return options.json ? JSON.stringify(result, null, 2) : (options.runner === "launchd" ? result.launchd : result.cron);
+    }
+
+    if (subcommand === "profile") {
+      const result = await profile(root, options);
+      return options.json ? JSON.stringify(result, null, 2) : String(result.next ?? JSON.stringify(result, null, 2));
     }
 
     throw new Error(`PERSONAL_COMMAND_INVALID: Unknown subcommand "personal ${subcommand}".`);

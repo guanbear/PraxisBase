@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
 import { deriveDailyNextActions, runDailyExperience } from "@praxisbase/core/experience/daily.js";
 import { listSourceItemLedgerEntries } from "@praxisbase/core/experience/source-item-ledger.js";
+import { MICROCOMPACT_PLACEHOLDER } from "@praxisbase/core/experience/context-juice.js";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { PROTOCOL_VERSION, protocolPaths } from "@praxisbase/core";
 
@@ -1561,6 +1562,243 @@ describe("runDailyExperience", () => {
     assert.ok(report.outputs.some((output) => output.startsWith(".praxisbase/reports/context-economy/")));
     const contextReport = JSON.parse(await readFile(join(root, report.context_economy.report_ref!), "utf8"));
     assert.equal(contextReport.type, "context_economy_report");
+  });
+
+  it("writes context juice reports and keys source item reuse by context juice identity", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-context-juice-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    const longText = `Fixed OpenClaw memory recall and pnpm test passed. ${"x".repeat(20 * 1024)}`;
+    await writeFile(join(sessions, "session-1.txt"), longText, "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      noContextEconomy: true,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: { source_ref: string; source_hash: string; chunk_hash: string; agent: string; scope_hint: string };
+            text: string;
+          };
+          assert.match(prompt.text, /praxisbase_context_juice/);
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw memory recall fix was verified.",
+              actions: ["Applied memory recall repair."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Keep OpenClaw memory recall fixes bounded and verified."],
+              risks: [],
+              suggested_tags: ["openclaw", "memory"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.ok(report.context_juice);
+    assert.equal(report.context_juice.enabled, true);
+    assert.equal(report.context_juice.items_seen, 1);
+    assert.equal(report.context_juice.items_budgeted, 1);
+    assert.ok(report.context_juice.saved_bytes > 0);
+    assert.ok(report.context_juice.report_ref);
+    assert.ok(report.outputs.some((output) => output.startsWith(protocolPaths.reportsContextJuice)));
+    const juiceReport = JSON.parse(await readFile(join(root, report.context_juice.report_ref!), "utf8"));
+    assert.equal(juiceReport.type, "context_juice_report");
+    assert.equal(juiceReport.budget_results.length, 1);
+    assert.equal(juiceReport.budget_results[0].truncated, true);
+
+    const ledgers = await listSourceItemLedgerEntries(root);
+    assert.equal(ledgers.length, 1);
+    assert.match(ledgers[0].reducer_identity, /context-juice-v1/);
+  });
+
+  it("microcompacts structured trajectories before AI distill input", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-microcompact-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-trajectory.json"), JSON.stringify([
+      { id: "goal", kind: "user_goal", content: "Fix OpenClaw auth expiry" },
+      { id: "old-output-1", kind: "tool_result", content: "old noisy OpenClaw command output 1 ".repeat(80) },
+      { id: "old-output-2", kind: "tool_result", content: "old noisy OpenClaw command output 2 ".repeat(80) },
+      { id: "failure", kind: "failure", content: "OpenClaw auth token expired" },
+      { id: "fix", kind: "fix", content: "Refreshed token and restarted OpenClaw" },
+      { id: "verify", kind: "verification", content: "pnpm test passed" },
+      { id: "recent-output-1", kind: "tool_result", content: "recent verification output 1" },
+      { id: "recent-output-2", kind: "tool_result", content: "recent verification output 2" },
+      { id: "recent-output-3", kind: "tool_result", content: "recent verification output 3" },
+      { id: "recent-output-4", kind: "tool_result", content: "recent verification output 4" },
+      { id: "recent-output", kind: "tool_result", content: "recent verification output" },
+    ]), "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    let distillText = "";
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      noContextEconomy: true,
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: { source_ref: string; source_hash: string; chunk_hash: string; agent: string; scope_hint: string };
+            text: string;
+          };
+          distillText = prompt.text;
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw auth expiry repair was verified.",
+              actions: ["Refreshed auth token."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Preserve failures, fixes, and verification while compacting noisy tool results."],
+              risks: [],
+              suggested_tags: ["openclaw", "auth"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.match(distillText, new RegExp(MICROCOMPACT_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(distillText, /OpenClaw auth token expired/);
+    assert.match(distillText, /Refreshed token/);
+    assert.match(distillText, /pnpm test passed/);
+    assert.ok(report.context_juice);
+    assert.equal(report.context_juice.items_microcompacted, 1);
+    const juiceReport = JSON.parse(await readFile(join(root, report.context_juice.report_ref!), "utf8"));
+    assert.equal(juiceReport.microcompact_results.length, 1);
+    assert.equal(juiceReport.microcompact_results[0].cleared_entries, 2);
+    assert.equal(juiceReport.microcompact_results[0].protected_signal_count, 3);
+  });
+
+  it("can pre-summarize oversized payloads before distill when explicitly enabled", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-presummary-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    const longText = Array.from({ length: 180 }, (_, i) => `OpenClaw repair evidence ${i}: fixed retry handling and pnpm test passed.`).join("\n");
+    await writeFile(join(sessions, "session-1.txt"), longText, "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    let distillText = "";
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      payloadPreSummary: {
+        enabled: true,
+        lowerThresholdBytes: 1024,
+        upperThresholdBytes: 64 * 1024,
+        maxCalls: 2,
+      },
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "payload_presummary") {
+            const prompt = JSON.parse(input.user) as { source_ref: string; source_hash: string };
+            return {
+              ok: true,
+              json: {
+                summary: `Pre-summary kept fix, verification, and provenance for ${prompt.source_ref} ${prompt.source_hash}.`,
+                provenance: [prompt.source_ref, prompt.source_hash],
+              },
+            };
+          }
+          if (input.schemaName === "CuratedWikiProposalDraft") {
+            return { ok: false, error: "curation not relevant for this test" };
+          }
+          const prompt = JSON.parse(input.user) as {
+            source: { source_ref: string; source_hash: string; chunk_hash: string; agent: string; scope_hint: string };
+            text: string;
+          };
+          distillText = prompt.text;
+          return {
+            ok: true,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "OpenClaw retry repair was verified.",
+              actions: ["Fixed retry handling."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["pnpm test passed"],
+              reusable_lessons: ["Preserve provenance when compacting retry repair evidence."],
+              risks: [],
+              suggested_tags: ["openclaw", "retry"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    assert.match(distillText, /^Pre-summary kept fix/);
+    assert.ok(report.context_juice);
+    assert.equal(report.context_juice.presummary_summarized, 1);
+    assert.ok(report.context_juice.presummary_saved_bytes > 0);
   });
 
   it("skips context economy when noContextEconomy is set", async () => {

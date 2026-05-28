@@ -139,6 +139,83 @@ describe("personal command", () => {
     assert.match(parsed.launchd, /praxisbase personal run --json/);
   });
 
+  it("lists, pins, forgets, and rebuilds personal profile facets", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-profile-"));
+    await mkdir(join(root, ".praxisbase/personal"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/personal/facets.jsonl"), [
+      JSON.stringify({
+        facet_class: "tooling",
+        key: "npm",
+        value: "Prefers npm scripts for verification.",
+        evidence_count: 3,
+        evidence_refs: ["session:1"],
+      }),
+      JSON.stringify({
+        facet_class: "style",
+        key: "concise",
+        value: "Prefers concise updates.",
+        evidence_count: 1,
+      }),
+    ].join("\n") + "\n", "utf8");
+
+    const listed = JSON.parse(await personalCommand(root, "profile", {
+      profileAction: "list",
+      json: true,
+    }));
+    assert.equal(listed.ok, true);
+    assert.equal(listed.facets.length, 2);
+    assert.match(listed.next, /personal profile pin/);
+
+    const pinned = JSON.parse(await personalCommand(root, "profile", {
+      profileAction: "pin",
+      profileKey: "tooling/npm",
+      json: true,
+    }));
+    assert.equal(pinned.ok, true);
+    assert.equal(pinned.pinned, "tooling/npm");
+    assert.match(pinned.next, /personal profile rebuild --json/);
+
+    const facetsAfterPin = (await readFile(join(root, ".praxisbase/personal/facets.jsonl"), "utf8"))
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    assert.equal(facetsAfterPin.find((facet) => facet.facet_class === "tooling" && facet.key === "npm").user_override, "pinned");
+    assert.match(await readFile(join(root, ".praxisbase/personal/profile.md"), "utf8"), /Prefers npm scripts/);
+
+    const forgotten = JSON.parse(await personalCommand(root, "profile", {
+      profileAction: "forget",
+      profileKey: "tooling/npm",
+      json: true,
+    }));
+    assert.equal(forgotten.ok, true);
+    assert.equal(forgotten.forgotten, "tooling/npm");
+
+    const rebuilt = JSON.parse(await personalCommand(root, "profile", {
+      profileAction: "rebuild",
+      json: true,
+    }));
+    assert.equal(rebuilt.ok, true);
+    assert.equal(rebuilt.facets_count, 2);
+    assert.equal(rebuilt.profile_path, ".praxisbase/personal/profile.md");
+
+    const added = JSON.parse(await personalCommand(root, "profile", {
+      profileAction: "add",
+      profileValue: "以后默认用 pnpm 跑测试",
+      json: true,
+    }));
+    assert.equal(added.ok, true);
+    assert.equal(added.added, 1);
+    assert.match(await readFile(join(root, ".praxisbase/personal/profile.md"), "utf8"), /pnpm/);
+
+    const missing = JSON.parse(await personalCommand(root, "profile", {
+      profileAction: "pin",
+      profileKey: "tooling/missing",
+      json: true,
+    }));
+    assert.equal(missing.ok, false);
+    assert.equal(missing.code, "FACET_NOT_FOUND");
+  });
+
   it("connects claude-code source with correct parser and default path", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-connect-claude-"));
     const result = JSON.parse(await personalCommand(root, "connect", {

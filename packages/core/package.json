@@ -163,6 +163,18 @@
       "types": "./src/experience/context-reducer-rules.ts",
       "default": "./dist/experience/context-reducer-rules.js"
     },
+    "./experience/context-juice.js": {
+      "types": "./src/experience/context-juice.ts",
+      "default": "./dist/experience/context-juice.js"
+    },
+    "./experience/personal-learning.js": {
+      "types": "./src/experience/personal-learning.ts",
+      "default": "./dist/experience/personal-learning.js"
+    },
+    "./experience/payload-presummary.js": {
+      "types": "./src/experience/payload-presummary.ts",
+      "default": "./dist/experience/payload-presummary.js"
+    },
     "./experience/source-adapters.js": {
       "types": "./src/experience/source-adapters.ts",
       "default": "./dist/experience/source-adapters.js"
@@ -326,6 +338,18 @@
     "./agent-access/mcp.js": {
       "types": "./src/agent-access/mcp.ts",
       "default": "./dist/agent-access/mcp.js"
+    },
+    "./agent-access/trust-boundary.js": {
+      "types": "./src/agent-access/trust-boundary.ts",
+      "default": "./dist/agent-access/trust-boundary.js"
+    },
+    "./agent-access/skill-injection.js": {
+      "types": "./src/agent-access/skill-injection.ts",
+      "default": "./dist/agent-access/skill-injection.js"
+    },
+    "./agent-access/context-bundle.js": {
+      "types": "./src/agent-access/context-bundle.ts",
+      "default": "./dist/agent-access/context-bundle.js"
     }
   },
   "scripts": {

@@ -75,6 +75,9 @@ describe("MCP tool handlers", () => {
         truncated: boolean;
         budget: { used_bytes: number };
       };
+      bundle: { trust_summary: Record<string, number>; budget_bytes: number };
+      text: string;
+      trust_guidance: string;
     };
 
     assert.equal(result.ok, true);
@@ -82,6 +85,10 @@ describe("MCP tool handlers", () => {
     assert.ok(Array.isArray(result.context.citations));
     assert.equal(result.context.truncated, false);
     assert.equal(typeof result.context.budget.used_bytes, "number");
+    assert.equal("body" in (result.context.items[0] as Record<string, unknown>), false);
+    assert.match(result.text, /Citations/);
+    assert.equal(result.bundle.trust_summary.pb_stable, 1);
+    assert.match(result.trust_guidance, /stable pages/i);
   });
 
   it("wiki_compile dry-run reports changed_stable_knowledge false", async () => {

@@ -216,6 +216,44 @@ describe("skill CLI command", () => {
     assert.match(await readFile(join(root, output.skill_path), "utf8"), /PraxisBase/);
   });
 
+  it("previews promoted skill injection without injecting candidates", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-skill-inject-"));
+    await mkdir(join(root, "skills/openclaw/openclaw-memory"), { recursive: true });
+    await writeFile(join(root, "skills/openclaw/openclaw-memory/SKILL.md"), `---
+name: openclaw-memory
+description: Use when repairing OpenClaw memory recall.
+origin: praxisbase_synthesized
+status: promoted
+scope: personal
+tags: ["openclaw", "memory"]
+---
+# OpenClaw Memory
+
+## When To Use
+Use when repairing OpenClaw memory recall.
+
+## Procedure
+- Check stable PraxisBase wiki first.
+`, "utf8");
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/inbox/proposals/candidate.json"), JSON.stringify({
+      id: "candidate",
+      type: "skill_synthesis_candidate",
+      target_path: "skills/openclaw/candidate/SKILL.md",
+      body_markdown: "candidate body",
+    }), "utf8");
+
+    const output = JSON.parse(await skillCommand(root, "inject-preview", {
+      query: "OpenClaw memory recall",
+      json: true,
+    }));
+
+    assert.equal(output.ok, true);
+    assert.match(output.text, /\[PB-SKILL:openclaw-memory\]/);
+    assert.ok(output.decisions.some((decision: { skill_id: string; decision: string }) => decision.skill_id === "openclaw-memory" && decision.decision === "matched"));
+    assert.equal(output.text.includes("candidate body"), false);
+  });
+
   it("summarizes the skill review queue while building the review site", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-skill-review-"));
     await mkdir(join(root, protocolPaths.inboxProposals), { recursive: true });

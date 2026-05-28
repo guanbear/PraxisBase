@@ -268,6 +268,35 @@ describe("daily CLI command", () => {
     assert.equal(parsed.report.context_economy.rule_set_hash, "disabled");
   });
 
+  it("passes noContextJuice flag through to the daily experience runner", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-no-juice-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Implemented OpenClaw auth refresh and pnpm test passed.", "utf8");
+    await sourceCommand(root, "add", {
+      name: "local-codex",
+      agent: "codex",
+      type: "local",
+      path: sessions,
+      scope: "personal",
+      json: true,
+    });
+
+    const output = await dailyCommand(root, "run", {
+      mode: "personal",
+      degraded: true,
+      noContextJuice: true,
+      json: true,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    assert.ok(parsed.report.context_juice);
+    assert.equal(parsed.report.context_juice.enabled, false);
+    assert.equal(parsed.report.context_juice.items_budgeted, 0);
+  });
+
   it("passes semanticReview flag through to wiki curation", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-semantic-review-"));
     const sessions = join(root, "sessions");

@@ -72,11 +72,15 @@ GBrain MCP is the default broad brain lookup path when GBrain is configured. Use
 
 \`\`\`bash
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+praxisbase context bundle --agent codex --stage diagnosis --query "openclaw auth expired" --mode personal --json
+praxisbase skill inject-preview --query "openclaw auth expired" --json
+praxisbase personal profile list --json
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --with-gbrain --json
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --with-agentmemory --json
 \`\`\`
 
 Context should come from compiled wiki pages, root wiki artifacts, graph neighbors, and provenance pointers. Use GBrain MCP for broad brain lookup across personal or team memory. Use \`--with-gbrain\` and \`--with-agentmemory\` only as sidecars for recall; stable PraxisBase wiki context remains the authority and should outrank sidecar hits. Use PraxisBase CLI for governed capture, review, promotion, and privacy gates. Do not rely on raw vault bodies as repair instructions.
+Use \`context bundle\` when injecting runtime context into an agent prompt: it applies M24 context juice budgets, trust summaries, citation-preserving omission, and untrusted-source wrapping. Use \`skill inject-preview\` to inspect which promoted PraxisBase skills would be injected; candidate or external skills are excluded by default.
 
 ## Capture After Repair
 

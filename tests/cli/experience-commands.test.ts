@@ -345,6 +345,54 @@ describe("experience CLI commands", () => {
     }
   });
 
+  it("context bundle returns bounded trust-aware context and context juice previews a source", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-context-bundle-"));
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(join(root, "kb/notes/openclaw-memory.md"), `---
+id: openclaw-memory
+type: note
+scope: personal
+maturity: proven
+---
+# OpenClaw Memory
+
+Use reviewed memory repair lessons before changing OpenClaw recall.
+
+## When To Use
+
+Use when OpenClaw memory recall fails during repair.
+
+## Procedure
+
+Refresh the reviewed recall index and verify the repair with pnpm test.
+`, "utf8");
+    await writeFile(join(root, "source.log"), `Fixed OpenClaw memory recall. ${"x".repeat(70 * 1024)}`, "utf8");
+
+    const bundle = JSON.parse(await contextCommand(root, "bundle", {
+      agent: "codex",
+      stage: "repair",
+      query: "OpenClaw memory",
+      mode: "personal",
+      json: true,
+    }));
+    assert.equal(bundle.ok, true);
+    assert.equal(bundle.bundle.mode, "personal");
+    assert.match(bundle.text, /Trust Note/);
+    assert.equal(bundle.bundle.trust_summary.pb_stable, 1);
+    assert.match(bundle.report_ref, /^\.praxisbase\/reports\/agent-bundles\//);
+    assert.ok(await readFile(join(root, bundle.report_ref), "utf8"));
+
+    const juice = JSON.parse(await contextCommand(root, "juice", {
+      agent: "codex",
+      stage: "repair",
+      source: "source.log",
+      json: true,
+    }));
+    assert.equal(juice.ok, true);
+    assert.equal(juice.result.truncated, true);
+    assert.match(juice.result.text, /praxisbase_context_juice/);
+  });
+
   it("distill run returns JSON report without writing stable knowledge", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-distill-"));
     await captureFinishCommand(root, {
