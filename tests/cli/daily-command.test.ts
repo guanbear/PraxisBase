@@ -193,7 +193,7 @@ describe("daily CLI command", () => {
     assert.equal(parsed.report.sources[0].source_type, "gbrain");
     assert.equal(parsed.report.sources[0].enveloped, 1);
     assert.ok(parsed.report.sources[0].warnings.some((warning: string) => warning.includes("gbrain_source_imported_as_evidence")));
-    assert.deepEqual(calls[0].args, ["query", "openclaw auth", "--limit", "20", "--source", "gbrain-praxisbase", "--json"]);
+    assert.deepEqual(calls[0].args, ["query", "openclaw auth", "--limit", "20", "--source-id", "gbrain-praxisbase", "--json"]);
   });
 
   it("returns a JSON error when production AI is not configured", async () => {

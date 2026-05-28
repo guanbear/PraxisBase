@@ -110,7 +110,7 @@ describe("gbrain doctor command", () => {
       source: "praxisbase",
       limit: 1,
       runCommand: async (_command, args) => {
-        assert.deepEqual(args, ["query", "openclaw auth", "--limit", "1", "--source", "praxisbase", "--json"]);
+        assert.deepEqual(args, ["query", "openclaw auth", "--limit", "1", "--source-id", "praxisbase", "--json"]);
         return {
           stdout: JSON.stringify({
             results: [{

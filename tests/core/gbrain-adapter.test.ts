@@ -89,7 +89,7 @@ describe("GBrainClient local CLI adapter", () => {
   it("passes explicit source id to query when configured", async () => {
     const client = new LocalGBrainClient({
       runCommand: async (_command, args) => {
-        assert.deepEqual(args, ["query", "openclaw auth refresh", "--limit", "2", "--source", "praxisbase"]);
+        assert.deepEqual(args, ["query", "openclaw auth refresh", "--limit", "2", "--source-id", "praxisbase"]);
         return {
           stdout: "[0.9100] openclaw-auth -- Refresh the OpenClaw login and retry memory sync.",
           stderr: "",
@@ -155,7 +155,7 @@ describe("GBrainClient local CLI adapter", () => {
       runCommand: async (command, args, options) => {
         assert.equal(command, "/opt/gbrain");
         assert.equal(options?.timeoutMs, 7000);
-        assert.deepEqual(args, ["query", "openclaw auth", "--limit", "2", "--source", "praxisbase"]);
+        assert.deepEqual(args, ["query", "openclaw auth", "--limit", "2", "--source-id", "praxisbase"]);
         return { stdout: "[0.9100] openclaw-auth -- Refresh OpenClaw auth.", stderr: "" };
       },
     });
@@ -185,5 +185,42 @@ describe("GBrainClient local CLI adapter", () => {
 
     assert.equal(result.backend, "gbrain");
     assert.equal(result.candidates.length, 1);
+  });
+
+  it("treats text no-results output as an empty successful query in JSON mode", async () => {
+    const client = new LocalGBrainClient({
+      preferJson: true,
+      runCommand: async (_command, args) => {
+        assert.deepEqual(args, ["query", "no results please", "--limit", "1", "--json"]);
+        return { stdout: "No results.", stderr: "" };
+      },
+    });
+
+    const result = await client.query("no results please", { limit: 1 });
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.hits, []);
+  });
+
+  it("falls back to text rows when gbrain ignores query --json", async () => {
+    const client = new LocalGBrainClient({
+      preferJson: true,
+      runCommand: async (_command, args) => {
+        assert.deepEqual(args, ["query", "openclaw dispatch", "--limit", "2", "--json"]);
+        return {
+          stdout: [
+            "[0.9999] verify-openclaw -- Verify OpenClaw model routing.",
+            "[0.9312] openclaw-dispatch -- Diagnose dispatch routing failures.",
+          ].join("\n"),
+          stderr: "",
+        };
+      },
+    });
+
+    const result = await client.query("openclaw dispatch", { limit: 2 });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.hits.length, 2);
+    assert.equal(result.hits[0].slug, "verify-openclaw");
   });
 });

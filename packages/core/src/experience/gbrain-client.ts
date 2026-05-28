@@ -262,16 +262,23 @@ export class GBrainClient {
   async query(query: string, options: { limit?: number; sourceId?: string } = {}): Promise<GBrainQueryResult> {
     const limit = Math.max(1, Math.min(options.limit ?? 4, 20));
     const args = ["query", query, "--limit", String(limit)];
-    if (options.sourceId) args.push("--source", options.sourceId);
+    if (options.sourceId) args.push("--source-id", options.sourceId);
     if (this.preferJson) args.push("--json");
     try {
       const result = await this.runCommand(this.executable, args, { timeoutMs: this.timeoutMs });
-      if (this.preferJson || /^[\s\r\n]*[\[{]/.test(result.stdout)) {
+      if (/^\s*no results\.?\s*$/i.test(result.stdout)) {
+        return { ok: true, hits: [] };
+      }
+      if (/^[\s\r\n]*[\[{]/.test(result.stdout)) {
         try {
           return { ok: true, hits: normalizeJsonHits(parseJson(result.stdout)).slice(0, limit) };
         } catch (error) {
+          const textHits = parseTextHits(result.stdout).slice(0, limit);
+          if (textHits.length > 0) {
+            return { ok: true, hits: textHits };
+          }
           if (!this.preferJson) {
-            return { ok: true, hits: parseTextHits(result.stdout).slice(0, limit) };
+            return { ok: true, hits: textHits };
           }
           return { ok: false, hits: [], error: `invalid_json: ${errorMessage(error)}` };
         }
