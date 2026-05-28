@@ -75,6 +75,34 @@ The adapter must not require GBrain for PB core commands. If the CLI is missing,
 
 Users do not install GBrain on every PraxisBase run. They either install and initialize GBrain once for local use, or configure a remote GBrain HTTP MCP endpoint. PraxisBase should detect the configured path, run diagnostics, and print exact setup commands when GBrain is absent.
 
+### Local Embedding Boundary
+
+PraxisBase does not own local embedding storage or vector dimensions. In the local topology, GBrain owns:
+
+- the PGLite or Postgres brain database;
+- source indexing;
+- embedding provider configuration;
+- embedding dimension validation;
+- semantic and hybrid retrieval.
+
+PraxisBase owns only the governed experience lifecycle and the adapter invocation. It can point at a GBrain executable or wrapper, pass source and timeout settings, publish promoted stable pages, and query sidecar context. This keeps PB from rebuilding GBrain's vector runtime.
+
+Local embedding is optional for PB core governance but required for useful GBrain semantic recall. A user can run PB without embeddings, but `context get --with-gbrain` will be weaker or empty if GBrain cannot index/query semantically.
+
+The recommended personal setup is local GBrain with PGLite and an OpenAI-compatible local embedding endpoint such as Ollama/llama-server:
+
+```text
+PraxisBase CLI -> gbrain wrapper -> GBrain CLI -> PGLite + local embedding endpoint
+```
+
+The wrapper may set environment variables such as `LLAMA_SERVER_BASE_URL` or map local key names before executing GBrain. PB should not persist embedding secrets, model names, or dimensions unless a future GBrain config API requires it. Those values belong to GBrain's config and doctor output.
+
+Compatibility risk: if an upstream GBrain release rejects explicit dimensions for user-provided embedding models, PB should not patch around that internally. The correct responses are:
+
+1. document a known-good GBrain release or local patch;
+2. upstream the compatibility fix to GBrain;
+3. select a GBrain-supported provider/model until the fix lands.
+
 ## GBrain Remote Adapter
 
 The remote adapter uses GBrain HTTP MCP/OAuth for team and cross-machine setups.

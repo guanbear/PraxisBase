@@ -52,3 +52,11 @@
 - [x] Add migration docs for current AgentMemory users.
 - [x] Add deprecation notes for PB-only general brain workflows when GBrain is configured.
 - [x] Add final verification checklist and run focused tests.
+
+## M20.7 Local Embedding Runbook
+
+- [x] Document that local embedding/PGLite belongs to GBrain, not PraxisBase.
+- [x] Document how to point PB at a GBrain executable or wrapper that sets local embedding environment variables.
+- [x] Document when embeddings are required: optional for PB governance, required for useful GBrain semantic recall.
+- [x] Document a known-good local provider shape: OpenAI-compatible endpoint, explicit dimensions, PGLite rebuild, doctor, export, and context smoke.
+- [x] Document the patched-GBrain risk and the preferred resolution path: upstream/fork or supported provider, not PB-side vector-runtime duplication.

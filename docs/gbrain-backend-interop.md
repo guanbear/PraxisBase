@@ -19,6 +19,53 @@ praxisbase gbrain init --executable gbrain --source praxisbase --json
 praxisbase gbrain doctor --json
 ```
 
+### Local PGLite And Embedding
+
+For local personal mode, GBrain can run entirely on this machine. The common setup is:
+
+- GBrain database: local PGLite, usually under `~/.gbrain/brain.pglite`;
+- GBrain source: `praxisbase`, used only for promoted PB knowledge;
+- embedding provider: local Ollama or another OpenAI-compatible embedding endpoint;
+- PraxisBase: calls GBrain through `praxisbase gbrain ...`, `daily --publish-gbrain`, and `context get --with-gbrain`.
+
+Embedding is not required for PraxisBase to ingest, review, promote, or render the wiki. It is required for useful semantic retrieval from GBrain. Without embeddings, GBrain/PB can still publish pages, but agent lookup becomes mostly lexical and weaker for "same meaning, different wording" queries.
+
+PraxisBase should not store the embedding API key or model dimensions. Configure those in GBrain, then point PB at the GBrain executable:
+
+```bash
+praxisbase gbrain init \
+  --executable /path/to/gbrain-or-wrapper \
+  --source praxisbase \
+  --timeout-ms 30000 \
+  --json
+```
+
+If the local embedding server is OpenAI-compatible but uses a custom base URL, use a small wrapper so GBrain receives the right environment:
+
+```sh
+#!/bin/sh
+export LLAMA_SERVER_BASE_URL="${LLAMA_SERVER_BASE_URL:-http://127.0.0.1:11434/v1}"
+exec /path/to/bun /path/to/gbrain/src/cli.ts "$@"
+```
+
+Example known-good local setup:
+
+- provider: `llama-server`;
+- base URL: `http://127.0.0.1:11434/v1`;
+- model: `hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:Q8_0`;
+- dimensions: `1024`;
+- GBrain engine: `pglite`.
+
+After changing embedding model or dimensions, rebuild or reinitialize the GBrain index so the PGLite vector width matches the model. Then run:
+
+```bash
+praxisbase gbrain doctor --json
+praxisbase gbrain export --mode personal --write --json
+praxisbase context get --agent codex --stage diagnosis --query "openclaw routing failure" --with-gbrain --json
+```
+
+Doctor is the source of truth. A good local embedding path should show an embedding provider check, vector width consistency, and nonzero indexed pages. If GBrain reports an unhealthy overall status because of unrelated optional checks, PraxisBase can still use GBrain retrieval as long as query/export work and the embedding checks are healthy.
+
 Run the daily loop and publish only promoted stable pages:
 
 ```bash

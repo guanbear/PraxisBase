@@ -68,6 +68,18 @@
     那么 输出可以包含 stable_praxisbase、gbrain_sidecar 和 agentmemory_sidecar
     并且 排序优先级是 stable_praxisbase 高于 gbrain_sidecar 高于 agentmemory_sidecar
 
+  场景: 本地 embedding 由 GBrain 拥有而 PraxisBase 只连接后端
+    假如 本机 GBrain 使用 PGLite 数据库
+    并且 本机 embedding endpoint 通过 OpenAI-compatible API 提供 1024 维 embedding
+    并且 用户用 wrapper 把 embedding endpoint 环境变量传给 GBrain CLI
+    当 用户运行 "praxisbase gbrain init --executable .praxisbase/gbrain-local --source praxisbase --json"
+    并且 用户运行 "praxisbase gbrain doctor --json"
+    那么 PraxisBase 报告 GBrain doctor 的 embedding 和 source 状态
+    并且 PraxisBase 不保存 embedding secret、模型名称或向量维度作为自己的权威配置
+    当 用户运行 "praxisbase context get --query 'same lesson in different words' --with-gbrain --json"
+    那么 语义召回由 GBrain 返回为 "gbrain_sidecar"
+    并且 stable PraxisBase 页面仍然排在 sidecar 之前
+
   场景: PB HTML 聚焦经验治理而不是通用 brain 浏览
     假如 GBrain backend 已配置
     当 用户运行 "praxisbase wiki build-site --json"
