@@ -24,11 +24,9 @@ import {
   ContextReducerRuleSchema,
   ContextReductionResultSchema,
   ContextEconomyReportSchema,
-  ContextEconomyReport,
-  ContextReductionResult,
   protocolPaths,
 } from "@praxisbase/core";
-import type { ContextReducerRule } from "@praxisbase/core";
+import type { ContextReducerRule, ContextEconomyReport, ContextReductionResult } from "@praxisbase/core";
 
 function repeatText(text: string, times: number): string {
   return Array(times).fill(text).join("\n");
@@ -639,16 +637,18 @@ describe("context reducer protocol", () => {
   });
 
   describe("built-in rule families", () => {
-    it("has 8 built-in rule families", () => {
+    it("has 10 built-in rule families", () => {
       const rules = buildBuiltinRules();
       const families = new Set(rules.map((r) => r.family));
-      assert.equal(families.size, 8);
+      assert.equal(families.size, 10);
       assert.ok(families.has("codex-session"));
       assert.ok(families.has("openclaw-log"));
       assert.ok(families.has("command-output"));
       assert.ok(families.has("test-output"));
       assert.ok(families.has("git-output"));
       assert.ok(families.has("agentmemory-memory"));
+      assert.ok(families.has("claude-code-session"));
+      assert.ok(families.has("opencode-session"));
       assert.ok(families.has("json-jsonl"));
       assert.ok(families.has("generic"));
     });
@@ -671,6 +671,26 @@ describe("context reducer protocol", () => {
       });
       assert.ok(result);
       assert.equal(result.rule.family, "openclaw-log");
+    });
+
+    it("claude-code-session rule matches claude-code source metadata", () => {
+      const rules = buildBuiltinRules();
+      const result = matchRule(rules, {
+        text: makeLargeText(2000),
+        source_metadata: { agent: "claude-code" },
+      });
+      assert.ok(result);
+      assert.equal(result.rule.family, "claude-code-session");
+    });
+
+    it("opencode-session rule matches opencode source metadata", () => {
+      const rules = buildBuiltinRules();
+      const result = matchRule(rules, {
+        text: makeLargeText(2000),
+        source_metadata: { agent: "opencode" },
+      });
+      assert.ok(result);
+      assert.equal(result.rule.family, "opencode-session");
     });
 
     it("generic rule is the lowest priority fallback", () => {

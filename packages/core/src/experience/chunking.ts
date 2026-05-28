@@ -120,7 +120,7 @@ function meaningfulText(rawText: string, agent: AgentProfile): string {
   const decoded = decodeJsonLineContent(rawText);
   const text = decoded.length > 0 ? decoded.join("\n") : rawText;
   const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  if (agent === "codex" || agent === "claude-code") {
+  if (agent === "codex" || agent === "claude-code" || agent === "opencode") {
     const patterns = [
       /\b(?:implemented|changed|fixed|added|updated|removed|created|refactored)\b/i,
       /\b(?:pnpm|npm|yarn)\s+(?:check|test|build|install|run)\b/i,
@@ -171,6 +171,7 @@ function sourceRefForFile(source: ExperienceSourceConfig, filePath: string): str
   const base = basename(filePath, extname(filePath));
   if (source.agent === "codex") return `raw-vault://codex/${base}`;
   if (source.agent === "claude-code") return `logs://${source.name}/${base}`;
+  if (source.agent === "opencode") return `raw-vault://opencode/${base}`;
   return `log://openclaw/${basename(filePath)}`;
 }
 

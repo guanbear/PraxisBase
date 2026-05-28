@@ -333,6 +333,7 @@ program
   .option("--url <url>")
   .option("--remote <remote>")
   .option("--bearer-token-env <name>", "environment variable name containing bearer token")
+  .option("--privacy-trust <trust>", "source privacy trust policy, e.g. trusted_personal_remote")
   .option("--json")
   .action(async (
     sub: string,
@@ -350,6 +351,7 @@ program
       url?: string;
       remote?: string;
       bearerTokenEnv?: string;
+      privacyTrust?: "trusted_personal_remote";
       json?: boolean;
     }
   ) => {

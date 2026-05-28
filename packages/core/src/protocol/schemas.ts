@@ -513,13 +513,16 @@ export const ExperienceSourceParserSchema = z.enum([
   "openclaw-export",
   "openclaw-log",
   "claude-code-repair-log",
+  "claude-code-session",
+  "opencode-session",
   "agentmemory-memory",
   "gbrain-memory",
 ]);
 
-export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code", "agentmemory", "generic"]);
+export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code", "opencode", "agentmemory", "generic"]);
 export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api", "agentmemory", "gbrain"]);
 export const ExperienceScopeHintSchema = z.enum(["personal", "project", "team", "org"]);
+export const ExperienceSourcePrivacyTrustSchema = z.enum(["trusted_personal_remote"]);
 export const ExperiencePrivacyVerdictSchema = z.enum(["allow", "reject", "human_required"]);
 export const ExperienceOutcomeSchema = z.enum(["success", "failed", "partial", "unknown"]);
 
@@ -540,6 +543,7 @@ export const ExperienceSourceConfigSchema = z.object({
   url: z.string().optional(),
   remote: z.string().optional(),
   bearer_token_env: z.string().min(1).optional(),
+  privacy_trust: ExperienceSourcePrivacyTrustSchema.optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -1086,6 +1090,7 @@ export type HarvestReport = z.infer<typeof HarvestReportSchema>;
 export type ExperienceSourceAgent = z.infer<typeof ExperienceSourceAgentSchema>;
 export type ExperienceSourceType = z.infer<typeof ExperienceSourceTypeSchema>;
 export type ExperienceSourceChannel = z.infer<typeof ExperienceSourceChannelSchema>;
+export type ExperienceSourcePrivacyTrust = z.infer<typeof ExperienceSourcePrivacyTrustSchema>;
 export type ExperienceSourceParser = z.infer<typeof ExperienceSourceParserSchema>;
 export type ExperienceScopeHint = z.infer<typeof ExperienceScopeHintSchema>;
 export type ExperiencePrivacyVerdict = z.infer<typeof ExperiencePrivacyVerdictSchema>;

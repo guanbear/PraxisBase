@@ -9,6 +9,7 @@ import {
   type ExperienceSourceChannel,
   type ExperienceSourceConfig,
   type ExperienceSourceParser,
+  type ExperienceSourcePrivacyTrust,
   type ExperienceSourceType,
 } from "../protocol/schemas.js";
 import { readJson, safePath, writeJson } from "../store/file-store.js";
@@ -27,6 +28,7 @@ export interface AddExperienceSourceInput {
   url?: string;
   remote?: string;
   bearerTokenEnv?: string;
+  privacyTrust?: ExperienceSourcePrivacyTrust;
   now?: string;
 }
 
@@ -53,7 +55,8 @@ export function inferExperienceSourceParser(
   if (sourceType === "gbrain") return "gbrain-memory";
   if (agent === "agentmemory") return "agentmemory-memory";
   if (agent === "codex") return "codex-session";
-  if (agent === "claude-code") return "claude-code-repair-log";
+  if (agent === "claude-code") return "claude-code-session";
+  if (agent === "opencode") return "opencode-session";
   if (agent === "openclaw" && sourceType === "local") return "openclaw-log";
   return "openclaw-export";
 }
@@ -82,6 +85,7 @@ export async function addExperienceSource(root: string, input: AddExperienceSour
     url: input.url,
     remote: input.remote,
     bearer_token_env: input.bearerTokenEnv,
+    privacy_trust: input.privacyTrust,
     created_at: now,
     updated_at: now,
   });

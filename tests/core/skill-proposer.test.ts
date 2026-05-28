@@ -37,6 +37,7 @@ const match: StableSkillMatch = {
     pitfalls: "",
     provenance: "",
     related_wiki_paths: [],
+    origin: "external_installed",
   },
 };
 

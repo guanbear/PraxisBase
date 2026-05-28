@@ -1,6 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateSkillDraft, generateSkillDraftsFromDistilledExperiences, synthesizeSkillCandidates } from "@praxisbase/core/synthesis/skill.js";
+import { classifySkillOrigin } from "@praxisbase/core/synthesis/skill-inventory.js";
+import type { SkillOrigin } from "@praxisbase/core/synthesis/skill-inventory.js";
 import { ProposalSchema } from "@praxisbase/core/protocol/schemas.js";
 import type { DistilledExperience } from "@praxisbase/core/ai/distill.js";
 import { mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
@@ -311,6 +313,88 @@ describe("Skill synthesis", () => {
     assert.ok(result.candidates[0].review_hint.risk_notes.includes("semantic_skill_review_unavailable:provider_error:review model unavailable"));
   });
 
+  it("retries structurally incomplete skill candidates once with a conservative default body", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-retry-"));
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "personal",
+      summary: "OpenClaw remote memory harvest repair.",
+      problem: "Remote OpenClaw memory harvest needed a stable sequence.",
+      actions: ["Exported memory JSON.", "Verified source hashes.", "Imported with provenance."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["daily smoke passed"],
+      reusable_lessons: ["Export remote memory, verify hashes, then import with provenance."],
+      risks: [],
+      suggested_tags: ["openclaw", "remote"],
+      suggested_wiki_kind: "procedure",
+      skill_candidate: {
+        should_create: true,
+        title: "OpenClaw remote memory harvest",
+        trigger: "Need to harvest remote OpenClaw memory into PraxisBase",
+        procedure: ["Export remote memory JSON.", "Verify source hashes.", "Import with provenance."],
+      },
+      confidence: 0.91,
+    };
+    let synthesisCalls = 0;
+    let reviewCalls = 0;
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "review",
+      authorityMode: "personal-local",
+      now: "2026-05-26T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+      ],
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "skill_synthesis_candidate") {
+            synthesisCalls++;
+            return {
+              ok: true,
+              json: {
+                title: "OpenClaw remote memory harvest",
+                body_markdown: "# OpenClaw remote memory harvest\n\n## Procedure\n1. Export.",
+              },
+            };
+          }
+          if (input.schemaName === "semantic_skill_review") {
+            reviewCalls++;
+            return {
+              ok: true,
+              json: {
+                decision: "approve_candidate",
+                quality_score: 0.91,
+                class_level: true,
+                actionable: true,
+                reusable: true,
+                safe_for_future_agents: true,
+                evidence_support: "strong",
+                should_update_existing: null,
+                fatal_issues: [],
+                missing_requirements: [],
+                reason: "Conservative rewritten skill is complete and reusable.",
+                reviewed_at: "2026-05-26T00:00:00.000Z",
+              },
+            };
+          }
+          return { ok: true, json: {} };
+        },
+      },
+    });
+
+    assert.equal(synthesisCalls, 1);
+    assert.ok(reviewCalls >= 2);
+    assert.equal(result.report.approved, 1);
+    assert.equal(result.report.needs_human, 0);
+    assert.ok(result.candidates[0].review_hint.risk_notes.includes("skill_structural_retry:applied"));
+    assert.match(result.candidates[0].body_markdown, /Verify source hashes/);
+  });
+
   it("uses stable wiki procedures as conservative skill synthesis signals", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-wiki-"));
     await mkdir(join(root, "kb/procedures"), { recursive: true });
@@ -373,5 +457,65 @@ Use when importing OpenClaw memory into PraxisBase.
     assert.equal(result.report.signals, 2);
     assert.equal(result.report.candidates, 1);
     assert.equal(result.candidates[0].related_wiki_paths[0], "kb/procedures/openclaw-memory-import.md");
+  });
+
+  it("classifies PB-synthesized skills by origin frontmatter", () => {
+    assert.equal(classifySkillOrigin({ origin: "praxisbase_synthesized", generated_by: "praxisbase" }), "praxisbase_synthesized");
+    assert.equal(classifySkillOrigin({ origin: "praxisbase_synthesized" }), "praxisbase_synthesized");
+    assert.equal(classifySkillOrigin({ generated_by: "praxisbase" }), "praxisbase_synthesized");
+  });
+
+  it("classifies external installed skills without provenance", () => {
+    assert.equal(classifySkillOrigin({}), "external_installed");
+    assert.equal(classifySkillOrigin({ name: "my-skill", scope: "project" }), "external_installed");
+  });
+
+  it("classifies malformed origin as unknown", () => {
+    assert.equal(classifySkillOrigin({ origin: "invalid_value" }), "unknown");
+  });
+
+  it("generated distilled skill markdown includes PB provenance frontmatter", () => {
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "project",
+      summary: "Fix test.",
+      problem: "Test failed.",
+      actions: ["Fixed the test."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["pnpm test passed"],
+      reusable_lessons: ["Always run tests."],
+      risks: [],
+      suggested_tags: ["test"],
+      suggested_wiki_kind: "known_fix",
+      skill_candidate: {
+        should_create: true,
+        title: "Fix tests",
+        trigger: "Test failures",
+        procedure: ["Run tests.", "Fix the issue.", "Verify."],
+      },
+      confidence: 0.91,
+    };
+
+    const proposals = generateSkillDraftsFromDistilledExperiences({
+      minEvidence: 2,
+      now: "2026-05-28T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+      ],
+    });
+
+    assert.equal(proposals.length, 1);
+    const content = proposals[0].patch.content;
+    assert.match(content, /origin: praxisbase_synthesized/);
+    assert.match(content, /generated_by: praxisbase/);
+    assert.match(content, /source_refs:/);
+    assert.match(content, /raw-vault:\/\/codex\/session-1/);
+    assert.match(content, /source_hashes:/);
+    assert.match(content, /sha256:distilled1/);
   });
 });

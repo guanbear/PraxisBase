@@ -305,4 +305,73 @@ describe("experience source adapters", () => {
     assert.equal(result.envelopes.length, 0);
     assert.ok(result.warnings.some((warning) => warning.includes("personal_agentmemory_blocked_in_team_mode")));
   });
+
+  it("resolves local OpenCode sessions with correct source refs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-opencode-"));
+    const sessions = join(root, "opencode-sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.log"), [
+      "Goal: implement feature X",
+      "pnpm build",
+      "ERROR: type mismatch in src/foo.ts",
+      "Fix: corrected type annotation",
+      "Verification: pnpm test passed",
+      "Lesson: always check return types",
+    ].join("\n"), "utf8");
+    const source = await addExperienceSource(root, {
+      name: "local-opencode",
+      agent: "opencode",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-28T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-28T01:00:00.000Z",
+    });
+
+    assert.equal(result.status, "completed");
+    assert.equal(result.fetched, 1);
+    assert.equal(result.envelopes.length, 1);
+    assert.equal(result.envelopes[0].agent, "opencode");
+    assert.match(result.envelopes[0].source_ref, /^raw-vault:\/\/opencode\//);
+    assert.ok(!result.envelopes[0].source_ref.includes("openclaw"), "OpenCode refs must not use OpenClaw namespace");
+    assert.equal(result.envelopes[0].privacy.verdict, "allow");
+  });
+
+  it("resolves local Claude Code sessions with logs source refs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-claude-local-"));
+    const sessions = join(root, "claude-sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.md"), [
+      "Goal: fix database migration issue",
+      "pnpm migrate",
+      "ERROR: column already exists",
+      "Fix: added IF NOT EXISTS check",
+      "Verification: pnpm test passed",
+      "Lesson: use idempotent migrations",
+    ].join("\n"), "utf8");
+    const source = await addExperienceSource(root, {
+      name: "local-claude",
+      agent: "claude-code",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-28T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-28T01:00:00.000Z",
+    });
+
+    assert.equal(result.status, "completed");
+    assert.equal(result.fetched, 1);
+    assert.equal(result.envelopes.length, 1);
+    assert.equal(result.envelopes[0].agent, "claude-code");
+    assert.match(result.envelopes[0].source_ref, /^logs:\/\/local-claude\//);
+    assert.ok(!result.envelopes[0].source_ref.includes("openclaw"), "Claude Code refs must not use OpenClaw namespace");
+  });
 });

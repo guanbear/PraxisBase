@@ -68,6 +68,8 @@ praxisbase harvest --openclaw-export <json-file> --build-site --json
 
 ## Context Before Repair
 
+GBrain MCP is the default broad brain lookup path when GBrain is configured. Use PraxisBase for governed experience context and audit, not as a replacement for the GBrain brain runtime.
+
 \`\`\`bash
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
 praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --with-gbrain --json
@@ -114,6 +116,8 @@ praxisbase mcp serve --stdio --workspace <path>
 
 \`\`\`bash
 praxisbase source add local-codex --agent codex --type local --path ~/.codex/archived_sessions --scope personal
+praxisbase source add local-claude-code --agent claude-code --type local --path ~/.claude/transcripts --scope personal
+praxisbase source add local-opencode --agent opencode --type local --path ~/.local/share/opencode/log --scope personal
 praxisbase source add openclaw-bot --agent openclaw --channel feishu --type openclaw-api --remote bot-prod --scope team
 praxisbase source list --json
 \`\`\`
@@ -142,7 +146,7 @@ praxisbase promote --auto
 praxisbase wiki build-site --json
 \`\`\`
 
-3. If \`next_actions.status\` is \`ready_to_export_agentmemory\`, share only stable wiki lessons back to session memory:
+3. If \`next_actions.status\` is \`ready_to_export_gbrain\`, share only stable wiki lessons back to the default GBrain MCP brain and session memory:
 
 \`\`\`bash
 praxisbase gbrain export --mode personal --write --json

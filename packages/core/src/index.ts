@@ -31,6 +31,7 @@ export * from "./experience/openclaw-remote.js";
 export * from "./experience/remote-sources.js";
 export * from "./experience/remote-adapters.js";
 export * from "./experience/source-config.js";
+export * from "./experience/source-item-ledger.js";
 export * from "./experience/privacy-policy.js";
 export * from "./experience/privacy-triage.js";
 export * from "./experience/chunking.js";

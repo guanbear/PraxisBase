@@ -4,6 +4,27 @@ import matter from "gray-matter";
 import type { SkillSignalCluster } from "./skill-stability.js";
 import type { SkillSignalScope } from "./skill-signals.js";
 
+export type SkillOrigin = "praxisbase_synthesized" | "external_installed" | "unknown";
+
+export function classifySkillOrigin(frontmatterData: Record<string, unknown>): SkillOrigin {
+  const origin = frontmatterData.origin;
+  const generatedBy = frontmatterData.generated_by;
+
+  if (origin === "praxisbase_synthesized" || generatedBy === "praxisbase") {
+    return "praxisbase_synthesized";
+  }
+
+  if (origin === undefined && generatedBy === undefined) {
+    const hasAnyFrontmatter = Object.keys(frontmatterData).length > 0;
+    if (hasAnyFrontmatter && frontmatterData.origin !== undefined && origin !== "praxisbase_synthesized" && origin !== "external_installed") {
+      return "unknown";
+    }
+    return "external_installed";
+  }
+
+  return "unknown";
+}
+
 export interface StableSkillInventoryItem {
   path: string;
   slug: string;
@@ -16,6 +37,7 @@ export interface StableSkillInventoryItem {
   pitfalls: string;
   provenance: string;
   related_wiki_paths: string[];
+  origin: SkillOrigin;
 }
 
 export interface StableSkillMatch {
@@ -86,6 +108,7 @@ export async function loadStableSkillInventory(root: string): Promise<StableSkil
       pitfalls: section(content, "Pitfalls"),
       provenance: section(content, "Provenance"),
       related_wiki_paths: Array.from(content.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g)).map((match) => match[1].trim()),
+      origin: classifySkillOrigin(parsed.data),
     });
   }
   return items.sort((a, b) => a.path.localeCompare(b.path));

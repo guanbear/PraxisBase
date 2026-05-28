@@ -8,13 +8,14 @@ import { addExperienceSource, listExperienceSources } from "@praxisbase/core/exp
 import { buildAgentToolManifest, writeAgentToolManifest } from "@praxisbase/core/agent-access/manifest.js";
 import { generateSkill } from "@praxisbase/core/agent-access/skill.js";
 import { readAiProviderConfig } from "@praxisbase/core/ai/config.js";
+import { readGBrainConfig, gbrainExecutable } from "@praxisbase/core/experience/gbrain-config.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { writeText } from "@praxisbase/core/store/file-store.js";
 import { diagnoseAgentMemorySource } from "./agentmemory-diagnostics.js";
 
 const execFileAsync = promisify(execFile);
 
-type PersonalTarget = "codex" | "openclaw" | "agentmemory";
+type PersonalTarget = "codex" | "openclaw" | "agentmemory" | "claude-code" | "opencode";
 type PersonalAgent = "codex" | "opencode" | "claude-code" | "openclaw" | "hermes" | "openhuman" | "generic";
 
 export interface PersonalCommandOptions {
@@ -77,7 +78,16 @@ async function defaultOpen(path: string): Promise<void> {
 function defaultPathFor(target: PersonalTarget): string | undefined {
   if (target === "codex") return "~/.codex/sessions";
   if (target === "openclaw") return "~/.openclaw/reports";
+  if (target === "claude-code") return "~/.claude/transcripts";
+  if (target === "opencode") return "~/.local/share/opencode/log";
   return undefined;
+}
+
+function parserForTarget(target: PersonalTarget): "codex-session" | "openclaw-log" | "claude-code-session" | "opencode-session" {
+  if (target === "codex") return "codex-session";
+  if (target === "openclaw") return "openclaw-log";
+  if (target === "claude-code") return "claude-code-session";
+  return "opencode-session";
 }
 
 async function connectPersonalSource(root: string, target: PersonalTarget, options: PersonalCommandOptions) {
@@ -93,11 +103,13 @@ async function connectPersonalSource(root: string, target: PersonalTarget, optio
     });
   }
 
+  const agentForTarget: "codex" | "openclaw" | "claude-code" | "opencode" = target;
+
   return addExperienceSource(root, {
     name: options.name ?? `personal-${target}`,
-    agent: target,
+    agent: agentForTarget,
     sourceType: "local",
-    parser: target === "codex" ? "codex-session" : "openclaw-log",
+    parser: parserForTarget(target),
     scopeDefault: "personal",
     path: options.path ?? defaultPathFor(target),
     now: options.now,
@@ -117,6 +129,9 @@ function personalNext(agent: PersonalAgent): string[] {
     "praxisbase personal doctor --json",
     "praxisbase ai init --provider openai-compatible --model <model> --json",
     "praxisbase ai doctor --json",
+    "praxisbase gbrain init --executable gbrain --source praxisbase --json",
+    "gbrain serve",
+    "GBrain MCP config: {\"command\":\"gbrain\",\"args\":[\"serve\"]}",
     "praxisbase personal run --open --json",
     `praxisbase context get --agent ${agent} --stage repair --query openclaw --with-agentmemory --json`,
   ];
@@ -165,6 +180,16 @@ async function doctor(root: string): Promise<{ ok: boolean; checks: PersonalChec
     message: siteReady ? "Static site exists at dist/index.html." : "Static site missing. Run `praxisbase personal run --open`.",
   });
 
+  const gbrainConfig = await readGBrainConfig(root);
+  checks.push({
+    id: "gbrain",
+    ok: Boolean(gbrainConfig),
+    severity: gbrainConfig ? "info" : "warning",
+    message: gbrainConfig
+      ? `GBrain configured via ${gbrainConfig.mode === "local" ? gbrainExecutable(gbrainConfig) : gbrainConfig.mcp_url}. Use GBrain MCP as the default broad brain lookup path.`
+      : "GBrain is not configured. Run `praxisbase gbrain init --executable gbrain --source praxisbase --json`, then expose MCP with `gbrain serve`.",
+  });
+
   for (const source of sources.filter((candidate) => candidate.source_type === "agentmemory")) {
     try {
       const agentMemoryChecks = await diagnoseAgentMemorySource(source, {
@@ -206,8 +231,8 @@ export async function personalCommand(root: string, subcommand: string, options:
 
     if (subcommand === "connect") {
       const target = options.target;
-      if (target !== "codex" && target !== "openclaw" && target !== "agentmemory") {
-        throw new Error("PERSONAL_CONNECT_INVALID: personal connect requires codex, openclaw, or agentmemory.");
+      if (target !== "codex" && target !== "openclaw" && target !== "agentmemory" && target !== "claude-code" && target !== "opencode") {
+        throw new Error("PERSONAL_CONNECT_INVALID: personal connect requires codex, openclaw, agentmemory, claude-code, or opencode.");
       }
       const source = await connectPersonalSource(root, target, options);
       const result = { ok: true, command: `personal connect ${target}`, source };

@@ -89,6 +89,25 @@ describe("source CLI command", () => {
     assert.equal(listed.sources[0].name, "test-agentmemory");
   });
 
+  it("adds a trusted personal remote OpenClaw source", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-trusted-remote-"));
+    const addOutput = await sourceCommand(root, "add", {
+      name: "remote-openclaw",
+      agent: "openclaw",
+      type: "ssh",
+      channel: "unknown",
+      host: "root@example.com",
+      path: "/root/.openclaw/praxisbase/latest.json",
+      scope: "personal",
+      privacyTrust: "trusted_personal_remote",
+      json: true,
+    });
+
+    const added = JSON.parse(addOutput);
+    assert.equal(added.ok, true);
+    assert.equal(added.source.privacy_trust, "trusted_personal_remote");
+  });
+
   it("source doctor returns a healthy check for AgentMemory", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-agentmemory-doctor-"));
     await sourceCommand(root, "add", {
@@ -139,5 +158,59 @@ describe("source CLI command", () => {
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+
+  it("adds an OpenCode source with correct parser inference", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-opencode-"));
+    const addOutput = await sourceCommand(root, "add", {
+      name: "local-opencode",
+      agent: "opencode",
+      type: "local",
+      path: "~/.local/share/opencode/log",
+      scope: "personal",
+      json: true,
+    });
+
+    const added = JSON.parse(addOutput);
+    assert.equal(added.ok, true);
+    assert.equal(added.source.agent, "opencode");
+    assert.equal(added.source.parser, "opencode-session");
+    assert.equal(added.source.source_type, "local");
+    assert.equal(added.source.scope_default, "personal");
+  });
+
+  it("adds a Claude Code source with correct parser inference", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-claude-"));
+    const addOutput = await sourceCommand(root, "add", {
+      name: "local-claude-code",
+      agent: "claude-code",
+      type: "local",
+      path: "~/.claude/transcripts",
+      scope: "personal",
+      json: true,
+    });
+
+    const added = JSON.parse(addOutput);
+    assert.equal(added.ok, true);
+    assert.equal(added.source.agent, "claude-code");
+    assert.equal(added.source.parser, "claude-code-session");
+    assert.equal(added.source.source_type, "local");
+  });
+
+  it("accepts explicit parser override for opencode", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-opencode-parser-"));
+    const addOutput = await sourceCommand(root, "add", {
+      name: "opencode-custom",
+      agent: "opencode",
+      type: "local",
+      parser: "opencode-session",
+      path: "/tmp/opencode-sessions",
+      scope: "personal",
+      json: true,
+    });
+
+    const added = JSON.parse(addOutput);
+    assert.equal(added.ok, true);
+    assert.equal(added.source.parser, "opencode-session");
   });
 });

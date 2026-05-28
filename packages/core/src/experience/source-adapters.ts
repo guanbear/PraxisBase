@@ -27,6 +27,22 @@ const DEFAULT_LIMIT = 20;
 const DEFAULT_MAX_BYTES = 512 * 1024;
 const MAX_SUMMARY_LENGTH = 1200;
 
+function extractCodingAgentExperienceText(item: RawExperienceItem, rawText: string): string {
+  const text = item.text ?? item.raw_log ?? rawText;
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const patterns = [
+    /\b(?:goal|task|objective|implement|fix|refactor|add|create|remove)\b/i,
+    /\b(?:pnpm|npm|yarn|cargo|go|git)\s+/i,
+    /\b(?:edited|modified|changed|created|deleted)\s+(?:file|files)\b/i,
+    /\b(?:error|fail|failure|exception|traceback)\b/i,
+    /\b(?:tests?\s+(?:passed|failed)|✓|✗|PASS|FAIL)\b/i,
+    /\b(?:success|succeed|done|complete|resolved|fixed)\b/i,
+    /\b(?:lesson|learned|takeaway|insight)\b/i,
+  ];
+  const selected = lines.filter((line) => patterns.some((p) => p.test(line)));
+  return selected.length > 0 ? selected.join("\n") : lines.slice(0, 20).join("\n");
+}
+
 export interface ResolveExperienceSourceOptions {
   authorityMode: EvaluateExperiencePrivacyInput["mode"];
   limit?: number;
@@ -172,6 +188,9 @@ function summaryForItem(source: ExperienceSourceConfig, item: RawExperienceItem,
   if (source.agent === "codex") {
     return summarizeText(extractCodexExperienceText(item, rawText), "codex experience");
   }
+  if (source.agent === "claude-code" || source.agent === "opencode") {
+    return summarizeText(extractCodingAgentExperienceText(item, rawText), `${source.agent} experience`);
+  }
   return summarizeText(item.text ?? item.raw_log ?? rawText, `${source.agent} experience`);
 }
 
@@ -187,6 +206,7 @@ function sourceRefForItem(source: ExperienceSourceConfig, item: RawExperienceIte
   const itemId = item.remote_id ?? item.id ?? (filePath ? basename(filePath, extname(filePath)) : `item-${index}`);
   if (source.agent === "codex") return `raw-vault://codex/${itemId}`;
   if (source.agent === "claude-code") return `logs://${source.name}/${itemId}`;
+  if (source.agent === "opencode") return `raw-vault://opencode/${itemId}`;
   if (source.source_type === "openclaw-api") return `openclaw://${source.remote ?? source.name}/${itemId}`;
   return `log://openclaw/${itemId}`;
 }

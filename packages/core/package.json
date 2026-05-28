@@ -143,6 +143,10 @@
       "types": "./src/experience/source-config.ts",
       "default": "./dist/experience/source-config.js"
     },
+    "./experience/source-item-ledger.js": {
+      "types": "./src/experience/source-item-ledger.ts",
+      "default": "./dist/experience/source-item-ledger.js"
+    },
     "./experience/privacy-policy.js": {
       "types": "./src/experience/privacy-policy.ts",
       "default": "./dist/experience/privacy-policy.js"

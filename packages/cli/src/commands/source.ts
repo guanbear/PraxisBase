@@ -10,6 +10,7 @@ import type {
   ExperienceSourceAgent,
   ExperienceSourceChannel,
   ExperienceSourceParser,
+  ExperienceSourcePrivacyTrust,
   ExperienceSourceType,
 } from "@praxisbase/core";
 
@@ -27,6 +28,7 @@ export interface SourceCommandOptions {
   url?: string;
   remote?: string;
   bearerTokenEnv?: string;
+  privacyTrust?: ExperienceSourcePrivacyTrust;
   json?: boolean;
 }
 
@@ -56,6 +58,7 @@ export async function sourceCommand(root: string, subcommand: string, options: S
         url: options.url,
         remote: options.remote,
         bearerTokenEnv: options.bearerTokenEnv,
+        privacyTrust: options.privacyTrust,
       });
       return options.json ? JSON.stringify({ ok: true, source }, null, 2) : `Source added: ${source.name}`;
     }

@@ -19,9 +19,9 @@ export interface BootstrapCommandOptions {
 
 interface SafeSourceCandidate {
   name: string;
-  agent: "codex" | "openclaw";
+  agent: "codex" | "openclaw" | "claude-code" | "opencode";
   sourceType: "local" | "file";
-  parser: "codex-session" | "openclaw-log";
+  parser: "codex-session" | "openclaw-log" | "claude-code-session" | "opencode-session";
   scope: "personal";
   displayPath: string;
   absolutePath: string;
@@ -74,6 +74,24 @@ function safeCandidates(home: string): SafeSourceCandidate[] {
       displayPath: "~/.openclaw/reports",
       absolutePath: join(home, ".openclaw/reports"),
     },
+    {
+      name: "local-claude-code-transcripts",
+      agent: "claude-code",
+      sourceType: "local",
+      parser: "claude-code-session",
+      scope: "personal",
+      displayPath: "~/.claude/transcripts",
+      absolutePath: join(home, ".claude/transcripts"),
+    },
+    {
+      name: "local-opencode-log",
+      agent: "opencode",
+      sourceType: "local",
+      parser: "opencode-session",
+      scope: "personal",
+      displayPath: "~/.local/share/opencode/log",
+      absolutePath: join(home, ".local/share/opencode/log"),
+    },
   ];
 }
 
@@ -90,6 +108,9 @@ function nextCommands(agent: BootstrapAgent): string[] {
   return [
     "praxisbase ai init --provider openai-compatible --model <model> --json",
     "praxisbase ai doctor --json",
+    "praxisbase gbrain init --executable gbrain --source praxisbase --json",
+    "gbrain serve",
+    "GBrain MCP config: {\"command\":\"gbrain\",\"args\":[\"serve\"]}",
     "praxisbase daily run --mode personal --build-site --json",
     "open dist/index.html",
     `praxisbase context get --agent ${agent} --stage repair --query openclaw --json`,

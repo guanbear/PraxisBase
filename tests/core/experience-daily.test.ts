@@ -1,10 +1,11 @@
-import { mkdir, mkdtemp, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
 import { deriveDailyNextActions, runDailyExperience } from "@praxisbase/core/experience/daily.js";
+import { listSourceItemLedgerEntries } from "@praxisbase/core/experience/source-item-ledger.js";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { PROTOCOL_VERSION, protocolPaths } from "@praxisbase/core";
 
@@ -91,7 +92,7 @@ describe("runDailyExperience", () => {
     assert.ok(nextActions.messages.some((message) => message.includes("privacy")));
   });
 
-  it("recommends AgentMemory export only after stable wiki changes without pending gates", () => {
+  it("prefers GBrain export after stable wiki changes without pending gates", () => {
     const nextActions = deriveDailyNextActions({
       id: "daily-experience_20260521",
       protocol_version: PROTOCOL_VERSION,
@@ -127,8 +128,10 @@ describe("runDailyExperience", () => {
       created_at: "2026-05-21T01:00:00.000Z",
     });
 
-    assert.equal(nextActions.status, "ready_to_export_agentmemory");
+    assert.equal(nextActions.status, "ready_to_export_gbrain");
+    assert.equal(nextActions.gbrain_export_recommended, true);
     assert.equal(nextActions.agentmemory_export_recommended, true);
+    assert.ok(nextActions.commands[0].includes("gbrain export"));
     assert.ok(nextActions.commands.some((command) => command.includes("agentmemory export")));
   });
 
@@ -685,6 +688,102 @@ describe("runDailyExperience", () => {
     assert.equal(second.sources[0].enveloped, 1);
     const cacheFiles = await readdir(join(root, ".praxisbase/cache/ai-distill"));
     assert.equal(cacheFiles.length, 1);
+  });
+
+  it("writes source item ledger entries but validates the distill cache before reuse", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-source-item-ledger-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw ACK timing and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "GLM-4.7",
+    });
+    await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const makeClient = (counter: { distillCalls: number }) => ({
+      async generateJson(input: { schemaName: string; user: string }) {
+        if (input.schemaName === "CuratedWikiProposalDraft") {
+          return { ok: false as const, error: "curation not relevant for this test" };
+        }
+        counter.distillCalls++;
+        const prompt = JSON.parse(input.user) as {
+          source: {
+            source_ref: string;
+            source_hash: string;
+            chunk_hash: string;
+            agent: "codex";
+            scope_hint: "personal";
+          };
+        };
+        return {
+          ok: true as const,
+          json: {
+            source_ref: prompt.source.source_ref,
+            source_hash: prompt.source.source_hash,
+            chunk_hashes: [prompt.source.chunk_hash],
+            agent: prompt.source.agent,
+            scope_hint: prompt.source.scope_hint,
+            summary: "OpenClaw ACK timing fix was verified.",
+            actions: ["Adjusted ACK timing."],
+            failed_attempts: [],
+            outcome: "success",
+            verification: ["pnpm test passed"],
+            reusable_lessons: ["Verify ACK timing fixes before reuse."],
+            risks: [],
+            suggested_tags: ["openclaw", "ack"],
+            suggested_wiki_kind: "known_fix",
+            skill_candidate: { should_create: false },
+            confidence: 0.9,
+          },
+        };
+      },
+    });
+
+    const firstCounter = { distillCalls: 0 };
+    await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: makeClient(firstCounter),
+    });
+
+    assert.equal(firstCounter.distillCalls, 1);
+    const firstLedger = await listSourceItemLedgerEntries(root);
+    assert.equal(firstLedger.length, 1);
+    assert.equal(firstLedger[0].status, "distilled");
+    assert.equal(firstLedger[0].parser, "codex-session");
+    assert.equal(firstLedger[0].model, "GLM-4.7");
+    assert.equal(firstLedger[0].authority_mode, "personal-local");
+    assert.equal(firstLedger[0].chunk_hashes.length, 1);
+    assert.ok(firstLedger[0].distill_cache_path?.startsWith(protocolPaths.cacheAiDistill));
+
+    await rm(join(root, firstLedger[0].distill_cache_path!));
+
+    const secondCounter = { distillCalls: 0 };
+    const second = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T02:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxCurationProposals: 0,
+      aiClient: makeClient(secondCounter),
+    });
+
+    assert.equal(secondCounter.distillCalls, 1);
+    assert.equal(second.ai_distill.cache_hits, 0);
+    const secondLedger = await listSourceItemLedgerEntries(root);
+    assert.equal(secondLedger.length, 1);
+    assert.equal(secondLedger[0].status, "distilled");
   });
 
   it("can retry only chunks with cached AI distill failures", async () => {

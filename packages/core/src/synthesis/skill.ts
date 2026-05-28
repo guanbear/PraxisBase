@@ -131,10 +131,19 @@ function skillGroupKey(experience: DistilledExperience): string | undefined {
 
 function generateDistilledSkillMd(title: string, trigger: string, procedure: string[], experiences: DistilledExperience[]): string {
   const sourceRefs = Array.from(new Set(experiences.map((experience) => experience.source_ref))).sort();
+  const sourceHashes = Array.from(new Set(experiences.map((experience) => experience.source_hash))).sort();
   const lessons = Array.from(new Set(experiences.flatMap((experience) => experience.reusable_lessons))).sort();
   const verification = Array.from(new Set(experiences.flatMap((experience) => experience.verification))).sort();
 
   return [
+    "---",
+    "origin: praxisbase_synthesized",
+    "generated_by: praxisbase",
+    `source_refs:`,
+    ...sourceRefs.map((ref) => `  - ${ref}`),
+    `source_hashes:`,
+    ...sourceHashes.map((hash) => `  - ${hash}`),
+    "---",
     `# ${title}`,
     "",
     "## When To Use",
@@ -292,16 +301,25 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
   for (const cluster of clusters) {
     try {
       const matches = matchStableSkills(cluster, inventory);
-      const candidate = await proposeSkillCandidate({ cluster, matches, aiClient: input.aiClient, now });
-      const reviewResult = await reviewSkillCandidateSemanticallyDetailed({ candidate, client: input.aiClient, now });
-      const review = reviewResult.ok ? reviewResult.review : null;
+      let candidate = await proposeSkillCandidate({ cluster, matches, aiClient: input.aiClient, now });
+      let reviewResult = await reviewSkillCandidateSemanticallyDetailed({ candidate, client: input.aiClient, now });
+      let review = reviewResult.ok ? reviewResult.review : null;
       if (review) reviewed++;
-      const decision = decideSemanticSkillAction(candidate, review ?? undefined, reviewResult.ok ? undefined : reviewResult.reason);
+      let decision = decideSemanticSkillAction(candidate, review ?? undefined, reviewResult.ok ? undefined : reviewResult.reason);
+      let retryApplied = false;
+      if (decision.action === "retry_synthesis") {
+        retryApplied = true;
+        candidate = await proposeSkillCandidate({ cluster, matches, now });
+        reviewResult = await reviewSkillCandidateSemanticallyDetailed({ candidate, client: input.aiClient, now });
+        review = reviewResult.ok ? reviewResult.review : null;
+        if (review) reviewed++;
+        decision = decideSemanticSkillAction(candidate, review ?? undefined, reviewResult.ok ? undefined : reviewResult.reason);
+      }
       const reviewedCandidate: SkillSynthesisCandidate = {
         ...candidate,
         review_hint: {
           suggested_decision: decision.action === "reject" ? "reject" : decision.action === "rewrite_as_update" ? "merge" : decision.action === "needs_human" ? "edit" : "approve",
-          risk_notes: decision.review_notes,
+          risk_notes: retryApplied ? ["skill_structural_retry:applied", ...decision.review_notes] : decision.review_notes,
         },
       };
       if (decision.action === "reject") rejected++;

@@ -77,6 +77,11 @@ function skillShapeRiskNotes(body: string): string[] {
 
 function defaultSkillBody(cluster: SkillSignalCluster, matches: StableSkillMatch[]): string {
   const related = cluster.related_wiki_paths.length > 0 ? cluster.related_wiki_paths.map((path) => `- [[${path}]]`) : ["- None yet"];
+  const procedure = [
+    "Confirm the current task matches the trigger and related wiki evidence.",
+    ...cluster.procedure,
+    "Verify the original workflow again and capture the result with provenance.",
+  ];
   return [
     "---",
     `name: ${cluster.title}`,
@@ -84,6 +89,12 @@ function defaultSkillBody(cluster: SkillSignalCluster, matches: StableSkillMatch
     `scope: ${cluster.scope}`,
     "status: draft",
     `source_count: ${cluster.source_count}`,
+    "origin: praxisbase_synthesized",
+    "generated_by: praxisbase",
+    `source_refs:`,
+    ...cluster.source_refs.map((ref) => `  - ${ref}`),
+    `source_hashes:`,
+    ...cluster.source_hashes.map((hash) => `  - ${hash}`),
     "---",
     `# ${cluster.title}`,
     "",
@@ -91,7 +102,7 @@ function defaultSkillBody(cluster: SkillSignalCluster, matches: StableSkillMatch
     cluster.trigger,
     "",
     "## Procedure",
-    ...cluster.procedure.map((step, index) => `${index + 1}. ${step}`),
+    ...procedure.map((step, index) => `${index + 1}. ${step}`),
     "",
     "## Verification",
     "- Re-run the workflow that produced the verified experiences.",

@@ -27,9 +27,12 @@ describe("personal command", () => {
     assert.ok(parsed.bootstrap.skill_path);
     assert.ok(parsed.next.some((command: string) => command.includes("praxisbase personal run --open")));
     assert.ok(parsed.next.some((command: string) => command.includes("--with-agentmemory")));
+    assert.ok(parsed.next.some((command: string) => command.includes("praxisbase gbrain init")));
+    assert.ok(parsed.next.some((command: string) => command.includes("gbrain serve")));
 
     const skill = await readFile(join(root, ".praxisbase/agent-tools/skills/praxisbase/SKILL.md"), "utf8");
     assert.match(skill, /praxisbase personal init/);
+    assert.match(skill, /GBrain MCP is the default broad brain lookup path/);
     assert.match(skill, /--with-agentmemory/);
   });
 
@@ -85,6 +88,7 @@ describe("personal command", () => {
       assert.equal(parsed.ok, true);
       assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "sources" && check.ok));
       assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "site" && check.ok));
+      assert.ok(parsed.checks.some((check: { id: string; ok: boolean; message: string }) => check.id === "gbrain" && !check.ok && /GBrain/.test(check.message)));
       assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "agentmemory:personal-agentmemory:health" && check.ok));
       assert.ok(parsed.checks.some((check: { id: string; ok: boolean }) => check.id === "agentmemory:personal-agentmemory:smart_search" && check.ok));
     } finally {
@@ -133,5 +137,59 @@ describe("personal command", () => {
     assert.equal(parsed.installed, false);
     assert.match(parsed.cron, /praxisbase personal run --json/);
     assert.match(parsed.launchd, /praxisbase personal run --json/);
+  });
+
+  it("connects claude-code source with correct parser and default path", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-connect-claude-"));
+    const result = JSON.parse(await personalCommand(root, "connect", {
+      target: "claude-code",
+      json: true,
+    }));
+
+    assert.equal(result.source.name, "personal-claude-code");
+    assert.equal(result.source.agent, "claude-code");
+    assert.equal(result.source.parser, "claude-code-session");
+    assert.equal(result.source.source_type, "local");
+    assert.equal(result.source.scope_default, "personal");
+    assert.equal(result.source.path, "~/.claude/transcripts");
+  });
+
+  it("connects opencode source with correct parser and default path", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-connect-opencode-"));
+    const result = JSON.parse(await personalCommand(root, "connect", {
+      target: "opencode",
+      json: true,
+    }));
+
+    assert.equal(result.source.name, "personal-opencode");
+    assert.equal(result.source.agent, "opencode");
+    assert.equal(result.source.parser, "opencode-session");
+    assert.equal(result.source.source_type, "local");
+    assert.equal(result.source.scope_default, "personal");
+    assert.equal(result.source.path, "~/.local/share/opencode/log");
+  });
+
+  it("connects claude-code source with custom path", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-connect-claude-custom-"));
+    const result = JSON.parse(await personalCommand(root, "connect", {
+      target: "claude-code",
+      path: "/custom/claude/sessions",
+      json: true,
+    }));
+
+    assert.equal(result.source.path, "/custom/claude/sessions");
+    assert.equal(result.source.parser, "claude-code-session");
+  });
+
+  it("rejects invalid connect targets", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-connect-invalid-"));
+    const output = await personalCommand(root, "connect", {
+      target: "invalid-agent" as any,
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.code, "PERSONAL_CONNECT_INVALID");
   });
 });

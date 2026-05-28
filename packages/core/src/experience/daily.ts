@@ -36,6 +36,11 @@ import {
 } from "./source-adapters.js";
 import { listExperienceSources } from "./source-config.js";
 import {
+  readSourceItemLedger,
+  writeSourceItemLedger,
+  type SourceItemLedgerKeyInput,
+} from "./source-item-ledger.js";
+import {
   chunkExperienceSource,
   chunkTextExperience,
   type ExperienceChunk,
@@ -129,7 +134,7 @@ const DISTILL_CACHE_VERSION = "ai-distill-v1";
 export type DailyNextActionStatus =
   | "needs_privacy_triage"
   | "needs_review"
-  | "ready_to_export_agentmemory"
+  | "ready_to_export_gbrain"
   | "no_stable_changes"
   | "ready";
 
@@ -200,7 +205,7 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
 
   if (report.changed_stable_knowledge) {
     return {
-      status: "ready_to_export_agentmemory",
+      status: "ready_to_export_gbrain",
       counts,
       agentmemory_export_recommended: report.authority_mode === "personal-local",
       gbrain_export_recommended: report.authority_mode === "personal-local",
@@ -744,6 +749,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     ? { ...aiConfig, ai_timeout_ms: input.aiTimeoutMs }
     : aiConfig;
   const distillAiConfig = runtimeAiConfig ? withDistillModel(runtimeAiConfig) : undefined;
+  const distillModelName = distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client";
   const aiClient = input.aiClient ?? (distillAiConfig
     ? createOpenAiCompatibleJsonClient({ config: distillAiConfig, env: input.env, fetchImpl: input.fetchImpl })
     : undefined);
@@ -905,8 +911,25 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       fetched = chunks.length + blocked.length;
 
       const distillTasks: ExperienceChunk[] = [];
+      const ledgerInputForChunk = (chunk: ExperienceChunk): SourceItemLedgerKeyInput => ({
+        source_id: chunk.source_id,
+        source_ref: chunk.source_ref,
+        source_hash: chunk.source_hash,
+        chunk_hash: chunk.chunk_hash,
+        authority_mode: input.authorityMode,
+        model: distillModelName,
+        parser: source.parser,
+        reducer_identity_salt: chunk.reducer_identity_salt,
+      });
+      let sourceLedgerReuse = 0;
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
         const chunk = chunks[chunkIndex];
+        const cachePath = distillCachePath({
+          authorityMode: input.authorityMode,
+          model: distillModelName,
+          chunk,
+        });
+        const ledgerInput = ledgerInputForChunk(chunk);
         const prePrivacy = evaluatePreAiPrivacy({
           mode: input.authorityMode,
           scopeHint: chunk.scope_hint,
@@ -925,24 +948,50 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           else humanRequired++;
           aiDistill.human_required++;
           aiDistill.privacy_required++;
+          if (mode === "write") {
+            await writeSourceItemLedger(root, ledgerInput, {
+              status: "human_required",
+              chunk_hashes: [chunk.chunk_hash],
+              envelope_ids: [envelope.id],
+              warnings: prePrivacy.reasons,
+              now,
+            });
+          }
           continue;
         }
 
-        const cachePath = distillCachePath({
-          authorityMode: input.authorityMode,
-          model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
-          chunk,
-        });
-        const cached = await readDistillCache(root, cachePath);
+        let cached = await readDistillCache(root, cachePath);
+        let validatedCachePath = cachePath;
+        if (!cached) {
+          const ledger = await readSourceItemLedger(root, ledgerInput);
+          if (ledger?.distill_cache_path) {
+            const ledgerCached = await readDistillCache(root, ledger.distill_cache_path);
+            if (ledgerCached) {
+              cached = ledgerCached;
+              validatedCachePath = ledger.distill_cache_path;
+              sourceLedgerReuse++;
+            }
+          }
+        }
         if (cached?.status === "distilled") {
           distilledExperiences.push(cached.experience);
-          allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
+          const envelope = makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
             verdict: "allow",
             reasons: ["ai_distilled", "ai_distill_cache_hit"],
-          }, cached.experience));
+          }, cached.experience);
+          allowed.push(envelope);
           aiDistill.chunks++;
           aiDistill.distilled++;
           aiDistill.cache_hits++;
+          if (mode === "write") {
+            await writeSourceItemLedger(root, ledgerInput, {
+              status: "distilled",
+              chunk_hashes: cached.experience.chunk_hashes,
+              distill_cache_path: validatedCachePath,
+              envelope_ids: [envelope.id],
+              now,
+            });
+          }
           continue;
         }
         if (cached?.status === "human_required") {
@@ -956,6 +1005,16 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           aiDistill.human_required++;
           aiDistill.privacy_required++;
           aiDistill.cache_hits++;
+          if (mode === "write") {
+            await writeSourceItemLedger(root, ledgerInput, {
+              status: "human_required",
+              chunk_hashes: [chunk.chunk_hash],
+              distill_cache_path: validatedCachePath,
+              envelope_ids: [envelope.id],
+              warnings: [cached.error],
+              now,
+            });
+          }
           continue;
         }
         if (input.retryFailedDistillOnly && cached?.status !== "failed") {
@@ -964,7 +1023,21 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         }
 
         if (uncachedAiChunks >= maxAiChunks) {
-          aiDistill.skipped_by_budget += chunks.length - chunkIndex;
+          const skippedChunks = chunks.slice(chunkIndex);
+          aiDistill.skipped_by_budget += skippedChunks.length;
+          if (mode === "write") {
+            await Promise.all(skippedChunks.map((skippedChunk) => writeSourceItemLedger(root, ledgerInputForChunk(skippedChunk), {
+              status: "skipped",
+              chunk_hashes: [skippedChunk.chunk_hash],
+              distill_cache_path: distillCachePath({
+                authorityMode: input.authorityMode,
+                model: distillModelName,
+                chunk: skippedChunk,
+              }),
+              warnings: [`max_uncached_ai_chunks_reached:${maxAiChunks}`],
+              now,
+            })));
+          }
           recordMaxAiChunksWarning();
           break;
         }
@@ -1012,29 +1085,38 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           });
           const cachePath = distillCachePath({
             authorityMode: input.authorityMode,
-            model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+            model: distillModelName,
             chunk,
           });
+          const ledgerInput = ledgerInputForChunk(chunk);
 
           if (distilled.ok) {
             distilledExperiences.push(distilled.experience);
-            allowed.push(makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
+            const envelope = makeEnvelopeFromChunk(chunk, now, input.authorityMode, {
               verdict: "allow",
               reasons: ["ai_distilled"],
-            }, distilled.experience));
+            }, distilled.experience);
+            allowed.push(envelope);
             aiDistill.distilled++;
             if (mode === "write") {
               await writeDistillCache(root, cachePath, {
                 type: "ai_distill_cache_entry",
                 version: DISTILL_CACHE_VERSION,
                 status: "distilled",
-                model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+                model: distillModelName,
                 authority_mode: input.authorityMode,
                 source_id: chunk.source_id,
                 source_hash: chunk.source_hash,
                 chunk_hash: chunk.chunk_hash,
                 experience: distilled.experience,
                 created_at: now,
+              });
+              await writeSourceItemLedger(root, ledgerInput, {
+                status: "distilled",
+                chunk_hashes: distilled.experience.chunk_hashes,
+                distill_cache_path: cachePath,
+                envelope_ids: [envelope.id],
+                now,
               });
             }
           } else {
@@ -1055,13 +1137,21 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
                   type: "ai_distill_cache_entry",
                   version: DISTILL_CACHE_VERSION,
                   status: "human_required",
-                  model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+                  model: distillModelName,
                   authority_mode: input.authorityMode,
                   source_id: chunk.source_id,
                   source_hash: chunk.source_hash,
                   chunk_hash: chunk.chunk_hash,
                   error: distilled.error,
                   created_at: now,
+                });
+                await writeSourceItemLedger(root, ledgerInput, {
+                  status: "human_required",
+                  chunk_hashes: [chunk.chunk_hash],
+                  distill_cache_path: cachePath,
+                  envelope_ids: [envelope.id],
+                  warnings: [distilled.error],
+                  now,
                 });
               }
             } else {
@@ -1072,13 +1162,20 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
                   type: "ai_distill_cache_entry",
                   version: DISTILL_CACHE_VERSION,
                   status: "failed",
-                  model: distillAiConfig?.model ?? aiConfig?.model ?? "injected-ai-client",
+                  model: distillModelName,
                   authority_mode: input.authorityMode,
                   source_id: chunk.source_id,
                   source_hash: chunk.source_hash,
                   chunk_hash: chunk.chunk_hash,
                   error: distilled.error,
                   created_at: now,
+                });
+                await writeSourceItemLedger(root, ledgerInput, {
+                  status: "failed",
+                  chunk_hashes: [chunk.chunk_hash],
+                  distill_cache_path: cachePath,
+                  warnings: [distilled.error],
+                  now,
                 });
               }
             }
@@ -1113,6 +1210,9 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           () => runDistillWorker(),
         ));
         if (uncachedAiChunks >= maxAiChunks) recordMaxAiChunksWarning();
+      }
+      if (sourceLedgerReuse > 0) {
+        sourceWarnings.push(`source_item_ledger_reuse:${sourceLedgerReuse}`);
       }
       enveloped = allowed.length + blocked.length;
     } else {

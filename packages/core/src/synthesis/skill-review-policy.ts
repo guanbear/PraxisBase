@@ -17,6 +17,14 @@ export function decideSemanticSkillAction(candidate: SkillSynthesisCandidate, re
   if (notes.includes("ambiguous_existing_skill_match")) {
     return { action: "needs_human", promotion_eligible: false, reason: "Ambiguous existing skill match requires human merge/update decision.", review_notes: notes };
   }
+  if (notes.some((note) => note.startsWith("skill_shape_invalid:missing_sections") || note === "skill_shape_invalid:short_procedure")) {
+    return {
+      action: "retry_synthesis",
+      promotion_eligible: false,
+      reason: "Skill candidate markdown shape is incomplete; retry with conservative default body.",
+      review_notes: [...notes, "skill_structural_retry:needed"],
+    };
+  }
   if (notes.some((note) => note.startsWith("skill_shape_invalid"))) {
     return { action: "needs_human", promotion_eligible: false, reason: "Skill candidate markdown shape requires human edit before future-agent use.", review_notes: notes };
   }
