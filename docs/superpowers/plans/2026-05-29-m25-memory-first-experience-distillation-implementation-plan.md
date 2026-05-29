@@ -542,7 +542,7 @@ Cache-specific implementation status:
 - [x] Validate cached lessons with `ExperienceLessonSchema` before reuse and ignore corrupt cache entries.
 - [x] Add extractor/CLI tests proving repeated `lesson extract --ai` reuses cache without another provider call.
 - [x] Add planner/reducer/parser identities to the AI lesson extraction cache.
-- [ ] Add hit/miss reporting to the AI lesson extraction cache.
+- [x] Add hit/miss reporting to the AI lesson extraction cache.
 
 - [ ] **Step 3: Run extractor test**
 

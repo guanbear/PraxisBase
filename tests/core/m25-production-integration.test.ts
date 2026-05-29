@@ -271,6 +271,7 @@ describe("M25 production integration", () => {
         human_required: 0,
         rejected: 0,
         wiki_evidence: 3,
+        ai_cache: { enabled: true, hits: 2, misses: 1, writes: 1, corrupt: 0 },
         golden_validation: [{ fixture: "openclaw-local", matches: 5, privateLeakCount: 0 }],
         report_ref: ".praxisbase/reports/lessons/lesson_daily.json",
       },
@@ -285,6 +286,7 @@ describe("M25 production integration", () => {
     const index = await readFile(join(root, "dist/index.html"), "utf8");
     assert.ok(index.includes("M25 Lessons"));
     assert.ok(index.includes("Lesson wiki ready"));
+    assert.ok(index.includes("Lesson AI cache hits"));
     assert.ok(index.includes("Golden openclaw-local"));
   });
 

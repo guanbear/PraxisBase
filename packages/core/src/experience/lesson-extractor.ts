@@ -19,7 +19,15 @@ export interface ExtractLessonsWithAiOptions {
     plannerIdentity?: string;
     parserIdentity?: string;
     reducerIdentity?: string;
+    stats?: LessonExtractCacheStats;
   };
+}
+
+export interface LessonExtractCacheStats {
+  hits: number;
+  misses: number;
+  writes: number;
+  corrupt: number;
 }
 
 interface AiLessonDraft {
@@ -78,7 +86,12 @@ export async function extractLessonsWithAi(
   const cachePath = options.cache ? lessonExtractCachePath(spans, options) : undefined;
   if (cachePath && options.cache) {
     const cached = await readCachedLessons(options.cache.root, cachePath);
-    if (cached) return cached;
+    if (cached.status === "hit") {
+      options.cache.stats && (options.cache.stats.hits += 1);
+      return cached.lessons;
+    }
+    options.cache.stats && (options.cache.stats.misses += 1);
+    if (cached.status === "corrupt") options.cache.stats && (options.cache.stats.corrupt += 1);
   }
 
   const first = await callExtractor(options.client, spans, buildSystemPrompt(), buildUserPrompt(spans));
@@ -86,11 +99,17 @@ export async function extractLessonsWithAi(
 
   const parsed = parseLessonDrafts(first.json, spans, options);
   if (parsed.valid.length > 0 && parsed.invalid === 0) {
-    if (cachePath && options.cache) await writeCachedLessons(options.cache.root, cachePath, parsed.valid);
+    if (cachePath && options.cache) {
+      await writeCachedLessons(options.cache.root, cachePath, parsed.valid);
+      options.cache.stats && (options.cache.stats.writes += 1);
+    }
     return parsed.valid;
   }
   if (parsed.invalid === 0) {
-    if (cachePath && options.cache) await writeCachedLessons(options.cache.root, cachePath, parsed.valid);
+    if (cachePath && options.cache) {
+      await writeCachedLessons(options.cache.root, cachePath, parsed.valid);
+      options.cache.stats && (options.cache.stats.writes += 1);
+    }
     return parsed.valid;
   }
 
@@ -104,7 +123,10 @@ export async function extractLessonsWithAi(
 
   const repaired = parseLessonDrafts(retry.json, spans, options);
   const lessons = [...parsed.valid, ...repaired.valid];
-  if (cachePath && options.cache) await writeCachedLessons(options.cache.root, cachePath, lessons);
+  if (cachePath && options.cache) {
+    await writeCachedLessons(options.cache.root, cachePath, lessons);
+    options.cache.stats && (options.cache.stats.writes += 1);
+  }
   return lessons;
 }
 
@@ -129,19 +151,26 @@ function lessonExtractCachePath(spans: EvidenceSpan[], options: ExtractLessonsWi
   return `${protocolPaths.cacheLessonExtract}/${key}.json`;
 }
 
-async function readCachedLessons(root: string, cachePath: string): Promise<ExperienceLesson[] | undefined> {
+async function readCachedLessons(
+  root: string,
+  cachePath: string,
+): Promise<
+  | { status: "hit"; lessons: ExperienceLesson[] }
+  | { status: "miss" }
+  | { status: "corrupt" }
+> {
   try {
     const raw = await readJson<{ lessons?: unknown[] }>(root, cachePath);
-    if (!Array.isArray(raw.lessons)) return undefined;
+    if (!Array.isArray(raw.lessons)) return { status: "corrupt" };
     const lessons: ExperienceLesson[] = [];
     for (const candidate of raw.lessons) {
       const parsed = ExperienceLessonSchema.safeParse(candidate);
-      if (!parsed.success) return undefined;
+      if (!parsed.success) return { status: "corrupt" };
       lessons.push(parsed.data);
     }
-    return lessons;
+    return { status: "hit", lessons };
   } catch {
-    return undefined;
+    return { status: "miss" };
   }
 }
 

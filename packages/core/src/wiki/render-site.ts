@@ -361,6 +361,8 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 	    <article><span>Lesson human required</span><strong>${escapeHtml(String(report.lessons.human_required))}</strong></article>
 	    <article><span>Lesson rejected</span><strong>${escapeHtml(String(report.lessons.rejected))}</strong></article>
 	    <article><span>Lesson wiki evidence</span><strong>${escapeHtml(String(report.lessons.wiki_evidence))}</strong></article>
+	    ${report.lessons.ai_cache && report.lessons.ai_cache.enabled ? `<article><span>Lesson AI cache hits</span><strong>${escapeHtml(String(report.lessons.ai_cache.hits))}</strong></article>
+	    <article><span>Lesson AI cache misses</span><strong>${escapeHtml(String(report.lessons.ai_cache.misses))}</strong></article>` : ""}
 	    ${report.lessons.golden_validation && report.lessons.golden_validation.length > 0 ? report.lessons.golden_validation.map((gv) => `<article><span>Golden ${escapeHtml(gv.fixture)}</span><strong>${escapeHtml(String(gv.matches))} matches / ${escapeHtml(String(gv.privateLeakCount))} leaks</strong></article>`).join("\n") : ""}` : ""}
 	  </div>
   ${renderAgentMemoryStatus(report)}
@@ -1168,6 +1170,13 @@ interface DailyReportSummary {
 	    human_required: number;
 	    rejected: number;
 	    wiki_evidence: number;
+	    ai_cache?: {
+	      enabled: boolean;
+	      hits: number;
+	      misses: number;
+	      writes: number;
+	      corrupt: number;
+	    };
 	    golden_validation: Array<{
 	      fixture: string;
 	      matches: number;
@@ -1455,6 +1464,16 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	        human_required: typeof l.human_required === "number" ? l.human_required : 0,
 	        rejected: typeof l.rejected === "number" ? l.rejected : 0,
 	        wiki_evidence: typeof l.wiki_evidence === "number" ? l.wiki_evidence : 0,
+	        ai_cache: l.ai_cache && typeof l.ai_cache === "object" ? (() => {
+	          const cache = l.ai_cache as Record<string, unknown>;
+	          return {
+	            enabled: Boolean(cache.enabled),
+	            hits: typeof cache.hits === "number" ? cache.hits : 0,
+	            misses: typeof cache.misses === "number" ? cache.misses : 0,
+	            writes: typeof cache.writes === "number" ? cache.writes : 0,
+	            corrupt: typeof cache.corrupt === "number" ? cache.corrupt : 0,
+	          };
+	        })() : undefined,
 	        golden_validation: gv,
 	        report_ref: typeof l.report_ref === "string" ? l.report_ref : undefined,
 	      };

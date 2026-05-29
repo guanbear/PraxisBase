@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { mkdtemp, readdir } from "node:fs/promises";
+import { mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -161,6 +161,52 @@ test("LLM extractor reuses cache by prompt model and span identity", async () =>
   assert.equal(calls, 1);
   const files = await readdir(join(root, protocolPaths.cacheLessonExtract));
   assert.equal(files.length, 1);
+});
+
+test("LLM extractor reports cache hits misses writes and corrupt entries", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-lesson-ai-cache-stats-"));
+  const stats = { hits: 0, misses: 0, writes: 0, corrupt: 0 };
+  let calls = 0;
+  const client = {
+    generateJson: async () => {
+      calls += 1;
+      return {
+        ok: true as const,
+        json: {
+          lessons: [makeLesson()],
+        },
+      };
+    },
+  };
+
+  await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7", stats },
+  });
+  await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7", stats },
+  });
+
+  const [cacheFile] = await readdir(join(root, protocolPaths.cacheLessonExtract));
+  await writeFile(join(root, protocolPaths.cacheLessonExtract, cacheFile!), "{\"lessons\":[{\"bad\":true}]}", "utf8");
+
+  await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7", stats },
+  });
+
+  assert.equal(calls, 2);
+  assert.deepEqual(stats, { hits: 1, misses: 2, writes: 2, corrupt: 1 });
 });
 
 test("LLM extractor cache identity includes source provenance", async () => {

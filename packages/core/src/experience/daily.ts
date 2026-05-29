@@ -1771,6 +1771,13 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         human_required: lessons.filter((lesson) => lesson.privacy_tier === "human_required").length,
         rejected: lessons.filter((lesson) => lesson.privacy_tier === "reject").length,
       },
+      ai_cache: {
+        enabled: lessonReports.some((report) => report.ai_cache.enabled),
+        hits: lessonReports.reduce((sum, report) => sum + report.ai_cache.hits, 0),
+        misses: lessonReports.reduce((sum, report) => sum + report.ai_cache.misses, 0),
+        writes: lessonReports.reduce((sum, report) => sum + report.ai_cache.writes, 0),
+        corrupt: lessonReports.reduce((sum, report) => sum + report.ai_cache.corrupt, 0),
+      },
       wiki_evidence: buildWikiEvidenceFromLessons(lessons).length,
       source_reports: lessonSourceReports,
     };
@@ -2119,6 +2126,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	        human_required: lessonReport.counts_by_state["human_required"] ?? 0,
 	        rejected: lessonReport.counts_by_state["rejected"] ?? 0,
 	        wiki_evidence: lessonReport.wiki_evidence,
+	        ai_cache: lessonReport.ai_cache,
 	        golden_validation: [],
 	        report_ref: lessonReportRef,
 	      } : {

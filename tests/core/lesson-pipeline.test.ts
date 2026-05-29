@@ -126,3 +126,71 @@ test("lesson pipeline writes and reuses persistent lesson state cache", async ()
   assert.equal(cache.records.length, 1);
   assert.equal(cache.records[0]!.observation_count, 2);
 });
+
+test("lesson pipeline reports AI extraction cache hits and misses", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-lesson-pipeline-ai-cache-"));
+  const source = join(root, "openclaw-memory");
+  await mkdir(source, { recursive: true });
+  await writeFile(
+    join(source, "MEMORY.md"),
+    "- Confirm target machine before executing a remote restart.\n",
+    "utf8",
+  );
+  let calls = 0;
+  const aiClient = {
+    async generateJson(input: { user: string }) {
+      calls += 1;
+      const parsed = JSON.parse(input.user) as { spans: Array<{ span_id: string }> };
+      return {
+        ok: true as const,
+        json: {
+          lessons: [{
+            claim: "Confirm target machine before executing remote restart.",
+            safe_claim: "Confirm the target machine before executing remote restart.",
+            problem: "Remote restarts can target the wrong machine.",
+            trigger: "Before restart or destructive remote operation.",
+            action: "Check the target machine before executing.",
+            verification: "Target was checked before execution.",
+            negative_case: "Do not assume the remote target is correct.",
+            applies_to_agents: ["openclaw"],
+            applies_to_systems: ["remote-ops"],
+            portability: "agent_family",
+            privacy_tier: "safe",
+            scope: "personal",
+            confidence: 0.91,
+            cue_family: "llm_inferred",
+            evidence_span_ids: [parsed.spans[0]!.span_id],
+            redaction_notes: [],
+          }],
+        },
+      };
+    },
+  };
+
+  const first = await runLessonPipeline(root, {
+    sourcePath: source,
+    agent: "openclaw",
+    scope: "personal",
+    origin: "local",
+    authorityMode: "personal-local",
+    now: "2026-05-29T00:00:00.000Z",
+    maxSpans: 10,
+    aiClient,
+    aiCacheIdentity: "glm-4.7",
+  });
+  const second = await runLessonPipeline(root, {
+    sourcePath: source,
+    agent: "openclaw",
+    scope: "personal",
+    origin: "local",
+    authorityMode: "personal-local",
+    now: "2026-05-29T00:05:00.000Z",
+    maxSpans: 10,
+    aiClient,
+    aiCacheIdentity: "glm-4.7",
+  });
+
+  assert.equal(calls, 1);
+  assert.deepEqual(first.ai_cache, { enabled: true, hits: 0, misses: 1, writes: 1, corrupt: 0 });
+  assert.deepEqual(second.ai_cache, { enabled: true, hits: 1, misses: 0, writes: 0, corrupt: 0 });
+});

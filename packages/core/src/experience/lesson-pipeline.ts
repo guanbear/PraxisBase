@@ -15,7 +15,7 @@ import {
   type ClassifiedLesson,
 } from "./lesson-cache.js";
 import { extractDeterministicLessons } from "./lesson-deterministic.js";
-import { extractLessonsWithAi } from "./lesson-extractor.js";
+import { extractLessonsWithAi, type LessonExtractCacheStats } from "./lesson-extractor.js";
 import { LESSON_PLANNER_IDENTITY, planLessonSpans } from "./lesson-planner.js";
 import { SOURCE_INVENTORY_PARSER_IDENTITY, buildSourceInventory } from "./source-inventory.js";
 
@@ -45,6 +45,7 @@ export interface LessonPipelineReport {
     human_required: number;
     rejected: number;
   };
+  ai_cache: LessonExtractCacheStats & { enabled: boolean };
   wiki_evidence: number;
 }
 
@@ -65,6 +66,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
   const aiSpans = input.authorityMode === "team-git" || input.scope === "team"
     ? redactEvidenceSpansForAi(spans).spans
     : spans;
+  const aiCacheStats: LessonExtractCacheStats = { hits: 0, misses: 0, writes: 0, corrupt: 0 };
   const aiLessons = input.aiClient
     ? await extractLessonsWithAi(aiSpans, {
       client: input.aiClient,
@@ -77,6 +79,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
           identity: input.aiCacheIdentity,
           plannerIdentity: LESSON_PLANNER_IDENTITY,
           parserIdentity: SOURCE_INVENTORY_PARSER_IDENTITY,
+          stats: aiCacheStats,
         },
       } : {}),
     })
@@ -134,6 +137,10 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
       abstracted,
       human_required: lessons.filter((lesson) => lesson.privacy_tier === "human_required").length,
       rejected: lessons.filter((lesson) => lesson.privacy_tier === "reject").length,
+    },
+    ai_cache: {
+      enabled: Boolean(input.aiClient && input.aiCacheIdentity),
+      ...aiCacheStats,
     },
     wiki_evidence: buildWikiEvidenceFromLessons(lessons).length,
   };

@@ -853,6 +853,19 @@ export const DailyExperienceReportSchema = z.object({
 	    human_required: z.number().int().min(0).default(0),
 	    rejected: z.number().int().min(0).default(0),
 	    wiki_evidence: z.number().int().min(0).default(0),
+	    ai_cache: z.object({
+	      enabled: z.boolean().default(false),
+	      hits: z.number().int().min(0).default(0),
+	      misses: z.number().int().min(0).default(0),
+	      writes: z.number().int().min(0).default(0),
+	      corrupt: z.number().int().min(0).default(0),
+	    }).default(() => ({
+	      enabled: false,
+	      hits: 0,
+	      misses: 0,
+	      writes: 0,
+	      corrupt: 0,
+	    })),
 	    golden_validation: z.array(z.object({
 	      fixture: z.string().min(1),
 	      matches: z.number().int().min(0),
@@ -871,6 +884,7 @@ export const DailyExperienceReportSchema = z.object({
 	    human_required: 0,
 	    rejected: 0,
 	    wiki_evidence: 0,
+	    ai_cache: { enabled: false, hits: 0, misses: 0, writes: 0, corrupt: 0 },
 	    golden_validation: [],
 	  })),
 	  outputs: z.array(z.string()),
