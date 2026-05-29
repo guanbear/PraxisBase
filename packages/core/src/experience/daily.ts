@@ -1761,6 +1761,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       deterministic_lessons: lessonReports.reduce((sum, report) => sum + report.deterministic_lessons, 0),
       ai_lessons: lessonReports.reduce((sum, report) => sum + report.ai_lessons, 0),
       lessons,
+      cache_upserted: lessonReports.reduce((sum, report) => sum + report.cache_upserted, 0),
       counts_by_state: lessons.reduce<Record<string, number>>((counts, lesson) => {
         counts[lesson.state] = (counts[lesson.state] ?? 0) + 1;
         return counts;

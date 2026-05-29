@@ -5,6 +5,7 @@
 - [ ] Add `ExperienceLesson`, `EvidenceSpan`, `SourceInventoryItem`, lesson state, portability, cue family, and privacy abstraction schemas.
 - [ ] Add report paths for source inventory, lesson extraction, lesson cache, golden validation, and runtime lesson injection.
 - [x] Add protocol cache path for AI lesson extraction cache at `.praxisbase/cache/lesson-extract`.
+- [x] Add protocol cache path for governed lesson state cache at `.praxisbase/cache/lesson-state`.
 - [x] Add local-only staging path for trusted remote OpenClaw raw evidence at `.praxisbase/staging/trusted-remote-openclaw`.
 - [ ] Export new schemas from `packages/core/src/index.ts`.
 - [ ] Add integration-contract report fields that show when lesson clusters outrank legacy distill summaries, GBrain hits, and AgentMemory hits.
@@ -52,9 +53,9 @@
 
 ## 7. Lesson Stability And Dedupe
 
-- [ ] Add lesson candidate cache with states: `candidate`, `provisional`, `active_personal`, `wiki_ready`, `skill_ready`, `forgotten`, `rejected`.
-- [ ] Add scoring by confidence, cue family, source count, agent count, verification, recency, privacy tier, duplicate status, and user override.
-- [ ] Add pin/forget/dismiss behavior for personal lessons.
+- [x] Add lesson candidate cache with states: `candidate`, `provisional`, `active_personal`, `wiki_ready`, `skill_ready`, `forgotten`, `rejected`.
+- [x] Add scoring by confidence, cue family, source count, agent count, verification, observation count, privacy tier, duplicate status, and user override.
+- [x] Add pin/forget/dismiss/reject behavior for personal lessons.
 - [ ] Add semantic duplicate grouping and contradiction routing.
 
 ## 8. Wiki Compiler Integration

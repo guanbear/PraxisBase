@@ -634,6 +634,11 @@ Implement:
 - `dedupeLessons(lessons)`;
 - `rankLessonsForWiki(lessons)`;
 - `rankLessonsForRuntime(lessons)`.
+- [x] Persist governed lesson state cache under `.praxisbase/cache/lesson-state/cache.json`.
+- [x] Upsert repeated lesson sightings by stable key, merge provenance, preserve user overrides, and record state history.
+- [x] Add pin/forget/dismiss/reject override helpers for future CLI/site controls.
+- [x] Integrate `runLessonPipeline` with the governed state cache and report `cache_upserted`.
+- [ ] Add semantic duplicate grouping and contradiction routing beyond deterministic stable-key dedupe.
 
 - [ ] **Step 3: Run cache tests**
 

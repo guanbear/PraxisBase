@@ -1,13 +1,19 @@
 /// <reference types="node" />
 
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyLessonState,
   dedupeLessons,
+  loadLessonStateCache,
   lessonStableKey,
   rankLessonsForRuntime,
   rankLessonsForWiki,
+  updateLessonUserOverride,
+  upsertLessonToCache,
 } from "@praxisbase/core";
 
 function makeLesson(overrides: Record<string, unknown> = {}) {
@@ -117,4 +123,89 @@ test("rankLessonsForRuntime filters to active_personal first", () => {
     makeLesson({ lesson_id: "human", state: "human_required", confidence: 1 }),
   ]);
   assert.deepEqual(ranked.map((lesson) => lesson.lesson_id), ["active", "candidate"]);
+});
+
+test("lesson cache increments observation count for repeated sightings", () => {
+  const first = upsertLessonToCache([], makeLesson(), "2026-05-29T00:00:00.000Z");
+  const second = upsertLessonToCache(first, makeLesson(), "2026-05-29T01:00:00.000Z");
+  assert.equal(second[0]!.observation_count, 2);
+  assert.equal(second[0]!.first_seen_at, "2026-05-29T00:00:00.000Z");
+  assert.equal(second[0]!.last_seen_at, "2026-05-29T01:00:00.000Z");
+});
+
+test("lesson cache keeps forgotten rejected and dismissed records from resurrecting", () => {
+  const now = "2026-05-29T00:00:00.000Z";
+  const stableKey = lessonStableKey(makeLesson());
+
+  for (const [override, expectedState] of [
+    ["forget", "forgotten"],
+    ["reject", "rejected"],
+    ["dismiss", "forgotten"],
+  ] as const) {
+    const initial = upsertLessonToCache([], makeLesson(), now);
+    const overridden = updateLessonUserOverride(initial, stableKey, override, "2026-05-29T00:01:00.000Z");
+    const seenAgain = upsertLessonToCache(overridden, makeLesson(), "2026-05-29T00:02:00.000Z");
+    assert.equal(seenAgain[0]!.state, expectedState);
+    assert.equal(seenAgain[0]!.user_override, override);
+  }
+});
+
+test("lesson cache pin override promotes a safe candidate", () => {
+  const candidate = makeLesson({
+    confidence: 0.4,
+    verification: undefined,
+    negative_case: undefined,
+  });
+  const stableKey = lessonStableKey(candidate);
+  const initial = upsertLessonToCache([], candidate, "2026-05-29T00:00:00.000Z");
+  assert.equal(initial[0]!.state, "candidate");
+
+  const pinned = updateLessonUserOverride(initial, stableKey, "pin", "2026-05-29T00:01:00.000Z");
+  assert.ok(["active_personal", "wiki_ready", "skill_ready"].includes(pinned[0]!.state));
+  assert.equal(pinned[0]!.user_override, "pin");
+});
+
+test("lesson cache merges evidence refs and source hashes for stable duplicates", () => {
+  const firstLesson = makeLesson({ source_refs: ["a"], source_hashes: ["sha256:a"] });
+  const secondLesson = makeLesson({ source_refs: ["b"], source_hashes: ["sha256:b"] });
+
+  const first = upsertLessonToCache([], firstLesson, "2026-05-29T00:00:00.000Z");
+  const second = upsertLessonToCache(first, secondLesson, "2026-05-29T00:01:00.000Z");
+
+  assert.deepEqual(second[0]!.evidence_refs.sort(), ["a", "b"]);
+  assert.deepEqual(second[0]!.source_hashes.sort(), ["sha256:a", "sha256:b"]);
+  assert.deepEqual(second[0]!.lesson.source_refs.sort(), ["a", "b"]);
+  assert.deepEqual(second[0]!.lesson.source_hashes.sort(), ["sha256:a", "sha256:b"]);
+});
+
+test("lesson cache merges applies-to agents for repeated stable lessons", () => {
+  const firstLesson = makeLesson({ applies_to_agents: ["openclaw"] });
+  const secondLesson = makeLesson({ applies_to_agents: ["codex"] });
+
+  const first = upsertLessonToCache([], firstLesson, "2026-05-29T00:00:00.000Z");
+  const second = upsertLessonToCache(first, secondLesson, "2026-05-29T00:01:00.000Z");
+
+  assert.deepEqual(second[0]!.lesson.applies_to_agents.sort(), ["codex", "openclaw"]);
+  assert.equal(second[0]!.agent_count, 2);
+});
+
+test("lesson cache ignores corrupt persisted cache", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-lesson-state-corrupt-"));
+  const cacheDir = join(root, ".praxisbase/cache/lesson-state");
+  await mkdir(cacheDir, { recursive: true });
+  await writeFile(join(cacheDir, "cache.json"), "{not-json", "utf8");
+
+  const records = await loadLessonStateCache(root);
+  assert.deepEqual(records, []);
+});
+
+test("lesson cache explicit pin resurrects forgotten record", () => {
+  const now = "2026-05-29T00:00:00.000Z";
+  const stableKey = lessonStableKey(makeLesson());
+  const initial = upsertLessonToCache([], makeLesson(), now);
+  const forgotten = updateLessonUserOverride(initial, stableKey, "forget", "2026-05-29T00:01:00.000Z");
+  const pinned = updateLessonUserOverride(forgotten, stableKey, "pin", "2026-05-29T00:02:00.000Z");
+
+  assert.ok(["active_personal", "wiki_ready", "skill_ready"].includes(pinned[0]!.state));
+  assert.equal(pinned[0]!.user_override, "pin");
 });

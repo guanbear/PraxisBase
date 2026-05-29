@@ -22,5 +22,6 @@ kb/.logs/
 .praxisbase/wiki/
 .praxisbase/inbox/proposals/
 .praxisbase/inbox/reviews/
+.omo/
 .sisyphus/
 data/

@@ -5,7 +5,15 @@ import { mkdtemp } from "node:fs/promises";
 import type { AiJsonClient } from "../ai/client.js";
 import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
 import { abstractLessonPrivacy, redactEvidenceSpansForAi } from "./lesson-privacy.js";
-import { classifyLessonState, dedupeLessons, type ClassifiedLesson } from "./lesson-cache.js";
+import {
+  classifyLessonState,
+  dedupeLessons,
+  loadLessonStateCache,
+  lessonStableKey,
+  saveLessonStateCache,
+  upsertLessonToCache,
+  type ClassifiedLesson,
+} from "./lesson-cache.js";
 import { extractDeterministicLessons } from "./lesson-deterministic.js";
 import { extractLessonsWithAi } from "./lesson-extractor.js";
 import { planLessonSpans } from "./lesson-planner.js";
@@ -21,6 +29,7 @@ export interface RunLessonPipelineInput {
   maxSpans?: number;
   aiClient?: AiJsonClient;
   aiCacheIdentity?: string;
+  cacheRoot?: string;
 }
 
 export interface LessonPipelineReport {
@@ -29,6 +38,7 @@ export interface LessonPipelineReport {
   deterministic_lessons: number;
   ai_lessons: number;
   lessons: ClassifiedLesson[];
+  cache_upserted: number;
   counts_by_state: Record<string, number>;
   privacy: {
     abstracted: number;
@@ -76,7 +86,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
     if (result.changed) abstracted++;
     return result.lesson;
   });
-  const lessons = dedupeLessons(privacyAdjusted).map((lesson) => ({
+  const classified = dedupeLessons(privacyAdjusted).map((lesson) => ({
     ...lesson,
     state: classifyLessonState(lesson, {
       mode,
@@ -84,6 +94,28 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
       verified: Boolean(lesson.verification),
     }),
   }));
+  const cacheRoot = input.cacheRoot ?? root;
+  let cacheRecords = await loadLessonStateCache(cacheRoot);
+  const upsertedKeys = new Set<string>();
+  for (const lesson of classified) {
+    const stableKey = lessonStableKey(lesson);
+    cacheRecords = upsertLessonToCache(cacheRecords, lesson, now, {
+      mode,
+      sourceCount: lesson.source_refs.length,
+      agentCount: lesson.applies_to_agents.length,
+      verified: Boolean(lesson.verification),
+    });
+    upsertedKeys.add(stableKey);
+  }
+  if (classified.length > 0) {
+    await saveLessonStateCache(cacheRoot, cacheRecords);
+  }
+  const lessons = cacheRecords
+    .filter((record) => upsertedKeys.has(record.stable_key))
+    .map((record) => ({
+      ...record.lesson,
+      state: record.state,
+    }));
   const counts_by_state = lessons.reduce<Record<string, number>>((counts, lesson) => {
     counts[lesson.state] = (counts[lesson.state] ?? 0) + 1;
     return counts;
@@ -94,6 +126,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
     deterministic_lessons: deterministicLessons.length,
     ai_lessons: aiLessons.length,
     lessons,
+    cache_upserted: upsertedKeys.size,
     counts_by_state,
     privacy: {
       abstracted,

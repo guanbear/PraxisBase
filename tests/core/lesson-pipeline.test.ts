@@ -1,11 +1,11 @@
 /// <reference types="node" />
 
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { runLessonPipeline } from "@praxisbase/core";
+import { protocolPaths, runLessonPipeline } from "@praxisbase/core";
 
 test("lesson pipeline uses injected AI client and redacts private spans before team-mode AI extraction", async () => {
   const root = await mkdtemp(join(tmpdir(), "praxisbase-lesson-pipeline-"));
@@ -88,4 +88,41 @@ test("lesson pipeline preserves home-relative source paths for inventory expansi
   } finally {
     await rm(source, { recursive: true, force: true });
   }
+});
+
+test("lesson pipeline writes and reuses persistent lesson state cache", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-lesson-pipeline-cache-"));
+  const source = join(root, "openclaw-memory");
+  await mkdir(source, { recursive: true });
+  await writeFile(
+    join(source, "MEMORY.md"),
+    "- Need tools/network/dispatch or slow tasks: send a short ACK first.\n",
+    "utf8",
+  );
+
+  const first = await runLessonPipeline(root, {
+    sourcePath: source,
+    agent: "openclaw",
+    scope: "personal",
+    origin: "local",
+    authorityMode: "personal-local",
+    now: "2026-05-29T00:00:00.000Z",
+    maxSpans: 10,
+  });
+  const second = await runLessonPipeline(root, {
+    sourcePath: source,
+    agent: "openclaw",
+    scope: "personal",
+    origin: "local",
+    authorityMode: "personal-local",
+    now: "2026-05-29T00:05:00.000Z",
+    maxSpans: 10,
+  });
+
+  assert.equal(first.cache_upserted, 1);
+  assert.equal(second.cache_upserted, 1);
+  const cacheRaw = await readFile(join(root, protocolPaths.cacheLessonState, "cache.json"), "utf8");
+  const cache = JSON.parse(cacheRaw) as { records: Array<{ observation_count: number }> };
+  assert.equal(cache.records.length, 1);
+  assert.equal(cache.records[0]!.observation_count, 2);
 });
