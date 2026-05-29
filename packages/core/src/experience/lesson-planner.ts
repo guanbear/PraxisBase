@@ -93,6 +93,13 @@ export function planLessonSpans(
   options?: PlanLessonSpansOptions,
 ): EvidenceSpan[] {
   const maxSpans = options?.maxSpans ?? 50;
+  const repetitionCounts = new Map<string, number>();
+  for (const item of items) {
+    for (const span of item.content_spans) {
+      const key = repetitionKey(span.excerpt);
+      repetitionCounts.set(key, (repetitionCounts.get(key) ?? 0) + 1);
+    }
+  }
 
   interface ScoredSpan {
     item: SourceInventoryItem;
@@ -105,7 +112,8 @@ export function planLessonSpans(
 
   for (const item of items) {
     for (const span of item.content_spans) {
-      const score = scoreEvidenceSpan(item, span);
+      const repeated = repetitionCounts.get(repetitionKey(span.excerpt)) ?? 1;
+      const score = scoreEvidenceSpan(item, span) + Math.min(30, (repeated - 1) * 20);
       scored.push({
         item,
         span,
@@ -127,5 +135,29 @@ export function planLessonSpans(
     return b.score - a.score;
   });
 
-  return scored.slice(0, maxSpans).map((s) => s.span);
+  const memorySpans = scored.filter((span) => span.isMemoryKind);
+  const selected = new Map<string, ScoredSpan>();
+  const memoryReserve = Math.min(memorySpans.length, Math.ceil(maxSpans * 0.4), maxSpans);
+  for (const span of memorySpans.slice(0, memoryReserve)) {
+    selected.set(span.span.span_id, span);
+  }
+
+  for (const span of scored) {
+    if (selected.size >= maxSpans) break;
+    selected.set(span.span.span_id, span);
+  }
+
+  return Array.from(selected.values())
+    .sort((a, b) => scored.indexOf(a) - scored.indexOf(b))
+    .slice(0, maxSpans)
+    .map((s) => s.span);
+}
+
+function repetitionKey(excerpt: string): string {
+  return excerpt
+    .toLowerCase()
+    .replace(/[0-9a-f]{8,}/g, "")
+    .replace(/\b\d+\b/g, "")
+    .replace(/[^a-z\u4e00-\u9fff]+/g, " ")
+    .trim();
 }

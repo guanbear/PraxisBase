@@ -23,8 +23,8 @@
 
 ## 3. Signal Planner
 
-- [ ] Add span scoring by source kind, authority hint, explicit lesson markers, failure/fix/verification markers, repetition, and user-authored/native-memory hints.
-- [ ] Reserve a minimum span budget for memory files before logs.
+- [x] Add span scoring by source kind, authority hint, explicit lesson markers, failure/fix/verification markers, repetition, and user-authored/native-memory hints.
+- [x] Reserve a minimum span budget for memory files before logs.
 - [ ] Include neighboring heading context for selected spans.
 - [x] Include planner identity in cache keys.
 - [x] Add tests proving newest logs cannot crowd out high-priority memory spans.
