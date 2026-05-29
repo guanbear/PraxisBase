@@ -4,6 +4,8 @@
 
 - [ ] Add `ExperienceLesson`, `EvidenceSpan`, `SourceInventoryItem`, lesson state, portability, cue family, and privacy abstraction schemas.
 - [ ] Add report paths for source inventory, lesson extraction, lesson cache, golden validation, and runtime lesson injection.
+- [x] Add protocol cache path for AI lesson extraction cache at `.praxisbase/cache/lesson-extract`.
+- [x] Add local-only staging path for trusted remote OpenClaw raw evidence at `.praxisbase/staging/trusted-remote-openclaw`.
 - [ ] Export new schemas from `packages/core/src/index.ts`.
 - [ ] Add integration-contract report fields that show when lesson clusters outrank legacy distill summaries, GBrain hits, and AgentMemory hits.
 
@@ -15,6 +17,8 @@
 - [ ] Prioritize `MEMORY.md`, `TOOLS.md`, native memory, and self-authored skills ahead of ordinary logs.
 - [ ] Add source inventory tests for long OpenClaw memory files and mixed Codex/OpenClaw source directories.
 - [x] Add JSONL/log session span extraction for Codex/OpenCode/Claude-style records with `json_message`, `tool_call`, and `tool_result` span kinds.
+- [x] Stage trusted personal remote OpenClaw raw MEMORY/TOOLS/report/sqlite-query material before M25 lesson extraction instead of relying only on sanitized envelopes.
+- [x] Extract nested OpenClaw JSON export text/tool fields as evidence spans.
 
 ## 3. Signal Planner
 
@@ -34,7 +38,8 @@
 
 - [ ] Add strict JSON lesson extractor prompts and zod validation.
 - [ ] Add malformed-output repair and quarantine.
-- [ ] Add model/prompt/span/reducer cache identity.
+- [x] Add AI lesson extraction cache identity using prompt version, CLI/daily model identity, agent, scope, source hash, span id, and excerpt hash.
+- [ ] Include planner/reducer/parser identity in lesson AI cache keys where reduced or planned span inputs affect extraction.
 - [ ] Require `safe_claim`, `portability`, `privacy_tier`, `applies_to_agents`, `applies_to_systems`, and evidence spans.
 - [ ] Add tests that weak one-off run reports return no lesson.
 
@@ -80,6 +85,7 @@
 
 - [ ] Add CLI/report surfaces for inventory, lesson extraction, lesson cache, golden validation, and injection preview.
 - [x] Add explicit `lesson extract --ai` provider path while keeping default lesson inspection deterministic-only.
+- [x] Reuse cached AI lesson extraction output for repeated `lesson extract --ai` CLI runs with the same model/span identity.
 - [ ] Show lesson states, privacy routing, source spans, and golden validation on the HTML site.
 - [ ] Keep raw private evidence hidden by default.
 
@@ -93,8 +99,9 @@
 
 ## 13. Real Smoke
 
-- [ ] Run a small personal daily against local OpenClaw and Codex sources with AI configured.
-- [ ] Run remote trusted personal OpenClaw source fetch/import if credentials are available.
+- [x] Run a small personal daily against local OpenClaw and Codex sources with AI configured.
+- [x] Run remote trusted personal OpenClaw source fetch/import if credentials are available.
+- [x] Confirm trusted remote OpenClaw lesson extraction uses staged raw evidence rather than envelope-only JSON.
 - [ ] Inspect generated wiki candidates and lesson cache quality.
 - [ ] Inspect HTML site for useful lesson visibility.
 - [ ] Record unresolved quality gaps before full daily.

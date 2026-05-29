@@ -64,6 +64,10 @@ describe("praxisbase init", () => {
     const gitignore = await readFile(join(root, ".gitignore"), "utf8");
     assert.ok(gitignore.includes(".praxisbase/staging/"));
     assert.ok(gitignore.includes(".praxisbase/cache/"));
+    assert.ok(gitignore.includes(".praxisbase/reports/"));
+    assert.ok(gitignore.includes(".praxisbase/runs/"));
+    assert.ok(gitignore.includes(".praxisbase/sources/"));
+    assert.ok(gitignore.includes(".praxisbase/raw-vault/"));
   });
 
   it("creates an OpenClaw-only knowledge repo with --profile openclaw", async () => {

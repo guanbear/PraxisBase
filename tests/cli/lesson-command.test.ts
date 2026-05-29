@@ -97,6 +97,22 @@ describe("lesson CLI command", () => {
     assert.equal(calls, 1);
     assert.equal(parsed.report.ai_lessons, 1);
 
+    const cachedOutput = await lessonCommand(root, "extract", {
+      source,
+      agent: "openclaw",
+      scope: "personal",
+      ai: true,
+      env: { TEST_LLM_API_KEY: "test-key" },
+      fetchImpl: async () => {
+        calls++;
+        return new Response("{}");
+      },
+      json: true,
+    });
+    const cachedParsed = JSON.parse(cachedOutput);
+    assert.equal(cachedParsed.report.ai_lessons, 1);
+    assert.equal(calls, 1);
+
     calls = 0;
     await lessonCommand(root, "extract", {
       source,

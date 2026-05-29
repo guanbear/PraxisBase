@@ -111,6 +111,8 @@ Budget rules:
 - keep heading context around selected spans;
 - cache by source hash, span hash, parser identity, reducer identity, model id, and prompt version.
 
+Trusted personal remote OpenClaw sources have one additional rule: the remote export/envelope is not enough for M25 quality. PB must stage trusted raw evidence into a local-only private staging path before lesson extraction. The staged set may include `MEMORY.md`, `TOOLS.md`, sqlite memory query results, recent reports, and the configured export JSON. The stable wiki, skills, GBrain export, and AgentMemory export must consume only abstracted lessons and promoted artifacts, never the raw staged files.
+
 ### 4. Deterministic Extraction
 
 The deterministic extractor emits high-precision lesson seeds:
@@ -155,6 +157,10 @@ Required lesson fields:
 - `redaction_notes`
 
 The prompt must ask for reusable lessons, not summaries. It must return no lesson for weak, one-off, or generic material.
+
+AI lesson extraction uses a provider-output cache that is distinct from the governed lesson candidate/state cache. The extraction cache stores schema-validated `ExperienceLesson[]` under `.praxisbase/cache/lesson-extract` and is keyed by extractor prompt version, model identity, agent, scope, source hash, span id, and excerpt hash. Corrupt cache entries are ignored. The later lesson candidate/state cache still owns `candidate`, `active_personal`, `wiki_ready`, `skill_ready`, `forgotten`, and `rejected` lifecycle behavior.
+
+Finite-budget daily runs must not spend hidden lesson LLM calls. Cached lesson extraction may be reused only when the daily path explicitly supplies a cache identity and does not require uncached provider calls outside the configured budget.
 
 ### 6. Privacy Abstraction
 

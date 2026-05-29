@@ -215,9 +215,13 @@ function parseJsonSpans(
   }
 
   const spans: EvidenceSpan[] = [];
-  const addSpan = (value: unknown, label: string): void => {
+  const seen = new Set<string>();
+  const addSpan = (value: unknown, label: string, spanKind: EvidenceSpan["span_kind"] = "json_message"): void => {
     if (typeof value !== "string" || value.trim().length === 0) return;
     const text = value.trim();
+    const dedupeKey = `${label}\n${text}`;
+    if (seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
     const byteStart = Math.max(0, Buffer.byteLength(content.slice(0, Math.max(0, content.indexOf(value))), "utf8"));
     spans.push({
       source_item_id: sourceItemId,
@@ -231,8 +235,34 @@ function parseJsonSpans(
       heading_path: [label],
       excerpt: text.length > 500 ? text.slice(0, 500) + "..." : text,
       excerpt_hash: computeHash(text),
-      span_kind: "json_message",
+      span_kind: spanKind,
     });
+  };
+
+  const visit = (value: unknown, path: string[]): void => {
+    if (typeof value === "string") {
+      const label = path.join(".") || "json";
+      const lowerLabel = label.toLowerCase();
+      const kind: EvidenceSpan["span_kind"] =
+        /tool.*(call|input)|command|cmd|args|arguments/.test(lowerLabel) ? "tool_call" :
+        /tool.*(result|output)|stdout|stderr|error|result/.test(lowerLabel) ? "tool_result" :
+        "json_message";
+      if (
+        /(^|\.)(text|content|raw_log|raw_transcript|memory|summary|redacted_summary|problem|action|lesson|reflection|result|error|stdout|stderr|command|cmd|message)$/i.test(label) ||
+        value.length > 80
+      ) {
+        addSpan(value, label, kind);
+      }
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => visit(item, [...path, String(index)]));
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+      visit(nested, [...path, key]);
+    }
   };
 
   if (parsed && typeof parsed === "object") {
@@ -249,6 +279,7 @@ function parseJsonSpans(
         addSpan(itemRecord.summary, `items.${index}.summary`);
       }
     }
+    visit(parsed, []);
   }
 
   return spans;

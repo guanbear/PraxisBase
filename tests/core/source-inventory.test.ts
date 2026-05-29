@@ -226,6 +226,43 @@ test("maps OpenClaw sqlite memory rows into evidence spans", async () => {
   assert.ok(inventory[0]!.content_spans.some((span) => span.span_kind === "sqlite_row" && span.excerpt.includes("target machine")));
 });
 
+test("extracts nested OpenClaw JSON export text as raw lesson evidence", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-openclaw-json-"));
+  const exportPath = join(root, "latest.json");
+  await writeFile(exportPath, JSON.stringify({
+    items: [{
+      id: "remote-1",
+      summary: "Remote OpenClaw export envelope.",
+      memory: {
+        text: "Confirm target machine before restart and run a self-test after changes.",
+      },
+      session: {
+        messages: [
+          { role: "user", content: "Frontend stale after deploy." },
+          { role: "assistant", content: "Use timestamp cache busting for frontend updates." },
+        ],
+      },
+      tool_results: [{
+        tool: "sqlite",
+        result: "Database lookups should use COLLATE NOCASE.",
+      }],
+    }],
+  }), "utf8");
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "openclaw",
+    path: exportPath,
+    scope: "personal",
+    origin: "trusted_personal_remote",
+  });
+
+  assert.equal(inventory.length, 1);
+  const spans = inventory[0]!.content_spans;
+  assert.ok(spans.some((span) => span.excerpt.includes("Confirm target machine")));
+  assert.ok(spans.some((span) => span.excerpt.includes("timestamp cache busting")));
+  assert.ok(spans.some((span) => span.span_kind === "tool_result" && span.excerpt.includes("COLLATE NOCASE")));
+});
+
 test("excludes OpenClaw dreaming sqlite rows from lesson evidence", async () => {
   const root = await mkdtemp(join(tmpdir(), "pb-m25-sqlite-dream-"));
   const dbPath = join(root, "main.sqlite");

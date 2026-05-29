@@ -69,6 +69,12 @@ export interface ResolvedExperienceSource {
   warnings: string[];
 }
 
+export interface TrustedOpenClawRawStage {
+  sourcePath?: string;
+  files: number;
+  warnings: string[];
+}
+
 interface RawExperienceItem {
   id?: string;
   remote_id?: string;
@@ -100,6 +106,164 @@ function expandSourcePath(path: string, root?: string): string {
   if (path.startsWith("~/")) return join(homedir(), path.slice(2));
   if (root && !isAbsolute(path)) return join(root, path);
   return path;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function trustedOpenClawRoot(source: ExperienceSourceConfig): string {
+  const sourcePath = source.path ?? "";
+  const match = sourcePath.match(/^(.*\/\.openclaw)(?:\/|$)/);
+  if (match?.[1]) return match[1];
+  return "~/.openclaw";
+}
+
+function stagedFileName(index: number, remotePath: string): string {
+  const base = basename(remotePath).replace(/[^a-zA-Z0-9._-]/g, "_") || `remote-${index}`;
+  const hash = computeHash(remotePath).replace(/^sha256:/, "").slice(0, 12);
+  return `${String(index).padStart(3, "0")}-${hash}-${base}`;
+}
+
+function buildTrustedOpenClawFetchScript(source: ExperienceSourceConfig): string {
+  const remoteRoot = trustedOpenClawRoot(source);
+  const primaryPath = source.path ?? `${remoteRoot}/praxisbase/latest.json`;
+  const maxBytes = 1024 * 1024;
+  const quotedRoot = shellQuote(remoteRoot);
+  const quotedPrimary = shellQuote(primaryPath);
+  return `
+set +e
+OPENCLAW_ROOT=${quotedRoot}
+PRIMARY_PATH=${quotedPrimary}
+MAX_BYTES=${maxBytes}
+b64_text() { printf '%s' "$1" | base64 | tr -d '\\n'; }
+b64_file() { base64 "$1" 2>/dev/null | tr -d '\\n'; }
+emit_content() {
+  p="$1"
+  content="$2"
+  if [ -n "$content" ]; then
+    printf '__PB_FILE__\\t%s\\t%s\\n' "$(b64_text "$p")" "$(b64_text "$content")"
+  fi
+}
+emit_file() {
+  p="$1"
+  [ -f "$p" ] || return 0
+  size=$(wc -c < "$p" 2>/dev/null | tr -d ' ')
+  case "$size" in ''|*[!0-9]*) return 0 ;; esac
+  [ "$size" -le "$MAX_BYTES" ] || return 0
+  encoded=$(b64_file "$p")
+  [ -n "$encoded" ] || return 0
+  printf '__PB_FILE__\\t%s\\t%s\\n' "$(b64_text "$p")" "$encoded"
+}
+emit_file "$PRIMARY_PATH"
+emit_file "$OPENCLAW_ROOT/MEMORY.md"
+emit_file "$OPENCLAW_ROOT/TOOLS.md"
+emit_file "$OPENCLAW_ROOT/workspace/MEMORY.md"
+emit_file "$OPENCLAW_ROOT/workspace/TOOLS.md"
+emit_file "$OPENCLAW_ROOT/.openclaw/workspace/MEMORY.md"
+emit_file "$OPENCLAW_ROOT/.openclaw/workspace/TOOLS.md"
+emit_file "$OPENCLAW_ROOT/memory/MEMORY.md"
+emit_file "$OPENCLAW_ROOT/memory/TOOLS.md"
+if command -v sqlite3 >/dev/null 2>&1 && [ -f "$OPENCLAW_ROOT/memory/main.sqlite" ]; then
+  rows=$(sqlite3 -json "$OPENCLAW_ROOT/memory/main.sqlite" "SELECT id, path, source, start_line, end_line, hash, text, updated_at FROM chunks WHERE text IS NOT NULL AND length(trim(text)) > 0 AND lower(COALESCE(path, '')) NOT LIKE 'memory/dreaming/%' AND lower(COALESCE(path, '')) NOT LIKE '%/.dreams/%' AND lower(COALESCE(path, '')) NOT LIKE '%dream-diary%' ORDER BY CASE WHEN lower(COALESCE(path, '')) = 'memory.md' OR lower(COALESCE(path, '')) LIKE '%/memory.md' THEN 0 WHEN lower(COALESCE(path, '')) GLOB 'memory/[0-9]*' THEN 1 ELSE 2 END, updated_at DESC LIMIT 200;" 2>/dev/null)
+  emit_content "$OPENCLAW_ROOT/memory/main.sqlite.query.json" "$rows"
+elif command -v python3 >/dev/null 2>&1 && [ -f "$OPENCLAW_ROOT/memory/main.sqlite" ]; then
+  rows=$(python3 - "$OPENCLAW_ROOT/memory/main.sqlite" <<'PY' 2>/dev/null
+import json
+import sqlite3
+import sys
+
+db = sys.argv[1]
+query = """
+SELECT id, path, source, start_line, end_line, hash, text, updated_at
+FROM chunks
+WHERE text IS NOT NULL AND length(trim(text)) > 0
+  AND lower(COALESCE(path, '')) NOT LIKE 'memory/dreaming/%'
+  AND lower(COALESCE(path, '')) NOT LIKE '%/.dreams/%'
+  AND lower(COALESCE(path, '')) NOT LIKE '%dream-diary%'
+ORDER BY
+  CASE
+    WHEN lower(COALESCE(path, '')) = 'memory.md' OR lower(COALESCE(path, '')) LIKE '%/memory.md' THEN 0
+    WHEN lower(COALESCE(path, '')) GLOB 'memory/[0-9]*' THEN 1
+    ELSE 2
+  END,
+  updated_at DESC
+LIMIT 200
+"""
+conn = sqlite3.connect(db)
+conn.row_factory = sqlite3.Row
+rows = [dict(row) for row in conn.execute(query)]
+print(json.dumps(rows, ensure_ascii=False))
+PY
+)
+  emit_content "$OPENCLAW_ROOT/memory/main.sqlite.query.json" "$rows"
+fi
+if [ -d "$OPENCLAW_ROOT/reports" ]; then
+  find "$OPENCLAW_ROOT/reports" -type f \\( -name '*.md' -o -name '*.txt' -o -name '*.json' -o -name '*.jsonl' -o -name '*.log' \\) 2>/dev/null | sort | tail -20 | while IFS= read -r report_file; do
+    emit_file "$report_file"
+  done
+fi
+`.trim();
+}
+
+export async function stageTrustedOpenClawRemoteRaw(
+  root: string,
+  source: ExperienceSourceConfig,
+  options: Pick<ResolveExperienceSourceOptions, "runCommand" | "now">,
+): Promise<TrustedOpenClawRawStage> {
+  if (source.agent !== "openclaw" || source.source_type !== "ssh" || source.privacy_trust !== "trusted_personal_remote") {
+    return { files: 0, warnings: [] };
+  }
+  if (!source.host) return { files: 0, warnings: ["trusted_openclaw_raw_stage_requires_host"] };
+  if (!options.runCommand) return { files: 0, warnings: ["trusted_openclaw_raw_stage_requires_runCommand"] };
+
+  const warnings: string[] = [];
+  const stageId = computeHash(JSON.stringify({
+    source_id: source.id,
+    host: source.host,
+    path: source.path,
+    now: options.now ?? "",
+  })).replace(/^sha256:/, "").slice(0, 16);
+  const stageDir = `${protocolPaths.stagingTrustedRemoteOpenClaw}/${source.id}/${stageId}`;
+
+  let output = "";
+  try {
+    output = await options.runCommand("ssh", [
+      source.host,
+      `sh -lc ${shellQuote(buildTrustedOpenClawFetchScript(source))}`,
+    ]);
+  } catch (error) {
+    return {
+      files: 0,
+      warnings: [`trusted_openclaw_raw_stage_failed:${error instanceof Error ? error.message : String(error)}`],
+    };
+  }
+
+  let files = 0;
+  for (const line of output.split(/\r?\n/)) {
+    if (!line.startsWith("__PB_FILE__\t")) continue;
+    const [, pathB64, contentB64] = line.split("\t");
+    if (!pathB64 || !contentB64) continue;
+    let remotePath = "";
+    let content = "";
+    try {
+      remotePath = Buffer.from(pathB64, "base64").toString("utf8");
+      content = Buffer.from(contentB64, "base64").toString("utf8");
+    } catch {
+      warnings.push("trusted_openclaw_raw_stage_decode_failed");
+      continue;
+    }
+    if (!content.trim()) continue;
+    files++;
+    await writeText(root, `${stageDir}/${stagedFileName(files, remotePath)}`, content);
+  }
+
+  if (files === 0) warnings.push("trusted_openclaw_raw_stage_empty");
+  return {
+    sourcePath: files > 0 ? stageDir : undefined,
+    files,
+    warnings,
+  };
 }
 
 async function listFilesRecursively(dir: string, maxBytes: number, warnings: string[]): Promise<string[]> {

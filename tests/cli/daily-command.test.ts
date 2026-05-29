@@ -91,6 +91,10 @@ async function writeAutoPromotableWikiCandidate(
 }
 
 describe("daily CLI command", () => {
+  function trustedRemoteFileLine(path: string, content: string): string {
+    return `__PB_FILE__\t${Buffer.from(path, "utf8").toString("base64")}\t${Buffer.from(content, "utf8").toString("base64")}`;
+  }
+
   it("runs the personal daily loop with json output", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-daily-"));
     const sessions = join(root, "sessions");
@@ -131,6 +135,7 @@ describe("daily CLI command", () => {
       host: "root@example.com",
       path: "/root/.openclaw/praxisbase/latest.json",
       scope: "personal",
+      privacyTrust: "trusted_personal_remote",
       json: true,
     });
 
@@ -140,10 +145,25 @@ describe("daily CLI command", () => {
       limit: 1,
       runCommand: async (command, args) => {
         assert.equal(command, "ssh");
-        assert.deepEqual(args, ["root@example.com", "cat", "/root/.openclaw/praxisbase/latest.json"]);
+        assert.equal(args[0], "root@example.com");
+        if (args[1] === "cat") {
+          assert.deepEqual(args, ["root@example.com", "cat", "/root/.openclaw/praxisbase/latest.json"]);
+          return JSON.stringify({
+            items: [{ id: "ssh-one", summary: "Remote OpenClaw learned to confirm target machine before restart.", signature: "openclaw:ssh-one" }],
+          });
+        }
+        assert.equal(args.length, 2);
+        assert.match(args[1]!, /^sh -lc '/);
         return JSON.stringify({
-          items: [{ id: "ssh-one", summary: "Remote OpenClaw learned to confirm target machine before restart.", signature: "openclaw:ssh-one" }],
-        });
+          ignored: true,
+        }) + "\n" + trustedRemoteFileLine(
+          "/root/.openclaw/MEMORY.md",
+          [
+            "# Remote OpenClaw Memory",
+            "- Confirm target machine before restart.",
+            "- Run a self-test after changes.",
+          ].join("\n"),
+        );
       },
       json: true,
       now: "2026-05-21T01:00:00.000Z",
@@ -156,7 +176,12 @@ describe("daily CLI command", () => {
     assert.equal(parsed.report.sources[0].imported, 1);
     assert.equal(parsed.report.lessons.enabled, true);
     assert.ok(parsed.report.lessons.source_items >= 1);
-    assert.ok(parsed.report.lessons.deterministic_lessons >= 1);
+    assert.ok(parsed.report.lessons.deterministic_lessons >= 2);
+    assert.ok(parsed.report.sources[0].warnings.some((warning: string) => warning.startsWith("trusted_openclaw_raw_stage_files:")));
+    const lessonReport = parsed.report.lessons.report_ref
+      ? await readFile(join(root, parsed.report.lessons.report_ref), "utf8")
+      : "";
+    assert.doesNotMatch(lessonReport, new RegExp(root.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   });
 
   it("imports an explicitly configured GBrain source as PB evidence", async () => {

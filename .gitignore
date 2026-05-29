@@ -13,5 +13,14 @@ kb/.logs/
 .praxisbase/outbox/
 .praxisbase/cache/
 .praxisbase/staging/
+.praxisbase/reports/
+.praxisbase/runs/
+.praxisbase/sources/
+.praxisbase/raw-vault/
+.praxisbase/exceptions/
+.praxisbase/remotes/
+.praxisbase/wiki/
+.praxisbase/inbox/proposals/
+.praxisbase/inbox/reviews/
 .sisyphus/
 data/

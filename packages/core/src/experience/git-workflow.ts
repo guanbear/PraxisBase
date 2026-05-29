@@ -88,7 +88,7 @@ export async function executeTeamGitAction(
 
 export function createDefaultGitRunner(root: string): GitCommandRunner {
   return async (command: string, args: string[]) => {
-    const { stdout } = await execFileAsync(command, args, { cwd: root });
+    const { stdout } = await execFileAsync(command, args, { cwd: root, maxBuffer: 64 * 1024 * 1024 });
     return stdout;
   };
 }

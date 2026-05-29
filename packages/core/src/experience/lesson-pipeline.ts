@@ -20,6 +20,7 @@ export interface RunLessonPipelineInput {
   now?: string;
   maxSpans?: number;
   aiClient?: AiJsonClient;
+  aiCacheIdentity?: string;
 }
 
 export interface LessonPipelineReport {
@@ -60,6 +61,12 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
       now,
       scope: input.scope,
       agent: input.agent,
+      ...(input.aiCacheIdentity ? {
+        cache: {
+          root,
+          identity: input.aiCacheIdentity,
+        },
+      } : {}),
     })
     : [];
   const mode = input.authorityMode ?? (input.scope === "team" || input.origin === "team_git" ? "team-git" : "personal-local");

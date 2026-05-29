@@ -34,6 +34,7 @@ import { SEMANTIC_PROMOTE_THRESHOLD } from "../wiki/semantic-review-policy.js";
 import { ingestAgentMemory } from "./agent-memory.js";
 import {
   resolveExperienceSource,
+  stageTrustedOpenClawRemoteRaw,
   writeExperienceEnvelope,
   type ResolveExperienceSourceOptions,
 } from "./source-adapters.js";
@@ -1196,6 +1197,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     let allowed: ExperienceEnvelope[] = [];
     let blocked: ExperienceEnvelope[] = [];
     const writtenEnvelopePaths: string[] = [];
+    let rawLessonSourcePath: string | undefined;
     let imported = 0;
 
     if (aiMode === "production") {
@@ -1586,16 +1588,32 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     }
 
     if (mode === "write") {
+      if (
+        source.agent === "openclaw" &&
+        source.source_type === "ssh" &&
+        source.privacy_trust === "trusted_personal_remote"
+      ) {
+        const staged = await stageTrustedOpenClawRemoteRaw(root, source, {
+          runCommand: sourceRunner,
+          now,
+        });
+        if (staged.sourcePath) {
+          rawLessonSourcePath = staged.sourcePath;
+          sourceWarnings.push(`trusted_openclaw_raw_stage_files:${staged.files}`);
+        }
+        sourceWarnings.push(...staged.warnings);
+      }
       for (const envelope of allowed) {
         const path = await writeExperienceEnvelope(root, envelope);
         writtenEnvelopePaths.push(path);
         outputs.push(path);
       }
       if (source.source_type !== "local" && source.source_type !== "file") {
-        for (const path of writtenEnvelopePaths) {
+        const lessonPaths = rawLessonSourcePath ? [rawLessonSourcePath] : writtenEnvelopePaths.map((path) => join(root, path));
+        for (const path of lessonPaths) {
           remoteLessonSources.push({
             source_name: source.name,
-            source_path: join(root, path),
+            source_path: path,
             source_agent: lessonAgentFromSource(source.agent),
             source_scope: lessonScopeFromSource(source.scope_default),
             origin: lessonOriginFromSource(source, input.authorityMode),
@@ -1700,6 +1718,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           now,
           maxSpans: 50,
           aiClient: lessonAiClient,
+          ...(lessonAiClient ? { aiCacheIdentity: `daily:${distillModelName}` } : {}),
         });
         lessonReports.push(sourceReport);
         lessonSourceReports.push({

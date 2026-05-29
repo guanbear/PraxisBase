@@ -1,5 +1,7 @@
 import type { AiJsonClient } from "../ai/client.js";
 import { computeHash } from "../protocol/id.js";
+import { protocolPaths } from "../protocol/paths.js";
+import { readJson, writeJson } from "../store/file-store.js";
 import {
   ExperienceLessonSchema,
   type EvidenceSpan,
@@ -11,6 +13,10 @@ export interface ExtractLessonsWithAiOptions {
   now: string;
   scope?: "personal" | "project" | "team" | "global" | "org";
   agent?: string;
+  cache?: {
+    root: string;
+    identity: string;
+  };
 }
 
 interface AiLessonDraft {
@@ -58,18 +64,32 @@ const CUE_VALUES = new Set([
   "llm_inferred",
 ]);
 
+const EXTRACTOR_PROMPT_VERSION = "m25-lesson-extractor-v1";
+
 export async function extractLessonsWithAi(
   spans: EvidenceSpan[],
   options: ExtractLessonsWithAiOptions,
 ): Promise<ExperienceLesson[]> {
   if (spans.length === 0) return [];
 
+  const cachePath = options.cache ? lessonExtractCachePath(spans, options) : undefined;
+  if (cachePath && options.cache) {
+    const cached = await readCachedLessons(options.cache.root, cachePath);
+    if (cached) return cached;
+  }
+
   const first = await callExtractor(options.client, spans, buildSystemPrompt(), buildUserPrompt(spans));
   if (!first.ok) return [];
 
   const parsed = parseLessonDrafts(first.json, spans, options);
-  if (parsed.valid.length > 0 && parsed.invalid === 0) return parsed.valid;
-  if (parsed.invalid === 0) return parsed.valid;
+  if (parsed.valid.length > 0 && parsed.invalid === 0) {
+    if (cachePath && options.cache) await writeCachedLessons(options.cache.root, cachePath, parsed.valid);
+    return parsed.valid;
+  }
+  if (parsed.invalid === 0) {
+    if (cachePath && options.cache) await writeCachedLessons(options.cache.root, cachePath, parsed.valid);
+    return parsed.valid;
+  }
 
   const retry = await callExtractor(
     options.client,
@@ -80,7 +100,51 @@ export async function extractLessonsWithAi(
   if (!retry.ok) return parsed.valid;
 
   const repaired = parseLessonDrafts(retry.json, spans, options);
-  return [...parsed.valid, ...repaired.valid];
+  const lessons = [...parsed.valid, ...repaired.valid];
+  if (cachePath && options.cache) await writeCachedLessons(options.cache.root, cachePath, lessons);
+  return lessons;
+}
+
+function lessonExtractCachePath(spans: EvidenceSpan[], options: ExtractLessonsWithAiOptions): string {
+  const spanIdentity = spans.map((span) => ({
+    source_item_id: span.source_item_id,
+    source_ref: span.source_ref,
+    span_id: span.span_id,
+    source_hash: span.source_hash,
+    excerpt_hash: span.excerpt_hash,
+  }));
+  const key = computeHash(JSON.stringify({
+    extractor: EXTRACTOR_PROMPT_VERSION,
+    identity: options.cache?.identity,
+    agent: options.agent ?? "generic",
+    scope: options.scope ?? "personal",
+    spans: spanIdentity,
+  })).replace(/^sha256:/, "");
+  return `${protocolPaths.cacheLessonExtract}/${key}.json`;
+}
+
+async function readCachedLessons(root: string, cachePath: string): Promise<ExperienceLesson[] | undefined> {
+  try {
+    const raw = await readJson<{ lessons?: unknown[] }>(root, cachePath);
+    if (!Array.isArray(raw.lessons)) return undefined;
+    const lessons: ExperienceLesson[] = [];
+    for (const candidate of raw.lessons) {
+      const parsed = ExperienceLessonSchema.safeParse(candidate);
+      if (!parsed.success) return undefined;
+      lessons.push(parsed.data);
+    }
+    return lessons;
+  } catch {
+    return undefined;
+  }
+}
+
+async function writeCachedLessons(root: string, cachePath: string, lessons: ExperienceLesson[]): Promise<void> {
+  await writeJson(root, cachePath, {
+    type: "lesson_extract_cache",
+    extractor: EXTRACTOR_PROMPT_VERSION,
+    lessons,
+  });
 }
 
 async function callExtractor(

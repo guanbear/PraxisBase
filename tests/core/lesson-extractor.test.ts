@@ -1,7 +1,10 @@
 /// <reference types="node" />
+import { mkdtemp, readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractLessonsWithAi } from "@praxisbase/core";
+import { extractLessonsWithAi, protocolPaths } from "@praxisbase/core";
 
 function makeSpan(spanId = "s1") {
   return {
@@ -121,4 +124,83 @@ test("LLM extractor retries once on malformed output", async () => {
   assert.equal(calls, 2);
   assert.equal(lessons.length, 1);
   assert.equal(lessons[0]!.evidence_spans[0]!.span_id, "s1");
+});
+
+test("LLM extractor reuses cache by prompt model and span identity", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-lesson-ai-cache-"));
+  let calls = 0;
+  const client = {
+    generateJson: async () => {
+      calls += 1;
+      return {
+        ok: true as const,
+        json: {
+          lessons: [makeLesson()],
+        },
+      };
+    },
+  };
+
+  const first = await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7" },
+  });
+  const second = await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7" },
+  });
+
+  assert.equal(first.length, 1);
+  assert.equal(second.length, 1);
+  assert.equal(calls, 1);
+  const files = await readdir(join(root, protocolPaths.cacheLessonExtract));
+  assert.equal(files.length, 1);
+});
+
+test("LLM extractor cache identity includes source provenance", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-lesson-ai-cache-source-"));
+  let calls = 0;
+  const client = {
+    generateJson: async () => {
+      calls += 1;
+      return {
+        ok: true as const,
+        json: {
+          lessons: [makeLesson()],
+        },
+      };
+    },
+  };
+  const firstSpan = makeSpan();
+  const secondSpan = {
+    ...makeSpan(),
+    source_item_id: "memory-copy",
+    source_ref: "source-inventory://openclaw/OTHER-MEMORY.md",
+  };
+
+  await extractLessonsWithAi([firstSpan], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7" },
+  });
+  const second = await extractLessonsWithAi([secondSpan], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7" },
+  });
+
+  assert.equal(calls, 2);
+  assert.equal(second[0]!.source_refs[0], "source-inventory://openclaw/OTHER-MEMORY.md");
+  const files = await readdir(join(root, protocolPaths.cacheLessonExtract));
+  assert.equal(files.length, 2);
 });

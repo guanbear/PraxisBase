@@ -60,6 +60,7 @@ export async function lessonCommand(root: string, sub: string, options: LessonCo
     authorityMode: authorityMode(options.mode),
     maxSpans,
     aiClient,
+    ...(aiConfig ? { aiCacheIdentity: `lesson-cli:${aiConfig.model}` } : {}),
   });
 
   if (sub === "inventory") {

@@ -532,6 +532,16 @@ Implementation rules:
 - parse with zod;
 - on malformed output, retry once with a short schema-repair prompt;
 - return an extraction report with counts and warnings.
+- persist successful AI lesson extraction results under `.praxisbase/cache/lesson-extract`;
+- validate cached lessons with `ExperienceLessonSchema` before reuse and ignore corrupt cache entries;
+- key the extractor cache by prompt version, provider/model identity, agent, scope, source hash, span id, and excerpt hash.
+
+Cache-specific implementation status:
+
+- [x] Persist successful AI lesson extraction results under `.praxisbase/cache/lesson-extract`.
+- [x] Validate cached lessons with `ExperienceLessonSchema` before reuse and ignore corrupt cache entries.
+- [x] Add extractor/CLI tests proving repeated `lesson extract --ai` reuses cache without another provider call.
+- [ ] Add planner/reducer/parser identities and hit/miss reporting to the AI lesson extraction cache.
 
 - [ ] **Step 3: Run extractor test**
 

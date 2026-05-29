@@ -46,7 +46,21 @@ async function ensureIgnoredPaths(root: string): Promise<void> {
   }
 
   const lines = new Set(existing.split(/\r?\n/).map((line) => line.trim()));
-  const missing = [".praxisbase/staging/", ".praxisbase/cache/"].filter((line) => !lines.has(line));
+  const generatedPrivatePaths = [
+    ".praxisbase/outbox/",
+    ".praxisbase/cache/",
+    ".praxisbase/staging/",
+    ".praxisbase/reports/",
+    ".praxisbase/runs/",
+    ".praxisbase/sources/",
+    ".praxisbase/raw-vault/",
+    ".praxisbase/exceptions/",
+    ".praxisbase/remotes/",
+    ".praxisbase/wiki/",
+    ".praxisbase/inbox/proposals/",
+    ".praxisbase/inbox/reviews/",
+  ];
+  const missing = generatedPrivatePaths.filter((line) => !lines.has(line));
   if (missing.length === 0) {
     return;
   }
