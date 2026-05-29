@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -60,4 +60,32 @@ test("lesson pipeline uses injected AI client and redacts private spans before t
   assert.doesNotMatch(aiUserPrompt, /100\.64\.1\.10/);
   assert.doesNotMatch(aiUserPrompt, /openclaw_key/);
   assert.match(aiUserPrompt, /\[REDACTED_/);
+});
+
+test("lesson pipeline preserves home-relative source paths for inventory expansion", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-lesson-pipeline-root-"));
+  const source = await mkdtemp(join(homedir(), ".praxisbase-lesson-pipeline-home-"));
+  try {
+    await writeFile(
+      join(source, "MEMORY.md"),
+      "- Need tools/network/dispatch or slow tasks: send a short ACK first.\n",
+      "utf8",
+    );
+
+    const report = await runLessonPipeline(root, {
+      sourcePath: `~/${source.slice(homedir().length + 1)}`,
+      agent: "openclaw",
+      scope: "personal",
+      origin: "local",
+      authorityMode: "personal-local",
+      now: "2026-05-29T00:00:00.000Z",
+      maxSpans: 10,
+    });
+
+    assert.equal(report.source_items, 1);
+    assert.equal(report.lessons.length, 1);
+    assert.match(report.lessons[0]!.safe_claim, /acknowledgement|ACK/i);
+  } finally {
+    await rm(source, { recursive: true, force: true });
+  }
 });

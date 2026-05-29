@@ -1674,6 +1674,18 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   if (lessonPipelineSources.length > 0) {
     const lessonReports: LessonPipelineReport[] = [];
     const lessonSourceReports: LessonSourceReport[] = [];
+    const lessonAiClient =
+      !input.aiClient &&
+      aiMode === "production" &&
+      aiClient &&
+      !Number.isFinite(maxAiChunks)
+        ? aiClient
+        : undefined;
+    if (!lessonAiClient && !input.aiClient && aiMode === "production" && aiClient && Number.isFinite(maxAiChunks)) {
+      const warning = "lesson_ai_skipped_by_finite_budget";
+      warnings.push(warning);
+      aiDistill.warnings.push(warning);
+    }
     for (const lessonSource of lessonPipelineSources) {
       const sourcePath = lessonSource.source_path;
       if (!sourcePath) continue;
@@ -1687,7 +1699,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           authorityMode: input.authorityMode,
           now,
           maxSpans: 50,
-          aiClient: input.aiClient ? undefined : aiClient,
+          aiClient: lessonAiClient,
         });
         lessonReports.push(sourceReport);
         lessonSourceReports.push({
@@ -1870,7 +1882,9 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	      authorityMode: input.authorityMode,
 	      experiences: distilledExperiences,
 	      lessons: lessonReport?.lessons ?? [],
-	      legacyDistillMode: lessonReport ? (input.degraded ? "degraded" : "disabled") : "compat",
+	      legacyDistillMode: lessonReport
+	        ? (input.degraded || input.skillSynthesis ? "degraded" : "disabled")
+	        : "compat",
 	      aiClient,
 	      now,
 	      maxClusters: input.maxSkillCandidates,

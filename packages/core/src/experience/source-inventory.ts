@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { readdir, readFile, stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import { basename, extname, join, relative } from "node:path";
 import { promisify } from "node:util";
 import { computeHash, slugifyId } from "../protocol/id.js";
@@ -28,6 +29,13 @@ export interface BuildSourceInventoryOptions {
   path: string;
   scope: "personal" | "project" | "team" | "global" | "org";
   origin: "local" | "trusted_personal_remote" | "team_git" | "external";
+}
+
+function expandSourcePath(sourcePath: string, root: string): string {
+  if (sourcePath === "~") return homedir();
+  if (sourcePath.startsWith("~/")) return join(homedir(), sourcePath.slice(2));
+  if (sourcePath.startsWith("/")) return sourcePath;
+  return join(root, sourcePath);
 }
 
 function classifySourceKind(fileName: string): SourceInventoryItem["source_kind"] {
@@ -76,6 +84,9 @@ function parseMarkdownSpans(
   let currentSpanByteEnd = 0;
   let currentSpanKind: EvidenceSpan["span_kind"] | null = null;
   let currentSpanLines: string[] = [];
+  const currentHeadingPath = (): string[] => headingPath.filter((part): part is string =>
+    typeof part === "string" && part.trim().length > 0,
+  );
 
   function flushSpan(endLineIndex: number) {
     if (currentSpanStart < 0 || !currentSpanKind) return;
@@ -97,7 +108,7 @@ function parseMarkdownSpans(
       line_end: endLineIndex,
       byte_start: currentSpanByteStart,
       byte_end: Math.max(currentSpanByteEnd, currentSpanByteStart + 1),
-      heading_path: [...headingPath],
+      heading_path: currentHeadingPath(),
       excerpt: text.length > 500 ? text.slice(0, 500) + "..." : text,
       excerpt_hash: computeHash(text),
       span_kind: currentSpanKind,
@@ -132,7 +143,7 @@ function parseMarkdownSpans(
         line_end: i + 1,
         byte_start: byteOffset,
         byte_end: byteOffset + lineTextByteLength,
-        heading_path: [...headingPath],
+        heading_path: currentHeadingPath(),
         excerpt: headingText,
         excerpt_hash: computeHash(headingText),
         span_kind: "heading",
@@ -155,7 +166,7 @@ function parseMarkdownSpans(
           line_end: i + 1,
           byte_start: byteOffset,
           byte_end: byteOffset + lineTextByteLength,
-          heading_path: [...headingPath],
+          heading_path: currentHeadingPath(),
           excerpt: bulletText.length > 500 ? bulletText.slice(0, 500) + "..." : bulletText,
           excerpt_hash: computeHash(bulletText),
           span_kind: "bullet",
@@ -252,7 +263,16 @@ async function parseSqliteSpans(
     SELECT id, path, source, start_line, end_line, hash, text, updated_at
     FROM chunks
     WHERE text IS NOT NULL AND length(text) > 0
-    ORDER BY updated_at DESC
+      AND lower(COALESCE(path, '')) NOT LIKE 'memory/dreaming/%'
+      AND lower(COALESCE(path, '')) NOT LIKE '%/.dreams/%'
+      AND lower(COALESCE(path, '')) NOT LIKE '%dream-diary%'
+    ORDER BY
+      CASE
+        WHEN lower(COALESCE(path, '')) = 'memory.md' OR lower(COALESCE(path, '')) LIKE '%/memory.md' THEN 0
+        WHEN lower(COALESCE(path, '')) GLOB 'memory/[0-9]*' THEN 1
+        ELSE 2
+      END,
+      updated_at DESC
     LIMIT 200
   `;
   let rows: OpenClawSqliteChunkRow[] = [];
@@ -300,6 +320,7 @@ export async function buildSourceInventory(
   options: BuildSourceInventoryOptions,
 ): Promise<SourceInventoryItem[]> {
   const items: SourceInventoryItem[] = [];
+  const sourceRoot = expandSourcePath(options.path, root);
 
   async function scanFile(fullPath: string, fileName = basename(fullPath)): Promise<void> {
     const ext = extname(fileName).toLowerCase();
@@ -388,14 +409,14 @@ export async function buildSourceInventory(
   }
 
   try {
-    const rootStat = await stat(options.path);
+    const rootStat = await stat(sourceRoot);
     if (rootStat.isFile()) {
-      await scanFile(options.path);
+      await scanFile(sourceRoot);
     } else {
-      await scanDir(options.path);
+      await scanDir(sourceRoot);
     }
   } catch {
-    await scanDir(options.path);
+    await scanDir(sourceRoot);
   }
   return items;
 }

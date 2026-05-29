@@ -620,7 +620,7 @@ test("forgotten lesson remains forgotten", () => {
 Implement:
 
 - `classifyLessonState(lesson, options)`;
-- `lessonStableKey(lesson)` using normalized `safe_claim`, applies-to systems, and portability;
+- `lessonStableKey(lesson)` using normalized structured semantics (`problem`, `trigger`, `action`), applies-to systems, and portability. Do not use raw `claim` or `safe_claim` as the primary key, because repeated evidence should collapse into one reusable lesson;
 - `dedupeLessons(lessons)`;
 - `rankLessonsForWiki(lessons)`;
 - `rankLessonsForRuntime(lessons)`.

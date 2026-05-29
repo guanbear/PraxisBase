@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { mkdtemp } from "node:fs/promises";
 import type { AiJsonClient } from "../ai/client.js";
@@ -39,10 +39,9 @@ export interface LessonPipelineReport {
 
 export async function runLessonPipeline(root: string, input: RunLessonPipelineInput): Promise<LessonPipelineReport> {
   const now = input.now ?? new Date().toISOString();
-  const sourcePath = isAbsolute(input.sourcePath) ? input.sourcePath : join(root, input.sourcePath);
   const inventory = await buildSourceInventory(root, {
     agent: input.agent,
-    path: sourcePath,
+    path: input.sourcePath,
     scope: input.scope,
     origin: input.origin ?? "local",
   });

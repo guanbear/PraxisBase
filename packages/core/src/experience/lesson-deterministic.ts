@@ -177,7 +177,7 @@ export function extractDeterministicLessons(
       const lesson = ExperienceLessonSchema.parse({
         lesson_id: `det_${family.id}_${hash}`,
         claim: excerpt,
-        safe_claim: excerpt,
+        safe_claim: buildSafeClaim(family),
         problem: family.problem,
         trigger: family.trigger,
         action: family.action,
@@ -208,4 +208,15 @@ function isWeakSpan(excerpt: string): boolean {
     return true;
   }
   return WEAK_SPAN_PATTERNS.some((pattern) => pattern.test(excerpt));
+}
+
+function buildSafeClaim(family: PatternFamily): string {
+  const trigger = family.trigger.replace(/\.$/, "");
+  const action = family.action.replace(/\.$/, "");
+  return `${trigger}, ${lowercaseFirst(action)}.`;
+}
+
+function lowercaseFirst(text: string): string {
+  if (!text) return text;
+  return text[0]!.toLowerCase() + text.slice(1);
 }

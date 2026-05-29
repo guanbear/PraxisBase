@@ -73,8 +73,18 @@ export function classifyLessonState(
   return "candidate";
 }
 
-export function lessonStableKey(lesson: Pick<ExperienceLesson, "safe_claim" | "applies_to_systems" | "portability">): string {
-  const normalized = lesson.safe_claim.toLowerCase().trim().replace(/\s+/g, " ");
+export function lessonStableKey(
+  lesson: Pick<
+    ExperienceLesson,
+    "problem" | "trigger" | "action" | "applies_to_systems" | "portability"
+  >,
+): string {
+  const semanticCore = [
+    lesson.problem,
+    lesson.trigger,
+    lesson.action,
+  ].join("\n");
+  const normalized = semanticCore.toLowerCase().trim().replace(/\s+/g, " ");
   const systems = [...lesson.applies_to_systems].sort().join(",");
   return computeHash(`${normalized}|${systems}|${lesson.portability}`);
 }

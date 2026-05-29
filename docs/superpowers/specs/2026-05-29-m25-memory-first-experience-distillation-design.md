@@ -229,11 +229,13 @@ Required fields:
 - `redaction_notes`
 - `created_at`
 
-The `safe_claim` is the privacy-abstracted lesson text. It may differ from the raw claim when concrete hostnames, account ids, user ids, paths, or private machine names are present.
+The `safe_claim` is the privacy-abstracted, publishable lesson text. It may differ from the raw claim when concrete hostnames, account ids, user ids, paths, private machine names, or raw candidate/session metadata are present. Deterministic extractors must preserve raw evidence in `claim`/`evidence_spans`, but should generate `safe_claim` from the structured lesson semantics rather than copying noisy source text.
 
 ## Source Inventory And Signal Planning
 
 The signal planner decides which spans enter the LLM lesson extractor.
+
+OpenClaw sqlite memory inventory must exclude generated dreaming/dream-diary paths from lesson evidence and should prioritize `MEMORY.md` and ordinary `memory/YYYY...` rows over lower-authority generated rows. These generated rows can repeat useful text, but they are not authoritative provenance for reusable experience.
 
 Priority order:
 

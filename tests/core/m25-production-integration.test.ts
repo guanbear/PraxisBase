@@ -143,7 +143,6 @@ describe("M25 production integration", () => {
       authorityMode: "personal-local",
       mode: "write",
       now: "2026-05-29T01:00:00.000Z",
-      maxAiChunks: 0,
       maxCurationProposals: 0,
       env: { TEST_LLM_API_KEY: "test-key" },
       fetchImpl: async (_url, init) => {
@@ -181,6 +180,52 @@ describe("M25 production integration", () => {
 
     assert.equal(report.lessons.enabled, true);
     assert.equal(report.lessons.ai_lessons, 1);
+  });
+
+  it("does not spend lesson AI calls when the daily AI chunk budget is finite", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-m25-daily-ai-budget-"));
+    const memory = join(root, "openclaw");
+    await mkdir(memory, { recursive: true });
+    await writeFile(join(memory, "MEMORY.md"), [
+      "# OpenClaw Memory",
+      "- Need tools/network/dispatch or slow tasks: send a short ACK first.",
+    ].join("\n"));
+
+    await addExperienceSource(root, {
+      name: "local-openclaw",
+      agent: "openclaw",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: memory,
+      now: "2026-05-29T00:00:00.000Z",
+    });
+    await writeAiProviderConfig(root, {
+      provider: "openai-compatible",
+      model: "test-model",
+      baseUrl: "https://llm.example.test/v1",
+      apiKeyEnv: "TEST_LLM_API_KEY",
+    });
+
+    let lessonCalls = 0;
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-29T01:00:00.000Z",
+      maxAiChunks: 0,
+      maxCurationProposals: 0,
+      env: { TEST_LLM_API_KEY: "test-key" },
+      fetchImpl: async (_url, init) => {
+        const body = JSON.parse(String(init?.body ?? "{}")) as { messages?: Array<{ role: string; content: string }> };
+        const user = body.messages?.find((message) => message.role === "user")?.content ?? "";
+        if (user.includes("\"spans\"")) lessonCalls++;
+        return new Response(JSON.stringify({ choices: [{ message: { content: "{}" } }] }), { status: 200 });
+      },
+    });
+
+    assert.equal(lessonCalls, 0);
+    assert.equal(report.lessons.enabled, true);
+    assert.equal(report.lessons.ai_lessons, 0);
+    assert.ok(report.warnings.some((warning) => warning === "lesson_ai_skipped_by_finite_budget"));
   });
 
   it("renders lesson metrics from the latest daily report on the wiki site", async () => {

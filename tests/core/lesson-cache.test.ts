@@ -66,10 +66,23 @@ test("lesson stable key is deterministic", () => {
   assert.equal(lessonStableKey(first), lessonStableKey(second));
 });
 
-test("lesson stable key differs for different claims", () => {
+test("lesson stable key dedupes different evidence claims for the same structured lesson", () => {
+  assert.equal(
+    lessonStableKey(makeLesson({ safe_claim: "ACK before slow dispatch from MEMORY.md." })),
+    lessonStableKey(makeLesson({ safe_claim: "ACK before slow network call from session log." })),
+  );
+});
+
+test("lesson stable key differs for different structured lessons", () => {
   assert.notEqual(
     lessonStableKey(makeLesson({ safe_claim: "Confirm target machine before restart." })),
-    lessonStableKey(makeLesson({ safe_claim: "Run self-test after code changes." })),
+    lessonStableKey(makeLesson({
+      safe_claim: "Run self-test after code changes.",
+      problem: "Untested changes can regress behavior.",
+      trigger: "After code changes.",
+      action: "Run the relevant self-test.",
+      applies_to_systems: ["testing"],
+    })),
   );
 });
 

@@ -3,9 +3,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { buildSourceInventory } from "@praxisbase/core";
 
@@ -52,6 +52,28 @@ test("section maps long OpenClaw MEMORY.md instead of skipping it", async () => 
   assert.ok(dispatchLessonSpan.byte_end > dispatchLessonSpan.byte_start);
 });
 
+test("normalizes skipped markdown heading levels without undefined path entries", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-heading-gap-"));
+  await writeFile(join(root, "report.md"), [
+    "# Report",
+    "### Verification",
+    "- Run replay before promoting the fix.",
+  ].join("\n"), "utf8");
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "openclaw",
+    path: root,
+    scope: "personal",
+    origin: "local",
+  });
+
+  assert.equal(inventory.length, 1);
+  assert.ok(inventory[0]!.content_spans.length >= 2);
+  for (const span of inventory[0]!.content_spans) {
+    assert.ok(span.heading_path.every((part) => typeof part === "string" && part.length > 0));
+  }
+});
+
 test("maps OpenClaw sqlite memory rows into evidence spans", async () => {
   const root = await mkdtemp(join(tmpdir(), "pb-m25-sqlite-"));
   const dbPath = join(root, "main.sqlite");
@@ -85,4 +107,94 @@ test("maps OpenClaw sqlite memory rows into evidence spans", async () => {
   assert.equal(inventory[0]!.source_kind, "sqlite_memory");
   assert.equal(inventory[0]!.content_spans.length, 2);
   assert.ok(inventory[0]!.content_spans.some((span) => span.span_kind === "sqlite_row" && span.excerpt.includes("target machine")));
+});
+
+test("excludes OpenClaw dreaming sqlite rows from lesson evidence", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-sqlite-dream-"));
+  const dbPath = join(root, "main.sqlite");
+  await execFileAsync("sqlite3", [dbPath, `
+    CREATE TABLE chunks (
+      id TEXT PRIMARY KEY,
+      path TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'memory',
+      start_line INTEGER NOT NULL,
+      end_line INTEGER NOT NULL,
+      hash TEXT NOT NULL,
+      model TEXT NOT NULL,
+      text TEXT NOT NULL,
+      embedding TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    INSERT INTO chunks (id, path, source, start_line, end_line, hash, model, text, embedding, updated_at)
+    VALUES
+      ('dream-1', 'memory/dreaming/light/2026-05-29.md', 'memory', 1, 1, 'hash-dream', 'text-embedding', 'Write a dream diary entry from these memory fragments.', '[]', 1779999999),
+      ('memory-1', 'MEMORY.md', 'memory', 2, 2, 'hash-memory', 'text-embedding', 'Confirm target machine before restart.', '[]', 1770000000);
+  `]);
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "openclaw",
+    path: dbPath,
+    scope: "personal",
+    origin: "local",
+  });
+
+  assert.equal(inventory.length, 1);
+  assert.equal(inventory[0]!.content_spans.length, 1);
+  assert.ok(inventory[0]!.content_spans[0]!.excerpt.includes("target machine"));
+  assert.ok(!inventory[0]!.content_spans.some((span) => span.heading_path.join("/").includes("dreaming")));
+});
+
+test("excludes OpenClaw dream diary sqlite rows from lesson evidence", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-sqlite-dream-diary-"));
+  const dbPath = join(root, "main.sqlite");
+  await execFileAsync("sqlite3", [dbPath, `
+    CREATE TABLE chunks (
+      id TEXT PRIMARY KEY,
+      path TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'memory',
+      start_line INTEGER NOT NULL,
+      end_line INTEGER NOT NULL,
+      hash TEXT NOT NULL,
+      model TEXT NOT NULL,
+      text TEXT NOT NULL,
+      embedding TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    INSERT INTO chunks (id, path, source, start_line, end_line, hash, model, text, embedding, updated_at)
+    VALUES
+      ('diary-1', 'memory/dream-diary-2026-04-16.md', 'memory', 1, 1, 'hash-diary', 'text-embedding', 'The night left a snag in the thread.', '[]', 1779999999),
+      ('memory-1', 'memory/2026-04-30.md', 'memory', 2, 2, 'hash-memory', 'text-embedding', 'Run self-test after changing code.', '[]', 1770000000);
+  `]);
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "openclaw",
+    path: dbPath,
+    scope: "personal",
+    origin: "local",
+  });
+
+  assert.equal(inventory.length, 1);
+  assert.equal(inventory[0]!.content_spans.length, 1);
+  assert.ok(inventory[0]!.content_spans[0]!.excerpt.includes("self-test"));
+  assert.ok(!inventory[0]!.content_spans.some((span) => span.heading_path.join("/").includes("dream-diary")));
+});
+
+test("expands home-relative source paths before scanning", async () => {
+  const dir = await mkdtemp(join(homedir(), ".praxisbase-source-inventory-test-"));
+  try {
+    await writeFile(join(dir, "MEMORY.md"), "- Confirm target machine before restart.\n", "utf8");
+
+    const inventory = await buildSourceInventory(process.cwd(), {
+      agent: "openclaw",
+      path: `~/${dir.slice(homedir().length + 1)}`,
+      scope: "personal",
+      origin: "local",
+    });
+
+    assert.equal(inventory.length, 1);
+    assert.equal(inventory[0]!.source_kind, "memory_file");
+    assert.ok(inventory[0]!.content_spans.some((span) => span.excerpt.includes("target machine")));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });

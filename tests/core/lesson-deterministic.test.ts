@@ -33,7 +33,18 @@ test("extracts explicit memory lesson with span provenance", () => {
 
   assert.equal(lessons.length, 1);
   assert.match(lessons[0]!.safe_claim, /ACK/i);
+  assert.doesNotMatch(lessons[0]!.safe_claim, /Need tools/);
   assert.equal(lessons[0]!.evidence_spans[0]!.span_id, "s1");
+});
+
+test("uses a structured safe claim instead of raw candidate evidence", () => {
+  const span = makeSpan("Candidate: route=delegate dispatch was slow and needed ACK first.");
+
+  const lessons = extractDeterministicLessons([span], options);
+
+  assert.equal(lessons.length, 1);
+  assert.doesNotMatch(lessons[0]!.safe_claim, /Candidate|route=delegate/);
+  assert.match(lessons[0]!.safe_claim, /acknowledgement|ACK/i);
 });
 
 test("skips weak smoke-only span", () => {

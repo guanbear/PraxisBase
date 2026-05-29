@@ -131,6 +131,8 @@ When AI is configured, the LLM extractor is mandatory for M25 production mode.
 
 It receives selected spans plus metadata and returns `ExperienceLesson[]`.
 
+Daily runs with a finite `--max-ai-chunks` budget must not perform hidden lesson LLM calls outside that budget. In finite-budget smoke runs, the lesson pipeline may produce deterministic lessons only and must report that lesson AI was skipped by budget.
+
 Required lesson fields:
 
 - `claim`
