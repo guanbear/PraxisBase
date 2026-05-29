@@ -39,8 +39,16 @@ function expandSourcePath(sourcePath: string, root: string): string {
   return join(root, sourcePath);
 }
 
-function classifySourceKind(fileName: string): SourceInventoryItem["source_kind"] {
+function classifySourceKind(fileName: string, sourcePath = fileName): SourceInventoryItem["source_kind"] {
   const lower = fileName.toLowerCase();
+  const lowerPath = sourcePath.toLowerCase();
+  if (lower === "skill.md" || lowerPath.includes("/skills/")) return "skill";
+  if (lowerPath.includes("/reports/") || lower.includes("report")) return "report";
+  if (
+    lowerPath.includes("/sidecar") ||
+    lowerPath.includes("agentmemory") ||
+    lowerPath.includes("gbrain")
+  ) return "sidecar_import";
   if (lower === "memory.md" || lower.includes("memory")) return "memory_file";
   if (lower === "tools.md") return "tools_file";
   if (lower.endsWith(".sqlite")) return "sqlite_memory";
@@ -531,7 +539,7 @@ export async function buildSourceInventory(
     if (!fileStat.isFile()) return;
 
     const relPath = relative(root, fullPath);
-    const sourceKind = classifySourceKind(fileName);
+    const sourceKind = classifySourceKind(fileName, relPath);
     const authorityHint = classifyAuthorityHint(sourceKind);
     const sourceItemId = `src_${options.agent}_${slugifyId(relPath)}`;
     const sourceRef = `source-inventory://${options.agent}/${relPath}`;
@@ -565,7 +573,11 @@ export async function buildSourceInventory(
       const jsonSpans = ext === ".json"
         ? parseJsonSpans(content, sourceItemId, sourceRef, sourceHash)
         : [];
-      contentSpans = [...jsonSpans, ...sessionSpans, ...spans];
+      contentSpans = [...jsonSpans, ...sessionSpans, ...spans].map((span) =>
+        sourceKind === "skill" && (span.span_kind === "heading" || span.span_kind === "paragraph" || span.span_kind === "bullet")
+          ? { ...span, span_kind: "skill_section" as const }
+          : span,
+      );
     }
 
     items.push(

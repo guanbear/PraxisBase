@@ -267,6 +267,7 @@ function buildLessonFromDraft(
   if (evidenceSpans.length === 0) return undefined;
 
   const claim = asNonEmptyString(draft.claim) ?? "Reusable agent lesson.";
+  if (isWeakOneOffLessonDraft(claim, draft, evidenceSpans)) return undefined;
   const lesson = {
     lesson_id: `ai_${computeHash(claim).slice("sha256:".length, "sha256:".length + 16)}`,
     claim,
@@ -295,6 +296,57 @@ function buildLessonFromDraft(
   } catch {
     return undefined;
   }
+}
+
+function isWeakOneOffLessonDraft(
+  claim: string,
+  draft: AiLessonDraft,
+  evidenceSpans: EvidenceSpan[],
+): boolean {
+  const fields = [
+    claim,
+    asOptionalString(draft.safe_claim),
+    asOptionalString(draft.problem),
+    asOptionalString(draft.trigger),
+    asOptionalString(draft.action),
+    asOptionalString(draft.verification),
+  ].filter((field): field is string => typeof field === "string");
+  const combined = fields.join("\n").toLowerCase();
+  const evidence = evidenceSpans.map((span) => span.excerpt.toLowerCase()).join("\n");
+
+  const oneOffRun =
+    /\b(run|ran|smoke|test)\s+[a-z0-9_.:-]*\s*(passed|success|successful|successfully|succeeded|completed|green)\b/.test(combined) ||
+    /\b(passed|success|successful|successfully|succeeded|completed|green)\b.*\b(run|ran|smoke|test)\b/.test(combined) ||
+    /\brun\s+\d{6,}[-_a-z0-9]*\b/.test(combined) ||
+    /\b(run|ran|smoke)\s+[a-z0-9_.:-]*\s*(passed|success|successful|successfully|succeeded|completed|green)\b/.test(evidence);
+  if (!oneOffRun) return false;
+
+  const reusableSignals = [
+    "next time",
+    "always",
+    "never",
+    "avoid",
+    "do not",
+    "must",
+    "procedure",
+    "reusable",
+    "lesson",
+    "root cause",
+    "failover",
+    "confirm",
+    "verify before",
+    "self-test after",
+  ];
+  const hasReusableSignal = reusableSignals.some((signal) =>
+    combined.includes(signal) || evidence.includes(signal),
+  );
+  if (hasReusableSignal) return false;
+
+  const allEvidenceLooksWeak = evidenceSpans.every((span) =>
+    /^(ok|done|pass|passed|success|completed|green)\.?$/i.test(span.excerpt.trim()) ||
+    /\b(smoke|run|ran|test)\b.{0,32}\b(passed|success|successful|successfully|succeeded|completed|green)\b/i.test(span.excerpt),
+  );
+  return allEvidenceLooksWeak;
 }
 
 function asNonEmptyString(value: unknown): string | undefined {

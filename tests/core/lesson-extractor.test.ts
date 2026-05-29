@@ -94,6 +94,41 @@ test("LLM extractor drops lessons without valid span evidence", async () => {
   assert.equal(lessons.length, 0);
 });
 
+test("LLM extractor rejects weak one-off run reports even when AI emits a lesson", async () => {
+  const weakSpan = {
+    ...makeSpan("run-1"),
+    excerpt: "Smoke ran successfully for run 20260529-abc.",
+    excerpt_hash: "sha256:weak",
+    span_kind: "paragraph",
+  };
+  const client = {
+    generateJson: async () => ({
+      ok: true as const,
+      json: {
+        lessons: [{
+          ...makeLesson(["run-1"]),
+          claim: "Smoke ran successfully.",
+          safe_claim: "Smoke ran successfully.",
+          problem: "A smoke run completed.",
+          trigger: "When checking this run.",
+          action: "Note that this smoke run completed.",
+          verification: "Run 20260529-abc passed.",
+          confidence: 0.9,
+        }],
+      },
+    }),
+  };
+
+  const lessons = await extractLessonsWithAi([weakSpan], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+  });
+
+  assert.equal(lessons.length, 0);
+});
+
 test("LLM extractor retries once on malformed output", async () => {
   let calls = 0;
   const client = {

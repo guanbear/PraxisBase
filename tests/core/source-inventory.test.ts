@@ -352,3 +352,40 @@ test("expands home-relative source paths before scanning", async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("classifies mixed memory skill report session and sidecar sources", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-mixed-sources-"));
+  const dir = join(root, "agent-sources");
+  await mkdir(join(dir, "skills", "ack-first"), { recursive: true });
+  await mkdir(join(dir, "reports"), { recursive: true });
+  await mkdir(join(dir, "sessions"), { recursive: true });
+  await mkdir(join(dir, "sidecars"), { recursive: true });
+  await writeFile(join(dir, "MEMORY.md"), "- Send ACK before long tool work.\n", "utf8");
+  await writeFile(join(dir, "skills", "ack-first", "SKILL.md"), "# ACK first\n\n## Procedure\n- Send a brief ACK before slow tools.\n", "utf8");
+  await writeFile(join(dir, "reports", "daily-report.md"), "# Daily Report\n\nVerification passed after self-test.\n", "utf8");
+  await writeFile(join(dir, "sessions", "codex.jsonl"), JSON.stringify({ type: "message", content: "Fix: parse mixed source directories." }) + "\n", "utf8");
+  await writeFile(join(dir, "sidecars", "gbrain-import.json"), JSON.stringify({ summary: "Imported GBrain hit should remain sidecar evidence." }), "utf8");
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "codex",
+    path: dir,
+    scope: "personal",
+    origin: "local",
+  });
+
+  const kinds = new Set(inventory.map((item) => item.source_kind));
+  assert.ok(kinds.has("memory_file"));
+  assert.ok(kinds.has("skill"));
+  assert.ok(kinds.has("report"));
+  assert.ok(kinds.has("session"));
+  assert.ok(kinds.has("sidecar_import"));
+
+  const skill = inventory.find((item) => item.source_kind === "skill");
+  assert.ok(skill);
+  assert.equal(skill.authority_hint, "user_authored");
+  assert.ok(skill.content_spans.some((span) => span.span_kind === "skill_section"));
+
+  const sidecar = inventory.find((item) => item.source_kind === "sidecar_import");
+  assert.ok(sidecar);
+  assert.equal(sidecar.authority_hint, "external_sidecar");
+});

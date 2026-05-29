@@ -12,11 +12,11 @@
 
 ## 2. Source Inventory And Span Mapping
 
-- [ ] Add memory-first source inventory for local files, sqlite rows, reports, sessions, skills, and sidecar imports.
-- [ ] Parse markdown memory files by headings, bullets, paragraphs, and byte ranges.
-- [ ] Split long memory files into spans instead of skipping the file.
-- [ ] Prioritize `MEMORY.md`, `TOOLS.md`, native memory, and self-authored skills ahead of ordinary logs.
-- [ ] Add source inventory tests for long OpenClaw memory files and mixed Codex/OpenClaw source directories.
+- [x] Add memory-first source inventory for local files, sqlite rows, reports, sessions, skills, and sidecar imports.
+- [x] Parse markdown memory files by headings, bullets, paragraphs, and byte ranges.
+- [x] Split long memory files into spans instead of skipping the file.
+- [x] Prioritize `MEMORY.md`, `TOOLS.md`, native memory, and self-authored skills ahead of ordinary logs.
+- [x] Add source inventory tests for long OpenClaw memory files and mixed Codex/OpenClaw source directories.
 - [x] Add JSONL/log session span extraction for Codex/OpenCode/Claude-style records with `json_message`, `tool_call`, and `tool_result` span kinds.
 - [x] Stage trusted personal remote OpenClaw raw MEMORY/TOOLS/report/sqlite-query material before M25 lesson extraction instead of relying only on sanitized envelopes.
 - [x] Extract nested OpenClaw JSON export text/tool fields as evidence spans.
@@ -26,8 +26,8 @@
 - [ ] Add span scoring by source kind, authority hint, explicit lesson markers, failure/fix/verification markers, repetition, and user-authored/native-memory hints.
 - [ ] Reserve a minimum span budget for memory files before logs.
 - [ ] Include neighboring heading context for selected spans.
-- [ ] Include planner identity in cache keys.
-- [ ] Add tests proving newest logs cannot crowd out high-priority memory spans.
+- [x] Include planner identity in cache keys.
+- [x] Add tests proving newest logs cannot crowd out high-priority memory spans.
 
 ## 4. Deterministic Lesson Extraction
 
@@ -42,7 +42,7 @@
 - [x] Add AI lesson extraction cache identity using prompt version, CLI/daily model identity, agent, scope, source hash, span id, and excerpt hash.
 - [x] Include planner/reducer/parser identity in lesson AI cache keys where reduced or planned span inputs affect extraction.
 - [ ] Require `safe_claim`, `portability`, `privacy_tier`, `applies_to_agents`, `applies_to_systems`, and evidence spans.
-- [ ] Add tests that weak one-off run reports return no lesson.
+- [x] Add tests that weak one-off run reports return no lesson.
 
 ## 6. Privacy Abstraction
 
