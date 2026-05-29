@@ -82,6 +82,10 @@ export function classifyLessonState(
   lesson: ExperienceLesson,
   options: ClassifyLessonStateOptions = {},
 ): LessonState {
+  const existingState = (lesson as { state?: unknown }).state;
+  if (existingState === "human_required" || existingState === "forgotten" || existingState === "rejected") {
+    return existingState;
+  }
   if (options.userState === "forgotten") return "forgotten";
   if (options.userState === "dismissed") return "forgotten";
   if (options.userState === "rejected") return "rejected";
@@ -146,11 +150,15 @@ export function dedupeLessons<T extends ExperienceLesson>(lessons: T[]): T[] {
   for (const lesson of lessons) {
     const key = lessonStableKey(lesson);
     const current = byKey.get(key);
-    if (!current || compareLessonStrength(lesson, current) < 0) {
+    if (!current) {
       byKey.set(key, lesson);
+    } else if (compareLessonStrength(lesson, current) < 0) {
+      byKey.set(key, mergeLessonProvenance(lesson, current));
+    } else {
+      byKey.set(key, mergeLessonProvenance(current, lesson));
     }
   }
-  return [...byKey.values()];
+  return dedupeSemanticLessons([...byKey.values()]);
 }
 
 export function rankLessonsForWiki<T extends ClassifiedLesson>(lessons: T[]): T[] {
@@ -356,6 +364,130 @@ function compareLessonStrength(a: ExperienceLesson, b: ExperienceLesson): number
   return (b.source_refs?.length ?? 0) - (a.source_refs?.length ?? 0);
 }
 
+function dedupeSemanticLessons<T extends ExperienceLesson>(lessons: T[]): T[] {
+  const byTopic = new Map<string, T[]>();
+  for (const lesson of lessons) {
+    const topicKey = lessonSemanticTopicKey(lesson);
+    byTopic.set(topicKey, [...(byTopic.get(topicKey) ?? []), lesson]);
+  }
+
+  const deduped: T[] = [];
+  for (const group of byTopic.values()) {
+    if (group.length === 1) {
+      deduped.push(group[0]!);
+      continue;
+    }
+
+    if (hasLessonContradiction(group)) {
+      deduped.push(...group.map((lesson) => withLessonState(lesson, "human_required")));
+      continue;
+    }
+
+    const clusters: T[][] = [];
+    for (const lesson of group) {
+      const existing = clusters.find((cluster) => cluster.some((candidate) => areActionCompatible(candidate, lesson)));
+      if (existing) {
+        existing.push(lesson);
+      } else {
+        clusters.push([lesson]);
+      }
+    }
+    for (const cluster of clusters) {
+      const merged = cluster.reduce((current, lesson) => {
+        if (compareLessonStrength(lesson, current) < 0) {
+          return mergeLessonProvenance(lesson, current);
+        }
+        return mergeLessonProvenance(current, lesson);
+      });
+      deduped.push(merged);
+    }
+  }
+  return deduped;
+}
+
+function lessonSemanticTopicKey(lesson: ExperienceLesson): string {
+  const systems = [...lesson.applies_to_systems].map(normalizeText).sort().join(",");
+  const agents = [...lesson.applies_to_agents].map(normalizeText).sort().join(",");
+  const topic = [
+    normalizeText(lesson.problem),
+    normalizeText(lesson.trigger),
+    systems,
+    agents,
+    lesson.portability,
+  ].join("|");
+  return computeHash(topic);
+}
+
+function hasLessonContradiction(lessons: ExperienceLesson[]): boolean {
+  for (let leftIndex = 0; leftIndex < lessons.length; leftIndex++) {
+    for (let rightIndex = leftIndex + 1; rightIndex < lessons.length; rightIndex++) {
+      if (lessonsContradict(lessons[leftIndex]!, lessons[rightIndex]!)) return true;
+    }
+  }
+  return false;
+}
+
+function lessonsContradict(left: ExperienceLesson, right: ExperienceLesson): boolean {
+  const leftAction = normalizeActionText(left.action);
+  const rightAction = normalizeActionText(right.action);
+  const leftPolarity = actionPolarity(leftAction);
+  const rightPolarity = actionPolarity(rightAction);
+  if (
+    leftPolarity !== rightPolarity &&
+    tokenOverlap(removeNegationTerms(leftAction), removeNegationTerms(rightAction)) >= 0.6
+  ) {
+    return true;
+  }
+
+  return negativeCaseConflicts(left.negative_case, right.action) ||
+    negativeCaseConflicts(right.negative_case, left.action);
+}
+
+function negativeCaseConflicts(negativeCase: string | undefined, action: string): boolean {
+  if (!negativeCase) return false;
+  const negative = normalizeActionText(negativeCase);
+  const normalizedAction = normalizeActionText(action);
+  if (!containsNegation(negative)) return false;
+  return tokenOverlap(removeNegationTerms(negative), removeNegationTerms(normalizedAction)) >= 0.6;
+}
+
+function areActionCompatible(left: ExperienceLesson, right: ExperienceLesson): boolean {
+  const leftAction = normalizeActionText(left.action);
+  const rightAction = normalizeActionText(right.action);
+  if (actionPolarity(leftAction) !== actionPolarity(rightAction)) return false;
+  return tokenOverlap(removeNegationTerms(leftAction), removeNegationTerms(rightAction)) >= 0.5;
+}
+
+function mergeLessonProvenance<T extends ExperienceLesson>(base: T, incoming: ExperienceLesson): T {
+  return {
+    ...base,
+    applies_to_agents: uniqueStrings([...base.applies_to_agents, ...incoming.applies_to_agents]),
+    applies_to_systems: uniqueStrings([...base.applies_to_systems, ...incoming.applies_to_systems]),
+    source_refs: uniqueStrings([...base.source_refs, ...incoming.source_refs]),
+    source_hashes: uniqueStrings([...base.source_hashes, ...incoming.source_hashes]),
+    evidence_spans: mergeEvidenceSpans(base.evidence_spans, incoming.evidence_spans),
+    redaction_notes: uniqueStrings([...base.redaction_notes, ...incoming.redaction_notes]),
+  };
+}
+
+function mergeEvidenceSpans(
+  base: ExperienceLesson["evidence_spans"],
+  incoming: ExperienceLesson["evidence_spans"],
+): ExperienceLesson["evidence_spans"] {
+  const byId = new Map<string, ExperienceLesson["evidence_spans"][number]>();
+  for (const span of [...base, ...incoming]) {
+    byId.set(span.span_id ?? `${span.source_ref}:${span.source_hash}`, span);
+  }
+  return [...byId.values()];
+}
+
+function withLessonState<T extends ExperienceLesson>(lesson: T, state: LessonState): T {
+  return {
+    ...lesson,
+    state,
+  } as T;
+}
+
 function lessonStateForComparison(lesson: ExperienceLesson): LessonState {
   const maybeState = (lesson as { state?: unknown }).state;
   if (isLessonState(maybeState)) return maybeState;
@@ -467,6 +599,76 @@ function appendStateHistory(
 function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.filter((value) => value.length > 0))].sort();
 }
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}_-]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeActionText(value: string): string {
+  return normalizeText(value)
+    .replace(/-/g, " ")
+    .replace(/\b(self test|self tests|verification|verify|verified|focused test|focused tests|tests)\b/g, "test")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function actionPolarity(normalizedAction: string): "affirm" | "negate" {
+  return containsNegation(normalizedAction) ? "negate" : "affirm";
+}
+
+function containsNegation(normalizedText: string): boolean {
+  return /\b(do not|don't|dont|never|avoid|skip|disable|forbid|forbidden|must not|should not|no)\b/i.test(normalizedText);
+}
+
+function removeNegationTerms(normalizedText: string): string {
+  return normalizedText
+    .replace(/\b(do not|don't|dont|never|avoid|skip|disable|forbid|forbidden|must not|should not|no)\b/gi, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function tokenOverlap(left: string, right: string): number {
+  const leftTokens = meaningfulTokens(left);
+  const rightTokens = meaningfulTokens(right);
+  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+  let shared = 0;
+  for (const token of leftTokens) {
+    if (rightTokens.has(token)) shared++;
+  }
+  return shared / Math.min(leftTokens.size, rightTokens.size);
+}
+
+function meaningfulTokens(text: string): Set<string> {
+  return new Set(
+    text
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3)
+      .filter((token) => !STOP_WORDS.has(token)),
+  );
+}
+
+const STOP_WORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "when",
+  "after",
+  "before",
+  "during",
+  "into",
+  "from",
+  "that",
+  "this",
+  "then",
+  "than",
+  "relevant",
+]);
 
 function countAgents(lesson: ExperienceLesson): number {
   return Math.max(1, new Set(lesson.applies_to_agents).size);

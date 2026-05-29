@@ -56,7 +56,7 @@
 - [x] Add lesson candidate cache with states: `candidate`, `provisional`, `active_personal`, `wiki_ready`, `skill_ready`, `forgotten`, `rejected`.
 - [x] Add scoring by confidence, cue family, source count, agent count, verification, observation count, privacy tier, duplicate status, and user override.
 - [x] Add pin/forget/dismiss/reject behavior for personal lessons.
-- [ ] Add semantic duplicate grouping and contradiction routing.
+- [x] Add semantic duplicate grouping and contradiction routing.
 
 ## 8. Wiki Compiler Integration
 

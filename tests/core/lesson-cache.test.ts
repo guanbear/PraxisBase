@@ -107,6 +107,97 @@ test("dedupeLessons keeps highest confidence within same state", () => {
   assert.equal(deduped[0]!.lesson_id, "high");
 });
 
+test("dedupeLessons merges semantic duplicates beyond stable key", () => {
+  const first = makeLesson({
+    lesson_id: "self-test",
+    safe_claim: "Run a self-test after changing code.",
+    problem: "Untested code changes can regress behavior.",
+    trigger: "After code changes.",
+    action: "Run the relevant self-test.",
+    applies_to_systems: ["testing"],
+    source_refs: ["a"],
+    source_hashes: ["sha256:a"],
+    confidence: 0.86,
+  });
+  const second = makeLesson({
+    lesson_id: "verify",
+    safe_claim: "Verify modified code before handing it back.",
+    problem: "Untested code changes can regress behavior.",
+    trigger: "After code changes.",
+    action: "Run focused verification tests.",
+    applies_to_systems: ["testing"],
+    source_refs: ["b"],
+    source_hashes: ["sha256:b"],
+    confidence: 0.92,
+  });
+
+  const deduped = dedupeLessons([first, second]);
+
+  assert.equal(deduped.length, 1);
+  assert.equal(deduped[0]!.lesson_id, "verify");
+  assert.deepEqual(deduped[0]!.source_refs.sort(), ["a", "b"]);
+  assert.deepEqual(deduped[0]!.source_hashes.sort(), ["sha256:a", "sha256:b"]);
+});
+
+test("dedupeLessons routes contradictory same-topic lessons to human_required", () => {
+  const runTests = makeLesson({
+    lesson_id: "run-tests",
+    safe_claim: "Run a self-test after code changes.",
+    problem: "Untested code changes can regress behavior.",
+    trigger: "After code changes.",
+    action: "Run the relevant self-test.",
+    negative_case: "Do not skip verification.",
+    applies_to_systems: ["testing"],
+  });
+  const skipTests = makeLesson({
+    lesson_id: "skip-tests",
+    safe_claim: "Skip self-tests for small code changes.",
+    problem: "Untested code changes can regress behavior.",
+    trigger: "After code changes.",
+    action: "Do not run the relevant self-test.",
+    negative_case: "Avoid spending time on focused verification.",
+    applies_to_systems: ["testing"],
+    confidence: 0.95,
+  });
+
+  const deduped = dedupeLessons([runTests, skipTests]);
+
+  assert.equal(deduped.length, 2);
+  assert.deepEqual(deduped.map((lesson) => lesson.state), ["human_required", "human_required"]);
+});
+
+test("dedupeLessons keeps different same-topic actions separate when not contradictory", () => {
+  const confirmTarget = makeLesson({
+    lesson_id: "confirm-target",
+    safe_claim: "Confirm target machine before remote operations.",
+    problem: "Remote operations can affect the wrong machine.",
+    trigger: "Before remote operations.",
+    action: "Confirm the target machine.",
+    applies_to_systems: ["remote-ops"],
+  });
+  const usePrivateRoute = makeLesson({
+    lesson_id: "private-route",
+    safe_claim: "Use the configured private route for Mac mini access.",
+    problem: "Remote operations can affect the wrong machine.",
+    trigger: "Before remote operations.",
+    action: "Use the configured private route.",
+    applies_to_systems: ["remote-ops"],
+  });
+
+  const deduped = dedupeLessons([confirmTarget, usePrivateRoute]);
+
+  assert.equal(deduped.length, 2);
+  assert.deepEqual(deduped.map((lesson) => lesson.lesson_id).sort(), ["confirm-target", "private-route"]);
+});
+
+test("lesson cache preserves human_required contradiction state on upsert", () => {
+  const humanRequired = makeLesson({ state: "human_required", privacy_tier: "safe" });
+  const records = upsertLessonToCache([], humanRequired, "2026-05-29T00:00:00.000Z");
+
+  assert.equal(records[0]!.state, "human_required");
+  assert.equal(records[0]!.lesson.privacy_tier, "safe");
+});
+
 test("rankLessonsForWiki filters to wiki_ready and skill_ready", () => {
   const ranked = rankLessonsForWiki([
     makeLesson({ lesson_id: "candidate", state: "candidate", confidence: 1 }),

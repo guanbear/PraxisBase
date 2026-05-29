@@ -638,9 +638,9 @@ Implement:
 - [x] Upsert repeated lesson sightings by stable key, merge provenance, preserve user overrides, and record state history.
 - [x] Add pin/forget/dismiss/reject override helpers for future CLI/site controls.
 - [x] Integrate `runLessonPipeline` with the governed state cache and report `cache_upserted`.
-- [ ] Add semantic duplicate grouping and contradiction routing beyond deterministic stable-key dedupe.
+- [x] Add semantic duplicate grouping and contradiction routing beyond deterministic stable-key dedupe.
 
-- [ ] **Step 3: Run cache tests**
+- [x] **Step 3: Run cache tests**
 
 Run: `pnpm build && tsc -p tsconfig.tests.json && node --test dist-tests/tests/core/lesson-cache.test.js`
 
