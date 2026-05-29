@@ -111,6 +111,10 @@
       "types": "./src/commands/gbrain.ts",
       "default": "./dist/commands/gbrain.js"
     },
+    "./commands/lesson.js": {
+      "types": "./src/commands/lesson.ts",
+      "default": "./dist/commands/lesson.js"
+    },
     "./commands/daily.js": {
       "types": "./src/commands/daily.ts",
       "default": "./dist/commands/daily.js"

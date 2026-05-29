@@ -1,0 +1,217 @@
+import type { AiJsonClient } from "../ai/client.js";
+import { computeHash } from "../protocol/id.js";
+import {
+  ExperienceLessonSchema,
+  type EvidenceSpan,
+  type ExperienceLesson,
+} from "./lesson-model.js";
+
+export interface ExtractLessonsWithAiOptions {
+  client: AiJsonClient;
+  now: string;
+  scope?: "personal" | "project" | "team" | "global" | "org";
+  agent?: string;
+}
+
+interface AiLessonDraft {
+  claim?: unknown;
+  safe_claim?: unknown;
+  problem?: unknown;
+  trigger?: unknown;
+  action?: unknown;
+  verification?: unknown;
+  negative_case?: unknown;
+  applies_to_agents?: unknown;
+  applies_to_systems?: unknown;
+  portability?: unknown;
+  privacy_tier?: unknown;
+  scope?: unknown;
+  confidence?: unknown;
+  cue_family?: unknown;
+  evidence_span_ids?: unknown;
+  redaction_notes?: unknown;
+}
+
+const PORTABILITY_VALUES = new Set([
+  "universal",
+  "agent_family",
+  "project",
+  "environment",
+  "private_instance",
+]);
+
+const PRIVACY_VALUES = new Set([
+  "safe",
+  "personal_only",
+  "team_allowed",
+  "human_required",
+  "reject",
+]);
+
+const CUE_VALUES = new Set([
+  "explicit_user",
+  "native_memory",
+  "repeated_failure",
+  "verified_fix",
+  "tool_sequence",
+  "reflection",
+  "llm_inferred",
+]);
+
+export async function extractLessonsWithAi(
+  spans: EvidenceSpan[],
+  options: ExtractLessonsWithAiOptions,
+): Promise<ExperienceLesson[]> {
+  if (spans.length === 0) return [];
+
+  const first = await callExtractor(options.client, spans, buildSystemPrompt(), buildUserPrompt(spans));
+  if (!first.ok) return [];
+
+  const parsed = parseLessonDrafts(first.json, spans, options);
+  if (parsed.valid.length > 0 && parsed.invalid === 0) return parsed.valid;
+  if (parsed.invalid === 0) return parsed.valid;
+
+  const retry = await callExtractor(
+    options.client,
+    spans,
+    buildRepairPrompt(spans),
+    JSON.stringify(first.json),
+  );
+  if (!retry.ok) return parsed.valid;
+
+  const repaired = parseLessonDrafts(retry.json, spans, options);
+  return [...parsed.valid, ...repaired.valid];
+}
+
+async function callExtractor(
+  client: AiJsonClient,
+  spans: EvidenceSpan[],
+  system: string,
+  user: string,
+): Promise<{ ok: true; json: unknown } | { ok: false; error: string }> {
+  if (spans.length === 0) return { ok: true, json: { lessons: [] } };
+  return client.generateJson({
+    system,
+    user,
+    schemaName: "ExperienceLessons",
+    maxOutputBytes: 65_536,
+  });
+}
+
+function buildSystemPrompt(): string {
+  return [
+    "You are an agent experience distiller.",
+    "Extract reusable lessons, not summaries.",
+    "Return JSON as {\"lessons\":[...]} only.",
+    "Each lesson must include evidence_span_ids referencing the provided spans.",
+    "Prefer fewer high-value lessons over padding weak or generic evidence.",
+  ].join("\n");
+}
+
+function buildUserPrompt(spans: EvidenceSpan[]): string {
+  const compact = spans.map((span) => ({
+    span_id: span.span_id,
+    excerpt: span.excerpt,
+    heading_path: span.heading_path,
+    span_kind: span.span_kind,
+    source_ref: span.source_ref,
+  }));
+  return JSON.stringify({ spans: compact });
+}
+
+function buildRepairPrompt(spans: EvidenceSpan[]): string {
+  const spanIds = spans.map((span) => span.span_id);
+  return [
+    "Your previous output failed validation.",
+    "Return valid JSON matching exactly: { lessons: [{ claim, safe_claim, problem, trigger, action, verification, negative_case, applies_to_agents, applies_to_systems, portability, privacy_tier, scope, confidence, cue_family, evidence_span_ids, redaction_notes }] }.",
+    `evidence_span_ids must reference: ${JSON.stringify(spanIds)}.`,
+    "portability must be one of: universal, agent_family, project, environment, private_instance.",
+    "privacy_tier must be one of: safe, personal_only, team_allowed, human_required, reject.",
+  ].join("\n");
+}
+
+function parseLessonDrafts(
+  json: unknown,
+  spans: EvidenceSpan[],
+  options: ExtractLessonsWithAiOptions,
+): { valid: ExperienceLesson[]; invalid: number } {
+  const lessons = (json as { lessons?: unknown }).lessons;
+  if (!Array.isArray(lessons)) return { valid: [], invalid: 1 };
+
+  const spansById = new Map(spans.map((span) => [span.span_id, span]));
+  const valid: ExperienceLesson[] = [];
+  let invalid = 0;
+
+  for (const draft of lessons) {
+    const built = buildLessonFromDraft(draft as AiLessonDraft, spansById, options);
+    if (!built) {
+      invalid += 1;
+      continue;
+    }
+    valid.push(built);
+  }
+
+  return { valid, invalid };
+}
+
+function buildLessonFromDraft(
+  draft: AiLessonDraft,
+  spansById: Map<string, EvidenceSpan>,
+  options: ExtractLessonsWithAiOptions,
+): ExperienceLesson | undefined {
+  const evidenceSpanIds = Array.isArray(draft.evidence_span_ids)
+    ? draft.evidence_span_ids.filter((id): id is string => typeof id === "string")
+    : [];
+  const evidenceSpans = evidenceSpanIds
+    .map((id) => spansById.get(id))
+    .filter((span): span is EvidenceSpan => Boolean(span));
+  if (evidenceSpans.length === 0) return undefined;
+
+  const claim = asNonEmptyString(draft.claim) ?? "Reusable agent lesson.";
+  const lesson = {
+    lesson_id: `ai_${computeHash(claim).slice("sha256:".length, "sha256:".length + 16)}`,
+    claim,
+    safe_claim: asNonEmptyString(draft.safe_claim) ?? claim,
+    problem: asNonEmptyString(draft.problem) ?? "The evidence describes a reusable agent failure mode.",
+    trigger: asNonEmptyString(draft.trigger) ?? "When the same condition appears again.",
+    action: asNonEmptyString(draft.action) ?? "Apply the reusable lesson from the evidence.",
+    verification: asOptionalString(draft.verification),
+    negative_case: asOptionalString(draft.negative_case),
+    applies_to_agents: asStringArray(draft.applies_to_agents, options.agent ? [options.agent] : []),
+    applies_to_systems: asStringArray(draft.applies_to_systems, []),
+    portability: PORTABILITY_VALUES.has(String(draft.portability)) ? draft.portability : "agent_family",
+    privacy_tier: PRIVACY_VALUES.has(String(draft.privacy_tier)) ? draft.privacy_tier : "human_required",
+    scope: options.scope ?? "personal",
+    confidence: typeof draft.confidence === "number" ? draft.confidence : 0.5,
+    cue_family: CUE_VALUES.has(String(draft.cue_family)) ? draft.cue_family : "llm_inferred",
+    source_refs: unique(evidenceSpans.map((span) => span.source_ref)),
+    source_hashes: unique(evidenceSpans.map((span) => span.source_hash)),
+    evidence_spans: evidenceSpans,
+    redaction_notes: asStringArray(draft.redaction_notes, []),
+    created_at: options.now,
+  };
+
+  try {
+    return ExperienceLessonSchema.parse(lesson);
+  } catch {
+    return undefined;
+  }
+}
+
+function asNonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function asOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function asStringArray(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  const strings = value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  return strings.length > 0 ? strings : fallback;
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
+}

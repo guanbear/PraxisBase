@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { readJson } from "@praxisbase/core/store/file-store.js";
 import { DistilledExperienceSchema, type DistilledExperience } from "@praxisbase/core/ai/distill.js";
+import { ExperienceLessonSchema, type ClassifiedLesson } from "@praxisbase/core";
 import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "@praxisbase/core/ai/client.js";
 import { readAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
@@ -126,6 +127,33 @@ async function loadDistilledExperiences(root: string): Promise<DistilledExperien
   return experiences;
 }
 
+async function loadReportedLessons(root: string): Promise<ClassifiedLesson[]> {
+  let files: string[];
+  try {
+    files = await readdir(join(root, protocolPaths.reportsLessons));
+  } catch {
+    return [];
+  }
+  const lessons: ClassifiedLesson[] = [];
+  for (const file of files.filter((name) => name.endsWith(".json")).sort()) {
+    let raw: unknown;
+    try {
+      raw = await readJson(root, `${protocolPaths.reportsLessons}/${file}`);
+    } catch {
+      continue;
+    }
+    if (!raw || typeof raw !== "object" || !Array.isArray((raw as { lessons?: unknown }).lessons)) continue;
+    for (const candidate of (raw as { lessons: unknown[] }).lessons) {
+      const parsed = ExperienceLessonSchema.safeParse(candidate);
+      const state = candidate && typeof candidate === "object" && typeof (candidate as { state?: unknown }).state === "string"
+        ? (candidate as { state: string }).state
+        : undefined;
+      if (parsed.success && state) lessons.push({ ...parsed.data, state } as ClassifiedLesson);
+    }
+  }
+  return lessons;
+}
+
 async function configuredAiClient(root: string, options: SkillCommandOptions): Promise<AiJsonClient | undefined> {
   if (options.aiClient) return options.aiClient;
   const config = await readAiProviderConfig(root);
@@ -197,10 +225,13 @@ async function countReviewQueue(root: string): Promise<{
 export async function skillCommand(root: string, subcommand: string, options: SkillCommandOptions): Promise<string> {
   if (subcommand === "synthesize" || subcommand === "curate") {
     const mode = options.dryRun || !options.review ? "dry-run" as const : "review" as const;
+    const lessons = await loadReportedLessons(root);
     const result = await synthesizeSkillCandidates(root, {
       mode,
       authorityMode: authorityMode(options.mode),
       experiences: await loadDistilledExperiences(root),
+      lessons,
+      legacyDistillMode: lessons.length > 0 ? "disabled" : "compat",
       aiClient: await configuredAiClient(root, options),
       now: options.now,
       maxClusters: options.maxClusters,

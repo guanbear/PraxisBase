@@ -77,6 +77,7 @@ describe("runDailyExperience", () => {
       changed_stable_knowledge: true,
       semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
       skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
+      lessons: { enabled: false, source_items: 0, selected_spans: 0, deterministic_lessons: 0, ai_lessons: 0, active_personal: 0, wiki_ready: 0, skill_ready: 0, human_required: 0, rejected: 0, wiki_evidence: 0, golden_validation: [] },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -124,6 +125,7 @@ describe("runDailyExperience", () => {
       changed_stable_knowledge: false,
       semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
       skill_synthesis: { enabled: true, signals: 12, rejected_signals: 2, clusters: 3, candidates: 3, reviewed: 3, approved: 1, rejected: 0, needs_human: 2, skipped: 1, promoted: 0 },
+      lessons: { enabled: false, source_items: 0, selected_spans: 0, deterministic_lessons: 0, ai_lessons: 0, active_personal: 0, wiki_ready: 0, skill_ready: 0, human_required: 0, rejected: 0, wiki_evidence: 0, golden_validation: [] },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -172,6 +174,7 @@ describe("runDailyExperience", () => {
       skill_synthesis: { enabled: true, signals: 4, rejected_signals: 0, clusters: 1, candidates: 1, reviewed: 1, approved: 1, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
       lifecycle: { proposals_by_decision: { promote: 1, archive: 1 } },
       skill_validation: { total_reports: 2, by_decision: { pass: 1, fail: 1 }, candidates_without_passing: 1 },
+      lessons: { enabled: false, source_items: 0, selected_spans: 0, deterministic_lessons: 0, ai_lessons: 0, active_personal: 0, wiki_ready: 0, skill_ready: 0, human_required: 0, rejected: 0, wiki_evidence: 0, golden_validation: [] },
       outputs: [],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -217,6 +220,7 @@ describe("runDailyExperience", () => {
       changed_stable_knowledge: true,
       semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
       skill_synthesis: { enabled: true, signals: 8, rejected_signals: 1, clusters: 2, candidates: 2, reviewed: 2, approved: 2, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
+      lessons: { enabled: false, source_items: 0, selected_spans: 0, deterministic_lessons: 0, ai_lessons: 0, active_personal: 0, wiki_ready: 0, skill_ready: 0, human_required: 0, rejected: 0, wiki_evidence: 0, golden_validation: [] },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -259,6 +263,7 @@ describe("runDailyExperience", () => {
       changed_stable_knowledge: true,
       semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
       skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
+      lessons: { enabled: false, source_items: 0, selected_spans: 0, deterministic_lessons: 0, ai_lessons: 0, active_personal: 0, wiki_ready: 0, skill_ready: 0, human_required: 0, rejected: 0, wiki_evidence: 0, golden_validation: [] },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -2294,8 +2299,8 @@ describe("runDailyExperience", () => {
     await mkdir(sessions, { recursive: true });
     await writeFile(join(sessions, "session-1.txt"), "OpenClaw memory import used export, hash verification, and provenance import.", "utf8");
     await writeFile(join(sessions, "session-2.txt"), "Repeated OpenClaw memory import used export, hash verification, and provenance import.", "utf8");
-    await writeFile(join(sessions, "session-3.txt"), "OpenClaw ACK timing repair used route inspection, timeout update, and replay verification.", "utf8");
-    await writeFile(join(sessions, "session-4.txt"), "Repeated OpenClaw ACK timing repair used route inspection, timeout update, and replay verification.", "utf8");
+    await writeFile(join(sessions, "session-3.txt"), "OpenClaw ACK timing repair: send ACK before slow tool work, then verify replay.", "utf8");
+    await writeFile(join(sessions, "session-4.txt"), "Repeated OpenClaw ACK timing repair: send ACK before slow tool work, then verify replay.", "utf8");
     await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
     await addExperienceSource(root, {
       name: "local-codex",

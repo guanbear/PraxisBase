@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   collectSkillSignalsFromDistilledExperiences,
+  collectSkillSignalsFromLessons,
   collectSkillSignalsFromStableWikiPages,
 } from "@praxisbase/core/synthesis/skill-signals.js";
 import type { DistilledExperience } from "@praxisbase/core/ai/distill.js";
@@ -97,5 +98,34 @@ describe("collectSkillSignalsFromDistilledExperiences", () => {
       body_markdown: "## When To Use\nPersonal workflow.\n\n## Procedure\n1. Do it.\n",
     }], { authorityMode: "team-git" });
     assert.equal(signals.length, 0);
+  });
+
+  it("collects skill signals from skill-ready lessons", () => {
+    const signals = collectSkillSignalsFromLessons([{
+      lesson_id: "lesson_ack",
+      state: "skill_ready",
+      safe_claim: "Send a brief ACK before long-running tool work.",
+      claim: "Send a brief ACK before long-running tool work.",
+      problem: "The user sees silence during slow work.",
+      trigger: "Before long-running tool work.",
+      action: "Send a short acknowledgement before using tools.",
+      verification: "ACK was sent before the tool call.",
+      negative_case: "Do not stay silent.",
+      applies_to_agents: ["codex"],
+      applies_to_systems: ["agent-runtime"],
+      portability: "agent_family",
+      privacy_tier: "safe",
+      scope: "personal",
+      confidence: 0.93,
+      cue_family: "native_memory",
+      source_refs: ["source-inventory://codex/MEMORY.md"],
+      source_hashes: ["sha256:m"],
+      evidence_spans: [],
+      redaction_notes: [],
+      created_at: "2026-05-29T00:00:00.000Z",
+    } as any], { authorityMode: "personal-local" });
+
+    assert.equal(signals.length, 1);
+    assert.match(signals[0].procedure.join(" "), /ack/i);
   });
 });

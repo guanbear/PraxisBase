@@ -142,7 +142,7 @@ describe("daily CLI command", () => {
         assert.equal(command, "ssh");
         assert.deepEqual(args, ["root@example.com", "cat", "/root/.openclaw/praxisbase/latest.json"]);
         return JSON.stringify({
-          items: [{ id: "ssh-one", summary: "Remote OpenClaw repaired gateway auth failure and verified the agent reply.", signature: "openclaw:ssh-one" }],
+          items: [{ id: "ssh-one", summary: "Remote OpenClaw learned to confirm target machine before restart.", signature: "openclaw:ssh-one" }],
         });
       },
       json: true,
@@ -154,6 +154,9 @@ describe("daily CLI command", () => {
     assert.equal(parsed.report.sources[0].name, "remote-openclaw");
     assert.equal(parsed.report.sources[0].source_type, "ssh");
     assert.equal(parsed.report.sources[0].imported, 1);
+    assert.equal(parsed.report.lessons.enabled, true);
+    assert.ok(parsed.report.lessons.source_items >= 1);
+    assert.ok(parsed.report.lessons.deterministic_lessons >= 1);
   });
 
   it("imports an explicitly configured GBrain source as PB evidence", async () => {

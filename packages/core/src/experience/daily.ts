@@ -85,6 +85,9 @@ import {
   type PayloadPreSummaryPolicy,
   type PayloadPreSummaryResult,
 } from "./payload-presummary.js";
+import { runLessonPipeline, type LessonPipelineReport } from "./lesson-pipeline.js";
+import { dedupeLessons } from "./lesson-cache.js";
+import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
 
 type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "skill-synthesis" | "review-promote" | "backend-publish" | "site-build";
 
@@ -160,6 +163,54 @@ interface DailyContextJuiceState {
   warnings: string[];
 }
 
+interface LessonSourceReport {
+  source_name: string;
+  source_path: string;
+  source_agent: string;
+  source_scope: string;
+  source_items: number;
+  selected_spans: number;
+  deterministic_lessons: number;
+  ai_lessons: number;
+  lessons: number;
+  wiki_evidence: number;
+  warnings: string[];
+}
+
+interface DailyLessonReport extends LessonPipelineReport {
+  source_reports: LessonSourceReport[];
+}
+
+interface DailyLessonSourceInput {
+  source_name: string;
+  source_path: string;
+  source_agent: "codex" | "openclaw" | "claude-code" | "opencode" | "hermes" | "openhuman" | "generic";
+  source_scope: "personal" | "project" | "team" | "global" | "org";
+  origin: "local" | "trusted_personal_remote" | "team_git" | "external";
+}
+
+function lessonAgentFromSource(agent: string): DailyLessonSourceInput["source_agent"] {
+  if (agent === "codex") return "codex";
+  if (agent === "openclaw") return "openclaw";
+  if (agent === "claude-code") return "claude-code";
+  if (agent === "opencode") return "opencode";
+  return "generic";
+}
+
+function lessonScopeFromSource(scope: string): DailyLessonSourceInput["source_scope"] {
+  if (scope === "team") return "team";
+  if (scope === "project") return "project";
+  if (scope === "org") return "org";
+  return "personal";
+}
+
+function lessonOriginFromSource(source: { source_type: string; privacy_trust?: string }, authorityMode: string): DailyLessonSourceInput["origin"] {
+  if (source.source_type === "local" || source.source_type === "file") return "local";
+  if (source.privacy_trust === "trusted_personal_remote") return "trusted_personal_remote";
+  if (source.source_type === "git" || authorityMode === "team-git") return "team_git";
+  return "external";
+}
+
 export type DailyNextActionStatus =
   | "needs_privacy_triage"
   | "needs_review"
@@ -192,6 +243,10 @@ export interface DailyNextActions {
     skill_validation_fail: number;
     skill_validation_needs_human: number;
     skill_validation_candidates_without_passing: number;
+    lesson_active_personal: number;
+    lesson_wiki_ready: number;
+    lesson_human_required: number;
+    lesson_rejected: number;
   };
   agentmemory_export_recommended: boolean;
   gbrain_export_recommended: boolean;
@@ -201,9 +256,11 @@ export interface DailyNextActions {
 
 export function deriveDailyNextActions(report: DailyExperienceReport): DailyNextActions {
   const sourceHumanRequired = report.sources.reduce((sum, source) => sum + source.human_required, 0);
-  const privacyRequired = Math.max(report.ai_distill.privacy_required, sourceHumanRequired);
+  const lessons = report.lessons;
+  const lessonHumanRequired = lessons.enabled ? lessons.human_required : 0;
+  const privacyRequired = Math.max(report.ai_distill.privacy_required, sourceHumanRequired, lessonHumanRequired);
   const reviewRequired = report.ai_distill.review_required + report.proposal_candidates;
-  const rejected = report.sources.reduce((sum, source) => sum + source.rejected, 0);
+  const rejected = report.sources.reduce((sum, source) => sum + source.rejected, 0) + (lessons.enabled ? lessons.rejected : 0);
   const skillSynthesis = report.skill_synthesis;
   const skillNeedsHuman = skillSynthesis.enabled ? skillSynthesis.needs_human : 0;
   const lifecycle = report.lifecycle ?? { proposals_by_decision: {} };
@@ -233,6 +290,10 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
     skill_validation_fail: skillValidation.by_decision["fail"] ?? 0,
     skill_validation_needs_human: skillValidation.by_decision["needs_human"] ?? 0,
     skill_validation_candidates_without_passing: candidatesWithoutPassing,
+    lesson_active_personal: lessons.enabled ? lessons.active_personal : 0,
+    lesson_wiki_ready: lessons.enabled ? lessons.wiki_ready : 0,
+    lesson_human_required: lessonHumanRequired,
+    lesson_rejected: lessons.enabled ? lessons.rejected : 0,
   };
 
   if (privacyRequired > 0) {
@@ -975,10 +1036,10 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const aiMode: DailyAiDistill["mode"] = input.noAi ? "disabled" : input.degraded ? "degraded" : "production";
   const aiConfig = await readAiProviderConfig(root);
   const aiDistill: DailyAiDistill = {
-    configured: Boolean(aiConfig),
+    configured: Boolean(aiConfig || input.aiClient),
     mode: aiMode,
     production_ready: aiMode === "production",
-    provider: aiConfig?.provider,
+    provider: aiConfig?.provider ?? (input.aiClient ? "injected" : undefined),
     model: aiConfig ? withDistillModel(aiConfig).model : undefined,
     chunks: 0,
     distilled: 0,
@@ -1089,10 +1150,10 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   }
 
   if (aiMode === "production") {
-    if (!aiConfig) {
+    if (!aiConfig && !input.aiClient) {
       throw new Error(`AI_DISTILL_NOT_CONFIGURED: AI provider config is missing at ${protocolPaths.aiConfig}. Run praxisbase ai init or use --degraded.`);
     }
-    if (!input.aiClient && !((input.env ?? process.env)[aiConfig.api_key_env])) {
+    if (aiConfig && !input.aiClient && !((input.env ?? process.env)[aiConfig.api_key_env])) {
       throw new Error(`AI_DISTILL_NOT_CONFIGURED: ${aiConfig.api_key_env} is not set. Run praxisbase ai doctor or use --degraded.`);
     }
   } else {
@@ -1104,6 +1165,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   }
 
   const sourceRunner = input.runCommand ?? createDefaultGitRunner(root);
+  const remoteLessonSources: DailyLessonSourceInput[] = [];
   for (const source of sources) {
     if (mode === "write") {
       await publishProgress({
@@ -1529,6 +1591,17 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         writtenEnvelopePaths.push(path);
         outputs.push(path);
       }
+      if (source.source_type !== "local" && source.source_type !== "file") {
+        for (const path of writtenEnvelopePaths) {
+          remoteLessonSources.push({
+            source_name: source.name,
+            source_path: join(root, path),
+            source_agent: lessonAgentFromSource(source.agent),
+            source_scope: lessonScopeFromSource(source.scope_default),
+            origin: lessonOriginFromSource(source, input.authorityMode),
+          });
+        }
+      }
       for (const envelope of blocked) {
         outputs.push(await writePrivacyException(root, envelope, now));
       }
@@ -1584,6 +1657,104 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     const warning = `retry_failed_distill_skipped_uncached:${retryFailedDistillSkippedUncached}`;
     warnings.push(warning);
     aiDistill.warnings.push(warning);
+  }
+
+  let lessonReport: DailyLessonReport | undefined;
+  let lessonReportRef: string | undefined;
+  const localFileSources: DailyLessonSourceInput[] = sources.filter(
+    (source) => (source.source_type === "local" || source.source_type === "file") && Boolean(source.path),
+  ).map((source) => ({
+    source_name: source.name,
+    source_path: source.path ?? "",
+    source_agent: lessonAgentFromSource(source.agent),
+    source_scope: lessonScopeFromSource(source.scope_default),
+    origin: "local",
+  }));
+  const lessonPipelineSources = [...localFileSources, ...remoteLessonSources];
+  if (lessonPipelineSources.length > 0) {
+    const lessonReports: LessonPipelineReport[] = [];
+    const lessonSourceReports: LessonSourceReport[] = [];
+    for (const lessonSource of lessonPipelineSources) {
+      const sourcePath = lessonSource.source_path;
+      if (!sourcePath) continue;
+      const sourceWarnings: string[] = [];
+      try {
+        const sourceReport = await runLessonPipeline(root, {
+          sourcePath,
+          agent: lessonSource.source_agent,
+          scope: lessonSource.source_scope,
+          origin: lessonSource.origin,
+          authorityMode: input.authorityMode,
+          now,
+          maxSpans: 50,
+          aiClient: input.aiClient ? undefined : aiClient,
+        });
+        lessonReports.push(sourceReport);
+        lessonSourceReports.push({
+          source_name: lessonSource.source_name,
+          source_path: sourcePath,
+          source_agent: lessonSource.source_agent,
+          source_scope: lessonSource.source_scope,
+          source_items: sourceReport.source_items,
+          selected_spans: sourceReport.selected_spans,
+          deterministic_lessons: sourceReport.deterministic_lessons,
+          ai_lessons: sourceReport.ai_lessons,
+          lessons: sourceReport.lessons.length,
+          wiki_evidence: sourceReport.wiki_evidence,
+          warnings: sourceWarnings,
+        });
+      } catch (error) {
+        const lessonWarning = `lesson_pipeline_failed:${lessonSource.source_name}:${error instanceof Error ? error.message : String(error)}`;
+        sourceWarnings.push(lessonWarning);
+        warnings.push(lessonWarning);
+        lessonSourceReports.push({
+          source_name: lessonSource.source_name,
+          source_path: sourcePath,
+          source_agent: lessonSource.source_agent,
+          source_scope: lessonSource.source_scope,
+          source_items: 0,
+          selected_spans: 0,
+          deterministic_lessons: 0,
+          ai_lessons: 0,
+          lessons: 0,
+          wiki_evidence: 0,
+          warnings: sourceWarnings,
+        });
+      }
+    }
+
+    const lessons = dedupeLessons(lessonReports.flatMap((report) => report.lessons));
+    lessonReport = {
+      source_items: lessonReports.reduce((sum, report) => sum + report.source_items, 0),
+      selected_spans: lessonReports.reduce((sum, report) => sum + report.selected_spans, 0),
+      deterministic_lessons: lessonReports.reduce((sum, report) => sum + report.deterministic_lessons, 0),
+      ai_lessons: lessonReports.reduce((sum, report) => sum + report.ai_lessons, 0),
+      lessons,
+      counts_by_state: lessons.reduce<Record<string, number>>((counts, lesson) => {
+        counts[lesson.state] = (counts[lesson.state] ?? 0) + 1;
+        return counts;
+      }, {}),
+      privacy: {
+        abstracted: lessonReports.reduce((sum, report) => sum + report.privacy.abstracted, 0),
+        human_required: lessons.filter((lesson) => lesson.privacy_tier === "human_required").length,
+        rejected: lessons.filter((lesson) => lesson.privacy_tier === "reject").length,
+      },
+      wiki_evidence: buildWikiEvidenceFromLessons(lessons).length,
+      source_reports: lessonSourceReports,
+    };
+
+    if (mode === "write") {
+      const lessonId = makeId("lesson", runSuffix(now));
+      lessonReportRef = `${protocolPaths.reportsLessons}/${lessonId}.json`;
+      await writeJson(root, lessonReportRef, {
+        id: lessonId,
+        protocol_version: PROTOCOL_VERSION,
+        type: "lesson_pipeline_report",
+        ...lessonReport,
+        created_at: now,
+      });
+      outputs.push(lessonReportRef);
+    }
   }
 
   let contextEconomyRef: string | undefined;
@@ -1698,6 +1869,8 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	      mode: wikiMode,
 	      authorityMode: input.authorityMode,
 	      experiences: distilledExperiences,
+	      lessons: lessonReport?.lessons ?? [],
+	      legacyDistillMode: lessonReport ? (input.degraded ? "degraded" : "disabled") : "compat",
 	      aiClient,
 	      now,
 	      maxClusters: input.maxSkillCandidates,
@@ -1900,6 +2073,34 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	      },
 	      lifecycle: lifecycleSummary,
 	      skill_validation: validationSummary,
+	      lessons: lessonReport ? {
+	        enabled: true,
+	        source_items: lessonReport.source_items,
+	        selected_spans: lessonReport.selected_spans,
+	        deterministic_lessons: lessonReport.deterministic_lessons,
+	        ai_lessons: lessonReport.ai_lessons,
+	        active_personal: lessonReport.counts_by_state["active_personal"] ?? 0,
+	        wiki_ready: lessonReport.counts_by_state["wiki_ready"] ?? 0,
+	        skill_ready: lessonReport.counts_by_state["skill_ready"] ?? 0,
+	        human_required: lessonReport.counts_by_state["human_required"] ?? 0,
+	        rejected: lessonReport.counts_by_state["rejected"] ?? 0,
+	        wiki_evidence: lessonReport.wiki_evidence,
+	        golden_validation: [],
+	        report_ref: lessonReportRef,
+	      } : {
+	        enabled: false,
+	        source_items: 0,
+	        selected_spans: 0,
+	        deterministic_lessons: 0,
+	        ai_lessons: 0,
+	        active_personal: 0,
+	        wiki_ready: 0,
+	        skill_ready: 0,
+	        human_required: 0,
+	        rejected: 0,
+	        wiki_evidence: 0,
+	        golden_validation: [],
+	      },
 	      outputs: reportOutputs,
       warnings: Array.from(new Set(warnings)).sort(),
       created_at: now,

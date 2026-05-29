@@ -84,7 +84,7 @@ function classifyCause(cluster: SkillSignalCluster): SkillCauseClassification {
     return "agent_problem";
   }
   if (/(?:network|rate limit|timeout|disk full|permission denied|env var|api key|quota|install failed|credential|flaky|outage|temporary)/i.test(combined)) {
-    const hasReusableFix = /(?:retry|fallback|cache|guard|verify|pin|configure|document|check|workaround)/i.test(combined);
+    const hasReusableFix = /(?:retry|fallback|cache|guard|verify|confirm|pin|configure|document|check|workaround)/i.test(combined);
     if (!hasReusableFix) return "environment_problem";
   }
   if (cluster.confidence < 0.5 || cluster.source_count < 2) {

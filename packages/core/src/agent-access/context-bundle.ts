@@ -2,6 +2,8 @@ import { computeHash, makeId } from "../protocol/id.js";
 import { PROTOCOL_VERSION, type Scope } from "../protocol/types.js";
 import type { AgentContextBundle, PersonalLearningFacet, SkillInjectionDecision, TrustTier } from "../protocol/schemas.js";
 import { utf8ByteLength, utf8SafeSlice } from "../experience/context-juice.js";
+import type { ExperienceLesson } from "../experience/lesson-model.js";
+import { renderRuntimeLessonBlock, retrieveRuntimeLessons } from "../experience/lesson-retrieval.js";
 import { classifyTrust, wrapUntrusted } from "./trust-boundary.js";
 
 export const DEFAULT_AGENT_CONTEXT_BUNDLE_BUDGET_BYTES = 24 * 1024;
@@ -26,6 +28,8 @@ export interface BuildAgentContextBundleInput {
   query?: string;
   items: readonly AgentContextBundleItem[];
   personalFacets?: readonly PersonalLearningFacet[];
+  runtimeLessons?: readonly ExperienceLesson[];
+  agent?: string;
   skillDecisions?: readonly SkillInjectionDecision[];
   budgetBytes?: number;
   now?: string;
@@ -141,6 +145,24 @@ function personalFacetSection(facets: readonly PersonalLearningFacet[], mode: "p
   };
 }
 
+function runtimeLessonSection(input: BuildAgentContextBundleInput): RenderedSection | undefined {
+  if (input.mode !== "personal") return undefined;
+  const lessons = retrieveRuntimeLessons([...(input.runtimeLessons ?? [])], {
+    query: input.query,
+    agent: input.agent,
+    maxHits: 5,
+  });
+  const text = renderRuntimeLessonBlock(lessons, { maxBytes: 2 * 1024 });
+  if (!text) return undefined;
+  return {
+    kind: "runtime_lessons",
+    tier: "pb_personal_facet",
+    items: lessons.length,
+    text,
+    priority: 26,
+  };
+}
+
 function citationsBlock(paths: readonly string[]): string {
   if (paths.length === 0) return "## Citations\n- none";
   return ["## Citations", ...paths.map((path) => `- ${path}`)].join("\n");
@@ -150,6 +172,7 @@ function withHeading(section: RenderedSection): string {
   if (section.kind === "personal_facets") return section.text;
   if (section.kind === "stable_knowledge") return `## Stable Knowledge\n${section.text}`;
   if (section.kind === "promoted_skills") return `## Promoted Skills\n${section.text}`;
+  if (section.kind === "runtime_lessons") return section.text;
   if (section.kind === "catalog") return `## Catalog\n${section.text}`;
   if (section.kind === "graph_neighbors") return `## Graph Neighbors\n${section.text}`;
   if (section.kind === "sidecar_hits") return `## Sidecar Hits\n${section.text}`;
@@ -166,6 +189,7 @@ function fitText(text: string, maxBytes: number): string {
 function sectionBudget(section: RenderedSection, totalBudget: number): number {
   if (section.kind === "personal_facets") return Math.min(totalBudget, DEFAULT_PERSONAL_FACETS_BUDGET_BYTES);
   if (section.kind === "promoted_skills") return Math.min(totalBudget, 8 * 1024);
+  if (section.kind === "runtime_lessons") return Math.min(totalBudget, 2 * 1024);
   if (section.kind === "catalog") return Math.min(totalBudget, DEFAULT_CATALOG_BUDGET_BYTES);
   if (section.kind === "graph_neighbors") return Math.min(totalBudget, DEFAULT_GRAPH_NEIGHBORS_BUDGET_BYTES);
   if (section.kind === "sidecar_hits") return Math.min(totalBudget, DEFAULT_SIDECAR_BUDGET_BYTES);
@@ -184,6 +208,7 @@ export function buildAgentContextBundle(input: BuildAgentContextBundleInput): Bu
   const sections = [
     safety,
     personalFacetSection(input.personalFacets ?? [], input.mode),
+    runtimeLessonSection(input),
     ...input.items.map(itemSection),
   ].filter((section): section is RenderedSection => Boolean(section))
     .sort((a, b) => a.priority - b.priority || (a.path ?? "").localeCompare(b.path ?? ""));

@@ -6,7 +6,8 @@ import type { DistilledExperience } from "../ai/distill.js";
 import type { AiJsonClient } from "../ai/client.js";
 import { writeJson } from "../store/file-store.js";
 import { protocolPaths } from "../protocol/paths.js";
-import { collectSkillSignalsFromDistilledExperiences, collectSkillSignalsFromStableWikiPages } from "./skill-signals.js";
+import type { ClassifiedLesson } from "../experience/lesson-cache.js";
+import { collectSkillSignalsFromDistilledExperiences, collectSkillSignalsFromLessons, collectSkillSignalsFromStableWikiPages } from "./skill-signals.js";
 import { clusterSkillSignals } from "./skill-stability.js";
 import { loadStableSkillInventory, matchStableSkills } from "./skill-inventory.js";
 import { proposeSkillCandidate } from "./skill-proposer.js";
@@ -238,6 +239,8 @@ export interface SynthesizeSkillCandidatesInput {
   mode: "dry-run" | "review";
   authorityMode: "personal-local" | "team-git";
   experiences: DistilledExperience[];
+  lessons?: ClassifiedLesson[];
+  legacyDistillMode?: "compat" | "degraded" | "disabled";
   aiClient?: AiJsonClient;
   now?: string;
   maxClusters?: number;
@@ -282,8 +285,13 @@ export function skillCandidateToKnowledgeProposal(candidate: SkillSynthesisCandi
 export async function synthesizeSkillCandidates(root: string, input: SynthesizeSkillCandidatesInput): Promise<SynthesizeSkillCandidatesResult> {
   const now = input.now ?? new Date().toISOString();
   const pages = await collectWikiPages(root);
+  const legacyDistillMode = input.legacyDistillMode ?? "compat";
+  const legacyDistillSignals = legacyDistillMode === "disabled"
+    ? []
+    : collectSkillSignalsFromDistilledExperiences(input.experiences, { authorityMode: input.authorityMode });
   const signals = [
-    ...collectSkillSignalsFromDistilledExperiences(input.experiences, { authorityMode: input.authorityMode }),
+    ...collectSkillSignalsFromLessons(input.lessons ?? [], { authorityMode: input.authorityMode }),
+    ...legacyDistillSignals,
     ...collectSkillSignalsFromStableWikiPages(pages, { authorityMode: input.authorityMode }),
   ];
   const clusters = clusterSkillSignals(signals, { maxClusters: input.maxClusters });
@@ -298,6 +306,12 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
   let skipped = 0;
   const outputs: string[] = [];
   const warnings: string[] = [];
+  if (legacyDistillMode === "disabled" && input.experiences.length > 0) {
+    warnings.push("legacy_distill_skill_signals_disabled:lesson_state_authority_required");
+  }
+  if (legacyDistillMode === "degraded" && input.experiences.length > 0) {
+    warnings.push("legacy_distill_skill_signals_enabled:explicit_degraded_mode");
+  }
 
   for (const cluster of clusters) {
     try {

@@ -35,6 +35,7 @@ import { mcpCommand } from "./commands/mcp.js";
 import { agentmemoryCommand } from "./commands/agentmemory.js";
 import { skillCommand } from "./commands/skill.js";
 import { gbrainCommand } from "./commands/gbrain.js";
+import { lessonCommand } from "./commands/lesson.js";
 
 const program = new Command();
 
@@ -430,6 +431,34 @@ program
       maxSkillCandidates: options.maxSkillCandidates ? parseInt(options.maxSkillCandidates, 10) : undefined,
       noContextEconomy: options.noContextEconomy ?? options.contextEconomy === false,
       noContextJuice: options.noContextJuice ?? options.contextJuice === false,
+    }));
+  });
+
+program
+  .command("lesson")
+  .argument("<sub>", "subcommand (inventory|extract|cache|golden|inject-preview)")
+  .option("--source <path>")
+  .option("--agent <agent>")
+  .option("--scope <scope>")
+  .option("--mode <mode>", "personal or team-git", "personal")
+  .option("--query <query>")
+  .option("--max-spans <n>")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: {
+      source?: string;
+      agent?: "codex" | "openclaw" | "claude-code" | "opencode" | "hermes" | "openhuman" | "generic";
+      scope?: "personal" | "project" | "team" | "global" | "org";
+      mode?: "personal" | "team-git";
+      query?: string;
+      maxSpans?: string;
+      json?: boolean;
+    },
+  ) => {
+    console.log(await lessonCommand(process.cwd(), sub, {
+      ...options,
+      maxSpans: options.maxSpans ? parseInt(options.maxSpans, 10) : undefined,
     }));
   });
 

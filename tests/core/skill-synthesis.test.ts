@@ -224,6 +224,49 @@ describe("Skill synthesis", () => {
     assert.match(reviewFiles[0], /^semantic_skill_review_/);
   });
 
+  it("can disable legacy distilled skill signals when lesson-state authority is required", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-m25-authority-"));
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "personal",
+      summary: "OpenClaw memory import repair.",
+      problem: "OpenClaw memory import needed provenance.",
+      actions: ["Exported memory JSON.", "Verified hash.", "Imported with provenance."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["pnpm test passed"],
+      reusable_lessons: ["Export memory, verify hash, then import with provenance."],
+      risks: [],
+      suggested_tags: ["openclaw"],
+      suggested_wiki_kind: "procedure",
+      skill_candidate: {
+        should_create: true,
+        title: "OpenClaw memory import operations",
+        trigger: "Need to import OpenClaw memory into PraxisBase",
+        procedure: ["Export memory JSON.", "Verify hash.", "Import with provenance."],
+      },
+      confidence: 0.91,
+    };
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "dry-run",
+      authorityMode: "personal-local",
+      now: "2026-05-29T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+      ],
+      legacyDistillMode: "disabled",
+    });
+
+    assert.equal(result.report.signals, 0);
+    assert.equal(result.report.candidates, 0);
+    assert.ok(result.report.warnings.includes("legacy_distill_skill_signals_disabled:lesson_state_authority_required"));
+  });
+
   it("reports low-signal skill signals rejected by stability clustering", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-rejected-signals-"));
     const result = await synthesizeSkillCandidates(root, {

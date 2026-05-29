@@ -1,5 +1,6 @@
 import { computeHash } from "../protocol/id.js";
 import type { DistilledExperience } from "../ai/distill.js";
+import type { ClassifiedLesson } from "../experience/lesson-cache.js";
 import type { WikiPage } from "../wiki/resolver.js";
 
 export type SkillSignalScope = "personal" | "project" | "team" | "org" | "global";
@@ -170,6 +171,39 @@ export function collectSkillSignalsFromStableWikiPages(
         related_wiki_paths: [page.path ?? page.slug],
       });
     }
+  }
+  return signals.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+export function collectSkillSignalsFromLessons(
+  lessons: ClassifiedLesson[],
+  options: { authorityMode: "personal-local" | "team-git" },
+): SkillSignalCandidate[] {
+  const signals: SkillSignalCandidate[] = [];
+  for (const lesson of lessons) {
+    if (lesson.state !== "skill_ready") continue;
+    if (lesson.privacy_tier === "reject" || lesson.privacy_tier === "human_required") continue;
+    if (lesson.portability === "private_instance") continue;
+    if (options.authorityMode === "team-git" && lesson.privacy_tier === "personal_only") continue;
+    const procedure = [lesson.action, lesson.verification].filter((item): item is string => Boolean(item));
+    if (procedure.length === 0) continue;
+    const trigger = normalizeText(lesson.trigger);
+    const title = normalizeText(lesson.safe_claim);
+    if (!trigger || !title) continue;
+    if (isBadOneOff(`${title} ${trigger}`)) continue;
+    signals.push({
+      id: `skill_signal_${computeHash(`${lesson.lesson_id}:${lesson.source_hashes.join(",")}:${trigger}`).slice(7, 19)}`,
+      scope: lesson.scope,
+      trigger,
+      procedure,
+      title,
+      source_ref: lesson.source_refs[0],
+      source_hash: lesson.source_hashes[0],
+      evidence_id: lesson.lesson_id,
+      confidence: lesson.confidence,
+      cue_family: lesson.cue_family === "tool_sequence" ? "tool_pattern" : "verified_fix",
+      related_wiki_paths: [],
+    });
   }
   return signals.sort((a, b) => a.id.localeCompare(b.id));
 }

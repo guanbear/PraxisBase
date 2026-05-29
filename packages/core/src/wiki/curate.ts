@@ -36,6 +36,8 @@ import { buildWikiTopics, loadExistingWikiPages, planWikiPages } from "./topic-p
 import { buildWikiRelationshipPlans, type WikiRelationshipPlan, type RelationshipWikiPage } from "./relationship-planner.js";
 import { reviewWikiCandidateSemanticallyDetailed, type ExistingWikiPageRef, type SemanticWikiReview } from "./semantic-review.js";
 import { decideSemanticWikiAction } from "./semantic-review-policy.js";
+import { ExperienceLessonSchema, type ExperienceLesson } from "../experience/lesson-model.js";
+import { buildWikiEvidenceFromLessons } from "./lesson-compiler.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
 const REPORTS_WIKI_SOURCE_SUMMARIES = ".praxisbase/reports/wiki-source-summaries";
@@ -485,8 +487,62 @@ export function buildWikiEvidencePool(sources: WikiSource[], rules: WikiFilterRu
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function collectLessonReportEvidence(root: string): Promise<WikiEvidenceItem[]> {
+  let files: string[];
+  try {
+    files = await readdir(join(root, protocolPaths.reportsLessons));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+
+  const lessons: Array<ExperienceLesson & { state?: string }> = [];
+  for (const file of files.sort()) {
+    if (!file.endsWith(".json")) continue;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(await readFile(join(root, protocolPaths.reportsLessons, file), "utf8"));
+    } catch {
+      continue;
+    }
+    if (!isRecord(raw) || raw.type !== "lesson_pipeline_report" || !Array.isArray(raw.lessons)) continue;
+    for (const candidate of raw.lessons) {
+      const parsed = ExperienceLessonSchema.safeParse(candidate);
+      if (!parsed.success) continue;
+      const state = isRecord(candidate) && typeof candidate.state === "string" ? candidate.state : undefined;
+      lessons.push(state ? { ...parsed.data, state } : parsed.data);
+    }
+  }
+
+  return buildWikiEvidenceFromLessons(lessons);
+}
+
+function mergeEvidenceItems(items: WikiEvidenceItem[]): WikiEvidenceItem[] {
+  const deduped = new Map<string, WikiEvidenceItem>();
+  for (const item of items) {
+    const key = `${item.source_ref}:${item.source_hash}`;
+    if (!deduped.has(key)) deduped.set(key, item);
+  }
+  return Array.from(deduped.values()).sort((a, b) => a.id.localeCompare(b.id));
+}
+
 export async function buildWikiEvidencePoolFromRoot(root: string): Promise<WikiEvidencePool> {
-  return buildWikiEvidencePool(await collectWikiSources(root), await readWikiFilterRules(root));
+  const sourcePool = buildWikiEvidencePool(await collectWikiSources(root), await readWikiFilterRules(root));
+  const lessonItems = await collectLessonReportEvidence(root);
+  if (lessonItems.length > 0) {
+    return {
+      ...sourcePool,
+      items: mergeEvidenceItems(lessonItems),
+    };
+  }
+  return {
+    ...sourcePool,
+    items: mergeEvidenceItems(sourcePool.items),
+  };
 }
 
 const IGNORED_OBSERVATION_SIG_PREFIX = /^(capture|native_memory|episode|external_ref|proposal|review|skill|text):/;

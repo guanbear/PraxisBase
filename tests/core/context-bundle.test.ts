@@ -122,6 +122,53 @@ describe("agent context bundle", () => {
     assert.match(result.text, /## Graph Neighbors/);
   });
 
+  it("places runtime lessons after stable knowledge and before sidecar hits", () => {
+    const result = buildAgentContextBundle({
+      mode: "personal",
+      query: "openclaw long tool task",
+      agent: "openclaw",
+      runtimeLessons: [{
+        lesson_id: "lesson_ack",
+        safe_claim: "Send a brief ACK before long-running tool work.",
+        claim: "Send a brief ACK before long-running tool work.",
+        problem: "The user sees silence during slow work.",
+        trigger: "Before long tool work.",
+        action: "Send a short acknowledgement.",
+        applies_to_agents: ["openclaw"],
+        applies_to_systems: ["agent-runtime"],
+        confidence: 0.9,
+        privacy_tier: "safe",
+        portability: "agent_family",
+        scope: "personal",
+        cue_family: "native_memory",
+        source_refs: ["source-inventory://openclaw/MEMORY.md"],
+        source_hashes: ["sha256:m"],
+        state: "active_personal",
+        evidence_spans: [],
+        redaction_notes: [],
+        created_at: "2026-05-29T00:00:00.000Z",
+      } as any],
+      items: [
+        {
+          id: "stable",
+          path: "kb/procedures/openclaw-tools.md",
+          kind: "procedure",
+          summary: "Use OpenClaw tools safely.",
+        },
+        {
+          id: "sidecar",
+          path: "gbrain://query/openclaw-tools",
+          kind: "gbrain_sidecar",
+          summary: "sidecar hint",
+        },
+      ],
+    });
+
+    assert.ok(result.text.indexOf("Stable Knowledge") < result.text.indexOf("Relevant PB Experience"));
+    assert.ok(result.text.indexOf("Relevant PB Experience") < result.text.indexOf("Sidecar Hits"));
+    assert.equal(result.bundle.sections.some((section) => section.kind === "runtime_lessons"), true);
+  });
+
   it("uses the documented default 24 KiB budget", () => {
     assert.equal(DEFAULT_AGENT_CONTEXT_BUNDLE_BUDGET_BYTES, 24 * 1024);
   });

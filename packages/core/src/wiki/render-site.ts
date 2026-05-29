@@ -354,6 +354,14 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 	    ${report.skill_validation.by_decision["fail"] ? `<article><span>Validation fail</span><strong>${escapeHtml(String(report.skill_validation.by_decision["fail"]))}</strong></article>` : ""}
 	    ${report.skill_validation.by_decision["needs_human"] ? `<article><span>Validation needs human</span><strong>${escapeHtml(String(report.skill_validation.by_decision["needs_human"]))}</strong></article>` : ""}
 	    ${report.skill_validation.candidates_without_passing > 0 ? `<article><span>Candidates needing validation</span><strong>${escapeHtml(String(report.skill_validation.candidates_without_passing))}</strong></article>` : ""}` : ""}
+	    ${report.lessons && report.lessons.enabled ? `<article><span>M25 Lessons</span><strong>${escapeHtml(String(report.lessons.deterministic_lessons + report.lessons.ai_lessons))} extracted</strong></article>
+	    <article><span>Lesson active personal</span><strong>${escapeHtml(String(report.lessons.active_personal))}</strong></article>
+	    <article><span>Lesson wiki ready</span><strong>${escapeHtml(String(report.lessons.wiki_ready))}</strong></article>
+	    <article><span>Lesson skill ready</span><strong>${escapeHtml(String(report.lessons.skill_ready))}</strong></article>
+	    <article><span>Lesson human required</span><strong>${escapeHtml(String(report.lessons.human_required))}</strong></article>
+	    <article><span>Lesson rejected</span><strong>${escapeHtml(String(report.lessons.rejected))}</strong></article>
+	    <article><span>Lesson wiki evidence</span><strong>${escapeHtml(String(report.lessons.wiki_evidence))}</strong></article>
+	    ${report.lessons.golden_validation && report.lessons.golden_validation.length > 0 ? report.lessons.golden_validation.map((gv) => `<article><span>Golden ${escapeHtml(gv.fixture)}</span><strong>${escapeHtml(String(gv.matches))} matches / ${escapeHtml(String(gv.privateLeakCount))} leaks</strong></article>`).join("\n") : ""}` : ""}
 	  </div>
   ${renderAgentMemoryStatus(report)}
   ${renderGBrainStatus(report)}
@@ -1148,6 +1156,25 @@ interface DailyReportSummary {
 	    by_decision: Record<string, number>;
 	    candidates_without_passing: number;
 	  };
+	  lessons?: {
+	    enabled: boolean;
+	    source_items: number;
+	    selected_spans: number;
+	    deterministic_lessons: number;
+	    ai_lessons: number;
+	    active_personal: number;
+	    wiki_ready: number;
+	    skill_ready: number;
+	    human_required: number;
+	    rejected: number;
+	    wiki_evidence: number;
+	    golden_validation: Array<{
+	      fixture: string;
+	      matches: number;
+	      privateLeakCount: number;
+	    }>;
+	    report_ref?: string;
+	  };
 	  agentmemory_sources: Array<{
     name: string;
     status: string;
@@ -1291,6 +1318,21 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	      by_decision?: Record<string, number>;
 	      candidates_without_passing?: number;
 	    };
+	    lessons?: {
+	      enabled?: boolean;
+	      source_items?: number;
+	      selected_spans?: number;
+	      deterministic_lessons?: number;
+	      ai_lessons?: number;
+	      active_personal?: number;
+	      wiki_ready?: number;
+	      skill_ready?: number;
+	      human_required?: number;
+	      rejected?: number;
+	      wiki_evidence?: number;
+	      golden_validation?: Array<Record<string, unknown>>;
+	      report_ref?: string;
+	    };
     brain_backends?: {
       gbrain?: {
         enabled?: boolean;
@@ -1394,6 +1436,29 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	        : {},
 	      candidates_without_passing: typeof latest.skill_validation.candidates_without_passing === "number" ? latest.skill_validation.candidates_without_passing : 0,
 	    } : undefined,
+	    lessons: latest.lessons && (latest.lessons as Record<string, unknown>).enabled ? (() => {
+	      const l = latest.lessons as Record<string, unknown>;
+	      const gv = Array.isArray(l.golden_validation) ? (l.golden_validation as Array<Record<string, unknown>>).filter((item) => item && typeof item === "object").map((item) => ({
+	        fixture: typeof item.fixture === "string" ? item.fixture : "",
+	        matches: typeof item.matches === "number" ? item.matches : 0,
+	        privateLeakCount: typeof item.privateLeakCount === "number" ? item.privateLeakCount : 0,
+	      })) : [];
+	      return {
+	        enabled: true,
+	        source_items: typeof l.source_items === "number" ? l.source_items : 0,
+	        selected_spans: typeof l.selected_spans === "number" ? l.selected_spans : 0,
+	        deterministic_lessons: typeof l.deterministic_lessons === "number" ? l.deterministic_lessons : 0,
+	        ai_lessons: typeof l.ai_lessons === "number" ? l.ai_lessons : 0,
+	        active_personal: typeof l.active_personal === "number" ? l.active_personal : 0,
+	        wiki_ready: typeof l.wiki_ready === "number" ? l.wiki_ready : 0,
+	        skill_ready: typeof l.skill_ready === "number" ? l.skill_ready : 0,
+	        human_required: typeof l.human_required === "number" ? l.human_required : 0,
+	        rejected: typeof l.rejected === "number" ? l.rejected : 0,
+	        wiki_evidence: typeof l.wiki_evidence === "number" ? l.wiki_evidence : 0,
+	        golden_validation: gv,
+	        report_ref: typeof l.report_ref === "string" ? l.report_ref : undefined,
+	      };
+	    })() : undefined,
 	    agentmemory_sources: sources
       .filter((source) => source.source_type === "agentmemory")
       .map((source) => ({
