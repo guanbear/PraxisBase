@@ -19,6 +19,27 @@ import { extractLessonsWithAi, type LessonExtractCacheStats } from "./lesson-ext
 import { LESSON_PLANNER_IDENTITY, planLessonSpans } from "./lesson-planner.js";
 import { SOURCE_INVENTORY_PARSER_IDENTITY, buildSourceInventory } from "./source-inventory.js";
 
+export const LESSON_AUTHORITY_CONTEXT_RANK = [
+  "stable_pb_page",
+  "promoted_skill",
+  "active_personal_lesson",
+  "gbrain_sidecar",
+  "agentmemory_sidecar",
+  "legacy_distilled",
+  "raw_audit",
+] as const;
+
+export interface LessonAuthorityContract {
+  wiki_semantic_input: "lesson_clusters" | "none";
+  context_rank: typeof LESSON_AUTHORITY_CONTEXT_RANK[number][];
+  promotion_evidence: {
+    lesson_state_authority: boolean;
+    legacy_distilled: false;
+    gbrain_sidecar: false;
+    agentmemory_sidecar: false;
+  };
+}
+
 export interface RunLessonPipelineInput {
   sourcePath: string;
   agent: "codex" | "openclaw" | "claude-code" | "opencode" | "hermes" | "openhuman" | "generic";
@@ -47,6 +68,7 @@ export interface LessonPipelineReport {
   };
   ai_cache: LessonExtractCacheStats & { enabled: boolean };
   wiki_evidence: number;
+  authority_contract: LessonAuthorityContract;
 }
 
 export async function runLessonPipeline(root: string, input: RunLessonPipelineInput): Promise<LessonPipelineReport> {
@@ -125,6 +147,8 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
     counts[lesson.state] = (counts[lesson.state] ?? 0) + 1;
     return counts;
   }, {});
+  const wikiEvidence = buildWikiEvidenceFromLessons(lessons).length;
+  const authorityContract = buildLessonAuthorityContract(lessons, wikiEvidence);
   return {
     source_items: inventory.length,
     selected_spans: spans.length,
@@ -142,7 +166,29 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
       enabled: Boolean(input.aiClient && input.aiCacheIdentity),
       ...aiCacheStats,
     },
-    wiki_evidence: buildWikiEvidenceFromLessons(lessons).length,
+    wiki_evidence: wikiEvidence,
+    authority_contract: authorityContract,
+  };
+}
+
+export function buildLessonAuthorityContract(
+  lessons: Array<{ state?: string }>,
+  wikiEvidence: number,
+): LessonAuthorityContract {
+  const lessonStateAuthority = lessons.some((lesson) =>
+    lesson.state === "active_personal" ||
+    lesson.state === "wiki_ready" ||
+    lesson.state === "skill_ready",
+  );
+  return {
+    wiki_semantic_input: wikiEvidence > 0 ? "lesson_clusters" : "none",
+    context_rank: [...LESSON_AUTHORITY_CONTEXT_RANK],
+    promotion_evidence: {
+      lesson_state_authority: lessonStateAuthority,
+      legacy_distilled: false,
+      gbrain_sidecar: false,
+      agentmemory_sidecar: false,
+    },
   };
 }
 

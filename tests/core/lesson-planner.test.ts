@@ -127,3 +127,46 @@ test("planner boosts repeated evidence across spans", () => {
     ["repeat-1", "repeat-2"],
   );
 });
+
+test("planner carries nearest heading context with selected memory spans", () => {
+  const headingSpan = {
+    source_item_id: "memory",
+    source_ref: "source-inventory://openclaw/MEMORY.md",
+    source_hash: "sha256:m",
+    span_id: "heading-ops",
+    line_start: 1,
+    line_end: 1,
+    byte_start: 0,
+    byte_end: 20,
+    heading_path: ["Operations"],
+    excerpt: "Operations",
+    excerpt_hash: "sha256:h",
+    span_kind: "heading" as const,
+  };
+  const lessonSpan = {
+    ...headingSpan,
+    span_id: "memory-target-machine",
+    line_start: 2,
+    line_end: 2,
+    byte_start: 21,
+    byte_end: 80,
+    excerpt: "Confirm target machine before restart.",
+    excerpt_hash: "sha256:l",
+    span_kind: "bullet" as const,
+  };
+
+  const selected = planLessonSpans(
+    [{
+      source_item_id: "memory",
+      source_kind: "memory_file",
+      authority_hint: "agent_native_memory",
+      content_spans: [headingSpan, lessonSpan],
+    } as any],
+    { maxSpans: 1 },
+  );
+
+  assert.deepEqual(
+    selected.map((span) => span.span_id),
+    ["heading-ops", "memory-target-machine"],
+  );
+});

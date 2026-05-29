@@ -86,7 +86,7 @@ import {
   type PayloadPreSummaryPolicy,
   type PayloadPreSummaryResult,
 } from "./payload-presummary.js";
-import { runLessonPipeline, type LessonPipelineReport } from "./lesson-pipeline.js";
+import { buildLessonAuthorityContract, runLessonPipeline, type LessonPipelineReport } from "./lesson-pipeline.js";
 import { dedupeLessons } from "./lesson-cache.js";
 import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
 
@@ -1755,6 +1755,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     }
 
     const lessons = dedupeLessons(lessonReports.flatMap((report) => report.lessons));
+    const lessonWikiEvidence = buildWikiEvidenceFromLessons(lessons).length;
     lessonReport = {
       source_items: lessonReports.reduce((sum, report) => sum + report.source_items, 0),
       selected_spans: lessonReports.reduce((sum, report) => sum + report.selected_spans, 0),
@@ -1778,7 +1779,8 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         writes: lessonReports.reduce((sum, report) => sum + report.ai_cache.writes, 0),
         corrupt: lessonReports.reduce((sum, report) => sum + report.ai_cache.corrupt, 0),
       },
-      wiki_evidence: buildWikiEvidenceFromLessons(lessons).length,
+      wiki_evidence: lessonWikiEvidence,
+      authority_contract: buildLessonAuthorityContract(lessons, lessonWikiEvidence),
       source_reports: lessonSourceReports,
     };
 

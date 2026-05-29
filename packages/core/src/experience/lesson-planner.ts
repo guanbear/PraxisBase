@@ -147,10 +147,11 @@ export function planLessonSpans(
     selected.set(span.span.span_id, span);
   }
 
-  return Array.from(selected.values())
+  const primary = Array.from(selected.values())
     .sort((a, b) => scored.indexOf(a) - scored.indexOf(b))
     .slice(0, maxSpans)
     .map((s) => s.span);
+  return includeNeighboringHeadingContext(items, primary);
 }
 
 function repetitionKey(excerpt: string): string {
@@ -160,4 +161,46 @@ function repetitionKey(excerpt: string): string {
     .replace(/\b\d+\b/g, "")
     .replace(/[^a-z\u4e00-\u9fff]+/g, " ")
     .trim();
+}
+
+function includeNeighboringHeadingContext(
+  items: SourceInventoryItem[],
+  selected: EvidenceSpan[],
+): EvidenceSpan[] {
+  const byId = new Map(selected.map((span) => [span.span_id, span]));
+  const itemById = new Map(items.map((item) => [item.source_item_id, item]));
+
+  for (const span of selected) {
+    if (span.span_kind === "heading") continue;
+    const item = itemById.get(span.source_item_id);
+    if (!item) continue;
+
+    const heading = nearestHeadingForSpan(item.content_spans, span);
+    if (heading) {
+      byId.set(heading.span_id, heading);
+    }
+  }
+
+  return Array.from(byId.values()).sort((a, b) => {
+    const sourceOrder = a.source_ref.localeCompare(b.source_ref);
+    if (sourceOrder !== 0) return sourceOrder;
+    if (a.line_start !== b.line_start) return a.line_start - b.line_start;
+    return a.span_id.localeCompare(b.span_id);
+  });
+}
+
+function nearestHeadingForSpan(spans: EvidenceSpan[], span: EvidenceSpan): EvidenceSpan | undefined {
+  const headingNames = new Set(span.heading_path.map((heading) => heading.toLowerCase()));
+  const precedingHeadings = spans.filter((candidate) =>
+    candidate.span_kind === "heading" &&
+    candidate.source_ref === span.source_ref &&
+    candidate.line_start <= span.line_start,
+  );
+
+  const matchingHeading = precedingHeadings
+    .filter((candidate) => headingNames.has(candidate.excerpt.toLowerCase()))
+    .sort((a, b) => b.line_start - a.line_start)[0];
+  if (matchingHeading) return matchingHeading;
+
+  return precedingHeadings.sort((a, b) => b.line_start - a.line_start)[0];
 }

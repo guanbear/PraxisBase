@@ -194,3 +194,41 @@ test("lesson pipeline reports AI extraction cache hits and misses", async () => 
   assert.deepEqual(first.ai_cache, { enabled: true, hits: 0, misses: 1, writes: 1, corrupt: 0 });
   assert.deepEqual(second.ai_cache, { enabled: true, hits: 1, misses: 0, writes: 0, corrupt: 0 });
 });
+
+test("lesson pipeline reports the authority contract for downstream integrations", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-lesson-pipeline-authority-"));
+  const source = join(root, "openclaw-memory");
+  await mkdir(source, { recursive: true });
+  await writeFile(
+    join(source, "MEMORY.md"),
+    "- Need tools/network/dispatch or slow tasks: send a short ACK first.\n",
+    "utf8",
+  );
+
+  const report = await runLessonPipeline(root, {
+    sourcePath: source,
+    agent: "openclaw",
+    scope: "personal",
+    origin: "local",
+    authorityMode: "personal-local",
+    now: "2026-05-29T00:00:00.000Z",
+    maxSpans: 10,
+  });
+
+  assert.equal(report.authority_contract.wiki_semantic_input, "lesson_clusters");
+  assert.deepEqual(report.authority_contract.context_rank, [
+    "stable_pb_page",
+    "promoted_skill",
+    "active_personal_lesson",
+    "gbrain_sidecar",
+    "agentmemory_sidecar",
+    "legacy_distilled",
+    "raw_audit",
+  ]);
+  assert.deepEqual(report.authority_contract.promotion_evidence, {
+    lesson_state_authority: true,
+    legacy_distilled: false,
+    gbrain_sidecar: false,
+    agentmemory_sidecar: false,
+  });
+});

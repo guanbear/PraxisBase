@@ -2,13 +2,13 @@
 
 ## 1. Schemas And Reports
 
-- [ ] Add `ExperienceLesson`, `EvidenceSpan`, `SourceInventoryItem`, lesson state, portability, cue family, and privacy abstraction schemas.
+- [x] Add `ExperienceLesson`, `EvidenceSpan`, `SourceInventoryItem`, lesson state, portability, cue family, and privacy abstraction schemas.
 - [ ] Add report paths for source inventory, lesson extraction, lesson cache, golden validation, and runtime lesson injection.
 - [x] Add protocol cache path for AI lesson extraction cache at `.praxisbase/cache/lesson-extract`.
 - [x] Add protocol cache path for governed lesson state cache at `.praxisbase/cache/lesson-state`.
 - [x] Add local-only staging path for trusted remote OpenClaw raw evidence at `.praxisbase/staging/trusted-remote-openclaw`.
-- [ ] Export new schemas from `packages/core/src/index.ts`.
-- [ ] Add integration-contract report fields that show when lesson clusters outrank legacy distill summaries, GBrain hits, and AgentMemory hits.
+- [x] Export new schemas from `packages/core/src/index.ts`.
+- [x] Add integration-contract report fields that show when lesson clusters outrank legacy distill summaries, GBrain hits, and AgentMemory hits.
 
 ## 2. Source Inventory And Span Mapping
 
@@ -25,29 +25,29 @@
 
 - [x] Add span scoring by source kind, authority hint, explicit lesson markers, failure/fix/verification markers, repetition, and user-authored/native-memory hints.
 - [x] Reserve a minimum span budget for memory files before logs.
-- [ ] Include neighboring heading context for selected spans.
+- [x] Include neighboring heading context for selected spans.
 - [x] Include planner identity in cache keys.
 - [x] Add tests proving newest logs cannot crowd out high-priority memory spans.
 
 ## 4. Deterministic Lesson Extraction
 
 - [ ] Add deterministic extraction for explicit preferences, vetoes, decisions, unresolved tasks, reflections, repeated failures, tool sequences, and verified fixes.
-- [ ] Preserve source refs, source hashes, and evidence span ids in every extracted seed.
+- [x] Preserve source refs, source hashes, and evidence span ids in every extracted seed.
 - [ ] Add tests based on OpenHuman-style transcript ingest behavior without copying OpenHuman code.
 
 ## 5. LLM Lesson Extraction
 
-- [ ] Add strict JSON lesson extractor prompts and zod validation.
+- [x] Add strict JSON lesson extractor prompts and zod validation.
 - [ ] Add malformed-output repair and quarantine.
 - [x] Add AI lesson extraction cache identity using prompt version, CLI/daily model identity, agent, scope, source hash, span id, and excerpt hash.
 - [x] Include planner/reducer/parser identity in lesson AI cache keys where reduced or planned span inputs affect extraction.
-- [ ] Require `safe_claim`, `portability`, `privacy_tier`, `applies_to_agents`, `applies_to_systems`, and evidence spans.
+- [x] Require `safe_claim`, `portability`, `privacy_tier`, `applies_to_agents`, `applies_to_systems`, and evidence spans.
 - [x] Add tests that weak one-off run reports return no lesson.
 
 ## 6. Privacy Abstraction
 
-- [ ] Add abstraction rules for hostnames, IPs, paths, key paths, accounts, raw platform user ids, private wrapper commands, and private remote names.
-- [ ] Add team-mode stricter routing for personal/private evidence.
+- [x] Add abstraction rules for hostnames, IPs, paths, key paths, accounts, raw platform user ids, private wrapper commands, and private remote names.
+- [x] Add team-mode stricter routing for personal/private evidence.
 - [ ] Block stable output leakage into `kb/`, `skills/`, `dist/`, GBrain export, and AgentMemory export.
 - [ ] Add tests with remote OpenClaw private details.
 
@@ -60,31 +60,31 @@
 
 ## 8. Wiki Compiler Integration
 
-- [ ] Feed wiki curation from lesson clusters rather than raw evidence summaries.
+- [x] Feed wiki curation from lesson clusters rather than raw evidence summaries.
 - [ ] Render wiki candidates with applicability, procedure/recommendation, verification, negative case, portability, privacy tier, links, and span provenance.
 - [ ] Prefer updating existing pages before creating new pages.
-- [ ] Add integration tests proving `wiki_ready` lesson clusters win when legacy distilled summaries exist for the same source.
-- [ ] Add wiki quality tests proving output is synthesized and linked, not raw copied summaries.
+- [x] Add integration tests proving `wiki_ready` lesson clusters win when legacy distilled summaries exist for the same source.
+- [x] Add wiki quality tests proving output is synthesized and linked, not raw copied summaries.
 
 ## 9. Skill Synthesis Integration
 
-- [ ] Feed skill synthesis from `skill_ready` lessons and stable procedural pages.
+- [x] Feed skill synthesis from `skill_ready` lessons and stable procedural pages.
 - [ ] Preserve update-before-create and umbrella-skill matching.
 - [ ] Add deterministic repair for fixable skill format errors before human review.
 - [ ] Keep unreviewed candidates out of normal agent injection.
-- [ ] Reject promotion-eligible skill candidates that are supported only by raw logs, one-off summaries, or sidecar hits without lesson-state authority.
+- [x] Reject promotion-eligible skill candidates that are supported only by raw logs, one-off summaries, or sidecar hits without lesson-state authority.
 
 ## 10. Runtime Personal Injection
 
 - [ ] Add personal runtime lesson retrieval by query, agents, systems, tags, portability, and state.
-- [ ] Add bounded `Relevant PB Experience` rendering through M24 context bundles.
-- [ ] Ensure stable PB pages and promoted skills outrank lesson hits.
-- [ ] Exclude personal runtime lessons from team bundles by default.
-- [ ] Ensure GBrain and AgentMemory sidecar hits rank below stable PB context and do not count as promotion evidence unless imported through M25.
+- [x] Add bounded `Relevant PB Experience` rendering through M24 context bundles.
+- [x] Ensure stable PB pages and promoted skills outrank lesson hits.
+- [x] Exclude personal runtime lessons from team bundles by default.
+- [x] Ensure GBrain and AgentMemory sidecar hits rank below stable PB context and do not count as promotion evidence unless imported through M25.
 
 ## 11. CLI And Site
 
-- [ ] Add CLI/report surfaces for inventory, lesson extraction, lesson cache, golden validation, and injection preview.
+- [x] Add CLI/report surfaces for inventory, lesson extraction, lesson cache, golden validation, and injection preview.
 - [x] Add explicit `lesson extract --ai` provider path while keeping default lesson inspection deterministic-only.
 - [x] Reuse cached AI lesson extraction output for repeated `lesson extract --ai` CLI runs with the same model/span identity.
 - [ ] Show lesson states, privacy routing, source spans, and golden validation on the HTML site.
