@@ -12,6 +12,10 @@ test("M25 golden validation extracts local and remote OpenClaw lessons without p
 
   assert.ok(local.matches >= 5);
   assert.ok(remote.matches >= 6);
+  assert.deepEqual(local.missing_targets, []);
+  assert.deepEqual(remote.missing_targets, []);
   assert.equal(local.privateLeakCount, 0);
   assert.equal(remote.privateLeakCount, 0);
+  assert.ok(local.lessons_with_span_provenance >= local.matches);
+  assert.ok(remote.lessons_with_span_provenance >= remote.matches);
 });

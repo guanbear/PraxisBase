@@ -254,6 +254,170 @@ function parseJsonSpans(
   return spans;
 }
 
+function stringifySessionValue(value: unknown): string[] {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return [String(value)];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => stringifySessionValue(item));
+  }
+
+  if (!value || typeof value !== "object") return [];
+
+  const record = value as Record<string, unknown>;
+  const parts: string[] = [];
+  for (const key of [
+    "content",
+    "text",
+    "summary",
+    "message",
+    "result",
+    "error",
+    "output",
+    "stdout",
+    "stderr",
+    "cmd",
+    "command",
+    "name",
+    "tool",
+    "type",
+  ]) {
+    parts.push(...stringifySessionValue(record[key]));
+  }
+
+  if (parts.length > 0) return parts;
+
+  for (const nested of Object.values(record)) {
+    parts.push(...stringifySessionValue(nested));
+  }
+  return parts;
+}
+
+function sessionRecordSpanKind(record: Record<string, unknown>): EvidenceSpan["span_kind"] {
+  const markers = [
+    record.type,
+    record.kind,
+    record.event,
+    record.name,
+    record.tool,
+  ].filter((value): value is string => typeof value === "string").join(" ").toLowerCase();
+
+  if (/\b(tool|function)[_-]?(call|use|request)\b/.test(markers) || markers.includes("tool_call")) {
+    return "tool_call";
+  }
+
+  if (
+    /\b(tool|function)[_-]?(result|response|output)\b/.test(markers) ||
+    markers.includes("tool_result") ||
+    markers.includes("command_output") ||
+    typeof record.error === "string" ||
+    typeof record.result === "string"
+  ) {
+    return "tool_result";
+  }
+
+  return "json_message";
+}
+
+function extractSessionRecordText(record: Record<string, unknown>): string {
+  const parts: string[] = [];
+  const role = typeof record.role === "string" && record.role.trim() ? record.role.trim() : "";
+  const type = typeof record.type === "string" && record.type.trim() ? record.type.trim() : "";
+  const name = typeof record.name === "string" && record.name.trim()
+    ? record.name.trim()
+    : typeof record.tool === "string" && record.tool.trim()
+      ? record.tool.trim()
+      : "";
+
+  for (const key of ["message", "content", "text", "summary", "result", "error"]) {
+    const values = stringifySessionValue(record[key]);
+    for (const value of values) {
+      if (!parts.includes(value)) parts.push(value);
+    }
+  }
+
+  const args = record.arguments ?? record.args ?? record.input ?? record.parameters;
+  for (const value of stringifySessionValue(args)) {
+    if (!parts.includes(value)) parts.push(value);
+  }
+
+  if (parts.length === 0) {
+    for (const value of stringifySessionValue(record)) {
+      if (!parts.includes(value)) parts.push(value);
+    }
+  }
+
+  const body = parts.join("\n").trim();
+  if (!body) return "";
+
+  const prefix = [role, type, name].filter(Boolean).join(" ");
+  return prefix ? `${prefix}: ${body}` : body;
+}
+
+function parseJsonlSessionSpans(
+  content: string,
+  sourceItemId: string,
+  sourceRef: string,
+  sourceHash: string,
+): EvidenceSpan[] {
+  const lines = content.split("\n");
+  const spans: EvidenceSpan[] = [];
+  let byteOffset = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineTextByteLength = Buffer.byteLength(line, "utf8");
+    const lineByteLength = lineTextByteLength + (i < lines.length - 1 ? 1 : 0);
+    const trimmed = line.trim();
+
+    if (trimmed.length > 0) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          const record = parsed as Record<string, unknown>;
+          const text = extractSessionRecordText(record);
+          if (text.length > 0) {
+            const spanKind = sessionRecordSpanKind(record);
+            const type = typeof record.type === "string" && record.type.trim() ? record.type.trim() : spanKind;
+            const role = typeof record.role === "string" && record.role.trim() ? record.role.trim() : "";
+            const name = typeof record.name === "string" && record.name.trim()
+              ? record.name.trim()
+              : typeof record.tool === "string" && record.tool.trim()
+                ? record.tool.trim()
+                : "";
+            spans.push({
+              source_item_id: sourceItemId,
+              source_ref: sourceRef,
+              source_hash: sourceHash,
+              span_id: `${sourceItemId}_jsonl_${spans.length}`,
+              line_start: i + 1,
+              line_end: i + 1,
+              byte_start: byteOffset,
+              byte_end: byteOffset + Math.max(lineTextByteLength, 1),
+              heading_path: [`line ${i + 1}`, ...[role, type, name].filter(Boolean)],
+              excerpt: text.length > 500 ? text.slice(0, 500) + "..." : text,
+              excerpt_hash: computeHash(text),
+              span_kind: spanKind,
+            });
+          }
+        }
+      } catch {
+        // Non-JSON log lines are handled by markdown fallback.
+      }
+    }
+
+    byteOffset += lineByteLength;
+  }
+
+  return spans;
+}
+
 async function parseSqliteSpans(
   fullPath: string,
   sourceItemId: string,
@@ -355,16 +519,21 @@ export async function buildSourceInventory(
       }
 
       sourceHash = computeHash(content);
-      const spans = parseMarkdownSpans(
-        content,
-        sourceItemId,
-        sourceRef,
-        sourceHash,
-      );
+      const sessionSpans = ext === ".jsonl" || ext === ".log"
+        ? parseJsonlSessionSpans(content, sourceItemId, sourceRef, sourceHash)
+        : [];
+      const spans = sessionSpans.length > 0
+        ? []
+        : parseMarkdownSpans(
+            content,
+            sourceItemId,
+            sourceRef,
+            sourceHash,
+          );
       const jsonSpans = ext === ".json"
         ? parseJsonSpans(content, sourceItemId, sourceRef, sourceHash)
         : [];
-      contentSpans = [...jsonSpans, ...spans];
+      contentSpans = [...jsonSpans, ...sessionSpans, ...spans];
     }
 
     items.push(

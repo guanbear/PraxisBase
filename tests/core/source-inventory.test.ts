@@ -74,6 +74,123 @@ test("normalizes skipped markdown heading levels without undefined path entries"
   }
 });
 
+test("extracts useful spans from Codex JSONL session records", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-codex-jsonl-"));
+  const sessionPath = join(root, "codex-session.jsonl");
+  const records = [
+    {
+      type: "message",
+      role: "user",
+      message: {
+        content: "Please implement source inventory depth for agent session JSONL.",
+      },
+    },
+    {
+      type: "tool_call",
+      name: "exec_command",
+      arguments: {
+        cmd: "pnpm test source-inventory",
+      },
+    },
+    {
+      type: "tool_result",
+      name: "exec_command",
+      result: "Test failed: expected json_message span but parser only returned paragraph spans.",
+      error: "AssertionError: missing json_message",
+    },
+    {
+      type: "message",
+      role: "assistant",
+      content: [
+        {
+          type: "text",
+          text: "Fix: parse newline-delimited JSON records and classify tool calls/results separately.",
+        },
+      ],
+    },
+    {
+      type: "message",
+      role: "assistant",
+      summary: "Verification: pnpm build and node --test source-inventory.test.js passed.",
+    },
+  ];
+  await writeFile(sessionPath, records.map((record) => JSON.stringify(record)).join("\n") + "\n", "utf8");
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "codex",
+    path: sessionPath,
+    scope: "personal",
+    origin: "local",
+  });
+
+  assert.equal(inventory.length, 1);
+  const spans = inventory[0]!.content_spans;
+  assert.ok(spans.some((span) =>
+    span.span_kind === "json_message" &&
+    span.excerpt.includes("Please implement source inventory depth")
+  ));
+  assert.ok(spans.some((span) =>
+    span.span_kind === "tool_call" &&
+    span.excerpt.includes("pnpm test source-inventory")
+  ));
+  assert.ok(spans.some((span) =>
+    span.span_kind === "tool_result" &&
+    span.excerpt.includes("missing json_message")
+  ));
+  assert.ok(spans.some((span) =>
+    span.span_kind === "json_message" &&
+    span.excerpt.includes("parse newline-delimited JSON records")
+  ));
+  assert.ok(spans.some((span) =>
+    span.span_kind === "json_message" &&
+    span.excerpt.includes("Verification: pnpm build")
+  ));
+
+  for (const span of spans) {
+    assert.equal(span.source_ref, inventory[0]!.source_ref);
+    assert.equal(span.source_hash, inventory[0]!.source_hash);
+    assert.ok(span.span_id.length > 0);
+    assert.ok(span.line_start >= 1);
+    assert.ok(span.line_end >= span.line_start);
+    assert.ok(span.byte_end > span.byte_start);
+    assert.ok(span.excerpt_hash.length > 0);
+  }
+});
+
+test("keeps ordinary MEMORY.md markdown spans intact", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-memory-markdown-"));
+  await writeFile(join(root, "MEMORY.md"), [
+    "# Agent Memory",
+    "## Verification",
+    "- Run the focused source inventory test after parser changes.",
+    "",
+    "Keep markdown paragraphs available as lesson evidence.",
+  ].join("\n"), "utf8");
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "codex",
+    path: root,
+    scope: "personal",
+    origin: "local",
+  });
+
+  assert.equal(inventory.length, 1);
+  assert.equal(inventory[0]!.source_kind, "memory_file");
+  assert.ok(inventory[0]!.content_spans.some((span) =>
+    span.span_kind === "heading" &&
+    span.excerpt === "Verification" &&
+    span.heading_path.includes("Verification")
+  ));
+  assert.ok(inventory[0]!.content_spans.some((span) =>
+    span.span_kind === "bullet" &&
+    span.excerpt.includes("focused source inventory test")
+  ));
+  assert.ok(inventory[0]!.content_spans.some((span) =>
+    span.span_kind === "paragraph" &&
+    span.excerpt.includes("markdown paragraphs available")
+  ));
+});
+
 test("maps OpenClaw sqlite memory rows into evidence spans", async () => {
   const root = await mkdtemp(join(tmpdir(), "pb-m25-sqlite-"));
   const dbPath = join(root, "main.sqlite");

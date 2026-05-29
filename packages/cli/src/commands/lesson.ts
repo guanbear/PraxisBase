@@ -1,9 +1,11 @@
 import {
+  createOpenAiCompatibleJsonClient,
   renderRuntimeLessonBlock,
   retrieveRuntimeLessons,
   runLessonPipeline,
   runM25GoldenValidation,
 } from "@praxisbase/core";
+import { readAiProviderConfig } from "@praxisbase/core/ai/config.js";
 
 type LessonAgent = "codex" | "openclaw" | "claude-code" | "opencode" | "hermes" | "openhuman" | "generic";
 
@@ -14,6 +16,9 @@ export interface LessonCommandOptions {
   mode?: "personal" | "team-git";
   query?: string;
   maxSpans?: number;
+  ai?: boolean;
+  env?: Record<string, string | undefined>;
+  fetchImpl?: typeof fetch;
   json?: boolean;
 }
 
@@ -37,12 +42,24 @@ export async function lessonCommand(root: string, sub: string, options: LessonCo
   }
 
   const sourcePath = requireSource(options);
+  const aiConfig = options.ai ? await readAiProviderConfig(root) : null;
+  if (options.ai && !aiConfig) {
+    throw new Error("LESSON_AI_CONFIG_REQUIRED: run praxisbase ai init before lesson extract --ai.");
+  }
+  const aiClient = aiConfig
+    ? createOpenAiCompatibleJsonClient({
+      config: aiConfig,
+      env: options.env,
+      fetchImpl: options.fetchImpl,
+    })
+    : undefined;
   const report = await runLessonPipeline(root, {
     sourcePath,
     agent,
     scope,
     authorityMode: authorityMode(options.mode),
     maxSpans,
+    aiClient,
   });
 
   if (sub === "inventory") {

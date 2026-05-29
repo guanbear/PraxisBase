@@ -100,7 +100,11 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
 export interface GoldenValidationResult {
   fixture: string;
   matches: number;
+  expected_targets: string[];
+  matched_targets: string[];
+  missing_targets: string[];
   privateLeakCount: number;
+  lessons_with_span_provenance: number;
   lesson_claims: string[];
 }
 
@@ -117,6 +121,13 @@ export async function runM25GoldenValidation(now = "2026-05-29T00:00:00.000Z"): 
     {
       fixture: "openclaw-local",
       agent: "openclaw" as const,
+      expectedTargets: [
+        "ack_before_slow_work",
+        "fail_closed_honesty",
+        "hide_internal_tool_failures",
+        "memory_truncation",
+        "rate_limit_model_failover",
+      ],
       text: [
         "# MEMORY",
         "## Runtime",
@@ -132,6 +143,14 @@ export async function runM25GoldenValidation(now = "2026-05-29T00:00:00.000Z"): 
     {
       fixture: "openclaw-remote",
       agent: "openclaw" as const,
+      expectedTargets: [
+        "target_machine_confirmation",
+        "self_test_after_changes",
+        "cache_busting",
+        "case_insensitive_db_collation",
+        "rate_limit_model_failover",
+        "slack_raw_user_id",
+      ],
       text: [
         "# MEMORY",
         "## Delivery",
@@ -160,10 +179,20 @@ export async function runM25GoldenValidation(now = "2026-05-29T00:00:00.000Z"): 
       maxSpans: 20,
     });
     const rendered = report.lessons.map((lesson) => lesson.safe_claim).join("\n");
+    const matchedTargets = fixture.expectedTargets.filter((target) =>
+      report.lessons.some((lesson) => lesson.lesson_id.includes(target)),
+    );
     results.push({
       fixture: fixture.fixture,
-      matches: report.lessons.length,
+      matches: matchedTargets.length,
+      expected_targets: fixture.expectedTargets,
+      matched_targets: matchedTargets,
+      missing_targets: fixture.expectedTargets.filter((target) => !matchedTargets.includes(target)),
       privateLeakCount: GOLDEN_PRIVATE_PATTERNS.filter((pattern) => pattern.test(rendered)).length,
+      lessons_with_span_provenance: report.lessons.filter((lesson) =>
+        lesson.evidence_spans.length > 0 &&
+        lesson.evidence_spans.every((span) => span.source_ref && span.source_hash && span.span_id),
+      ).length,
       lesson_claims: report.lessons.map((lesson) => lesson.safe_claim),
     });
   }

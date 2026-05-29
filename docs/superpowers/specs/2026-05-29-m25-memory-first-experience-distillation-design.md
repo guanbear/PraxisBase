@@ -181,6 +181,8 @@ Required fields:
 
 `MEMORY.md`, `TOOLS.md`, known agent memory files, and self-authored skill files receive higher source priority than ordinary logs.
 
+Codex, Claude Code, and OpenCode JSONL/log sessions are first-class source inventory inputs. The parser should extract user/assistant messages, tool calls, tool results, failures, fixes, verification statements, and explicit directives as span-level evidence with `json_message`, `tool_call`, or `tool_result` kinds. Session parsing must preserve line/byte ranges and source hashes so later lesson extraction can cite the exact raw evidence rather than treating a whole session file as one summary.
+
 ### Evidence Span
 
 `EvidenceSpan` points to exact source material.
@@ -286,6 +288,8 @@ It must not fabricate lessons. Its output is low-cost seed material for the LLM 
 ### LLM Lesson Extraction Lane
 
 This lane is mandatory when AI is configured. M25 assumes PB is an AI-assisted project; deterministic extraction alone is fallback/degraded mode.
+
+For the standalone CLI, AI use is explicit: `praxisbase lesson extract --ai` reads the configured provider and may spend model tokens; `praxisbase lesson extract` remains deterministic-only for inspection and smoke. Daily runs with finite budgets must continue to avoid hidden lesson LLM calls outside the declared budget.
 
 The extractor receives:
 

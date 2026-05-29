@@ -443,6 +443,8 @@ program
   .option("--mode <mode>", "personal or team-git", "personal")
   .option("--query <query>")
   .option("--max-spans <n>")
+  .option("--ai", "use configured AI provider for lesson extraction")
+  .option("--no-ai", "run deterministic lesson extraction only")
   .option("--json")
   .action(async (
     sub: string,
@@ -453,6 +455,7 @@ program
       mode?: "personal" | "team-git";
       query?: string;
       maxSpans?: string;
+      ai?: boolean;
       json?: boolean;
     },
   ) => {

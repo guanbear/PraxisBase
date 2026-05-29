@@ -264,6 +264,7 @@ Remote OpenClaw target lessons include:
 
 - Parse failures produce warnings and skip only the failing source.
 - LLM unavailability produces deterministic-only degraded reports.
+- The standalone `lesson extract` CLI runs deterministic-only by default. It may use the configured AI provider only when the caller explicitly passes `--ai`; missing AI config is a hard error in that mode. This keeps daily smoke and ad hoc inspection from spending model tokens implicitly.
 - Malformed LLM output retries once with a schema repair request, then quarantines.
 - Ambiguous privacy becomes `human_required`.
 - Duplicate or contradictory lessons become merge/update/human-required candidates.

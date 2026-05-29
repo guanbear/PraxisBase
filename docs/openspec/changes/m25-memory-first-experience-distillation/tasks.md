@@ -14,6 +14,7 @@
 - [ ] Split long memory files into spans instead of skipping the file.
 - [ ] Prioritize `MEMORY.md`, `TOOLS.md`, native memory, and self-authored skills ahead of ordinary logs.
 - [ ] Add source inventory tests for long OpenClaw memory files and mixed Codex/OpenClaw source directories.
+- [x] Add JSONL/log session span extraction for Codex/OpenCode/Claude-style records with `json_message`, `tool_call`, and `tool_result` span kinds.
 
 ## 3. Signal Planner
 
@@ -78,6 +79,7 @@
 ## 11. CLI And Site
 
 - [ ] Add CLI/report surfaces for inventory, lesson extraction, lesson cache, golden validation, and injection preview.
+- [x] Add explicit `lesson extract --ai` provider path while keeping default lesson inspection deterministic-only.
 - [ ] Show lesson states, privacy routing, source spans, and golden validation on the HTML site.
 - [ ] Keep raw private evidence hidden by default.
 
