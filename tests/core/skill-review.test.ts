@@ -15,6 +15,7 @@ const candidate: SkillSynthesisCandidate = {
   protocol_version: PROTOCOL_VERSION,
   type: "skill_synthesis_candidate",
   action: "skill_create",
+  cause_classification: "skill_problem",
   scope: "personal",
   target_path: "skills/openclaw/openclaw-memory-operations/SKILL.md",
   target_skill: "OpenClaw memory operations",

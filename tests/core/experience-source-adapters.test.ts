@@ -374,4 +374,159 @@ describe("experience source adapters", () => {
     assert.match(result.envelopes[0].source_ref, /^logs:\/\/local-claude\//);
     assert.ok(!result.envelopes[0].source_ref.includes("openclaw"), "Claude Code refs must not use OpenClaw namespace");
   });
+
+  it("preserves structured Codex trajectory fields without carrying raw transcripts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-codex-trajectory-"));
+    const sessions = join(root, "sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session.json"), JSON.stringify({
+      id: "codex-structured-1",
+      summary: "Implemented SkillClaw-inspired context ranking and pnpm test passed.",
+      raw_transcript: "RAW TRANSCRIPT MUST NOT BE WRITTEN",
+      raw_log: "RAW LOG MUST NOT BE WRITTEN",
+      trajectory_steps: [
+        { goal: "rank context", action: "added source metadata", tool: "apply_patch", outcome: "success" },
+      ],
+      tool_outcomes: [
+        { tool: "pnpm test", result_category: "success", verification_marker: true },
+      ],
+      read_skills: ["skills/openclaw/auth/SKILL.md"],
+      modified_skills: ["skills/openclaw/auth/SKILL.md"],
+      injected_context: ["kb/procedures/openclaw-auth-refresh.md"],
+      verification_events: ["pnpm test passed"],
+      skill_effectiveness_hints: ["helped"],
+    }), "utf8");
+    const source = await addExperienceSource(root, {
+      name: "local-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-29T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-29T01:00:00.000Z",
+    });
+
+    assert.equal(result.status, "completed");
+    assert.equal(result.envelopes.length, 1);
+    const envelope = result.envelopes[0] as typeof result.envelopes[number] & { raw_transcript?: string; raw_log?: string };
+    assert.deepEqual(envelope.trajectory_steps, [
+      { goal: "rank context", action: "added source metadata", tool: "apply_patch", outcome: "success" },
+    ]);
+    assert.deepEqual(envelope.tool_outcomes, [
+      { tool: "pnpm test", result_category: "success", verification_marker: true },
+    ]);
+    assert.deepEqual(envelope.read_skills, ["skills/openclaw/auth/SKILL.md"]);
+    assert.deepEqual(envelope.modified_skills, ["skills/openclaw/auth/SKILL.md"]);
+    assert.deepEqual(envelope.injected_context, ["kb/procedures/openclaw-auth-refresh.md"]);
+    assert.deepEqual(envelope.verification_events, ["pnpm test passed"]);
+    assert.deepEqual(envelope.skill_effectiveness_hints, ["helped"]);
+    assert.equal(envelope.raw_transcript, undefined);
+    assert.equal(envelope.raw_log, undefined);
+  });
+
+  it("maps Claude Code and OpenCode structured summaries into bounded trajectory envelopes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-agent-trajectory-"));
+    const sessions = join(root, "agent-sessions");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "session.jsonl"), [
+      JSON.stringify({
+        id: "claude-structured-1",
+        summary: "Claude Code fixed schema drift and pnpm build passed.",
+        steps: [
+          { action: "inspect schema", tool: "rg", outcome: "success" },
+          { action: "patch parser", tool: "apply_patch", outcome: "success" },
+        ],
+        tools: [
+          { name: "pnpm build", status: "success", verification: true },
+        ],
+        skills_read: ["skills/schema-drift/SKILL.md"],
+      }),
+      JSON.stringify({
+        id: "opencode-structured-1",
+        summary: "OpenCode implemented adapter mapping and pnpm test passed.",
+        trajectory: [
+          { goal: "adapter mapping", action: "preserve structured fields", tool: "apply_patch", outcome: "success" },
+        ],
+        tool_results: [
+          { tool: "pnpm test", result: "success", verification_marker: true },
+        ],
+        context_injected: ["kb/procedures/source-adapters.md"],
+        verification: ["pnpm test passed"],
+      }),
+    ].join("\n"), "utf8");
+    const claude = await addExperienceSource(root, {
+      name: "local-claude",
+      agent: "claude-code",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-29T00:00:00.000Z",
+    });
+    const opencode = await addExperienceSource(root, {
+      name: "local-opencode",
+      agent: "opencode",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: sessions,
+      now: "2026-05-29T00:00:00.000Z",
+    });
+
+    const claudeResult = await resolveExperienceSource(root, claude, {
+      authorityMode: "personal-local",
+      now: "2026-05-29T01:00:00.000Z",
+    });
+    const opencodeResult = await resolveExperienceSource(root, opencode, {
+      authorityMode: "personal-local",
+      now: "2026-05-29T01:00:00.000Z",
+    });
+
+    assert.equal(claudeResult.envelopes[0].trajectory_steps?.[0]?.action, "inspect schema");
+    assert.equal(claudeResult.envelopes[0].tool_outcomes?.[0]?.tool, "pnpm build");
+    assert.deepEqual(claudeResult.envelopes[0].read_skills, ["skills/schema-drift/SKILL.md"]);
+    assert.equal(opencodeResult.envelopes[1].trajectory_steps?.[0]?.goal, "adapter mapping");
+    assert.equal(opencodeResult.envelopes[1].tool_outcomes?.[0]?.verification_marker, true);
+    assert.deepEqual(opencodeResult.envelopes[1].injected_context, ["kb/procedures/source-adapters.md"]);
+    assert.deepEqual(opencodeResult.envelopes[1].verification_events, ["pnpm test passed"]);
+  });
+
+  it("maps OpenClaw staged envelopes into bounded trajectory fields", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-openclaw-trajectory-"));
+    const sessions = join(root, "openclaw-staging");
+    await mkdir(sessions, { recursive: true });
+    await writeFile(join(sessions, "stage.json"), JSON.stringify({
+      id: "openclaw-stage-1",
+      summary: "OpenClaw repaired auth expiry and smoke verification passed.",
+      stages: [
+        { stage: "diagnosis", action: "detected auth expiry", tool: "logs", result: "success" },
+        { stage: "repair", action: "refreshed credentials", tool: "openclaw", result: "success" },
+      ],
+      verification: ["smoke verification passed"],
+      used_skills: ["skills/openclaw/auth-refresh/SKILL.md"],
+    }), "utf8");
+    const source = await addExperienceSource(root, {
+      name: "local-openclaw",
+      agent: "openclaw",
+      sourceType: "local",
+      scopeDefault: "project",
+      path: sessions,
+      now: "2026-05-29T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-29T01:00:00.000Z",
+    });
+
+    assert.equal(result.envelopes.length, 1);
+    assert.deepEqual(result.envelopes[0].trajectory_steps, [
+      { goal: "diagnosis", action: "detected auth expiry", tool: "logs", outcome: "success" },
+      { goal: "repair", action: "refreshed credentials", tool: "openclaw", outcome: "success" },
+    ]);
+    assert.deepEqual(result.envelopes[0].verification_events, ["smoke verification passed"]);
+    assert.deepEqual(result.envelopes[0].read_skills, ["skills/openclaw/auth-refresh/SKILL.md"]);
+  });
 });

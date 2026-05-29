@@ -33,7 +33,7 @@ export const KnowledgeTypeSchema = z.enum([
   "known_fix", "procedure", "skill", "decision", "policy",
   "pitfall", "guideline", "model", "note"
 ]);
-export const MaturitySchema = z.enum(["draft", "verified", "proven"]);
+export const MaturitySchema = z.enum(["draft", "verified", "proven", "stale", "archived"]);
 export const ContextStageSchema = z.enum(["diagnosis", "repair", "verification", "proposal"]);
 
 const DateTimeSchema = z.string().datetime();
@@ -548,7 +548,23 @@ export const ExperienceSourceConfigSchema = z.object({
   updated_at: z.string(),
 });
 
-export const ExperienceEnvelopeSchema = z.object({
+export const TrajectoryStepSchema = z.object({
+  goal: z.string().optional(),
+  action: z.string().optional(),
+  tool: z.string().optional(),
+  outcome: z.string().optional(),
+});
+
+export const ToolOutcomeSchema = z.object({
+  tool: z.string().min(1),
+  result_category: z.enum(["success", "failure", "partial", "unknown"]),
+  failure_snippet: z.string().optional(),
+  verification_marker: z.boolean().optional(),
+});
+
+export const SkillEffectivenessHintSchema = z.enum(["helped", "hurt", "missing", "stale", "ignored"]);
+
+const ExperienceEnvelopeObjectSchema = z.object({
   id: z.string().min(1),
   protocol_version: ProtocolVersionSchema,
   type: z.literal("experience_envelope"),
@@ -562,6 +578,13 @@ export const ExperienceEnvelopeSchema = z.object({
   problem_signature: z.string().optional(),
   outcome: ExperienceOutcomeSchema.optional(),
   redacted_summary: z.string().min(1),
+  trajectory_steps: z.array(TrajectoryStepSchema).optional(),
+  tool_outcomes: z.array(ToolOutcomeSchema).optional(),
+  read_skills: z.array(z.string().min(1)).optional(),
+  modified_skills: z.array(z.string().min(1)).optional(),
+  injected_context: z.array(z.string().min(1)).optional(),
+  verification_events: z.array(z.string().min(1)).optional(),
+  skill_effectiveness_hints: z.array(SkillEffectivenessHintSchema).optional(),
   created_at: z.string().optional(),
   fetched_at: z.string(),
   privacy: z.object({
@@ -571,6 +594,32 @@ export const ExperienceEnvelopeSchema = z.object({
   }),
   warnings: z.array(z.string()).default([]),
 });
+
+export const ExperienceEnvelopeSchema = ExperienceEnvelopeObjectSchema
+  .passthrough()
+  .superRefine((value, ctx) => {
+    if (Object.hasOwn(value, "raw_transcript")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["raw_transcript"],
+        message: "raw_transcript is not allowed in experience envelopes",
+      });
+    }
+    if (Object.hasOwn(value, "raw_log")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["raw_log"],
+        message: "raw_log is not allowed in experience envelopes",
+      });
+    }
+  })
+  .transform((value) => {
+    const stripped: Record<string, unknown> = { ...value };
+    delete stripped.raw_transcript;
+    delete stripped.raw_log;
+    return stripped;
+  })
+  .pipe(ExperienceEnvelopeObjectSchema);
 
 export const RemoteSourceConfigSchema = z.object({
   id: z.string().min(1),
@@ -763,6 +812,7 @@ export const DailyExperienceReportSchema = z.object({
 	    approved: z.number().int().min(0).default(0),
 	    rejected: z.number().int().min(0).default(0),
 	    needs_human: z.number().int().min(0).default(0),
+	    skipped: z.number().int().min(0).default(0),
 	    promoted: z.number().int().min(0).default(0),
 	  }).default(() => ({
 	    enabled: false,
@@ -774,8 +824,23 @@ export const DailyExperienceReportSchema = z.object({
 	    approved: 0,
 	    rejected: 0,
 	    needs_human: 0,
+	    skipped: 0,
 	    promoted: 0,
 	  })),
+	  lifecycle: z.object({
+	    proposals_by_decision: z.record(z.string(), z.number().int().min(0)).default({}),
+	  }).default(() => ({
+	    proposals_by_decision: {},
+	  })).optional(),
+	  skill_validation: z.object({
+	    total_reports: z.number().int().min(0).default(0),
+	    by_decision: z.record(z.string(), z.number().int().min(0)).default({}),
+	    candidates_without_passing: z.number().int().min(0).default(0),
+	  }).default(() => ({
+	    total_reports: 0,
+	    by_decision: {},
+	    candidates_without_passing: 0,
+	  })).optional(),
 	  outputs: z.array(z.string()),
   warnings: z.array(z.string()).default([]),
   created_at: z.string(),
@@ -831,6 +896,8 @@ export const ContextItemSchema = z.object({
   kind: z.string().min(1),
   summary: z.string().optional(),
   body: z.string().optional(),
+  source_rank: z.string().optional(),
+  promotion_evidence: z.boolean().optional(),
 });
 
 export const ContextResponseSchema = z.object({
@@ -1296,3 +1363,111 @@ export type SkillInjectionDecision = z.infer<typeof SkillInjectionDecisionSchema
 export type AgentContextBundle = z.infer<typeof AgentContextBundleSchema>;
 export type PersonalLearningFacet = z.infer<typeof PersonalLearningFacetSchema>;
 export type PersonalLearningReport = z.infer<typeof PersonalLearningReportSchema>;
+export type SkillEffectivenessHint = z.infer<typeof SkillEffectivenessHintSchema>;
+export type TrajectoryStep = z.infer<typeof TrajectoryStepSchema>;
+export type ToolOutcome = z.infer<typeof ToolOutcomeSchema>;
+export type LifecycleDecision = z.infer<typeof LifecycleDecisionSchema>;
+export type LifecycleObservation = z.infer<typeof LifecycleObservationSchema>;
+export type LifecycleProposal = z.infer<typeof LifecycleProposalSchema>;
+export type KnowledgeLifecycleReport = z.infer<typeof KnowledgeLifecycleReportSchema>;
+export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;
+export type KnowledgeCatalog = z.infer<typeof KnowledgeCatalogSchema>;
+export type SkillValidationMode = z.infer<typeof SkillValidationModeSchema>;
+export type SkillValidationDecision = z.infer<typeof SkillValidationDecisionSchema>;
+export type SkillValidationCheck = z.infer<typeof SkillValidationCheckSchema>;
+export type SkillValidationReport = z.infer<typeof SkillValidationReportSchema>;
+
+// --- M23: Knowledge Lifecycle ---
+
+export const LifecycleDecisionSchema = z.enum(["promote", "decay", "archive", "conflict", "no_op"]);
+
+export const LifecycleObservationSchema = z.object({
+  page_id: z.string().min(1),
+  page_path: z.string().min(1),
+  maturity: MaturitySchema,
+  scope: ScopeSchema.optional(),
+  source_refs: z.array(z.string().min(1)).default([]),
+  source_hashes: z.array(z.string().min(1)).default([]),
+  reference_count: z.number().int().nonnegative().default(0),
+  updated_at: z.string().optional(),
+  superseded_by: z.string().nullable().optional(),
+});
+
+export const LifecycleProposalSchema = z.object({
+  page_id: z.string().min(1),
+  page_path: z.string().min(1),
+  decision: LifecycleDecisionSchema,
+  reasons: z.array(z.string().min(1)),
+  current_maturity: MaturitySchema,
+  proposed_maturity: MaturitySchema.optional(),
+  source_refs: z.array(z.string()).default([]),
+  source_hashes: z.array(z.string()).default([]),
+});
+
+export const KnowledgeLifecycleReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("knowledge_lifecycle_report"),
+  observations: z.array(LifecycleObservationSchema),
+  proposals: z.array(LifecycleProposalSchema),
+  changed_stable_knowledge: z.literal(false),
+  warnings: z.array(z.string()).default([]),
+  created_at: z.string(),
+});
+
+// --- M23: Knowledge Catalog ---
+
+export const CatalogEntrySchema = z.object({
+  page_id: z.string().min(1),
+  page_path: z.string().min(1),
+  title: z.string().min(1),
+  scope: ScopeSchema.optional(),
+  layer: LayerSchema.optional(),
+  page_kind: z.string().optional(),
+  maturity: MaturitySchema.optional(),
+  related_skills: z.array(z.string()).default([]),
+  source_refs: z.array(z.string()).default([]),
+  source_hashes: z.array(z.string()).default([]),
+  last_observed: z.string().optional(),
+  last_validated: z.string().optional(),
+});
+
+export const KnowledgeCatalogSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("knowledge_catalog"),
+  entries: z.array(CatalogEntrySchema),
+  grouped_by_scope: z.record(z.array(z.string())).default({}),
+  grouped_by_layer: z.record(z.array(z.string())).default({}),
+  grouped_by_type: z.record(z.array(z.string())).default({}),
+  grouped_by_maturity: z.record(z.array(z.string())).default({}),
+  changed_stable_knowledge: z.literal(false),
+  warnings: z.array(z.string()).default([]),
+  created_at: z.string(),
+});
+
+// --- M23: Skill Validation ---
+
+export const SkillValidationModeSchema = z.enum(["static", "evidence_simulation", "replay"]);
+export const SkillValidationDecisionSchema = z.enum(["pass", "fail", "needs_human"]);
+
+export const SkillValidationCheckSchema = z.object({
+  check: z.string().min(1),
+  passed: z.boolean(),
+  details: z.string().optional(),
+});
+
+export const SkillValidationReportSchema = z.object({
+  id: z.string().min(1),
+  protocol_version: ProtocolVersionSchema,
+  type: z.literal("skill_validation_report"),
+  candidate_id: z.string().min(1),
+  target_path: z.string().min(1).optional(),
+  source_hashes: z.array(z.string().min(1)).optional(),
+  mode: SkillValidationModeSchema,
+  evidence_ids: z.array(z.string().min(1)).default([]),
+  checks: z.array(SkillValidationCheckSchema),
+  decision: SkillValidationDecisionSchema,
+  reason: z.string().min(1),
+  created_at: z.string(),
+});

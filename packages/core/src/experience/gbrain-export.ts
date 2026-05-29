@@ -1,5 +1,6 @@
 import { computeHash } from "../protocol/id.js";
 import { collectWikiPages } from "../wiki/render-site.js";
+import { buildKnowledgeCatalog } from "../wiki/catalog.js";
 import type { WikiSitePage } from "../wiki/site-model.js";
 import { GBrainClient, type GBrainCommandRunner } from "./gbrain-client.js";
 import { gbrainExecutable, readGBrainConfig, type GBrainConfig } from "./gbrain-config.js";
@@ -35,6 +36,8 @@ export interface ExportGBrainResult {
   payloads: GBrainExportPayload[];
   exported: number;
   skipped: number;
+  skills_exported: number;
+  catalog_exported: number;
   errors: string[];
   warnings: string[];
   summary: {
@@ -42,16 +45,20 @@ export interface ExportGBrainResult {
     payloads_generated: number;
     exported: number;
     skipped: number;
+    skills_exported: number;
+    catalog_exported: number;
     idempotency: "provenance_hash";
   };
 }
 
-function exportSummary(input: { pages: number; payloads: number; exported: number; skipped: number }): ExportGBrainResult["summary"] {
+function exportSummary(input: { pages: number; payloads: number; exported: number; skipped: number; skillsExported: number; catalogExported: number }): ExportGBrainResult["summary"] {
   return {
     pages_scanned: input.pages,
     payloads_generated: input.payloads,
     exported: input.exported,
     skipped: input.skipped,
+    skills_exported: input.skillsExported,
+    catalog_exported: input.catalogExported,
     idempotency: "provenance_hash",
   };
 }
@@ -64,9 +71,11 @@ function emptyResult(mode: "personal" | "team", errors: string[] = [], warnings:
     payloads: [],
     exported: 0,
     skipped: 0,
+    skills_exported: 0,
+    catalog_exported: 0,
     errors,
     warnings,
-    summary: exportSummary({ pages: 0, payloads: 0, exported: 0, skipped: 0 }),
+    summary: exportSummary({ pages: 0, payloads: 0, exported: 0, skipped: 0, skillsExported: 0, catalogExported: 0 }),
   };
 }
 
@@ -105,6 +114,64 @@ function compactContent(page: WikiSitePage, provenanceHash: string): string {
   return `${compactBody}\n${provenance}`;
 }
 
+function compactSkillContent(page: WikiSitePage, provenanceHash: string): string {
+  const body = page.body_markdown ?? page.body_text;
+  const triggerSection = extractSection(body, "When To Use");
+  const procedureSection = extractSection(body, "Procedure");
+  const verificationSection = extractSection(body, "Verification");
+  const pitfallsSection = extractSection(body, "Pitfalls");
+
+  const sourceHashes = Array.from(new Set([
+    provenanceHash,
+    ...page.provenance_refs?.map((ref) => ref.hash).filter((hash): hash is string => Boolean(hash)) ?? [],
+  ])).sort();
+
+  const parts = [
+    `skill: ${page.title}`,
+    `path: ${page.path}`,
+    `scope: ${page.scope ?? "project"}`,
+    `maturity: ${page.maturity ?? "draft"}`,
+    "",
+    triggerSection ? `## Trigger\n${triggerSection}` : "",
+    procedureSection ? `## Procedure\n${procedureSection}` : "",
+    verificationSection ? `## Verification\n${verificationSection}` : "",
+    pitfallsSection ? `## Pitfalls\n${pitfallsSection}` : "",
+    "",
+    "## Provenance",
+    ...sourceHashes.map((h) => `- ${h}`),
+  ].filter(Boolean);
+
+  const result = parts.join("\n");
+  return result.length > MAX_CAPTURE_CONTENT_CHARS
+    ? `${result.slice(0, MAX_CAPTURE_CONTENT_CHARS - 16).trimEnd()}\n[truncated]`
+    : result;
+}
+
+function extractSection(body: string, heading: string): string {
+  const lines = body.split(/\r?\n/);
+  const start = lines.findIndex((line) => new RegExp(`^##\\s+${heading}\\s*$`, "i").test(line));
+  if (start < 0) return "";
+  const collected: string[] = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^##\s+\S/.test(lines[i])) break;
+    collected.push(lines[i]);
+  }
+  return collected.join("\n").trim();
+}
+
+function catalogPayload(catalogJson: string, catalogId: string): GBrainExportPayload {
+  const provenanceHash = computeHash(catalogJson);
+  return {
+    pagePath: ".praxisbase/catalog/catalog.json",
+    slug: `praxisbase/catalog/${catalogId}`,
+    type: "knowledge_catalog",
+    title: "PraxisBase Knowledge Catalog",
+    content: catalogJson,
+    provenanceHash,
+    idempotencyKey: provenanceHash,
+  };
+}
+
 function pageToPayload(page: WikiSitePage): GBrainExportPayload {
   const provenanceHash = computeHash(JSON.stringify({
     path: page.path,
@@ -141,6 +208,7 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
   const sourceId = options.sourceId ?? config?.source_id;
   const pages = await collectWikiPages(root);
   const warnings: string[] = [];
+
   const exportablePages = options.mode === "team"
     ? pages.filter((page) => {
       if (!isTeamSafePage(page)) {
@@ -152,7 +220,35 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
       return true;
     })
     : pages;
-  const payloads = exportablePages.map(pageToPayload);
+
+  const wikiPayloads = exportablePages
+    .filter((page) => page.page_kind !== "skill")
+    .map(pageToPayload);
+
+  const skillPages = exportablePages.filter((page) => page.page_kind === "skill");
+  const skillPayloads = skillPages.map((page) => {
+    const provenanceHash = computeHash(JSON.stringify({
+      path: page.path,
+      source_ids: page.source_ids,
+      title: page.title,
+      body: page.body_markdown ?? page.body_text,
+    }));
+    return {
+      pagePath: page.path,
+      slug: slugForPage(page),
+      type: "skill",
+      title: page.title,
+      content: compactSkillContent(page, provenanceHash),
+      provenanceHash,
+      idempotencyKey: provenanceHash,
+    };
+  });
+
+  const catalog = buildKnowledgeCatalog(exportablePages);
+  const catalogJson = JSON.stringify(catalog);
+  const catPayload = catalogPayload(catalogJson, catalog.id);
+
+  const payloads = [...wikiPayloads, ...skillPayloads, catPayload];
 
   if (options.dryRun) {
     return {
@@ -162,59 +258,55 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
       payloads,
       exported: 0,
       skipped: pages.length,
+      skills_exported: skillPayloads.length,
+      catalog_exported: 1,
       errors: [],
       warnings,
-      summary: exportSummary({ pages: pages.length, payloads: payloads.length, exported: 0, skipped: pages.length }),
+      summary: exportSummary({
+        pages: pages.length,
+        payloads: payloads.length,
+        exported: 0,
+        skipped: pages.length,
+        skillsExported: skillPayloads.length,
+        catalogExported: 1,
+      }),
     };
   }
 
-  if (config?.mode === "remote") {
-    const client = new GBrainRemoteClient(config, { fetch: options.fetchImpl });
+  const publishPayloads = async (payloadsToPublish: GBrainExportPayload[]): Promise<{ exported: number; errors: string[] }> => {
     const errors: string[] = [];
     let exported = 0;
-    for (const payload of payloads) {
-      const result = await client.publishPage({
-        slug: payload.slug,
-        content: payload.content,
-        title: payload.title,
-        type: payload.type,
-        sourceId,
+
+    if (config?.mode === "remote") {
+      const client = new GBrainRemoteClient(config, { fetch: options.fetchImpl });
+      for (const payload of payloadsToPublish) {
+        const result = await client.publishPage({
+          slug: payload.slug,
+          content: payload.content,
+          title: payload.title,
+          type: payload.type,
+          sourceId,
+        });
+        if (result.ok) exported++;
+        else errors.push(`${payload.pagePath}: ${result.error ?? "gbrain_remote_publish_failed"}`);
+      }
+    } else {
+      const client = new GBrainClient({
+        executable: options.executable ?? (config ? gbrainExecutable(config) : undefined),
+        timeoutMs: config?.mode === "local" ? config.timeout_ms : undefined,
+        runCommand: options.runCommand,
       });
-      if (result.ok) {
-        exported += 1;
-      } else {
-        errors.push(`${payload.pagePath}: ${result.error ?? "gbrain_remote_publish_failed"}`);
+      for (const payload of payloadsToPublish) {
+        const result = await client.capture(payload.content, { slug: payload.slug, type: payload.type, sourceId });
+        if (result.ok) exported++;
+        else errors.push(`${payload.pagePath}: ${result.error ?? "gbrain_capture_failed"}`);
       }
     }
 
-    return {
-      ok: errors.length === 0,
-      mode: options.mode,
-      pages: pages.length,
-      payloads,
-      exported,
-      skipped: pages.length - exported,
-      errors,
-      warnings,
-      summary: exportSummary({ pages: pages.length, payloads: payloads.length, exported, skipped: pages.length - exported }),
-    };
-  }
+    return { exported, errors };
+  };
 
-  const client = new GBrainClient({
-    executable: options.executable ?? (config ? gbrainExecutable(config) : undefined),
-    timeoutMs: config?.mode === "local" ? config.timeout_ms : undefined,
-    runCommand: options.runCommand,
-  });
-  const errors: string[] = [];
-  let exported = 0;
-  for (const payload of payloads) {
-    const result = await client.capture(payload.content, { slug: payload.slug, type: payload.type, sourceId });
-    if (result.ok) {
-      exported += 1;
-    } else {
-      errors.push(`${payload.pagePath}: ${result.error ?? "gbrain_capture_failed"}`);
-    }
-  }
+  const { exported, errors } = await publishPayloads(payloads);
 
   return {
     ok: errors.length === 0,
@@ -222,9 +314,18 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
     pages: pages.length,
     payloads,
     exported,
-    skipped: pages.length - exported,
+    skipped: payloads.length - exported,
+    skills_exported: skillPayloads.length,
+    catalog_exported: 1,
     errors,
     warnings,
-    summary: exportSummary({ pages: pages.length, payloads: payloads.length, exported, skipped: pages.length - exported }),
+    summary: exportSummary({
+      pages: pages.length,
+      payloads: payloads.length,
+      exported,
+      skipped: payloads.length - exported,
+      skillsExported: skillPayloads.length,
+      catalogExported: 1,
+    }),
   };
 }

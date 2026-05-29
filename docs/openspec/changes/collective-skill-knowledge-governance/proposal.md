@@ -34,6 +34,19 @@ M22 is adding incremental session source tracking and skill origin metadata. Thi
 - Improve team mode as the collective evolution path with privacy, Git/human review, and cross-source validation.
 - Make stable skills visible to GBrain and optional AgentMemory after promotion.
 
+## Product Outcomes
+
+When fully implemented, this change should make the following user-visible outcomes true:
+
+- Repeated agent failures can become governed reusable knowledge with source refs, privacy status, review state, and verification evidence.
+- Stable skills improve from real usage signals before new skills are created.
+- Stale or contradicted knowledge leaves the active context path through reviewable lifecycle proposals.
+- Personal mode can collect and validate local evidence without publishing private material to team knowledge.
+- Team mode can aggregate safe evidence from multiple agents while requiring Git/human review before stable team knowledge changes.
+- GBrain receives stable PB wiki pages, promoted skills, and catalog entries as runtime context.
+- AgentMemory can cache or source material when configured, but missing AgentMemory never blocks PB or GBrain workflows.
+- Skills and MCP remain complementary: GBrain MCP is the runtime retrieval/tool channel, while promoted skills are governed operational knowledge that can be discovered through GBrain and can instruct agents how to use MCP tools.
+
 ## Non-Goals
 
 - Do not add a mandatory SkillClaw-compatible proxy, daemon, shared object store, or evolve server.
@@ -51,6 +64,8 @@ M22 is adding incremental session source tracking and skill origin metadata. Thi
 - A generated knowledge catalog summarizes stable knowledge by scope, layer, type, maturity, and source provenance.
 - Experience envelopes can carry trajectory steps, tool outcomes, read/modified skills, injected context, and verification events.
 - Skill synthesis can use trajectory attribution to update existing skills, optimize triggering descriptions, create new skills only as last resort, or skip weak signals.
+- The skill proposer records whether evidence indicates a skill problem, agent problem, environment problem, or weak signal.
 - Skill validation writes reviewable evidence and never promotes a candidate by itself.
 - Personal mode can run local trajectory-based skill validation and still require user audit for stable skill promotion.
 - Team mode requires privacy-safe evidence, Git/human review, and explicit policy before team/org stable knowledge or skills are exported.
+- End-to-end BDD covers at least one full loop from trajectory import to candidate proposal, validation evidence, promotion audit, catalog update, and GBrain export.

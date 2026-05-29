@@ -435,7 +435,7 @@ program
 
 program
   .command("skill")
-  .argument("<sub>", "subcommand (synthesize|curate|review|promote|inject-preview|export)")
+  .argument("<sub>", "subcommand (synthesize|curate|review|promote|inject-preview|validate|export)")
   .option("--mode <mode>", "personal, team, or team-git", "personal")
   .option("--agent <agent>", "agent profile for skill export")
   .option("--query <query>", "query for skill injection preview")

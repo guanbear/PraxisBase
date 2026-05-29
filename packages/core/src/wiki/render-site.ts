@@ -11,6 +11,7 @@ import { buildWikiQualityReport } from "./quality.js";
 import { buildWikiGraphSlice } from "./graph-slices.js";
 import { buildWikiGraph, type WikiGraph, type WikiPage } from "./resolver.js";
 import { collectPendingWikiProposalCandidates, type PendingWikiProposalCandidate } from "./proposal-candidates.js";
+import { findFreshPassingValidationReport } from "../synthesis/skill-validation.js";
 import { SITE_CSS, SITE_JS, SITE_OUTPUTS } from "./site-assets.js";
 import { graphJsonLd, pageHref, renderSitemap } from "./site-html.js";
 import type { BuildWikiSiteResult, WikiSitePage } from "./site-model.js";
@@ -335,8 +336,24 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 	    ${skillSynthesis && skillSynthesis.enabled ? `<article><span>Skill synthesis</span><strong>${escapeHtml(String(skillSynthesis.reviewed))} reviewed</strong></article>
 	    <article><span>Skill candidates</span><strong>${escapeHtml(String(skillSynthesis.candidates))}</strong></article>
 	    <article><span>Skill approved</span><strong>${escapeHtml(String(skillSynthesis.approved))}</strong></article>
+	    <article><span>Skill skipped</span><strong>${escapeHtml(String(skillSynthesis.skipped ?? 0))}</strong></article>
 	    <article><span>Skill rejected signals</span><strong>${escapeHtml(String(skillSynthesis.rejected_signals ?? 0))}</strong></article>
 	    <article><span>Skill needs human</span><strong>${escapeHtml(String(skillSynthesis.needs_human))}</strong></article>` : ""}
+	    ${report.lifecycle ? (() => {
+	      const decisions = report.lifecycle.proposals_by_decision;
+	      const total = Object.values(decisions).reduce((sum, count) => sum + count, 0);
+	      return total > 0 ? `<article><span>Lifecycle proposals</span><strong>${escapeHtml(String(total))}</strong></article>
+	      ${decisions["promote"] ? `<article><span>Lifecycle promote</span><strong>${escapeHtml(String(decisions["promote"]))}</strong></article>` : ""}
+	      ${decisions["decay"] ? `<article><span>Lifecycle decay</span><strong>${escapeHtml(String(decisions["decay"]))}</strong></article>` : ""}
+	      ${decisions["archive"] ? `<article><span>Lifecycle archive</span><strong>${escapeHtml(String(decisions["archive"]))}</strong></article>` : ""}
+	      ${decisions["conflict"] ? `<article><span>Lifecycle conflict</span><strong>${escapeHtml(String(decisions["conflict"]))}</strong></article>` : ""}
+	      ${decisions["no_op"] ? `<article><span>Lifecycle no-op</span><strong>${escapeHtml(String(decisions["no_op"]))}</strong></article>` : ""}` : "";
+	    })() : ""}
+	    ${report.skill_validation && report.skill_validation.total_reports > 0 ? `<article><span>Skill validation reports</span><strong>${escapeHtml(String(report.skill_validation.total_reports))}</strong></article>
+	    ${report.skill_validation.by_decision["pass"] ? `<article><span>Validation pass</span><strong>${escapeHtml(String(report.skill_validation.by_decision["pass"]))}</strong></article>` : ""}
+	    ${report.skill_validation.by_decision["fail"] ? `<article><span>Validation fail</span><strong>${escapeHtml(String(report.skill_validation.by_decision["fail"]))}</strong></article>` : ""}
+	    ${report.skill_validation.by_decision["needs_human"] ? `<article><span>Validation needs human</span><strong>${escapeHtml(String(report.skill_validation.by_decision["needs_human"]))}</strong></article>` : ""}
+	    ${report.skill_validation.candidates_without_passing > 0 ? `<article><span>Candidates needing validation</span><strong>${escapeHtml(String(report.skill_validation.candidates_without_passing))}</strong></article>` : ""}` : ""}
 	  </div>
   ${renderAgentMemoryStatus(report)}
   ${renderGBrainStatus(report)}
@@ -534,6 +551,7 @@ type CandidateStatus = "pending" | "approved" | "needs_human" | "promoted";
 interface ReviewQueueCandidate extends PendingWikiProposalCandidate {
   status: CandidateStatus;
   review_decision?: string;
+  validation_status?: string;
 }
 
 interface HumanRequiredRecord {
@@ -578,8 +596,11 @@ function recommendedCandidateCommand(item: ReviewQueueCandidate): string {
 }
 
 function renderCandidateCard(item: ReviewQueueCandidate): string {
+  const validationStatus = item.validation_status
+    ? ` <span class="status-pill">${escapeHtml(item.validation_status)}</span>`
+    : "";
   return `<li id="${escapeHtml(item.anchor)}" class="review-card">
-    <p><strong>${escapeHtml(item.title)}</strong> <span class="status-pill">${escapeHtml(statusLabel(item.status))}</span></p>
+    <p><strong>${escapeHtml(item.title)}</strong> <span class="status-pill">${escapeHtml(statusLabel(item.status))}</span>${validationStatus}</p>
     <p>${escapeHtml(item.summary)}</p>
     <dl>
       <dt>Target</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
@@ -592,6 +613,7 @@ function renderCandidateCard(item: ReviewQueueCandidate): string {
       ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
       ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
       ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
+      ${item.validation_status ? `<dt>Validation</dt><dd>${escapeHtml(item.validation_status)}</dd>` : ""}
       <dt>Recommended</dt><dd><code>${escapeHtml(recommendedCandidateCommand(item))}</code></dd>
       ${renderRelationshipDetails(item)}
       ${item.review_hint && item.review_hint.risk_notes.length > 0 ? (() => { const sr = extractSemanticReviewFromRiskNotes(item.review_hint.risk_notes); return sr ? renderSemanticReviewHtml(sr) : ""; })() : ""}
@@ -655,27 +677,35 @@ function renderHumanRequired(
   </dl>` : ""}
   ${records.length > visibleRecords.length ? `<p class="muted">Showing the latest ${escapeHtml(String(visibleRecords.length))} privacy records. Older backlog is intentionally hidden from the default page to keep current daily work readable.</p>` : ""}
   ${visibleRecords.length > 0 ? `<ol class="experience-list">
-    ${visibleRecords.map((item) => `<li id="${escapeHtml(item.id)}" class="review-card">
+    ${visibleRecords.map((item) => {
+      const detailsReleased = humanRequiredDetailsReleased(item);
+      return `<li id="${escapeHtml(item.id)}" class="review-card">
       <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">Privacy required</span></p>
       <dl>
         <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
         <dt>Agent</dt><dd>${escapeHtml(item.agent ?? "unknown")}</dd>
         <dt>Scope</dt><dd>${escapeHtml(item.scope ?? "unknown")}</dd>
-        <dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>
-        ${item.redacted_summary ? `<dt>Summary</dt><dd>${escapeHtml(item.redacted_summary)}</dd>` : ""}
+        ${detailsReleased ? `<dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>` : ""}
+        ${detailsReleased && item.redacted_summary ? `<dt>Summary</dt><dd>${escapeHtml(item.redacted_summary)}</dd>` : ""}
         <dt>File</dt><dd><code>${escapeHtml(item.path)}</code></dd>
         <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
         ${item.triage ? `
         <dt>Triage</dt><dd>${escapeHtml(item.triage.classification ?? "unknown")} / ${escapeHtml(item.triage.decision ?? "unknown")}</dd>
         <dt>Confidence</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
-        <dt>Rationale</dt><dd>${escapeHtml(item.triage.rationale ?? "n/a")}</dd>
-        ${item.triage.suggested_redactions.length > 0 ? `<dt>Suggested Redactions</dt><dd>${escapeHtml(item.triage.suggested_redactions.join(", "))}</dd>` : ""}
+        ${detailsReleased ? `<dt>Rationale</dt><dd>${escapeHtml(item.triage.rationale ?? "n/a")}</dd>` : `<dt>Details</dt><dd>Sensitive details hidden until privacy triage releases this record.</dd>`}
+        ${detailsReleased && item.triage.suggested_redactions.length > 0 ? `<dt>Suggested Redactions</dt><dd>${escapeHtml(item.triage.suggested_redactions.join(", "))}</dd>` : ""}
         ` : ""}
       </dl>
-    </li>`).join("\n")}
+    </li>`;
+    }).join("\n")}
   </ol>` : "<p>No privacy-required records.</p>"}
 </section>`;
+}
+
+function humanRequiredDetailsReleased(item: HumanRequiredRecord): boolean {
+  if (!item.triage) return false;
+  return item.triage.decision === "auto_released";
 }
 
 function renderRejectedSection(dailyReport: DailyReportSummary | null, curationReport: WikiCurationReportSummary | null): string {
@@ -1107,7 +1137,16 @@ interface DailyReportSummary {
 	    approved: number;
 	    rejected: number;
 	    needs_human: number;
+	    skipped: number;
 	    promoted: number;
+	  };
+	  lifecycle?: {
+	    proposals_by_decision: Record<string, number>;
+	  };
+	  skill_validation?: {
+	    total_reports: number;
+	    by_decision: Record<string, number>;
+	    candidates_without_passing: number;
 	  };
 	  agentmemory_sources: Array<{
     name: string;
@@ -1241,7 +1280,16 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	      approved?: number;
 	      rejected?: number;
 	      needs_human?: number;
+	      skipped?: number;
 	      promoted?: number;
+	    };
+	    lifecycle?: {
+	      proposals_by_decision?: Record<string, number>;
+	    };
+	    skill_validation?: {
+	      total_reports?: number;
+	      by_decision?: Record<string, number>;
+	      candidates_without_passing?: number;
 	    };
     brain_backends?: {
       gbrain?: {
@@ -1331,7 +1379,20 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	      approved: typeof latest.skill_synthesis.approved === "number" ? latest.skill_synthesis.approved : 0,
 	      rejected: typeof latest.skill_synthesis.rejected === "number" ? latest.skill_synthesis.rejected : 0,
 	      needs_human: typeof latest.skill_synthesis.needs_human === "number" ? latest.skill_synthesis.needs_human : 0,
+	      skipped: typeof latest.skill_synthesis.skipped === "number" ? latest.skill_synthesis.skipped : 0,
 	      promoted: typeof latest.skill_synthesis.promoted === "number" ? latest.skill_synthesis.promoted : 0,
+	    } : undefined,
+	    lifecycle: latest.lifecycle ? {
+	      proposals_by_decision: latest.lifecycle.proposals_by_decision && typeof latest.lifecycle.proposals_by_decision === "object" && !Array.isArray(latest.lifecycle.proposals_by_decision)
+	        ? latest.lifecycle.proposals_by_decision as Record<string, number>
+	        : {},
+	    } : undefined,
+	    skill_validation: latest.skill_validation ? {
+	      total_reports: typeof latest.skill_validation.total_reports === "number" ? latest.skill_validation.total_reports : 0,
+	      by_decision: latest.skill_validation.by_decision && typeof latest.skill_validation.by_decision === "object" && !Array.isArray(latest.skill_validation.by_decision)
+	        ? latest.skill_validation.by_decision as Record<string, number>
+	        : {},
+	      candidates_without_passing: typeof latest.skill_validation.candidates_without_passing === "number" ? latest.skill_validation.candidates_without_passing : 0,
 	    } : undefined,
 	    agentmemory_sources: sources
       .filter((source) => source.source_type === "agentmemory")
@@ -1663,7 +1724,28 @@ async function buildReviewQueue(root: string, candidates: PendingWikiProposalCan
         : decision
           ? "needs_human"
           : "pending";
-    reviewCandidates.push({ ...candidate, status, review_decision: decision });
+
+    const isSkillCandidate = candidate.source_kind === "skill_synthesis" || candidate.kind === "skill";
+    let validationStatus: string | undefined;
+    if (isSkillCandidate) {
+      const sourceHashes = candidate.source_hash.split(",").map((hash) => hash.trim()).filter(Boolean);
+      const validation = await findFreshPassingValidationReport(root, {
+        id: candidate.id,
+        target_path: candidate.patch_path,
+        source_hashes: sourceHashes,
+      });
+      validationStatus = validation.status === "pass"
+        ? "validated"
+        : validation.status === "missing"
+          ? "validation needed"
+          : validation.status === "stale"
+            ? "validation stale"
+            : validation.status === "mismatched"
+              ? "validation mismatched"
+              : "validation failed";
+    }
+
+    reviewCandidates.push({ ...candidate, status, review_decision: decision, validation_status: validationStatus });
   }
 
   return { candidates: reviewCandidates, human_required: humanRequired };

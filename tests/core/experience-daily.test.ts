@@ -76,7 +76,7 @@ describe("runDailyExperience", () => {
       site_pages: 5,
       changed_stable_knowledge: true,
       semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
-      skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, promoted: 0 },
+      skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -91,6 +91,141 @@ describe("runDailyExperience", () => {
     assert.equal(nextActions.agentmemory_export_recommended, false);
     assert.ok(nextActions.commands.some((command) => command.includes("privacy triage")));
     assert.ok(nextActions.messages.some((message) => message.includes("privacy")));
+  });
+
+  it("surfaces skill synthesis needs_human before wiki review in next actions", () => {
+    const nextActions = deriveDailyNextActions({
+      id: "daily-experience_20260521",
+      protocol_version: PROTOCOL_VERSION,
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: true,
+        chunks: 4,
+        distilled: 4,
+        failed: 0,
+        human_required: 0,
+        privacy_required: 0,
+        review_required: 0,
+        rejected_low_signal: 0,
+        rejected_quality: 0,
+        cache_hits: 0,
+        budget_used_uncached: 4,
+        skipped_by_budget: 0,
+        warnings: [],
+      },
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 6,
+      changed_stable_knowledge: false,
+      semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
+      skill_synthesis: { enabled: true, signals: 12, rejected_signals: 2, clusters: 3, candidates: 3, reviewed: 3, approved: 1, rejected: 0, needs_human: 2, skipped: 1, promoted: 0 },
+      outputs: ["dist/index.html"],
+      warnings: [],
+      created_at: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(nextActions.status, "needs_review");
+    assert.equal(nextActions.counts.skill_synthesis_signals, 12);
+    assert.equal(nextActions.counts.skill_synthesis_candidates, 3);
+    assert.equal(nextActions.counts.skill_synthesis_approved, 1);
+    assert.equal(nextActions.counts.skill_synthesis_needs_human, 2);
+    assert.equal(nextActions.counts.skill_synthesis_skipped, 1);
+    assert.ok(nextActions.commands.some((command) => command.includes("skill review")));
+    assert.ok(nextActions.messages.some((message) => message.includes("2 skill candidate")));
+  });
+
+  it("surfaces lifecycle and validation queues in next actions", () => {
+    const nextActions = deriveDailyNextActions({
+      id: "daily-experience_20260521",
+      protocol_version: PROTOCOL_VERSION,
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: true,
+        chunks: 0,
+        distilled: 0,
+        failed: 0,
+        human_required: 0,
+        privacy_required: 0,
+        review_required: 0,
+        rejected_low_signal: 0,
+        rejected_quality: 0,
+        cache_hits: 0,
+        budget_used_uncached: 0,
+        skipped_by_budget: 0,
+        warnings: [],
+      },
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
+      skill_synthesis: { enabled: true, signals: 4, rejected_signals: 0, clusters: 1, candidates: 1, reviewed: 1, approved: 1, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
+      lifecycle: { proposals_by_decision: { promote: 1, archive: 1 } },
+      skill_validation: { total_reports: 2, by_decision: { pass: 1, fail: 1 }, candidates_without_passing: 1 },
+      outputs: [],
+      warnings: [],
+      created_at: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(nextActions.counts.lifecycle_proposals, 2);
+    assert.equal(nextActions.counts.skill_validation_total, 2);
+    assert.equal(nextActions.counts.skill_validation_fail, 1);
+    assert.equal(nextActions.counts.skill_validation_candidates_without_passing, 1);
+    assert.ok(nextActions.commands.some((command) => command.includes("skill validate")));
+    assert.ok(nextActions.commands.some((command) => command.includes("wiki build-site")));
+    assert.ok(nextActions.messages.some((message) => message.includes("need validation")));
+  });
+
+  it("includes skill synthesis summary in GBrain export ready state", () => {
+    const nextActions = deriveDailyNextActions({
+      id: "daily-experience_20260521",
+      protocol_version: PROTOCOL_VERSION,
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: true,
+        chunks: 4,
+        distilled: 4,
+        failed: 0,
+        human_required: 0,
+        privacy_required: 0,
+        review_required: 0,
+        rejected_low_signal: 0,
+        rejected_quality: 0,
+        cache_hits: 0,
+        budget_used_uncached: 4,
+        skipped_by_budget: 0,
+        warnings: [],
+      },
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 6,
+      changed_stable_knowledge: true,
+      semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
+      skill_synthesis: { enabled: true, signals: 8, rejected_signals: 1, clusters: 2, candidates: 2, reviewed: 2, approved: 2, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
+      outputs: ["dist/index.html"],
+      warnings: [],
+      created_at: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(nextActions.status, "ready_to_export_gbrain");
+    assert.equal(nextActions.counts.skill_synthesis_signals, 8);
+    assert.equal(nextActions.counts.skill_synthesis_candidates, 2);
+    assert.ok(nextActions.messages.some((message) => message.includes("Skill synthesis: 8 signals")));
   });
 
   it("prefers GBrain export after stable wiki changes without pending gates", () => {
@@ -123,7 +258,7 @@ describe("runDailyExperience", () => {
       site_pages: 6,
       changed_stable_knowledge: true,
       semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
-      skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, promoted: 0 },
+      skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
       outputs: ["dist/index.html"],
       warnings: [],
       created_at: "2026-05-21T01:00:00.000Z",
@@ -171,6 +306,34 @@ describe("runDailyExperience", () => {
       JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", file), "utf8"))
     )));
     assert.ok(proposals.some((proposal) => proposal.type === "wiki_curated_proposal"));
+  });
+
+  it("continues the daily loop when optional AgentMemory import is unavailable", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-agentmemory-warning-"));
+    await addExperienceSource(root, {
+      name: "agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:3111",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      degraded: true,
+      noAi: true,
+      now: "2026-05-29T01:00:00.000Z",
+      fetchImpl: (async () => new Response("down", { status: 503, statusText: "Service Unavailable" })) as typeof fetch,
+    });
+
+    assert.equal(report.sources.length, 1);
+    assert.equal(report.sources[0].source_type, "agentmemory");
+    assert.equal(report.sources[0].status, "failed");
+    assert.ok(report.sources[0].warnings.some((warning) => warning.includes("agentmemory_health_failed")));
+    assert.ok(report.warnings.some((warning) => warning.includes("agentmemory_health_failed")));
+    assert.ok(report.outputs.some((output) => output.startsWith(protocolPaths.reportsDaily)));
+    assert.ok(report.outputs.some((output) => output.startsWith(protocolPaths.runsDaily)));
   });
 
   it("keeps personal material out of team daily ingestion", async () => {
@@ -2226,6 +2389,7 @@ describe("runDailyExperience", () => {
 
     assert.equal(report.skill_synthesis.enabled, true);
     assert.equal(report.skill_synthesis.candidates, 1);
+    assert.equal(report.skill_synthesis.skipped, 0);
     assert.ok(report.outputs.some((path) => path.includes(".praxisbase/reports/skill-synthesis/")));
     await assert.rejects(() => stat(join(root, "skills/openclaw/openclaw-memory-import-operations/SKILL.md")), { code: "ENOENT" });
   });

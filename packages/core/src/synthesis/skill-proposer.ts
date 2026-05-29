@@ -2,7 +2,7 @@ import { computeHash, slugifyId } from "../protocol/id.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import type { AiJsonClient } from "../ai/client.js";
 import type { StableSkillMatch } from "./skill-inventory.js";
-import { SkillSynthesisCandidateSchema, type SkillSynthesisCandidate } from "./skill-model.js";
+import { SkillSynthesisCandidateSchema, type SkillSynthesisCandidate, type SkillCauseClassification } from "./skill-model.js";
 import type { SkillSignalCluster } from "./skill-stability.js";
 
 const REQUIRED_SECTIONS = ["When To Use", "Procedure", "Verification", "Pitfalls", "Do Not Use When", "Related Wiki Pages", "Provenance"];
@@ -75,6 +75,24 @@ function skillShapeRiskNotes(body: string): string[] {
   return notes;
 }
 
+function classifyCause(cluster: SkillSignalCluster): SkillCauseClassification {
+  const triggerLower = cluster.trigger.toLowerCase();
+  const procedureText = cluster.procedure.join(" ").toLowerCase();
+  const combined = `${triggerLower} ${procedureText}`;
+
+  if (/(?:agent|model|mcp|llm)\s+(?:did not|failed to|ignored|misused|overflow|context overflow|hallucinat)/i.test(combined)) {
+    return "agent_problem";
+  }
+  if (/(?:network|rate limit|timeout|disk full|permission denied|env var|api key|quota|install failed|credential|flaky|outage|temporary)/i.test(combined)) {
+    const hasReusableFix = /(?:retry|fallback|cache|guard|verify|pin|configure|document|check|workaround)/i.test(combined);
+    if (!hasReusableFix) return "environment_problem";
+  }
+  if (cluster.confidence < 0.5 || cluster.source_count < 2) {
+    return "weak_signal";
+  }
+  return "skill_problem";
+}
+
 function defaultSkillBody(cluster: SkillSignalCluster, matches: StableSkillMatch[]): string {
   const related = cluster.related_wiki_paths.length > 0 ? cluster.related_wiki_paths.map((path) => `- [[${path}]]`) : ["- None yet"];
   const procedure = [
@@ -128,16 +146,58 @@ function normalizeCandidate(raw: Record<string, unknown>, cluster: SkillSignalCl
   const best = matches.find((match) => match.strength === "strong" || match.strength === "medium");
   const title = typeof raw.title === "string" && raw.title.trim() ? raw.title.trim() : cluster.title;
   const slug = slugifyId(title);
-  const action = (raw.action === "skill_update" || raw.action === "skill_support_file" || raw.action === "skill_create")
+  const causeClassification = classifyCause(cluster);
+
+  const shouldSkip = causeClassification === "weak_signal"
+    || causeClassification === "agent_problem"
+    || causeClassification === "environment_problem";
+  const rawAction = raw.action === "skill_update" || raw.action === "skill_support_file" || raw.action === "skill_create" || raw.action === "skill_optimize_description" || raw.action === "skip"
     ? raw.action
-    : best
-      ? "skill_update"
-      : "skill_create";
+    : undefined;
+  const action = rawAction === "skip" || shouldSkip ? "skip"
+    : rawAction === "skill_optimize_description" ? "skill_optimize_description"
+    : rawAction ?? (best ? "skill_update" : "skill_create");
   const targetPath = typeof raw.target_path === "string" && raw.target_path.trim()
     ? raw.target_path.trim()
     : action === "skill_create"
       ? `skills/${slug.split("-")[0] || "agent"}/${slug}/SKILL.md`
       : best?.skill.path ?? `skills/${slug.split("-")[0] || "agent"}/${slug}/SKILL.md`;
+
+  if (action === "skip") {
+    const skipRiskNotes: string[] = Array.isArray(raw.risk_notes) ? raw.risk_notes.map(String) : [];
+    skipRiskNotes.push(`cause_classification:${causeClassification}`);
+    if (causeClassification === "weak_signal") skipRiskNotes.push("skip_reason:weak_signal");
+    if (causeClassification === "agent_problem") skipRiskNotes.push("skip_reason:agent_problem");
+    if (causeClassification === "environment_problem") skipRiskNotes.push("skip_reason:environment_problem");
+
+    return SkillSynthesisCandidateSchema.parse({
+      id: typeof raw.id === "string" ? raw.id : `skill_candidate_${computeHash(`${cluster.id}:${targetPath}`).slice(7, 19)}`,
+      protocol_version: PROTOCOL_VERSION,
+      type: "skill_synthesis_candidate",
+      action: "skip",
+      cause_classification: causeClassification,
+      scope: cluster.scope,
+      target_path: targetPath,
+      target_skill: title,
+      title,
+      summary: `Skipped: ${causeClassification.replace(/_/g, " ")}.`,
+      body_markdown: "",
+      source_refs: cluster.source_refs,
+      source_hashes: cluster.source_hashes,
+      evidence_ids: cluster.evidence_ids,
+      source_count: cluster.source_count,
+      confidence: cluster.confidence,
+      ladder_choice: "skip",
+      existing_skill_path: best?.skill.path ?? null,
+      related_wiki_paths: cluster.related_wiki_paths,
+      review_hint: {
+        suggested_decision: "reject",
+        risk_notes: skipRiskNotes,
+      },
+      created_at: now,
+    });
+  }
+
   let body = typeof raw.body_markdown === "string" && raw.body_markdown.trim()
     ? raw.body_markdown.trim()
     : defaultSkillBody(cluster, matches);
@@ -152,11 +212,16 @@ function normalizeCandidate(raw: Record<string, unknown>, cluster: SkillSignalCl
   if (strongMatches.length > 1) riskNotes.push("ambiguous_existing_skill_match");
   const hasShapeInvalid = riskNotes.some((note) => note.startsWith("skill_shape_invalid"));
 
+  const ladderChoice = action === "skill_optimize_description" ? "skill_optimize_description"
+    : best ? "skill_update_existing"
+    : "skill_create";
+
   return SkillSynthesisCandidateSchema.parse({
     id: typeof raw.id === "string" ? raw.id : `skill_candidate_${computeHash(`${cluster.id}:${targetPath}`).slice(7, 19)}`,
     protocol_version: PROTOCOL_VERSION,
     type: "skill_synthesis_candidate",
     action,
+    cause_classification: causeClassification,
     scope: cluster.scope,
     target_path: targetPath,
     target_skill: typeof raw.target_skill === "string" ? raw.target_skill : title,
@@ -168,7 +233,7 @@ function normalizeCandidate(raw: Record<string, unknown>, cluster: SkillSignalCl
     evidence_ids: cluster.evidence_ids,
     source_count: cluster.source_count,
     confidence: cluster.confidence,
-    ladder_choice: best ? "skill_update_existing" : "skill_create",
+    ladder_choice: ladderChoice,
     existing_skill_path: best?.skill.path ?? null,
     related_wiki_paths: cluster.related_wiki_paths,
     review_hint: {
@@ -182,12 +247,15 @@ function normalizeCandidate(raw: Record<string, unknown>, cluster: SkillSignalCl
 export function buildSkillProposerPrompt(cluster: SkillSignalCluster, matches: StableSkillMatch[]): string {
   return JSON.stringify({
     role: "PraxisBase skill proposer",
-    ladder: ["skill_update_loaded", "skill_update_existing", "skill_support_file", "skill_create"],
+    ladder: ["skill_update_loaded", "skill_update_existing", "skill_support_file", "skill_optimize_description", "skill_create", "skip"],
     rules: [
       "Prefer updating an existing umbrella skill before creating a new skill.",
       "Create only durable class-level skills, never PR/run/error-string micro skills.",
       "Write synthesized instructions, not raw transcript.",
       "Include When To Use, Procedure, Verification, Pitfalls, Do Not Use When, Related Wiki Pages, and Provenance.",
+      "Classify cause: skill_problem, agent_problem, environment_problem, or weak_signal.",
+      "Skip when cause is agent_problem, environment_problem without reusable fix, or weak_signal.",
+      "Use skill_optimize_description when the skill body is useful but matching is too broad or too narrow.",
     ],
     cluster,
     existing_matches: matches,

@@ -20,13 +20,24 @@ import {
   AgentContextBundleSchema,
   ContextJuiceBudgetResultSchema,
   ContextJuiceReportSchema,
+  ExperienceEnvelopeSchema,
+  LifecycleDecisionSchema,
+  LifecycleObservationSchema,
+  LifecycleProposalSchema,
+  KnowledgeLifecycleReportSchema,
+  CatalogEntrySchema,
+  KnowledgeCatalogSchema,
   PersonalLearningFacetSchema,
   PersonalLearningReportSchema,
+  SkillValidationReportSchema,
+  SkillValidationDecisionSchema,
+  SkillValidationModeSchema,
   SkillInjectionDecisionSchema,
   TrajectoryMicrocompactResultSchema,
   TrustBoundaryItemSchema,
   TrustTierSchema,
 } from "@praxisbase/core/protocol/schemas.js";
+import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 
 describe("protocol schemas", () => {
   it("accepts a valid repair episode", () => {
@@ -620,6 +631,213 @@ describe("protocol schemas", () => {
       effect: "helped_fix",
       outcome: "arbitrary_outcome",
     }));
+  });
+
+  it("MaturitySchema accepts stale and archived values", () => {
+    assert.equal(MaturitySchema.parse("stale"), "stale");
+    assert.equal(MaturitySchema.parse("archived"), "archived");
+    assert.equal(MaturitySchema.parse("draft"), "draft");
+    assert.equal(MaturitySchema.parse("verified"), "verified");
+    assert.equal(MaturitySchema.parse("proven"), "proven");
+  });
+
+  it("ExperienceEnvelope parses without trajectory metadata (backward compat)", () => {
+    const parsed = ExperienceEnvelopeSchema.parse({
+      id: "env-1",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://session-1",
+      source_hash: "sha256:abc",
+      scope_hint: "personal",
+      redacted_summary: "Fixed auth issue.",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    });
+    assert.equal(parsed.trajectory_steps, undefined);
+    assert.equal(parsed.tool_outcomes, undefined);
+    assert.equal(parsed.read_skills, undefined);
+    assert.equal(parsed.skill_effectiveness_hints, undefined);
+  });
+
+  it("ExperienceEnvelope parses with trajectory metadata", () => {
+    const parsed = ExperienceEnvelopeSchema.parse({
+      id: "env-2",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-2",
+      agent: "opencode",
+      channel: "terminal",
+      source_ref: "log://session-2",
+      source_hash: "sha256:def",
+      scope_hint: "project",
+      redacted_summary: "Repaired build pipeline.",
+      trajectory_steps: [
+        { goal: "fix build", action: "ran make", tool: "bash", outcome: "success" },
+      ],
+      tool_outcomes: [
+        { tool: "bash", result_category: "success" },
+      ],
+      read_skills: ["skills/openclaw/build-repair/SKILL.md"],
+      modified_skills: [],
+      injected_context: ["ctx-123"],
+      verification_events: ["test_pass"],
+      skill_effectiveness_hints: ["helped"],
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    });
+    assert.equal(parsed.trajectory_steps!.length, 1);
+    assert.equal(parsed.tool_outcomes![0].tool, "bash");
+    assert.deepEqual(parsed.read_skills, ["skills/openclaw/build-repair/SKILL.md"]);
+    assert.deepEqual(parsed.skill_effectiveness_hints, ["helped"]);
+  });
+
+  it("ExperienceEnvelope rejects raw_transcript field", () => {
+    assert.throws(() => ExperienceEnvelopeSchema.parse({
+      id: "env-bad",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://s",
+      source_hash: "sha256:x",
+      scope_hint: "personal",
+      redacted_summary: "Has raw data.",
+      raw_transcript: "full transcript here",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    }), /raw_transcript/);
+  });
+
+  it("ExperienceEnvelope rejects raw_log field", () => {
+    assert.throws(() => ExperienceEnvelopeSchema.parse({
+      id: "env-bad2",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://s",
+      source_hash: "sha256:x",
+      scope_hint: "personal",
+      redacted_summary: "Has raw log.",
+      raw_log: "full log content",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    }), /raw_log/);
+  });
+
+  it("ExperienceEnvelope safeParse reports raw log fields without throwing", () => {
+    const parsed = ExperienceEnvelopeSchema.safeParse({
+      id: "env-bad-safe",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://s",
+      source_hash: "sha256:x",
+      scope_hint: "personal",
+      redacted_summary: "Has raw log.",
+      raw_log: "full log content",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    });
+
+    assert.equal(parsed.success, false);
+    if (!parsed.success) {
+      assert.equal(parsed.error.issues[0].path.join("."), "raw_log");
+      assert.match(parsed.error.issues[0].message, /raw_log is not allowed/);
+    }
+  });
+
+  it("protocol paths include M23 lifecycle, validation, and catalog paths", () => {
+    assert.equal(protocolPaths.reportsLifecycle, ".praxisbase/reports/lifecycle");
+    assert.equal(protocolPaths.reportsSkillValidation, ".praxisbase/reports/skill-validation");
+    assert.equal(protocolPaths.catalog, ".praxisbase/catalog");
+  });
+
+  it("LifecycleDecisionSchema accepts all decision values", () => {
+    for (const d of ["promote", "decay", "archive", "conflict", "no_op"] as const) {
+      assert.equal(LifecycleDecisionSchema.parse(d), d);
+    }
+  });
+
+  it("KnowledgeLifecycleReportSchema validates", () => {
+    const parsed = KnowledgeLifecycleReportSchema.parse({
+      id: "lr-1",
+      protocol_version: "0.1",
+      type: "knowledge_lifecycle_report",
+      observations: [{
+        page_id: "page-1",
+        page_path: "kb/known-fixes/test.md",
+        maturity: "draft",
+        source_refs: ["src-1"],
+        source_hashes: ["sha256:abc"],
+      }],
+      proposals: [{
+        page_id: "page-1",
+        page_path: "kb/known-fixes/test.md",
+        decision: "promote",
+        reasons: ["Two provenance refs"],
+        current_maturity: "draft",
+        proposed_maturity: "verified",
+      }],
+      changed_stable_knowledge: false,
+      created_at: "2026-05-28T10:00:00Z",
+    });
+    assert.equal(parsed.changed_stable_knowledge, false);
+    assert.equal(parsed.proposals[0].decision, "promote");
+  });
+
+  it("KnowledgeCatalogSchema validates", () => {
+    const parsed = KnowledgeCatalogSchema.parse({
+      id: "cat-1",
+      protocol_version: "0.1",
+      type: "knowledge_catalog",
+      entries: [{
+        page_id: "p1",
+        page_path: "kb/test.md",
+        title: "Test Page",
+        maturity: "verified",
+        source_hashes: ["sha256:abc"],
+      }],
+      changed_stable_knowledge: false,
+      created_at: "2026-05-28T10:00:00Z",
+    });
+    assert.equal(parsed.entries.length, 1);
+    assert.equal(parsed.changed_stable_knowledge, false);
+  });
+
+  it("SkillValidationReportSchema validates", () => {
+    const parsed = SkillValidationReportSchema.parse({
+      id: "sv-1",
+      protocol_version: "0.1",
+      type: "skill_validation_report",
+      candidate_id: "cand-1",
+      mode: "static",
+      checks: [
+        { check: "safe_path", passed: true },
+        { check: "required_sections", passed: true },
+      ],
+      decision: "pass",
+      reason: "All static checks passed.",
+      created_at: "2026-05-28T10:00:00Z",
+    });
+    assert.equal(parsed.decision, "pass");
+    assert.equal(parsed.mode, "static");
+  });
+
+  it("SkillValidationModeSchema and DecisionSchema accept valid values", () => {
+    assert.equal(SkillValidationModeSchema.parse("static"), "static");
+    assert.equal(SkillValidationModeSchema.parse("evidence_simulation"), "evidence_simulation");
+    assert.equal(SkillValidationModeSchema.parse("replay"), "replay");
+    assert.equal(SkillValidationDecisionSchema.parse("pass"), "pass");
+    assert.equal(SkillValidationDecisionSchema.parse("fail"), "fail");
+    assert.equal(SkillValidationDecisionSchema.parse("needs_human"), "needs_human");
   });
 });
 

@@ -8,6 +8,14 @@ Feature: Collective skill and knowledge governance
     And each entry includes provenance hashes
     And raw evidence bodies are not included
 
+  Scenario: End-to-end governed learning loop
+    Given repeated agent trajectories show the same durable failure and verified fix
+    When daily synthesis, skill validation, review, promotion, catalog generation, and GBrain export complete
+    Then PraxisBase has a promoted stable knowledge or skill artifact with provenance
+    And validation evidence is linked to the promoted artifact
+    And GBrain receives only the stable artifact and catalog entry
+    And raw transcripts and unreviewed candidates are not exported
+
   Scenario: Draft knowledge is promoted through review
     Given a draft technical pitfall has verified source refs from two successful runs
     When lifecycle analysis runs
@@ -93,3 +101,10 @@ Feature: Collective skill and knowledge governance
     When context get runs with AgentMemory enabled
     Then stable PB context appears before AgentMemory sidecar hits
     And sidecar hits do not count as promotion evidence
+
+  Scenario: Skills and MCP are complementary
+    Given a promoted PB skill has been exported to GBrain
+    When an agent asks GBrain MCP for task context matching that skill
+    Then GBrain can return the promoted skill reference
+    And following the skill may instruct the agent to use MCP tools
+    And neither GBrain discovery nor MCP tool use can promote new PB knowledge without review

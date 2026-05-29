@@ -123,6 +123,18 @@
       "types": "./src/synthesis/skill-audit.ts",
       "default": "./dist/synthesis/skill-audit.js"
     },
+    "./synthesis/skill-validation.js": {
+      "types": "./src/synthesis/skill-validation.ts",
+      "default": "./dist/synthesis/skill-validation.js"
+    },
+    "./wiki/lifecycle.js": {
+      "types": "./src/wiki/lifecycle.ts",
+      "default": "./dist/wiki/lifecycle.js"
+    },
+    "./wiki/catalog.js": {
+      "types": "./src/wiki/catalog.ts",
+      "default": "./dist/wiki/catalog.js"
+    },
     "./experience/agent-memory.js": {
       "types": "./src/experience/agent-memory.ts",
       "default": "./dist/experience/agent-memory.js"

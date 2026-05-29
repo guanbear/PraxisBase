@@ -223,6 +223,31 @@ describe("agentmemory export", () => {
     }
   });
 
+  it("returns explicit export failure when the requested AgentMemory target fails", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-am-export-fail-"));
+    await sourceCommand(root, "add", {
+      name: "am-export-fail",
+      agent: "agentmemory",
+      type: "agentmemory",
+      scope: "personal",
+      url: "http://localhost:3111",
+      json: true,
+    });
+    await createKbPage(root, "kb/known-fixes/real.md", "# Real Fix\n\nStable content.");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response("down", { status: 503, statusText: "Service Unavailable" })) as typeof fetch;
+    try {
+      const output = await agentmemoryCommand(root, "export", { mode: "personal", write: true, json: true });
+      const parsed = JSON.parse(output);
+      assert.equal(parsed.ok, false);
+      assert.equal(parsed.exported, 0);
+      assert.ok(parsed.errors.some((error: string) => error.includes("503")));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("allows team export only with explicit allow flag and write", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-am-export-team-allow-"));
     await sourceCommand(root, "add", {

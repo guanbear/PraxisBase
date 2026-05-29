@@ -500,6 +500,48 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("Refresh OpenClaw auth before retrying memory sync."));
   });
 
+  it("hides private human-required details until privacy triage releases them", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-privacy-hidden-"));
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/exceptions/human-required/exception_private.json"),
+      JSON.stringify({
+        id: "exception_private",
+        protocol_version: "0.1",
+        type: "exception_record",
+        category: "human_required",
+        source_id: "capture:private-remote",
+        reason: "Experience privacy verdict human_required: private_material_detected",
+        details: {
+          agent: "openclaw",
+          scope_hint: "personal",
+          source_ref: "openclaw-ssh://remote/MEMORY.md:10:10",
+          source_hash: "sha256:private-remote",
+          redacted_summary: "Use private-host-wrapper with private network address and secret key.",
+          triage: {
+            classification: "private_material_detected",
+            decision: "keep_human_required",
+            confidence: 0.93,
+            rationale: "Contains private host and key material.",
+            suggested_redactions: ["private-host-wrapper", "secret key"],
+          },
+        },
+        created_at: "2026-05-21T10:02:00.000Z",
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("private_material_detected"));
+    assert.ok(review.includes("keep_human_required"));
+    assert.ok(review.includes("Sensitive details hidden until privacy triage releases this record."));
+    assert.ok(!review.includes("private-host-wrapper"));
+    assert.ok(!review.includes("secret key"));
+    assert.ok(!review.includes("openclaw-ssh://remote/MEMORY.md:10:10"));
+  });
+
   it("uses curated wiki proposals as the primary pending review queue", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-curated-pending-"));
     await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
@@ -1011,6 +1053,7 @@ Body.
         approved: 1,
         rejected: 0,
         needs_human: 0,
+        skipped: 1,
         promoted: 0,
       },
       outputs: [],
@@ -1024,7 +1067,39 @@ Body.
     assert.ok(index.includes("Skill synthesis"));
     assert.match(index, /Skill candidates[\s\S]*?<strong>1<\/strong>/);
     assert.match(index, /Skill approved[\s\S]*?<strong>1<\/strong>/);
+    assert.match(index, /Skill skipped[\s\S]*?<strong>1<\/strong>/);
     assert.match(index, /Skill rejected signals[\s\S]*?<strong>1<\/strong>/);
+  });
+
+  it("renders lifecycle and skill validation counts in dashboard when daily report includes governance summaries", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-governance-counts-"));
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/reports/daily/daily_governance.json"), JSON.stringify({
+      id: "daily_governance",
+      protocol_version: "0.1",
+      type: "daily_experience_report",
+      authority_mode: "personal-local",
+      mode: "write",
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      lifecycle: { proposals_by_decision: { promote: 1, archive: 1 } },
+      skill_validation: { total_reports: 3, by_decision: { pass: 1, fail: 1, needs_human: 1 }, candidates_without_passing: 2 },
+      outputs: [],
+      warnings: [],
+      created_at: "2026-05-26T12:00:00.000Z",
+    }), "utf8");
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.match(index, /Lifecycle proposals[\s\S]*?<strong>2<\/strong>/);
+    assert.match(index, /Skill validation reports[\s\S]*?<strong>3<\/strong>/);
+    assert.match(index, /Validation pass[\s\S]*?<strong>1<\/strong>/);
+    assert.match(index, /Validation fail[\s\S]*?<strong>1<\/strong>/);
+    assert.match(index, /Candidates needing validation[\s\S]*?<strong>2<\/strong>/);
   });
 
   it("renders skill synthesis candidates in the review queue", async () => {
@@ -1063,6 +1138,7 @@ Body.
     assert.ok(review.includes("skill_create"));
     assert.ok(review.includes("0.91"));
     assert.ok(review.includes("praxisbase skill review --json"));
+    assert.ok(review.includes("validation needed"));
   });
 
   it("separates latest daily privacy blockers from historical privacy backlog", async () => {

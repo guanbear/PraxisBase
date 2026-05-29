@@ -77,5 +77,8 @@ export const protocolPaths = {
   runsWiki: ".praxisbase/runs/wiki",
   reportsWikiCompile: ".praxisbase/reports/wiki-compile",
   reportsWikiLint: ".praxisbase/reports/wiki-lint",
-  configAi: ".praxisbase/ai/config.json"
+  configAi: ".praxisbase/ai/config.json",
+  reportsLifecycle: ".praxisbase/reports/lifecycle",
+  reportsSkillValidation: ".praxisbase/reports/skill-validation",
+  catalog: ".praxisbase/catalog",
 } as const;

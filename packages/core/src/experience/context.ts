@@ -220,6 +220,19 @@ function wantsBackend(input: BuildContextInput, name: BrainBackendName): boolean
   return (input.withBackends ?? []).includes(name);
 }
 
+function sourceRankForCandidate(candidate: WikiContextCandidate): string {
+  if (candidate.kind === "gbrain_sidecar" || candidate.path.startsWith("gbrain://")) return "gbrain_sidecar";
+  if (candidate.kind === "agentmemory_sidecar" || candidate.path.startsWith("agentmemory://")) return "agentmemory_sidecar";
+  if (candidate.path.startsWith("kb/") || candidate.path.startsWith("skills/")) return "pb_stable";
+  if (candidate.path.includes("/indexes/") || candidate.path.includes("/bundles/")) return "pb_catalog";
+  if (candidate.path.startsWith(".praxisbase/raw-vault/refs/")) return "raw_debug";
+  return "raw_debug";
+}
+
+function promotionEvidenceForCandidate(candidate: WikiContextCandidate): boolean {
+  return sourceRankForCandidate(candidate) === "pb_stable";
+}
+
 async function agentMemorySidecarCandidates(input: BuildContextInput): Promise<{ candidates: WikiContextCandidate[]; warnings: string[] }> {
   if (!wantsBackend(input, "agentmemory")) return { candidates: [], warnings: [] };
 
@@ -285,6 +298,8 @@ function enforceBudget(output: BuildContextOutput, maxBytes: number): BuildConte
       path: item.path,
       kind: item.kind,
       summary: item.summary,
+      source_rank: item.source_rank,
+      promotion_evidence: item.promotion_evidence,
     })),
   };
   withoutBodies.budget.used_bytes = serializeSize(withoutBodies);
@@ -328,10 +343,13 @@ export async function buildContext(input: BuildContextInput): Promise<BuildConte
     stage: input.stage,
     maxItems: 8,
   });
+  const sidecarLimit = sidecarCandidates.length > 0 && selectedStable.length >= 8
+    ? 2
+    : Math.max(0, 8 - selectedStable.length);
   const selectedSidecars = rankWikiContextItems(sidecarCandidates, {
     query: input.query ?? "",
     stage: input.stage,
-    maxItems: Math.max(0, 8 - selectedStable.length),
+    maxItems: sidecarLimit,
   });
   const selected = [...selectedStable, ...selectedSidecars];
   const id = makeId("context", `${input.agent}-${input.stage}-${input.query ?? "default"}`);
@@ -346,6 +364,8 @@ export async function buildContext(input: BuildContextInput): Promise<BuildConte
       kind: candidate.kind,
       summary: candidate.summary,
       body: candidate.body,
+      source_rank: sourceRankForCandidate(candidate),
+      promotion_evidence: promotionEvidenceForCandidate(candidate),
     })),
     citations: selected.map((candidate) => ({
       id: makeId("citation", candidate.path),

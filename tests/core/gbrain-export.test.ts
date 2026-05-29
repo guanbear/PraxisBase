@@ -35,12 +35,13 @@ Refresh auth and retry.
 
     assert.equal(result.ok, true);
     assert.equal(result.pages, 1);
-    assert.equal(result.payloads.length, 1);
-    assert.equal(result.payloads[0].pagePath, "kb/procedures/openclaw-auth-refresh.md");
-    assert.match(result.payloads[0].content, /PraxisBase provenance/);
-    assert.match(result.payloads[0].content, /generated_by: praxisbase/);
-    assert.match(result.payloads[0].content, /praxisbase_path: kb\/procedures\/openclaw-auth-refresh\.md/);
-    assert.match(result.payloads[0].content, /source_hashes:/);
+    assert.ok(result.payloads.length >= 2, "Should have wiki page payload and catalog payload");
+    const wikiPayload = result.payloads.find((p) => p.pagePath === "kb/procedures/openclaw-auth-refresh.md");
+    assert.ok(wikiPayload, "Should have wiki page payload");
+    assert.match(wikiPayload.content, /PraxisBase provenance/);
+    assert.match(wikiPayload.content, /generated_by: praxisbase/);
+    assert.match(wikiPayload.content, /praxisbase_path: kb\/procedures\/openclaw-auth-refresh\.md/);
+    assert.match(wikiPayload.content, /source_hashes:/);
     assert.doesNotMatch(JSON.stringify(result.payloads), /Human required|Review candidate/);
   });
 
@@ -89,10 +90,10 @@ Safe team lesson.
 
     assert.equal(result.ok, true);
     assert.equal(result.pages, 2);
-    assert.equal(result.exported, 1);
-    assert.equal(result.skipped, 1);
+    assert.equal(result.exported, 2, "Should export team page and catalog");
+    assert.equal(result.skipped, 0, "No skipped payloads after filtering");
     assert.match(result.warnings.join("\n"), /GBRAIN_TEAM_EXPORT_SKIPPED_PERSONAL/);
-    assert.equal(calls.length, 1);
+    assert.ok(calls.length >= 2, "Should have published team page and catalog");
     assert.ok(calls[0].args.includes("--source"));
     assert.ok(calls[0].args.includes("team-praxisbase"));
     assert.ok(calls[0].args.includes("praxisbase/kb/procedures/team-openclaw"));
@@ -166,5 +167,154 @@ Safe team lesson.
       if (original === undefined) delete process.env.GBRAIN_EXPORT_TEST_TOKEN;
       else process.env.GBRAIN_EXPORT_TEST_TOKEN = original;
     }
+  });
+
+  it("exports promoted skill pages alongside wiki pages", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-skill-export-"));
+    await writePage(root, "kb/procedures/auth-refresh.md", `---
+id: auth-refresh
+type: procedure
+scope: personal
+---
+# Auth Refresh
+
+Refresh when expired.
+`);
+    await writePage(root, "skills/openclaw/repair/SKILL.md", `---
+id: openclaw-repair-skill
+type: skill
+scope: personal
+maturity: verified
+---
+# OpenClaw Repair
+
+## When To Use
+When OpenClaw breaks.
+
+## Procedure
+1. Check logs.
+2. Restart.
+
+## Verification
+OpenClaw responds.
+
+## Pitfalls
+Don't force kill.
+
+## Do Not Use When
+Not broken.
+`);
+
+    const result = await exportGBrain(root, { mode: "personal", dryRun: true });
+
+    assert.equal(result.ok, true);
+    assert.ok(result.payloads.length >= 3, "Should have wiki page, skill page, and catalog payload");
+    const skillPayload = result.payloads.find((p) => p.type === "skill");
+    assert.ok(skillPayload, "Should have a skill payload");
+    assert.match(skillPayload.content, /When OpenClaw breaks/);
+    assert.match(skillPayload.content, /Check logs/);
+    assert.equal(result.skills_exported, 1);
+  });
+
+  it("exports catalog payload with provenance hash", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-catalog-"));
+    await writePage(root, "kb/known-fixes/test.md", `---
+id: test-fix
+type: known_fix
+scope: personal
+---
+# Test Fix
+
+A test fix.
+`);
+
+    const result = await exportGBrain(root, { mode: "personal", dryRun: true });
+
+    const catPayload = result.payloads.find((p) => p.type === "knowledge_catalog");
+    assert.ok(catPayload, "Should have catalog payload");
+    assert.ok(catPayload.provenanceHash.startsWith("sha256:"));
+    assert.equal(result.catalog_exported, 1);
+  });
+
+  it("does not export inbox candidates or raw evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-no-raw-"));
+    await writePage(root, "kb/procedures/safe.md", "# Safe page\n\nPublic content.");
+    await writePage(root, ".praxisbase/inbox/proposals/candidate.json", JSON.stringify({ type: "skill_synthesis_candidate", raw_log: "should not export" }));
+    await writePage(root, ".praxisbase/exceptions/human-required/private.md", "# Private\n\nSecret content.");
+
+    const result = await exportGBrain(root, { mode: "personal", dryRun: true });
+
+    const serialized = JSON.stringify(result.payloads);
+    assert.ok(!serialized.includes("should not export"), "Inbox candidate should not be exported");
+    assert.ok(!serialized.includes("Secret content"), "Human-required exception should not be exported");
+    assert.ok(!serialized.includes("raw_log"), "Raw log key should not appear in export");
+  });
+
+  it("team export skips personal/project scopes and still includes catalog", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-team-scopes-"));
+    await writePage(root, "kb/procedures/personal-thing.md", `---
+id: personal-thing
+type: procedure
+scope: personal
+---
+# Personal Thing
+
+Not for team.
+`);
+    await writePage(root, "kb/procedures/team-thing.md", `---
+id: team-thing
+type: procedure
+scope: team
+---
+# Team Thing
+
+For team export.
+`);
+    const calls: Array<{ command: string; args: string[] }> = [];
+
+    const result = await exportGBrain(root, {
+      mode: "team",
+      allowTeamExport: true,
+      dryRun: false,
+      sourceId: "team-pb",
+      runCommand: async (command, args) => {
+        calls.push({ command, args });
+        return { stdout: JSON.stringify({ slug: args[args.indexOf("--slug") + 1] }), stderr: "" };
+      },
+    });
+
+    assert.equal(result.ok, true);
+    assert.ok(result.warnings.some((w) => w.includes("GBRAIN_TEAM_EXPORT_SKIPPED_PERSONAL")));
+    const exported = result.payloads.filter((p) => !p.type?.includes("catalog"));
+    assert.ok(exported.every((p) => !p.pagePath.includes("personal")), "No personal pages should be exported");
+    assert.equal(result.catalog_exported, 1);
+  });
+
+  it("preserves provenance hash idempotency across exports", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-export-idempotency-"));
+    await writePage(root, "kb/procedures/stable.md", "# Stable\n\nContent.");
+
+    const result1 = await exportGBrain(root, { mode: "personal", dryRun: true });
+    const result2 = await exportGBrain(root, { mode: "personal", dryRun: true });
+
+    const wikiHashes1 = result1.payloads.filter((p) => p.type !== "knowledge_catalog").map((p) => p.provenanceHash).sort();
+    const wikiHashes2 = result2.payloads.filter((p) => p.type !== "knowledge_catalog").map((p) => p.provenanceHash).sort();
+    assert.deepEqual(wikiHashes1, wikiHashes2, "Wiki page provenance hashes should be deterministic");
+  });
+
+  it("preserves catalog provenance hash idempotency across exports", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-catalog-idempotency-"));
+    await writePage(root, "kb/procedures/stable.md", "# Stable\n\nContent.");
+
+    const result1 = await exportGBrain(root, { mode: "personal", dryRun: true });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const result2 = await exportGBrain(root, { mode: "personal", dryRun: true });
+
+    const catalog1 = result1.payloads.find((p) => p.type === "knowledge_catalog");
+    const catalog2 = result2.payloads.find((p) => p.type === "knowledge_catalog");
+    assert.ok(catalog1);
+    assert.ok(catalog2);
+    assert.equal(catalog1.provenanceHash, catalog2.provenanceHash);
+    assert.equal(catalog1.idempotencyKey, catalog2.idempotencyKey);
   });
 });

@@ -410,7 +410,7 @@ describe("daily CLI command", () => {
     assert.equal(parsed.report.changed_stable_knowledge, true);
     assert.equal(parsed.report.brain_backends.gbrain.enabled, true);
     assert.equal(parsed.report.brain_backends.gbrain.publish_status, "completed");
-    assert.equal(parsed.report.brain_backends.gbrain.exported, 1);
+    assert.equal(parsed.report.brain_backends.gbrain.exported, 2);
     assert.ok(calls.some((call) => call.command === "gbrain" && call.args.includes("capture")));
     assert.ok(parsed.next_actions.commands.some((command: string) => command.includes("praxisbase gbrain export --mode personal --write --json")));
   });

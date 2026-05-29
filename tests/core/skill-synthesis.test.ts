@@ -262,6 +262,51 @@ describe("Skill synthesis", () => {
     assert.equal(result.report.candidates, 0);
   });
 
+  it("reports skipped skill clusters without writing inbox candidates", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-skipped-"));
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "personal",
+      summary: "Agent ignored context and misused MCP tools.",
+      problem: "Agent misuse.",
+      actions: ["Agent ignored guidance.", "Model hallucinated commands."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["reviewed transcript"],
+      reusable_lessons: ["Agent failed to read correct guidance."],
+      risks: [],
+      suggested_tags: ["agent"],
+      suggested_wiki_kind: "known_fix",
+      skill_candidate: {
+        should_create: true,
+        title: "Agent misuse incident",
+        trigger: "Agent failed to read correct guidance and misused tools",
+        procedure: ["Agent ignored context overflow.", "Model hallucinated commands.", "Reviewer stopped the run."],
+      },
+      confidence: 0.91,
+    };
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "review",
+      authorityMode: "personal-local",
+      now: "2026-05-26T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+      ],
+    });
+
+    assert.equal(result.report.clusters, 1);
+    assert.equal(result.report.skipped, 1);
+    assert.equal(result.report.candidates, 0);
+    assert.equal(result.candidates.length, 0);
+    assert.ok(result.report.warnings.some((warning) => warning.includes("skill_synthesis_skipped")));
+    await assert.rejects(() => readdir(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
+  });
+
   it("keeps semantic skill review failure reason on human-required candidates", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-unavailable-"));
     const base: DistilledExperience = {

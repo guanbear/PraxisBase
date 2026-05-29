@@ -71,6 +71,7 @@ describe("skill synthesis schemas", () => {
       approved: 1,
       rejected: 0,
       needs_human: 0,
+      skipped: 0,
       outputs: [],
       warnings: [],
       created_at: now,

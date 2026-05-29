@@ -3,7 +3,7 @@ import type { SemanticSkillReview, SkillSynthesisCandidate } from "./skill-model
 export const SEMANTIC_SKILL_APPROVE_THRESHOLD = 0.86;
 
 export interface SemanticSkillPolicyDecision {
-  action: "write_candidate" | "retry_synthesis" | "reject" | "needs_human" | "rewrite_as_update";
+  action: "write_candidate" | "retry_synthesis" | "reject" | "needs_human" | "rewrite_as_update" | "skip" | "skill_optimize_description";
   promotion_eligible: boolean;
   reason: string;
   review_notes: string[];
@@ -11,6 +11,23 @@ export interface SemanticSkillPolicyDecision {
 
 export function decideSemanticSkillAction(candidate: SkillSynthesisCandidate, review?: SemanticSkillReview, unavailableReason?: string): SemanticSkillPolicyDecision {
   const notes = [...candidate.review_hint.risk_notes];
+  if (candidate.action === "skip") {
+    const cause = candidate.cause_classification;
+    return {
+      action: "skip",
+      promotion_eligible: false,
+      reason: `Skipped: ${cause?.replace(/_/g, " ") ?? "unclassified"}.`,
+      review_notes: [...notes, `cause_classification:${cause ?? "unclassified"}`],
+    };
+  }
+  if (candidate.action === "skill_optimize_description") {
+    return {
+      action: "skill_optimize_description",
+      promotion_eligible: false,
+      reason: "Candidate proposes description optimization for existing skill trigger matching.",
+      review_notes: notes,
+    };
+  }
   if (!candidate.target_path.startsWith("skills/") || candidate.target_path.includes("..")) {
     return { action: "reject", promotion_eligible: false, reason: "Unsafe skill target path.", review_notes: [...notes, "unsafe_target_path"] };
   }

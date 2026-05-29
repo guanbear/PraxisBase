@@ -25,6 +25,7 @@ import { compileWiki } from "../wiki/compile.js";
 import { curateWiki } from "../wiki/curate.js";
 import { CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal } from "../wiki/curation-model.js";
 import { buildWikiSite } from "../wiki/render-site.js";
+import { analyzeKnowledgeLifecycle } from "../wiki/lifecycle.js";
 import { recordWikiSourceSummaryContributions } from "../wiki/source-summary.js";
 import { readReviewPolicy, decideAutoReview } from "../review/policy.js";
 import { reviewProposal } from "../review/reviewer.js";
@@ -66,6 +67,7 @@ import {
 } from "./git-workflow.js";
 import { synthesizeSkillCandidates } from "../synthesis/skill.js";
 import type { SkillSynthesisReport } from "../synthesis/skill-model.js";
+import { collectValidationSummaries } from "../synthesis/skill-validation.js";
 import { exportGBrain } from "./gbrain-export.js";
 import type { GBrainCommandRunner } from "./gbrain-client.js";
 import {
@@ -132,13 +134,13 @@ export interface RunDailyExperienceInput {
   noContextEconomy?: boolean;
   noContextJuice?: boolean;
   payloadPreSummary?: PayloadPreSummaryPolicy;
-	  semanticReview?: boolean;
-	  skillSynthesis?: boolean;
+  semanticReview?: boolean;
+  skillSynthesis?: boolean;
   publishGbrain?: boolean;
   allowTeamGbrainExport?: boolean;
   gbrainExecutable?: string;
   gbrainRunCommand?: GBrainCommandRunner;
-	  onProgress?: (event: DailyProgressEvent) => void | Promise<void>;
+  onProgress?: (event: DailyProgressEvent) => void | Promise<void>;
 }
 
 function statusFromCounts(input: { warnings: string[]; rejected: number; humanRequired: number; enveloped: number }): "completed" | "partial" | "failed" {
@@ -179,6 +181,17 @@ export interface DailyNextActions {
     proposal_candidates: number;
     site_pages: number;
     changed_stable_knowledge: boolean;
+    skill_synthesis_signals: number;
+    skill_synthesis_candidates: number;
+    skill_synthesis_approved: number;
+    skill_synthesis_needs_human: number;
+    skill_synthesis_skipped: number;
+    lifecycle_proposals: number;
+    skill_validation_total: number;
+    skill_validation_pass: number;
+    skill_validation_fail: number;
+    skill_validation_needs_human: number;
+    skill_validation_candidates_without_passing: number;
   };
   agentmemory_export_recommended: boolean;
   gbrain_export_recommended: boolean;
@@ -191,6 +204,12 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
   const privacyRequired = Math.max(report.ai_distill.privacy_required, sourceHumanRequired);
   const reviewRequired = report.ai_distill.review_required + report.proposal_candidates;
   const rejected = report.sources.reduce((sum, source) => sum + source.rejected, 0);
+  const skillSynthesis = report.skill_synthesis;
+  const skillNeedsHuman = skillSynthesis.enabled ? skillSynthesis.needs_human : 0;
+  const lifecycle = report.lifecycle ?? { proposals_by_decision: {} };
+  const lifecycleProposals = Object.values(lifecycle.proposals_by_decision).reduce((sum, count) => sum + count, 0);
+  const skillValidation = report.skill_validation ?? { total_reports: 0, by_decision: {}, candidates_without_passing: 0 };
+  const candidatesWithoutPassing = skillValidation.candidates_without_passing;
   const counts = {
     sources: report.sources.length,
     chunks: report.ai_distill.chunks,
@@ -203,6 +222,17 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
     proposal_candidates: report.proposal_candidates,
     site_pages: report.site_pages,
     changed_stable_knowledge: report.changed_stable_knowledge,
+    skill_synthesis_signals: skillSynthesis.enabled ? skillSynthesis.signals : 0,
+    skill_synthesis_candidates: skillSynthesis.enabled ? skillSynthesis.candidates : 0,
+    skill_synthesis_approved: skillSynthesis.enabled ? skillSynthesis.approved : 0,
+    skill_synthesis_needs_human: skillNeedsHuman,
+    skill_synthesis_skipped: skillSynthesis.enabled ? skillSynthesis.skipped : 0,
+    lifecycle_proposals: lifecycleProposals,
+    skill_validation_total: skillValidation.total_reports,
+    skill_validation_pass: skillValidation.by_decision["pass"] ?? 0,
+    skill_validation_fail: skillValidation.by_decision["fail"] ?? 0,
+    skill_validation_needs_human: skillValidation.by_decision["needs_human"] ?? 0,
+    skill_validation_candidates_without_passing: candidatesWithoutPassing,
   };
 
   if (privacyRequired > 0) {
@@ -213,6 +243,25 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
       gbrain_export_recommended: false,
       messages: [`${privacyRequired} item(s) need privacy triage before they can become wiki evidence.`],
       commands: ["praxisbase privacy triage --mode personal --auto-release --json"],
+    };
+  }
+
+  if (skillNeedsHuman > 0) {
+    const validationNote = candidatesWithoutPassing > 0
+      ? ` ${candidatesWithoutPassing} skill candidate(s) lack passing validation.`
+      : "";
+    return {
+      status: "needs_review",
+      counts,
+      agentmemory_export_recommended: false,
+      gbrain_export_recommended: false,
+      messages: [`${skillNeedsHuman} skill candidate(s) need human review. ${skillSynthesis.signals} signals processed, ${skillSynthesis.candidates} candidates generated, ${skillSynthesis.approved} approved.${validationNote}`],
+      commands: [
+        "praxisbase skill review --json",
+        "praxisbase review list --json",
+        ...(candidatesWithoutPassing > 0 ? ["praxisbase skill validate --proposal <id> --json"] : []),
+        ...(lifecycleProposals > 0 ? ["praxisbase wiki build-site --json"] : []),
+      ],
     };
   }
 
@@ -231,26 +280,50 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
   }
 
   if (report.changed_stable_knowledge) {
+    const skillNote = skillSynthesis.enabled && skillSynthesis.candidates > 0
+      ? ` Skill synthesis: ${skillSynthesis.signals} signals, ${skillSynthesis.candidates} candidates, ${skillSynthesis.approved} approved.`
+      : "";
+    const validationNote = candidatesWithoutPassing > 0
+      ? ` ${candidatesWithoutPassing} skill candidate(s) need validation before promotion.`
+      : "";
+    const lifecycleNote = lifecycleProposals > 0
+      ? ` Lifecycle: ${lifecycleProposals} proposal(s) pending review.`
+      : "";
     return {
       status: "ready_to_export_gbrain",
       counts,
       agentmemory_export_recommended: report.authority_mode === "personal-local",
       gbrain_export_recommended: report.authority_mode === "personal-local",
-      messages: ["Stable wiki changed and is ready to share with local agents through GBrain and AgentMemory."],
+      messages: [`Stable wiki changed and is ready to share with local agents through GBrain and AgentMemory.${skillNote}${validationNote}${lifecycleNote}`],
       commands: [
         "praxisbase gbrain export --mode personal --write --json",
         "praxisbase agentmemory export --mode personal --write --json",
+        ...(candidatesWithoutPassing > 0 ? ["praxisbase skill validate --proposal <id> --json"] : []),
+        ...(lifecycleProposals > 0 ? ["praxisbase wiki build-site --json"] : []),
       ],
     };
   }
 
+  const skillSummary = skillSynthesis.enabled && skillSynthesis.signals > 0
+    ? ` Skill synthesis: ${skillSynthesis.signals} signals, ${skillSynthesis.candidates} candidates.`
+    : "";
+  const validationNote = candidatesWithoutPassing > 0
+    ? ` ${candidatesWithoutPassing} skill candidate(s) need validation before promotion.`
+    : "";
+  const lifecycleNote = lifecycleProposals > 0
+    ? ` Lifecycle: ${lifecycleProposals} proposal(s) pending review.`
+    : "";
   return {
     status: report.ai_distill.distilled > 0 || report.proposal_candidates > 0 ? "ready" : "no_stable_changes",
     counts,
     agentmemory_export_recommended: false,
     gbrain_export_recommended: false,
-    messages: ["No stable wiki changes were produced in this run."],
-    commands: ["praxisbase personal run --open --json"],
+    messages: [`No stable wiki changes were produced in this run.${skillSummary}${validationNote}${lifecycleNote}`],
+    commands: [
+      "praxisbase personal run --open --json",
+      ...(candidatesWithoutPassing > 0 ? ["praxisbase skill validate --proposal <id> --json"] : []),
+      ...(lifecycleProposals > 0 ? ["praxisbase wiki build-site --json"] : []),
+    ],
   };
 }
 
@@ -1755,6 +1828,22 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     warnings: contextJuiceWarnings,
   };
 
+  const lifecycleReport = await analyzeKnowledgeLifecycle(root, { now });
+  const lifecycleSummary = {
+    proposals_by_decision: lifecycleReport.proposals
+      .filter((proposal) => proposal.decision !== "no_op")
+      .reduce<Record<string, number>>((counts, proposal) => {
+        counts[proposal.decision] = (counts[proposal.decision] ?? 0) + 1;
+        return counts;
+      }, {}),
+  };
+  const validationSummaries = await collectValidationSummaries(root);
+  const validationSummary = {
+    total_reports: validationSummaries.total,
+    by_decision: validationSummaries.by_decision,
+    candidates_without_passing: validationSummaries.candidates_without_passing.length,
+  };
+
   const makeReport = (sitePages: number, qualityFindings: number, outputPaths: string[]): DailyExperienceReport => {
     const reportOutputs = mode === "write"
       ? Array.from(new Set([...outputPaths, aiReportPath, reportPath, runPath])).sort()
@@ -1794,6 +1883,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	        approved: skillSynthesisReport.approved,
 	        rejected: skillSynthesisReport.rejected,
 	        needs_human: skillSynthesisReport.needs_human,
+	        skipped: skillSynthesisReport.skipped,
 	        promoted: skillSynthesisReport.promoted,
 	      } : {
 	        enabled: false,
@@ -1805,8 +1895,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	        approved: 0,
 	        rejected: 0,
 	        needs_human: 0,
+	        skipped: 0,
 	        promoted: 0,
 	      },
+	      lifecycle: lifecycleSummary,
+	      skill_validation: validationSummary,
 	      outputs: reportOutputs,
       warnings: Array.from(new Set(warnings)).sort(),
       created_at: now,

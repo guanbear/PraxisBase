@@ -9,6 +9,7 @@ import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
 import { findApprovedSkillPromotionAudit } from "@praxisbase/core/synthesis/skill-audit.js";
 import { skillCandidateToKnowledgeProposal, synthesizeSkillCandidates } from "@praxisbase/core/synthesis/skill.js";
 import { SemanticSkillReviewSchema, SkillPromotionAuditSchema, SkillSynthesisCandidateSchema } from "@praxisbase/core/synthesis/skill-model.js";
+import { validateSkillCandidateFromProposal, findFreshPassingValidationReport } from "@praxisbase/core/synthesis/skill-validation.js";
 import { buildWikiSite } from "@praxisbase/core/wiki/render-site.js";
 import { PROTOCOL_VERSION } from "@praxisbase/core/protocol/types.js";
 import type { AgentProfile } from "@praxisbase/core/protocol/types.js";
@@ -28,6 +29,7 @@ export interface SkillCommandOptions {
   aiClient?: AiJsonClient;
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
+  requireValidation?: boolean;
 }
 
 async function listFilesRecursively(root: string, relativeDir: string): Promise<string[]> {
@@ -234,6 +236,28 @@ export async function skillCommand(root: string, subcommand: string, options: Sk
       };
       return options.json ? JSON.stringify(result, null, 2) : result.message;
     }
+
+    const requireValidation = options.requireValidation ?? true;
+    if (requireValidation) {
+      const validation = await findFreshPassingValidationReport(root, candidate);
+      if (validation.status !== "pass") {
+        const codeMap: Record<string, string> = {
+          missing: "SKILL_PROMOTION_REQUIRES_VALIDATION",
+          stale: "SKILL_PROMOTION_VALIDATION_STALE",
+          mismatched: "SKILL_PROMOTION_VALIDATION_MISMATCHED",
+          failing: "SKILL_PROMOTION_VALIDATION_FAILING",
+        };
+        const result = {
+          ok: false,
+          code: codeMap[validation.status],
+          message: validation.status === "missing"
+            ? "Stable skill promotion requires a fresh passing validation report. Run `praxisbase skill validate --proposal <id> --json` first."
+            : `Stable skill promotion blocked: ${validation.reason}`,
+        };
+        return options.json ? JSON.stringify(result, null, 2) : result.message;
+      }
+    }
+
     await promoteApprovedProposal(root, {
       proposal,
       review: {
@@ -268,5 +292,19 @@ export async function skillCommand(root: string, subcommand: string, options: Sk
     return options.json ? JSON.stringify({ ok: true, ...result }, null, 2) : result.text;
   }
 
-  throw new Error(`Unknown subcommand "skill ${subcommand}". Use "skill synthesize", "skill curate", "skill review", "skill promote", "skill inject-preview", or "skill export".`);
+  if (subcommand === "validate") {
+    if (!options.proposal) throw new Error("skill validate requires --proposal <id>.");
+    const { report, reportPath } = await validateSkillCandidateFromProposal(root, options.proposal, {
+      now: options.now,
+      write: !options.dryRun,
+    });
+    if (options.json) {
+      return JSON.stringify({ ok: true, report, report_path: reportPath }, null, 2);
+    }
+    return reportPath
+      ? `Validation ${report.decision}: ${report.reason}\nReport: ${reportPath}`
+      : `Validation ${report.decision}: ${report.reason}`;
+  }
+
+  throw new Error(`Unknown subcommand "skill ${subcommand}". Use "skill synthesize", "skill curate", "skill review", "skill promote", "skill inject-preview", "skill validate", or "skill export".`);
 }

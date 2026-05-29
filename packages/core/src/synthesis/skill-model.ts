@@ -7,8 +7,11 @@ const STABLE_SKILL_PATH = /^skills\/[^/]+\/[^/]+\/SKILL\.md$/;
 const SUPPORT_FILE_PATH = /^skills\/[^/]+\/[^/]+\/(references\/[^/]+\.md|templates\/[^/]+\.[A-Za-z0-9._-]+|scripts\/[^/]+\.[A-Za-z0-9._-]+)$/;
 const SKILL_PROMOTION_PATH = /^skills\/[^/]+\/[^/]+\/(SKILL\.md|references\/[^/]+\.md|templates\/[^/]+\.[A-Za-z0-9._-]+|scripts\/[^/]+\.[A-Za-z0-9._-]+)$/;
 
-function validSkillTarget(path: string, action: "skill_create" | "skill_update" | "skill_support_file"): boolean {
+export type SkillCauseClassification = "skill_problem" | "agent_problem" | "environment_problem" | "weak_signal";
+
+function validSkillTarget(path: string, action: "skill_create" | "skill_update" | "skill_support_file" | "skill_optimize_description" | "skip"): boolean {
   if (!SAFE_RELATIVE_PATH.test(path)) return false;
+  if (action === "skip") return true;
   if (action === "skill_support_file") return SUPPORT_FILE_PATH.test(path);
   return STABLE_SKILL_PATH.test(path);
 }
@@ -17,19 +20,20 @@ export const SkillSynthesisCandidateSchema = z.object({
   id: z.string().min(1),
   protocol_version: z.literal(PROTOCOL_VERSION),
   type: z.literal("skill_synthesis_candidate"),
-  action: z.enum(["skill_create", "skill_update", "skill_support_file"]),
+  action: z.enum(["skill_create", "skill_update", "skill_support_file", "skill_optimize_description", "skip"]),
+  cause_classification: z.enum(["skill_problem", "agent_problem", "environment_problem", "weak_signal"]).default("skill_problem"),
   scope: ScopeSchema,
   target_path: z.string().min(1),
   target_skill: z.string().min(1),
   title: z.string().min(1),
   summary: z.string().min(1),
-  body_markdown: z.string().min(1),
+  body_markdown: z.string(),
   source_refs: z.array(z.string().min(1)).min(1),
   source_hashes: z.array(z.string().min(1)).min(1),
   evidence_ids: z.array(z.string().min(1)).min(1),
   source_count: z.number().int().min(1),
   confidence: z.number().min(0).max(1),
-  ladder_choice: z.enum(["skill_update_loaded", "skill_update_existing", "skill_support_file", "skill_create"]),
+  ladder_choice: z.enum(["skill_update_loaded", "skill_update_existing", "skill_support_file", "skill_optimize_description", "skill_create", "skip"]),
   existing_skill_path: z.string().nullable(),
   related_wiki_paths: z.array(z.string()).default([]),
   review_hint: z.object({
@@ -45,11 +49,18 @@ export const SkillSynthesisCandidateSchema = z.object({
       message: "target_path must be a safe skill path; support files are limited to references/, templates/, or scripts/",
     });
   }
-  if (candidate.action !== "skill_create" && !candidate.existing_skill_path) {
+  if (candidate.action !== "skill_create" && candidate.action !== "skip" && !candidate.existing_skill_path) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["existing_skill_path"],
       message: "skill updates and support files must identify the existing skill",
+    });
+  }
+  if (candidate.action !== "skip" && candidate.body_markdown.trim().length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["body_markdown"],
+      message: "body_markdown is required for non-skip candidates",
     });
   }
 });
@@ -92,6 +103,7 @@ export const SkillSynthesisReportSchema = z.object({
   approved: z.number().int().nonnegative(),
   rejected: z.number().int().nonnegative(),
   needs_human: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative().default(0),
   promoted: z.number().int().nonnegative().default(0),
   outputs: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),

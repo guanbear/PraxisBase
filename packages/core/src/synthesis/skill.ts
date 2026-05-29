@@ -295,6 +295,7 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
   let approved = 0;
   let rejected = 0;
   let needsHuman = 0;
+  let skipped = 0;
   const outputs: string[] = [];
   const warnings: string[] = [];
 
@@ -302,6 +303,12 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
     try {
       const matches = matchStableSkills(cluster, inventory);
       let candidate = await proposeSkillCandidate({ cluster, matches, aiClient: input.aiClient, now });
+      if (candidate.action === "skip") {
+        skipped++;
+        const cause = candidate.cause_classification;
+        warnings.push(`skill_synthesis_skipped:${cluster.id}:cause:${cause ?? "unclassified"}`);
+        continue;
+      }
       let reviewResult = await reviewSkillCandidateSemanticallyDetailed({ candidate, client: input.aiClient, now });
       let review = reviewResult.ok ? reviewResult.review : null;
       if (review) reviewed++;
@@ -315,10 +322,15 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
         if (review) reviewed++;
         decision = decideSemanticSkillAction(candidate, review ?? undefined, reviewResult.ok ? undefined : reviewResult.reason);
       }
+      if (decision.action === "skip") {
+        skipped++;
+        warnings.push(`skill_synthesis_skipped:${cluster.id}:cause:${candidate.cause_classification ?? "unclassified"}`);
+        continue;
+      }
       const reviewedCandidate: SkillSynthesisCandidate = {
         ...candidate,
         review_hint: {
-          suggested_decision: decision.action === "reject" ? "reject" : decision.action === "rewrite_as_update" ? "merge" : decision.action === "needs_human" ? "edit" : "approve",
+          suggested_decision: decision.action === "reject" ? "reject" : decision.action === "rewrite_as_update" ? "merge" : decision.action === "needs_human" ? "edit" : decision.action === "skill_optimize_description" ? "approve" : "approve",
           risk_notes: retryApplied ? ["skill_structural_retry:applied", ...decision.review_notes] : decision.review_notes,
         },
       };
@@ -356,6 +368,7 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
     approved,
     rejected,
     needs_human: needsHuman,
+    skipped,
     promoted: 0,
     outputs,
     warnings,

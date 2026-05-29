@@ -26,6 +26,8 @@ const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log", 
 const DEFAULT_LIMIT = 20;
 const DEFAULT_MAX_BYTES = 512 * 1024;
 const MAX_SUMMARY_LENGTH = 1200;
+const MAX_TRAJECTORY_ITEMS = 32;
+const MAX_STRUCTURED_STRING_LENGTH = 500;
 
 function extractCodingAgentExperienceText(item: RawExperienceItem, rawText: string): string {
   const text = item.text ?? item.raw_log ?? rawText;
@@ -201,6 +203,104 @@ function outcomeForItem(item: RawExperienceItem): ExperienceOutcome | undefined 
   return undefined;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function trimmedString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.length > MAX_STRUCTURED_STRING_LENGTH
+    ? `${trimmed.slice(0, MAX_STRUCTURED_STRING_LENGTH)}...[truncated]`
+    : trimmed;
+}
+
+function arrayFromAliases(item: RawExperienceItem, aliases: string[]): unknown[] {
+  for (const alias of aliases) {
+    const value = item[alias];
+    if (Array.isArray(value)) return value;
+  }
+  return [];
+}
+
+function stringArrayFromAliases(item: RawExperienceItem, aliases: string[]): string[] | undefined {
+  const values = arrayFromAliases(item, aliases)
+    .map(trimmedString)
+    .filter((value): value is string => Boolean(value))
+    .slice(0, MAX_TRAJECTORY_ITEMS);
+  return values.length > 0 ? Array.from(new Set(values)) : undefined;
+}
+
+function trajectoryStepsForItem(item: RawExperienceItem): Array<{ goal?: string; action?: string; tool?: string; outcome?: string }> | undefined {
+  const values = arrayFromAliases(item, ["trajectory_steps", "trajectory", "steps", "stages"]);
+  const steps = values
+    .filter(isRecord)
+    .map((entry) => ({
+      goal: trimmedString(entry.goal ?? entry.stage ?? entry.phase ?? entry.objective),
+      action: trimmedString(entry.action ?? entry.summary ?? entry.description),
+      tool: trimmedString(entry.tool ?? entry.command),
+      outcome: trimmedString(entry.outcome ?? entry.result ?? entry.status),
+    }))
+    .filter((entry) => entry.goal || entry.action || entry.tool || entry.outcome)
+    .slice(0, MAX_TRAJECTORY_ITEMS);
+  return steps.length > 0 ? steps : undefined;
+}
+
+function resultCategory(value: unknown): "success" | "failure" | "partial" | "unknown" {
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (/^(success|succeeded|pass|passed|ok|completed)$/.test(normalized)) return "success";
+  if (/^(failure|failed|fail|error|errored)$/.test(normalized)) return "failure";
+  if (/^(partial|warning|warn|degraded)$/.test(normalized)) return "partial";
+  return "unknown";
+}
+
+function booleanValue(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function toolOutcomesForItem(item: RawExperienceItem): Array<{ tool: string; result_category: "success" | "failure" | "partial" | "unknown"; failure_snippet?: string; verification_marker?: boolean }> | undefined {
+  const values = arrayFromAliases(item, ["tool_outcomes", "tool_results", "tools"]);
+  const outcomes = values
+    .filter(isRecord)
+    .map((entry) => {
+      const tool = trimmedString(entry.tool ?? entry.name ?? entry.command);
+      if (!tool) return undefined;
+      const failureSnippet = trimmedString(entry.failure_snippet ?? entry.error ?? entry.stderr);
+      const verificationMarker = booleanValue(entry.verification_marker ?? entry.verification);
+      return {
+        tool,
+        result_category: resultCategory(entry.result_category ?? entry.result ?? entry.status ?? entry.outcome),
+        ...(failureSnippet ? { failure_snippet: failureSnippet } : {}),
+        ...(verificationMarker !== undefined ? { verification_marker: verificationMarker } : {}),
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    .slice(0, MAX_TRAJECTORY_ITEMS);
+  return outcomes.length > 0 ? outcomes : undefined;
+}
+
+function skillEffectivenessHintsForItem(item: RawExperienceItem): Array<"helped" | "hurt" | "missing" | "stale" | "ignored"> | undefined {
+  const allowed = new Set(["helped", "hurt", "missing", "stale", "ignored"]);
+  const values = arrayFromAliases(item, ["skill_effectiveness_hints", "skill_hints"])
+    .map((value) => typeof value === "string" ? value.trim().toLowerCase() : "")
+    .filter((value): value is "helped" | "hurt" | "missing" | "stale" | "ignored" => allowed.has(value))
+    .slice(0, MAX_TRAJECTORY_ITEMS);
+  return values.length > 0 ? Array.from(new Set(values)) : undefined;
+}
+
+function structuredTrajectoryFields(item: RawExperienceItem): Record<string, unknown> {
+  return {
+    trajectory_steps: trajectoryStepsForItem(item),
+    tool_outcomes: toolOutcomesForItem(item),
+    read_skills: stringArrayFromAliases(item, ["read_skills", "skills_read", "used_skills"]),
+    modified_skills: stringArrayFromAliases(item, ["modified_skills", "skills_modified"]),
+    injected_context: stringArrayFromAliases(item, ["injected_context", "context_injected"]),
+    verification_events: stringArrayFromAliases(item, ["verification_events", "verification", "verifications"]),
+    skill_effectiveness_hints: skillEffectivenessHintsForItem(item),
+  };
+}
+
 function sourceRefForItem(source: ExperienceSourceConfig, item: RawExperienceItem, index: number, filePath?: string): string {
   if (item.source_ref) return item.source_ref;
   const itemId = item.remote_id ?? item.id ?? (filePath ? basename(filePath, extname(filePath)) : `item-${index}`);
@@ -261,6 +361,7 @@ function makeEnvelope(
     problem_signature: item.problem_signature ?? signature,
     outcome: outcomeForItem(item),
     redacted_summary: redactedSummary,
+    ...structuredTrajectoryFields(item),
     created_at: typeof item.created_at === "string" ? item.created_at : undefined,
     fetched_at: fetchedAt,
     privacy: {

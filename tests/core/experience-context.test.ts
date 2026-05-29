@@ -396,4 +396,130 @@ Refresh auth and verify the run.
     assert.ok(output.items.some((item) => item.path === "agentmemory://smart-search/mem-1"));
     assert.ok(output.items.some((item) => item.path === "gbrain://query/gbrain-auth"));
   });
+
+  it("ranks PB stable knowledge ahead of catalog and sidecar duplicates with explicit evidence metadata", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-source-rank-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/indexes"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-auth-refresh.md"), `---
+id: openclaw-auth-refresh
+type: procedure
+knowledge_type: procedure
+scope: team
+maturity: verified
+---
+# OpenClaw auth refresh
+
+## When to Use
+Use this when OpenClaw auth refresh is required.
+
+## What To Do
+Refresh auth and verify the run.
+`);
+    await writeFile(join(root, ".praxisbase/indexes/openclaw-auth-refresh.json"), JSON.stringify({
+      id: "catalog-openclaw-auth-refresh",
+      type: "knowledge_catalog",
+      title: "OpenClaw auth refresh catalog duplicate",
+      summary: "Catalog copy of OpenClaw auth refresh.",
+      body: "OpenClaw auth refresh catalog duplicate.",
+    }), "utf8");
+    await addExperienceSource(root, {
+      name: "agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:3111",
+    });
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "OpenClaw auth refresh",
+      maxBytes: 6000,
+      withBackends: ["agentmemory", "gbrain"],
+      fetchImpl: (async (input) => {
+        if (String(input).includes("health")) return new Response(JSON.stringify({ status: "ok" }));
+        return new Response(JSON.stringify({
+          hits: [{ id: "mem-auth", title: "OpenClaw auth refresh", content: "AgentMemory duplicate of OpenClaw auth refresh." }],
+        }));
+      }) as typeof fetch,
+      gbrainRunCommand: async () => ({
+        stdout: "[0.9500] gbrain-openclaw-auth -- OpenClaw auth refresh duplicate from GBrain.",
+        stderr: "",
+      }),
+    });
+
+    const paths = output.items.map((item) => item.path);
+    assert.equal(paths[0], "kb/procedures/openclaw-auth-refresh.md");
+    assert.ok(paths.indexOf(".praxisbase/indexes/openclaw-auth-refresh.json") > 0);
+    assert.ok(paths.indexOf("gbrain://query/gbrain-openclaw-auth") > 0);
+    assert.ok(paths.indexOf("agentmemory://smart-search/mem-auth") > 0);
+
+    const items = output.items as Array<typeof output.items[number] & {
+      source_rank?: string;
+      promotion_evidence?: boolean;
+    }>;
+    const stable = items.find((item) => item.path === "kb/procedures/openclaw-auth-refresh.md");
+    const catalog = items.find((item) => item.path === ".praxisbase/indexes/openclaw-auth-refresh.json");
+    const gbrain = items.find((item) => item.path === "gbrain://query/gbrain-openclaw-auth");
+    const agentmemory = items.find((item) => item.path === "agentmemory://smart-search/mem-auth");
+
+    assert.equal(stable?.source_rank, "pb_stable");
+    assert.equal(stable?.promotion_evidence, true);
+    assert.equal(catalog?.source_rank, "pb_catalog");
+    assert.equal(catalog?.promotion_evidence, false);
+    assert.equal(gbrain?.source_rank, "gbrain_sidecar");
+    assert.equal(gbrain?.promotion_evidence, false);
+    assert.equal(agentmemory?.source_rank, "agentmemory_sidecar");
+    assert.equal(agentmemory?.promotion_evidence, false);
+  });
+
+  it("keeps sidecar support visible even when stable PB matches fill the primary ranking window", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-sidecar-support-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    for (let index = 0; index < 9; index += 1) {
+      await writeFile(join(root, `kb/procedures/openclaw-auth-refresh-${index}.md`), `---
+id: openclaw-auth-refresh-${index}
+type: procedure
+scope: team
+maturity: verified
+---
+# OpenClaw auth refresh ${index}
+
+## When to Use
+Use this stable PB procedure for OpenClaw auth refresh.
+
+## What To Do
+Refresh auth, retry the run, and verify the result.
+`, "utf8");
+    }
+    await addExperienceSource(root, {
+      name: "agentmemory",
+      agent: "agentmemory",
+      sourceType: "agentmemory",
+      scopeDefault: "personal",
+      url: "http://localhost:3111",
+    });
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "OpenClaw auth refresh",
+      maxBytes: 8000,
+      withAgentMemory: true,
+      fetchImpl: (async (input) => {
+        if (String(input).includes("health")) return new Response(JSON.stringify({ status: "ok" }));
+        return new Response(JSON.stringify({
+          hits: [{ id: "supporting-memory", title: "OpenClaw auth refresh support", content: "AgentMemory supporting recall for auth refresh." }],
+        }));
+      }) as typeof fetch,
+    });
+
+    assert.equal(output.items[0]?.source_rank, "pb_stable");
+    assert.ok(output.items.some((item) => item.path === "agentmemory://smart-search/supporting-memory"));
+  });
 });

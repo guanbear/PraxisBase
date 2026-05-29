@@ -15,6 +15,37 @@ agent evidence
 
 GBrain is the runtime brain. Agents use GBrain MCP for broad search, query, graph traversal, and reasoning support. PraxisBase supplies reviewed experience and stable skills to that brain. AgentMemory is an optional source/sink/retrieval sidecar and must never outrank stable PraxisBase knowledge.
 
+## Runtime Relationship
+
+Skills and MCP are not alternative designs.
+
+GBrain MCP provides the runtime channel: retrieval, graph lookup, search, and tool access. Promoted PB skills provide governed operational knowledge: when to use a workflow, what steps to follow, what to verify, and what pitfalls to avoid.
+
+The intended loop is:
+
+```text
+PB stable pages + promoted skills + catalog
+  -> GBrain export
+  -> agent discovers relevant context through GBrain MCP
+  -> agent reads and follows the promoted skill
+  -> new trajectory evidence returns to PB
+```
+
+A skill may instruct an agent to use MCP tools. MCP results may help an agent find a skill. Neither path bypasses PB review when stable knowledge or promoted skills change.
+
+## Outcome Contract
+
+This design is considered complete only when these outcomes are demonstrable:
+
+- repeated failures produce reviewable knowledge or skill candidates rather than raw transcript accumulation;
+- skill evolution favors existing skill update, description optimization, or support-file update before new skill creation;
+- agent misuse and transient environment failures can be classified and skipped;
+- stable context outranks GBrain sidecar and AgentMemory sidecar results when PB has authoritative knowledge;
+- personal evidence stays personal unless explicitly imported and approved;
+- team/org exports include only team-safe stable pages, promoted skills, and catalog entries;
+- lifecycle analysis can propose promotion, decay, or archive without direct stable writes;
+- validation evidence can block or inform promotion policy but cannot promote by itself.
+
 ## Source-Level Borrowing
 
 This change borrows ideas, not runtimes:
