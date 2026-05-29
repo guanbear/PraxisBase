@@ -92,11 +92,11 @@
 
 ## 12. Golden Validation
 
-- [ ] Add local OpenClaw golden fixture and expected lesson assertions.
-- [ ] Add remote OpenClaw golden fixture and expected lesson assertions.
-- [ ] Assert local fixture extracts at least 5 of 8 targets.
-- [ ] Assert remote fixture extracts at least 6 of 8 targets.
-- [ ] Assert every target lesson has evidence spans and no private leakage.
+- [x] Add local OpenClaw golden fixture and expected lesson assertions.
+- [x] Add remote OpenClaw golden fixture and expected lesson assertions.
+- [x] Assert local fixture extracts at least 5 of 8 targets.
+- [x] Assert remote fixture extracts at least 6 of 8 targets.
+- [x] Assert every target lesson has evidence spans and no private leakage.
 
 ## 13. Real Smoke
 

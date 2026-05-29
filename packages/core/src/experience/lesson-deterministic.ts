@@ -16,7 +16,7 @@ type PatternFamily = {
   verification?: string;
   negative_case?: string;
   applies_to_systems: string[];
-  portability: "universal" | "agent_family";
+  portability: ExperienceLesson["portability"];
   confidence: number;
 };
 
@@ -57,6 +57,18 @@ const PATTERN_FAMILIES: PatternFamily[] = [
     confidence: 0.91,
   },
   {
+    id: "main_session_completion_honesty",
+    matches: (excerpt) => /main session.*(already|directly).*(did|completed|wrote)|do not say.*dispatch.*failed.*already/i.test(excerpt),
+    problem: "Agents can misreport task state when fallback or main-session work already completed the user-visible task.",
+    trigger: "When delegation failed but the main session already completed or directly handled the work.",
+    action: "Report the completed main-session work accurately instead of saying the task was not dispatched.",
+    verification: "Compare the user-visible work done in the main session with the delegation status before replying.",
+    negative_case: "Do not claim dispatch failure as the outcome when the requested work was already completed elsewhere.",
+    applies_to_systems: ["agent-runtime", "delegation", "reporting"],
+    portability: "agent_family",
+    confidence: 0.9,
+  },
+  {
     id: "memory_truncation",
     matches: (excerpt) => /memory.*truncat|truncat.*memory|MEMORY\.md.*truncat/i.test(excerpt),
     problem: "Long memory files can be truncated during context injection and lose important instructions.",
@@ -66,6 +78,30 @@ const PATTERN_FAMILIES: PatternFamily[] = [
     applies_to_systems: ["memory", "context-injection"],
     portability: "agent_family",
     confidence: 0.93,
+  },
+  {
+    id: "daily_log_long_term_memory_distinction",
+    matches: (excerpt) => /daily.*log.*raw|raw.*record.*MEMORY|long.term.*memory|distill.*MEMORY/i.test(excerpt),
+    problem: "Raw daily logs and long-term memory have different roles, and mixing them can bury reusable guidance.",
+    trigger: "When maintaining agent memory over time.",
+    action: "Distill durable lessons from raw daily logs into concise long-term memory.",
+    verification: "Check that long-term memory contains reusable lessons rather than unfiltered daily records.",
+    negative_case: "Do not treat raw daily logs as the injected long-term memory surface.",
+    applies_to_systems: ["memory", "context-injection", "daily-logs"],
+    portability: "agent_family",
+    confidence: 0.9,
+  },
+  {
+    id: "openclaw_export_mapping",
+    matches: (excerpt) => /openclaw.*dist.*hash|hash.suffixed.*export|export mapping|export.*mapping/i.test(excerpt),
+    problem: "Bundled OpenClaw distribution files can hide real export names behind hash-suffixed artifacts or mappings.",
+    trigger: "When debugging OpenClaw bundled distribution files or locating runtime functions.",
+    action: "Resolve the export mapping before assuming a function name or file path.",
+    verification: "Confirm the mapped export resolves to the intended runtime function.",
+    negative_case: "Do not assume unmapped bundled export names are stable.",
+    applies_to_systems: ["openclaw", "bundling", "debugging"],
+    portability: "agent_family",
+    confidence: 0.89,
   },
   {
     id: "target_machine_confirmation",
@@ -78,6 +114,30 @@ const PATTERN_FAMILIES: PatternFamily[] = [
     applies_to_systems: ["operations", "infrastructure", "hosts"],
     portability: "agent_family",
     confidence: 0.92,
+  },
+  {
+    id: "voice_primary_delivery",
+    matches: (excerpt) => /voice.*primary|primary.*delivery.*voice|daily report.*voice|no voice.*not.*complete/i.test(excerpt),
+    problem: "Some workflows define voice output as the primary deliverable, so text-only completion can be incomplete.",
+    trigger: "When producing daily reports or deliverables whose channel policy requires voice.",
+    action: "Produce the required voice artifact as part of the deliverable.",
+    verification: "Confirm the voice artifact exists and is attached or delivered through the expected channel.",
+    negative_case: "Do not mark the report complete when the required voice artifact is missing.",
+    applies_to_systems: ["delivery", "voice", "reports"],
+    portability: "agent_family",
+    confidence: 0.9,
+  },
+  {
+    id: "private_route_remote_access",
+    matches: (excerpt) => /private route|tailscale|mac mini|macmini|trusted.*route/i.test(excerpt),
+    problem: "Remote personal infrastructure access can be unsafe or unreliable when it bypasses the trusted private route.",
+    trigger: "Before accessing personal remote machines or services.",
+    action: "Use the configured private route or trusted access path instead of an ad hoc public route.",
+    verification: "Confirm the connection uses the configured trusted route before operating on the machine.",
+    negative_case: "Do not expose private route details in shared team knowledge.",
+    applies_to_systems: ["remote-access", "privacy", "infrastructure"],
+    portability: "environment",
+    confidence: 0.89,
   },
   {
     id: "self_test_after_changes",

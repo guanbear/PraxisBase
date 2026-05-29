@@ -10,6 +10,8 @@ test("M25 golden validation extracts local and remote OpenClaw lessons without p
   const remote = results.find((result) => result.fixture === "openclaw-remote");
   if (!local || !remote) throw new Error("missing golden validation fixtures");
 
+  assert.equal(local.expected_targets.length, 8);
+  assert.equal(remote.expected_targets.length, 8);
   assert.ok(local.matches >= 5);
   assert.ok(remote.matches >= 6);
   assert.deepEqual(local.missing_targets, []);
