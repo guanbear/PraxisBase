@@ -16,6 +16,9 @@ export interface ExtractLessonsWithAiOptions {
   cache?: {
     root: string;
     identity: string;
+    plannerIdentity?: string;
+    parserIdentity?: string;
+    reducerIdentity?: string;
   };
 }
 
@@ -116,6 +119,9 @@ function lessonExtractCachePath(spans: EvidenceSpan[], options: ExtractLessonsWi
   const key = computeHash(JSON.stringify({
     extractor: EXTRACTOR_PROMPT_VERSION,
     identity: options.cache?.identity,
+    plannerIdentity: options.cache?.plannerIdentity ?? "unspecified-planner",
+    parserIdentity: options.cache?.parserIdentity ?? "unspecified-parser",
+    reducerIdentity: options.cache?.reducerIdentity ?? "none",
     agent: options.agent ?? "generic",
     scope: options.scope ?? "personal",
     spans: spanIdentity,

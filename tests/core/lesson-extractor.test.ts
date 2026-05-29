@@ -204,3 +204,76 @@ test("LLM extractor cache identity includes source provenance", async () => {
   const files = await readdir(join(root, protocolPaths.cacheLessonExtract));
   assert.equal(files.length, 2);
 });
+
+test("LLM extractor cache identity includes planner parser and reducer identities", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-lesson-ai-cache-identity-"));
+  let calls = 0;
+  const client = {
+    generateJson: async () => {
+      calls += 1;
+      return {
+        ok: true as const,
+        json: {
+          lessons: [makeLesson()],
+        },
+      };
+    },
+  };
+
+  await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: {
+      root,
+      identity: "glm-4.7",
+      plannerIdentity: "planner-v1",
+      parserIdentity: "parser-v1",
+      reducerIdentity: "reducer-v1",
+    },
+  });
+  await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: {
+      root,
+      identity: "glm-4.7",
+      plannerIdentity: "planner-v2",
+      parserIdentity: "parser-v1",
+      reducerIdentity: "reducer-v1",
+    },
+  });
+  await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: {
+      root,
+      identity: "glm-4.7",
+      plannerIdentity: "planner-v2",
+      parserIdentity: "parser-v2",
+      reducerIdentity: "reducer-v1",
+    },
+  });
+  await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: {
+      root,
+      identity: "glm-4.7",
+      plannerIdentity: "planner-v2",
+      parserIdentity: "parser-v2",
+      reducerIdentity: "reducer-v2",
+    },
+  });
+
+  assert.equal(calls, 4);
+  const files = await readdir(join(root, protocolPaths.cacheLessonExtract));
+  assert.equal(files.length, 4);
+});

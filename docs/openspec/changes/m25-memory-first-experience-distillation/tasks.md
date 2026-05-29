@@ -40,7 +40,7 @@
 - [ ] Add strict JSON lesson extractor prompts and zod validation.
 - [ ] Add malformed-output repair and quarantine.
 - [x] Add AI lesson extraction cache identity using prompt version, CLI/daily model identity, agent, scope, source hash, span id, and excerpt hash.
-- [ ] Include planner/reducer/parser identity in lesson AI cache keys where reduced or planned span inputs affect extraction.
+- [x] Include planner/reducer/parser identity in lesson AI cache keys where reduced or planned span inputs affect extraction.
 - [ ] Require `safe_claim`, `portability`, `privacy_tier`, `applies_to_agents`, `applies_to_systems`, and evidence spans.
 - [ ] Add tests that weak one-off run reports return no lesson.
 

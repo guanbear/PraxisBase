@@ -12,6 +12,7 @@ import {
 
 const SUPPORTED_EXTENSIONS = new Set([".md", ".txt", ".json", ".jsonl", ".log"]);
 const execFileAsync = promisify(execFile);
+export const SOURCE_INVENTORY_PARSER_IDENTITY = "m25-source-inventory-v1";
 
 interface OpenClawSqliteChunkRow {
   id?: unknown;
@@ -579,7 +580,7 @@ export async function buildSourceInventory(
         origin: options.origin,
         mtime: fileStat.mtime.toISOString(),
         size_bytes: fileStat.size,
-        parser_identity: "m25-source-inventory-v1",
+        parser_identity: SOURCE_INVENTORY_PARSER_IDENTITY,
         content_spans: contentSpans,
         privacy_precheck: "allow_for_ai",
       }),

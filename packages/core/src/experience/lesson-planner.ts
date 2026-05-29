@@ -1,5 +1,7 @@
 import type { EvidenceSpan, SourceInventoryItem } from "./lesson-model.js";
 
+export const LESSON_PLANNER_IDENTITY = "m25-lesson-planner-v1";
+
 const SOURCE_KIND_PRIORITY: Record<string, number> = {
   memory_file: 100,
   tools_file: 90,

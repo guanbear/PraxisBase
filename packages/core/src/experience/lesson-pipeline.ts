@@ -16,8 +16,8 @@ import {
 } from "./lesson-cache.js";
 import { extractDeterministicLessons } from "./lesson-deterministic.js";
 import { extractLessonsWithAi } from "./lesson-extractor.js";
-import { planLessonSpans } from "./lesson-planner.js";
-import { buildSourceInventory } from "./source-inventory.js";
+import { LESSON_PLANNER_IDENTITY, planLessonSpans } from "./lesson-planner.js";
+import { SOURCE_INVENTORY_PARSER_IDENTITY, buildSourceInventory } from "./source-inventory.js";
 
 export interface RunLessonPipelineInput {
   sourcePath: string;
@@ -75,6 +75,8 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
         cache: {
           root,
           identity: input.aiCacheIdentity,
+          plannerIdentity: LESSON_PLANNER_IDENTITY,
+          parserIdentity: SOURCE_INVENTORY_PARSER_IDENTITY,
         },
       } : {}),
     })
