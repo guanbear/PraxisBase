@@ -337,7 +337,7 @@ export function extractDeterministicLessons(
 
   for (const span of spans) {
     const excerpt = span.excerpt.trim();
-    if (isWeakSpan(excerpt)) {
+    if (isWeakSpan(excerpt) || isRawCandidateCorpusNoise(excerpt)) {
       continue;
     }
 
@@ -368,6 +368,20 @@ function isWeakSpan(excerpt: string): boolean {
     return true;
   }
   return WEAK_SPAN_PATTERNS.some((pattern) => pattern.test(excerpt));
+}
+
+function isRawCandidateCorpusNoise(excerpt: string): boolean {
+  if (!/\bCandidate:/i.test(excerpt)) return false;
+  const lower = excerpt.toLowerCase();
+  const repeatedCandidateCount = excerpt.match(/\bCandidate:/gi)?.length ?? 0;
+  const noisySignals = [
+    /confidence:\s*0(?:\.0+)?\b/i.test(excerpt),
+    lower.includes("memory/.dreams/session-corpus"),
+    lower.includes("conversation info (untrusted metadata)"),
+    lower.includes("status: staged"),
+    repeatedCandidateCount >= 2,
+  ].filter(Boolean).length;
+  return noisySignals >= 2;
 }
 
 function buildGenericLesson(

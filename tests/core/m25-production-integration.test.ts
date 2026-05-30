@@ -102,6 +102,8 @@ describe("M25 production integration", () => {
     assert.equal(report.lessons.enabled, true);
     assert.equal(report.lessons.source_items, 2);
     assert.ok(report.lessons.deterministic_lessons >= 4);
+    assert.equal(report.lessons.authority_contract.wiki_semantic_input, "lesson_clusters");
+    assert.equal(report.lessons.authority_contract.promotion_evidence.lesson_state_authority, true);
     assert.ok(report.lessons.report_ref);
 
     const lessonReport = JSON.parse(await readFile(join(root, report.lessons.report_ref!), "utf8")) as {

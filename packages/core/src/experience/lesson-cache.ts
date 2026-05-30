@@ -203,7 +203,7 @@ export async function loadLessonStateCache(root: string): Promise<LessonCacheRec
       console.warn("lesson_state_cache_invalid");
       return [];
     }
-    return records;
+    return records.filter((record) => !isRawCandidateCorpusLesson(record.lesson));
   } catch (error) {
     console.warn(`lesson_state_cache_corrupt:${error instanceof Error ? error.message : String(error)}`);
     return [];
@@ -249,6 +249,7 @@ export function upsertLessonToCache(
   now: string,
   options: UpsertLessonCacheOptions = {},
 ): LessonCacheRecord[] {
+  records = records.filter((record) => !isRawCandidateCorpusLesson(record.lesson));
   const stableKey = lessonStableKey(lesson);
   const existingIndex = records.findIndex((record) => record.stable_key === stableKey);
   if (existingIndex === -1) {
@@ -584,6 +585,29 @@ function normalizeLessonArrays(lesson: ExperienceLesson): ExperienceLesson {
     source_refs: uniqueStrings(lesson.source_refs),
     source_hashes: uniqueStrings(lesson.source_hashes),
   };
+}
+
+function isRawCandidateCorpusLesson(lesson: ExperienceLesson): boolean {
+  const texts = [
+    lesson.claim,
+    lesson.safe_claim,
+    ...lesson.evidence_spans.map((span) => span.excerpt ?? ""),
+  ];
+  return texts.some(isRawCandidateCorpusNoise);
+}
+
+function isRawCandidateCorpusNoise(text: string): boolean {
+  if (!/\bCandidate:/i.test(text)) return false;
+  const lower = text.toLowerCase();
+  const repeatedCandidateCount = text.match(/\bCandidate:/gi)?.length ?? 0;
+  const noisySignals = [
+    /confidence:\s*0(?:\.0+)?\b/i.test(text),
+    lower.includes("memory/.dreams/session-corpus"),
+    lower.includes("conversation info (untrusted metadata)"),
+    lower.includes("status: staged"),
+    repeatedCandidateCount >= 2,
+  ].filter(Boolean).length;
+  return noisySignals >= 2;
 }
 
 function appendStateHistory(

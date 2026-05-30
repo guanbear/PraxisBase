@@ -2129,6 +2129,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	        rejected: lessonReport.counts_by_state["rejected"] ?? 0,
 	        wiki_evidence: lessonReport.wiki_evidence,
 	        ai_cache: lessonReport.ai_cache,
+	        authority_contract: lessonReport.authority_contract,
 	        golden_validation: [],
 	        report_ref: lessonReportRef,
 	      } : {

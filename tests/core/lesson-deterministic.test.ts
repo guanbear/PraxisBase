@@ -50,6 +50,20 @@ test("uses a structured safe claim instead of raw candidate evidence", () => {
   assert.match(lessons[0]!.safe_claim, /acknowledgement|ACK/i);
 });
 
+test("skips raw OpenClaw candidate corpus noise", () => {
+  const span = makeSpan([
+    "- Candidate: - Candidate: User: route=direct | worker_pool=octoclaw-main | task_class=main_direct",
+    "Conversation info (untrusted metadata): ```json { \"message_id\": \"1776570461.813469\" }",
+    "- confidence: 0.00 - evidence: memory/.dreams/session-corpus/2026-04-19.txt:307-307",
+    "- recalls: 0 - status: staged - Candidate: User: route=direct",
+    "Mac mini Tailscale private route was mentioned in the raw transcript.",
+  ].join(" "));
+
+  const lessons = extractDeterministicLessons([span], options);
+
+  assert.equal(lessons.length, 0);
+});
+
 test("skips weak smoke-only span", () => {
   const span = makeSpan("Smoke ran successfully.");
 

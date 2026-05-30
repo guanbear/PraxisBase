@@ -224,6 +224,33 @@ test("lesson cache increments observation count for repeated sightings", () => {
   assert.equal(second[0]!.last_seen_at, "2026-05-29T01:00:00.000Z");
 });
 
+test("lesson cache drops stale raw candidate corpus lessons before upsert", () => {
+  const noisyExcerpt = [
+    "- Candidate: - Candidate: User: route=direct | worker_pool=octoclaw-main",
+    "Conversation info (untrusted metadata): ```json { \"message_id\": \"1776570461.813469\" }",
+    "- confidence: 0.00 - evidence: memory/.dreams/session-corpus/2026-04-19.txt:307-307",
+    "- status: staged - Candidate: User: route=direct",
+  ].join(" ");
+  const noisy = makeLesson({
+    lesson_id: "noisy",
+    claim: noisyExcerpt,
+    evidence_spans: [{ span_id: "bad", excerpt: noisyExcerpt }],
+  });
+  const clean = makeLesson({
+    lesson_id: "clean",
+    claim: "Confirm target machine before restart.",
+    safe_claim: "Confirm target machine before restart.",
+    evidence_spans: [{ span_id: "good", excerpt: "Confirm target machine before restart." }],
+  });
+  const initial = upsertLessonToCache([], noisy, "2026-05-29T00:00:00.000Z");
+
+  const next = upsertLessonToCache(initial, clean, "2026-05-29T00:01:00.000Z");
+
+  assert.equal(next.length, 1);
+  assert.equal(next[0]!.lesson.lesson_id, "clean");
+  assert.deepEqual(next[0]!.lesson.evidence_spans.map((span: any) => span.span_id), ["good"]);
+});
+
 test("lesson cache keeps forgotten rejected and dismissed records from resurrecting", () => {
   const now = "2026-05-29T00:00:00.000Z";
   const stableKey = lessonStableKey(makeLesson());
