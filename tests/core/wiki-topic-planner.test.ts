@@ -469,6 +469,37 @@ describe("planWikiPages", () => {
     const plans = planWikiPages(topics, existing);
     assert.equal(plans[0].action, "update");
   });
+
+  it("prefers updating existing pages that share lesson signatures", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "Slow tool work can leave users without timely feedback",
+        action: "Send a short acknowledgement first",
+        source_hash: "sha256:new",
+        entities: ["agent-runtime"],
+        topics: ["lesson:ack-before-slow-work", "portability:universal"],
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/procedures/ack-before-long-work.md",
+        title: "ACK before long work",
+        slug: "ack-before-long-work",
+        source_hashes: ["sha256:old"],
+        entities: ["agent-runtime"],
+        signatures: ["lesson:ack-before-slow-work", "portability:universal"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing);
+
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, "kb/procedures/ack-before-long-work.md");
+    assert.ok(plans[0].reasons.includes("signature_overlap"));
+  });
 });
 
 describe("planWikiPages with relationship plans", () => {

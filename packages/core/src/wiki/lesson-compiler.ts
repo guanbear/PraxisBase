@@ -45,6 +45,18 @@ export function buildWikiEvidenceFromLessons(lessons: WikiEvidenceLesson[]): Wik
         lesson.safe_claim,
         ...(lesson.negative_case ? [lesson.negative_case] : []),
       ],
+      portability: lesson.portability,
+      applies_to_agents: lesson.applies_to_agents,
+      applies_to_systems: lesson.applies_to_systems,
+      evidence_spans: lesson.evidence_spans.map((span) => ({
+        source_ref: span.source_ref,
+        source_hash: span.source_hash,
+        span_id: span.span_id,
+        line_start: span.line_start,
+        line_end: span.line_end,
+        heading_path: span.heading_path,
+        excerpt: span.excerpt,
+      })),
       signatures: [
         ...lesson.applies_to_systems.map((system) => `system:${system}`),
         `portability:${lesson.portability}`,

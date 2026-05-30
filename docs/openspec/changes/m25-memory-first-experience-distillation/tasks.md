@@ -61,17 +61,17 @@
 ## 8. Wiki Compiler Integration
 
 - [x] Feed wiki curation from lesson clusters rather than raw evidence summaries.
-- [ ] Render wiki candidates with applicability, procedure/recommendation, verification, negative case, portability, privacy tier, links, and span provenance.
-- [ ] Prefer updating existing pages before creating new pages.
+- [x] Render wiki candidates with applicability, procedure/recommendation, verification, negative case, portability, privacy tier, links, and span provenance.
+- [x] Prefer updating existing pages before creating new pages.
 - [x] Add integration tests proving `wiki_ready` lesson clusters win when legacy distilled summaries exist for the same source.
 - [x] Add wiki quality tests proving output is synthesized and linked, not raw copied summaries.
 
 ## 9. Skill Synthesis Integration
 
 - [x] Feed skill synthesis from `skill_ready` lessons and stable procedural pages.
-- [ ] Preserve update-before-create and umbrella-skill matching.
-- [ ] Add deterministic repair for fixable skill format errors before human review.
-- [ ] Keep unreviewed candidates out of normal agent injection.
+- [x] Preserve update-before-create and umbrella-skill matching.
+- [x] Add deterministic repair for fixable skill format errors before human review.
+- [x] Keep unreviewed candidates out of normal agent injection.
 - [x] Reject promotion-eligible skill candidates that are supported only by raw logs, one-off summaries, or sidecar hits without lesson-state authority.
 
 ## 10. Runtime Personal Injection

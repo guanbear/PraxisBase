@@ -261,6 +261,7 @@ export function buildWikiTopics(observations: WikiObservation[]): WikiTopic[] {
       source_hashes: sourceHashes,
       source_count: sourceRefs.length,
       entities,
+      signatures: uniqSorted(bucket.flatMap((o) => o.topics)),
       related_topic_keys: [],
       confidence: confidenceForObservations(bucket),
       maturity: "draft",
@@ -436,6 +437,14 @@ function findMatchingPage(
   );
   if (byHash) return byHash;
 
+  const topicSignatures = new Set((topic.signatures ?? []).filter((signature) => signature.startsWith("lesson:") || signature.startsWith("portability:") || signature.startsWith("system:")));
+  if (topicSignatures.size > 0) {
+    const bySignature = existingPages.find((p) =>
+      (p.signatures ?? []).some((signature) => topicSignatures.has(signature)),
+    );
+    if (bySignature) return bySignature;
+  }
+
   return undefined;
 }
 
@@ -488,12 +497,18 @@ export function planWikiPages(
         const sameSourceHash = topic.source_hashes.some((h) =>
           match.source_hashes.includes(h),
         );
+        const sameSignature = (topic.signatures ?? []).some((signature) =>
+          (match.signatures ?? []).includes(signature),
+        );
         if (sameSourceHash) {
           action = "update";
           existingSourceHash = topic.source_hashes.find((h) =>
             match.source_hashes.includes(h),
           );
           reasons.push("source_hash_overlap");
+        } else if (sameSignature) {
+          action = "update";
+          reasons.push("signature_overlap");
         } else {
           action = "update";
           reasons.push("existing_page_match");

@@ -2,7 +2,11 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildWikiEvidenceFromLessons } from "@praxisbase/core";
+import {
+  buildWikiEvidenceFromLessons,
+  clusterWikiEvidence,
+  synthesizeCuratedWikiProposal,
+} from "@praxisbase/core";
 
 test("lesson-derived wiki evidence is synthesized and span-cited", () => {
   const evidence = buildWikiEvidenceFromLessons([{
@@ -131,4 +135,63 @@ test("lesson-derived wiki evidence excludes private or human-required stable les
   ]);
 
   assert.equal(evidence.length, 0);
+});
+
+test("lesson-derived wiki proposals render applicability and span provenance", async () => {
+  const evidence = buildWikiEvidenceFromLessons([{
+    lesson_id: "lesson_ack",
+    claim: "Send ACK before slow work.",
+    safe_claim: "Send ACK before slow work.",
+    problem: "Slow tool work can leave users without timely feedback.",
+    trigger: "Before tool, network, dispatch, or other work that may take more than a few seconds.",
+    action: "Send a short acknowledgement before starting the slow operation.",
+    verification: "The acknowledgement appears before the tool call in the transcript.",
+    negative_case: "Do not stay silent while a long-running tool call is pending.",
+    applies_to_agents: ["codex", "openclaw"],
+    applies_to_systems: ["agent-runtime", "tooling"],
+    portability: "universal",
+    privacy_tier: "safe",
+    scope: "personal",
+    confidence: 0.92,
+    cue_family: "native_memory",
+    source_refs: ["source-inventory://openclaw/MEMORY.md"],
+    source_hashes: ["sha256:m"],
+    state: "wiki_ready",
+    evidence_spans: [{
+      source_item_id: "memory",
+      source_ref: "source-inventory://openclaw/MEMORY.md",
+      source_hash: "sha256:m",
+      span_id: "ack-1",
+      line_start: 12,
+      line_end: 14,
+      byte_start: 120,
+      byte_end: 180,
+      heading_path: ["Runtime"],
+      excerpt: "Need tools or dispatch: send ACK first.",
+      excerpt_hash: "sha256:e",
+      span_kind: "bullet",
+    }],
+    redaction_notes: [],
+    created_at: "2026-05-29T00:00:00.000Z",
+  }]);
+  const [cluster] = clusterWikiEvidence(evidence);
+
+  const result = await synthesizeCuratedWikiProposal(cluster!, {
+    evidence,
+    now: "2026-05-29T00:00:00.000Z",
+  });
+
+  assert.equal(result.ok, true);
+  assert.match(result.proposal.body_markdown, /## Applicability/);
+  assert.match(result.proposal.body_markdown, /Portability: universal/);
+  assert.match(result.proposal.body_markdown, /Privacy: safe/);
+  assert.match(result.proposal.body_markdown, /Agents: codex, openclaw/);
+  assert.match(result.proposal.body_markdown, /Systems: agent-runtime, tooling/);
+  assert.match(result.proposal.body_markdown, /## What To Do/);
+  assert.match(result.proposal.body_markdown, /Send a short acknowledgement/);
+  assert.match(result.proposal.body_markdown, /## Verify/);
+  assert.match(result.proposal.body_markdown, /## Negative Cases/);
+  assert.match(result.proposal.body_markdown, /## Span Provenance/);
+  assert.match(result.proposal.body_markdown, /source-inventory:\/\/openclaw\/MEMORY\.md#ack-1/);
+  assert.match(result.proposal.body_markdown, /lines 12-14/);
 });

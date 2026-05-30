@@ -735,12 +735,48 @@ function titleFromCluster(cluster: WikiEvidenceCluster): string {
   return cluster.normalized_title;
 }
 
+function commaList(values: string[]): string {
+  return uniq(values).join(", ");
+}
+
+function renderApplicability(evidence: WikiEvidenceItem[]): string[] {
+  const scopes = commaList(evidence.map((item) => item.scope));
+  const portability = commaList(evidence.flatMap((item) => item.portability ? [item.portability] : []));
+  const agents = commaList(evidence.flatMap((item) => item.applies_to_agents ?? []));
+  const systems = commaList(evidence.flatMap((item) => item.applies_to_systems ?? []));
+  const privacy = commaList(evidence.map((item) => item.privacy_verdict));
+  const lines = [
+    scopes ? `- Scope: ${scopes}` : undefined,
+    portability ? `- Portability: ${portability}` : undefined,
+    agents ? `- Agents: ${agents}` : undefined,
+    systems ? `- Systems: ${systems}` : undefined,
+    privacy ? `- Privacy: ${privacy}` : undefined,
+  ].filter((line): line is string => Boolean(line));
+  return lines.length > 0 ? lines : ["- Use this only when the current task matches the symptoms and provenance on this page."];
+}
+
+function renderSpanProvenance(evidence: WikiEvidenceItem[]): string[] {
+  const spanLines = evidence
+    .flatMap((item) => item.evidence_spans ?? [])
+    .slice(0, 8)
+    .map((span) => {
+      const lines = typeof span.line_start === "number" && typeof span.line_end === "number"
+        ? ` lines ${span.line_start}-${span.line_end}`
+        : "";
+      const heading = span.heading_path.length > 0 ? ` (${span.heading_path.join(" > ")})` : "";
+      const excerpt = span.excerpt ? ` - ${span.excerpt}` : "";
+      return `- ${span.source_ref}#${span.span_id}${lines}${heading}${excerpt}`;
+    });
+  return spanLines.length > 0 ? spanLines : [];
+}
+
 function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], titleOverride?: string): string {
   const title = titleOverride ?? titleFromCluster(cluster);
   const actions = uniq(evidence.flatMap((item) => item.actions)).slice(0, 5);
   const failed = uniq(evidence.flatMap((item) => item.failed_attempts)).slice(0, 4);
   const verification = uniq(evidence.flatMap((item) => item.verification)).slice(0, 4);
   const lessons = uniq(evidence.flatMap((item) => item.reusable_lessons)).slice(0, 5);
+  const spanProvenance = renderSpanProvenance(evidence);
   const summaryLines = evidence.flatMap((item) => (item.problem ?? item.summary).split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
   const symptom = summaryLines.find((line) => /\b(failed|failure|error|slow|reported|missing|timeout|stuck)\b|反馈|没有|不能|失败|超时|慢/i.test(line))
     ?? summaryLines[0]
@@ -756,19 +792,23 @@ function buildBody(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], t
     "## When to Use",
     `Use this when ${whenToUse.replace(/[.。]\s*$/, "")}.`,
     "",
+    "## Applicability",
+    ...renderApplicability(evidence),
+    "",
     "## Symptoms",
     symptom,
     "",
     "## What To Do",
     ...(actions.length > 0 ? actions.map((action) => `- ${action}`) : ["- Review the provenance and apply the repeated successful action."]),
     "",
-    ...(failed.length > 0 ? ["## Failed Attempts", ...failed.map((item) => `- ${item}`), ""] : []),
+    ...(failed.length > 0 ? ["## Negative Cases", ...failed.map((item) => `- ${item}`), ""] : []),
     "## Verify",
     ...(verification.length > 0 ? verification.map((item) => `- ${item}`) : ["- Re-run the failing workflow and confirm the original symptom is gone."]),
     "",
     "## Reusable Lessons",
     ...(lessons.length > 0 ? lessons.map((item) => `- ${item}`) : ["- Keep this page updated when the same signature appears again."]),
     "",
+    ...(spanProvenance.length > 0 ? ["## Span Provenance", ...spanProvenance, ""] : []),
     renderAgentUseSection({
       title,
       whenToUse,
