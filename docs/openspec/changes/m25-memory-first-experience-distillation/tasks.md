@@ -103,7 +103,7 @@
 - [x] Run a small personal daily against local OpenClaw and Codex sources with AI configured.
 - [x] Run remote trusted personal OpenClaw source fetch/import if credentials are available.
 - [x] Confirm trusted remote OpenClaw lesson extraction uses staged raw evidence rather than envelope-only JSON.
-- [ ] Inspect generated wiki candidates and lesson cache quality.
-- [ ] Inspect HTML site for useful lesson visibility.
-- [ ] Record unresolved quality gaps before full daily.
-- [ ] Confirm reports show which outputs came from `active_personal`, `wiki_ready`, `skill_ready`, stable PB pages, GBrain sidecars, and AgentMemory sidecars.
+- [x] Inspect generated wiki candidates and lesson cache quality.
+- [x] Inspect HTML site for useful lesson visibility.
+- [x] Record unresolved quality gaps before full daily.
+- [x] Confirm reports show which outputs came from `active_personal`, `wiki_ready`, `skill_ready`, stable PB pages, GBrain sidecars, and AgentMemory sidecars.
