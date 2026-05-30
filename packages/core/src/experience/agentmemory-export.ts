@@ -8,6 +8,7 @@ import { AgentMemoryClient, type AgentMemoryRememberPayload } from "./agentmemor
 import { listExperienceSources } from "./source-config.js";
 import { collectWikiPages } from "../wiki/render-site.js";
 import type { WikiSitePage } from "../wiki/site-model.js";
+import { stableOutputLeakReasons } from "./stable-output-safety.js";
 
 const MAX_REMEMBER_CONTENT_CHARS = 4000;
 
@@ -226,8 +227,21 @@ function wikiPageToStablePage(page: WikiSitePage): StablePage {
   };
 }
 
-async function collectExportableStablePages(root: string): Promise<StablePage[]> {
-  return (await collectWikiPages(root)).map(wikiPageToStablePage);
+function filterExportSafePages(pages: StablePage[]): { pages: StablePage[]; warnings: string[] } {
+  const warnings: string[] = [];
+  const safePages = pages.filter((page) => {
+    const reasons = stableOutputLeakReasons(page.content);
+    if (reasons.length === 0) return true;
+    warnings.push(`AGENTMEMORY_EXPORT_SKIPPED_PRIVATE: ${page.relativePath} (${reasons.join(",")})`);
+    return false;
+  });
+  return { pages: safePages, warnings };
+}
+
+async function collectExportableStablePages(root: string): Promise<{ pages: StablePage[]; warnings: string[]; scanned: number }> {
+  const pages = (await collectWikiPages(root)).map(wikiPageToStablePage);
+  const filtered = filterExportSafePages(pages);
+  return { ...filtered, scanned: pages.length };
 }
 
 function pageToExportPayload(page: StablePage): AgentMemoryExportPayload {
@@ -281,22 +295,24 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
     return emptyResult(options.mode, ["AGENTMEMORY_TEAM_EXPORT_BLOCKED: team export requires explicit allowTeamExport flag."]);
   }
 
-  const pages = await collectExportableStablePages(root);
+  const collected = await collectExportableStablePages(root);
+  const pages = collected.pages;
+  const warnings = [...collected.warnings];
   const payloads = pages.map(pageToExportPayload);
 
   if (options.dryRun) {
     return {
       ok: true,
       mode: options.mode,
-      pages: pages.length,
+      pages: collected.scanned,
       payloads,
       exported: 0,
       already_present: 0,
       skipped: payloads.length,
       errors: [],
-      warnings: [],
+      warnings,
       summary: exportSummary({
-        pages: pages.length,
+        pages: collected.scanned,
         payloads: payloads.length,
         exported: 0,
         alreadyPresent: 0,
@@ -306,13 +322,12 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
   }
 
   const errors: string[] = [];
-  const warnings: string[] = [];
   const source = await findAgentMemorySource(root, options.sourceName);
   if (!source) {
     return {
       ok: false,
       mode: options.mode,
-      pages: pages.length,
+      pages: collected.scanned,
       payloads,
       exported: 0,
       already_present: 0,
@@ -320,7 +335,7 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
       errors: ["AGENTMEMORY_NO_SOURCE"],
       warnings,
       summary: exportSummary({
-        pages: pages.length,
+        pages: collected.scanned,
         payloads: payloads.length,
         exported: 0,
         alreadyPresent: 0,
@@ -336,7 +351,7 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
     return {
       ok: false,
       mode: options.mode,
-      pages: pages.length,
+      pages: collected.scanned,
       payloads,
       exported: 0,
       already_present: 0,
@@ -344,7 +359,7 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
       errors: [error instanceof Error ? error.message : String(error)],
       warnings,
       summary: exportSummary({
-        pages: pages.length,
+        pages: collected.scanned,
         payloads: payloads.length,
         exported: 0,
         alreadyPresent: 0,
@@ -375,7 +390,7 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
   return {
     ok: errors.length === 0,
     mode: options.mode,
-    pages: pages.length,
+    pages: collected.scanned,
     payloads,
     exported,
     already_present: alreadyPresent,
@@ -383,7 +398,7 @@ export async function exportAgentMemory(root: string, options: ExportAgentMemory
     errors,
     warnings,
     summary: exportSummary({
-      pages: pages.length,
+      pages: collected.scanned,
       payloads: payloads.length,
       exported,
       alreadyPresent,

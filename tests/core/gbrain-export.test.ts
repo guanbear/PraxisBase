@@ -250,6 +250,36 @@ A test fix.
     assert.ok(!serialized.includes("raw_log"), "Raw log key should not appear in export");
   });
 
+  it("skips stable pages with private material before building GBrain payloads", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-private-stable-"));
+    await writePage(root, "kb/procedures/safe.md", "# Safe page\n\nPublic operational lesson.");
+    await writePage(root, "kb/procedures/private-remote.md", "# Private Remote\n\nUse root@guanzhicheng.com through macmini-ssh.");
+    await writePage(root, "skills/openclaw/private/SKILL.md", "# Private Skill\n\nUse ~/.ssh/openclaw_key before restart.");
+
+    const result = await exportGBrain(root, { mode: "personal", dryRun: true });
+
+    const serialized = JSON.stringify(result.payloads);
+    assert.ok(!serialized.includes("root@guanzhicheng.com"));
+    assert.ok(!serialized.includes("macmini-ssh"));
+    assert.ok(!serialized.includes("openclaw_key"));
+    assert.ok(result.payloads.some((payload) => payload.pagePath === "kb/procedures/safe.md"));
+    assert.ok(result.warnings.some((warning) => warning.includes("GBRAIN_EXPORT_SKIPPED_PRIVATE")));
+  });
+
+  it("allows stable policy lessons that mention token expiry without concrete secrets", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-policy-token-"));
+    await writePage(root, "kb/procedures/auth-expired.md", "# Auth Expired\n\nSession token expired after 24h. Refresh auth and retry.");
+    await writePage(root, "kb/procedures/concrete-secret.md", "# Concrete Secret\n\nRetry with token=abc123456789 before refresh.");
+
+    const result = await exportGBrain(root, { mode: "personal", dryRun: true });
+
+    const pagePaths = result.payloads.map((payload) => payload.pagePath);
+    assert.ok(pagePaths.includes("kb/procedures/auth-expired.md"));
+    assert.ok(!pagePaths.includes("kb/procedures/concrete-secret.md"));
+    assert.ok(!JSON.stringify(result.payloads).includes("abc123456789"));
+    assert.ok(result.warnings.some((warning) => warning.includes("concrete-secret.md")));
+  });
+
   it("team export skips personal/project scopes and still includes catalog", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-gbrain-team-scopes-"));
     await writePage(root, "kb/procedures/personal-thing.md", `---

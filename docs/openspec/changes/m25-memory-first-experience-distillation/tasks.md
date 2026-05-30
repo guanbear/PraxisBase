@@ -48,7 +48,7 @@
 
 - [x] Add abstraction rules for hostnames, IPs, paths, key paths, accounts, raw platform user ids, private wrapper commands, and private remote names.
 - [x] Add team-mode stricter routing for personal/private evidence.
-- [ ] Block stable output leakage into `kb/`, `skills/`, `dist/`, GBrain export, and AgentMemory export.
+- [x] Block stable output leakage into `kb/`, `skills/`, `dist/`, GBrain export, and AgentMemory export.
 - [x] Add tests with remote OpenClaw private details.
 
 ## 7. Lesson Stability And Dedupe

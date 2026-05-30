@@ -190,6 +190,39 @@ describe("exportAgentMemory", () => {
     assert.equal(result.payloads.length, 1);
   });
 
+  it("skips stable pages with private material before AgentMemory export", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-export-private-stable-"));
+    await createKbWithPages(root, {
+      "kb/known-fixes/safe.md": "# Safe\n\nReusable public lesson.",
+      "kb/known-fixes/private.md": "# Private\n\nRestart root@guanzhicheng.com through macmini-ssh.",
+      "skills/openclaw/private/SKILL.md": "# Private Skill\n\nUse token=abc123456789 before retry.",
+    });
+
+    const result = await exportAgentMemory(root, { mode: "personal", dryRun: true });
+
+    const serialized = JSON.stringify(result.payloads);
+    assert.deepEqual(result.payloads.map((payload) => payload.pagePath), ["kb/known-fixes/safe.md"]);
+    assert.ok(!serialized.includes("root@guanzhicheng.com"));
+    assert.ok(!serialized.includes("macmini-ssh"));
+    assert.ok(!serialized.includes("abc123456789"));
+    assert.ok(result.warnings.some((warning) => warning.includes("AGENTMEMORY_EXPORT_SKIPPED_PRIVATE")));
+  });
+
+  it("allows stable policy lessons that mention token expiry without concrete secrets", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-export-policy-token-"));
+    await createKbWithPages(root, {
+      "kb/known-fixes/auth-expired.md": "# Auth Expired\n\nSession token expired after 24h. Refresh auth and retry.",
+      "kb/known-fixes/concrete-secret.md": "# Concrete Secret\n\nRetry with token=abc123456789 before refresh.",
+    });
+
+    const result = await exportAgentMemory(root, { mode: "personal", dryRun: true });
+
+    assert.deepEqual(result.payloads.map((payload) => payload.pagePath), ["kb/known-fixes/auth-expired.md"]);
+    assert.ok(result.payloads[0].payload.content.includes("Session token expired"));
+    assert.ok(!JSON.stringify(result.payloads).includes("abc123456789"));
+    assert.ok(result.warnings.some((warning) => warning.includes("concrete-secret.md")));
+  });
+
   it("POSTs payloads to agentmemory daemon when not dry-run", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-export-post-"));
     await createKbWithPages(root, { "kb/known-fixes/fix.md": "# Fix\n\nThe fix content." });

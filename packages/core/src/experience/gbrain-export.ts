@@ -5,6 +5,7 @@ import type { WikiSitePage } from "../wiki/site-model.js";
 import { GBrainClient, type GBrainCommandRunner } from "./gbrain-client.js";
 import { gbrainExecutable, readGBrainConfig, type GBrainConfig } from "./gbrain-config.js";
 import { GBrainRemoteClient, type FetchLike } from "./gbrain-remote.js";
+import { stableOutputLeakReasons } from "./stable-output-safety.js";
 
 const MAX_CAPTURE_CONTENT_CHARS = 4000;
 
@@ -194,6 +195,14 @@ function isTeamSafePage(page: WikiSitePage): boolean {
   return page.scope === "team" || page.scope === "org";
 }
 
+function isExportSafePage(page: WikiSitePage, warnings: string[]): boolean {
+  const content = page.body_markdown ?? page.body_text;
+  const reasons = stableOutputLeakReasons(content);
+  if (reasons.length === 0) return true;
+  warnings.push(`GBRAIN_EXPORT_SKIPPED_PRIVATE: ${page.path} (${reasons.join(",")})`);
+  return false;
+}
+
 async function resolveExportConfig(root: string, options: ExportGBrainOptions): Promise<GBrainConfig | null> {
   if (options.config !== undefined) return options.config;
   return readGBrainConfig(root);
@@ -209,7 +218,7 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
   const pages = await collectWikiPages(root);
   const warnings: string[] = [];
 
-  const exportablePages = options.mode === "team"
+  const scopeFilteredPages = options.mode === "team"
     ? pages.filter((page) => {
       if (!isTeamSafePage(page)) {
         warnings.push(page.scope === "personal"
@@ -220,6 +229,7 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
       return true;
     })
     : pages;
+  const exportablePages = scopeFilteredPages.filter((page) => isExportSafePage(page, warnings));
 
   const wikiPayloads = exportablePages
     .filter((page) => page.page_kind !== "skill")
