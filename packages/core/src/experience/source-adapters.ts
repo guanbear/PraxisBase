@@ -101,6 +101,44 @@ interface OpenClawSqliteChunkRow {
   updated_at?: unknown;
 }
 
+function isOpenClawDreamingRef(value: string): boolean {
+  const lower = value.toLowerCase();
+  return lower.includes("memory/dreaming/") ||
+    lower.includes("memory/.dreams/") ||
+    lower.includes("/.dreams/") ||
+    lower.includes("dream-diary");
+}
+
+function isOpenClawCandidateCorpusText(value: string): boolean {
+  const lower = value.toLowerCase();
+  if (!lower.includes("candidate:")) return false;
+  const signals = [
+    lower.includes("confidence: 0.00"),
+    lower.includes("confidence: 0.58"),
+    lower.includes("memory/.dreams/session-corpus"),
+    lower.includes("conversation info (untrusted metadata)"),
+    lower.includes("status: staged"),
+  ].filter(Boolean).length;
+  return signals >= 2;
+}
+
+function isOpenClawDreamingNoiseItem(item: RawExperienceItem, rawText: string): boolean {
+  const refs = [
+    item.source_ref,
+    item.id,
+    item.remote_id,
+  ].filter((value): value is string => typeof value === "string" && value.length > 0);
+  if (refs.some(isOpenClawDreamingRef)) return true;
+  const itemTextFields = [
+    item.summary,
+    item.redacted_summary,
+    item.raw_log,
+    item.text,
+  ].filter((value): value is string => typeof value === "string" && value.length > 0);
+  const textForNoiseCheck = itemTextFields.length > 0 ? itemTextFields.join("\n") : rawText;
+  return isOpenClawCandidateCorpusText(textForNoiseCheck);
+}
+
 function expandSourcePath(path: string, root?: string): string {
   if (path === "~") return homedir();
   if (path.startsWith("~/")) return join(homedir(), path.slice(2));
@@ -486,6 +524,7 @@ function itemText(item: RawExperienceItem, rawText: string): string {
 }
 
 function shouldUseItem(source: ExperienceSourceConfig, item: RawExperienceItem, rawText: string): boolean {
+  if (source.agent === "openclaw" && isOpenClawDreamingNoiseItem(item, rawText)) return false;
   if (source.agent !== "codex") return true;
   return isUsefulCodexExperience(item, rawText);
 }
@@ -569,6 +608,9 @@ async function itemsFromOpenClawSqlite(path: string, warnings: string[]): Promis
     "SELECT id, path, source, start_line, end_line, hash, text, updated_at",
     "FROM chunks",
     "WHERE text IS NOT NULL AND length(trim(text)) > 0",
+    "AND lower(COALESCE(path, '')) NOT LIKE 'memory/dreaming/%'",
+    "AND lower(COALESCE(path, '')) NOT LIKE '%/.dreams/%'",
+    "AND lower(COALESCE(path, '')) NOT LIKE '%dream-diary%'",
     "ORDER BY updated_at DESC, id ASC",
     "LIMIT 200;",
   ].join(" ");

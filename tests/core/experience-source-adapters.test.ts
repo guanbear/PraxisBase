@@ -258,6 +258,88 @@ describe("experience source adapters", () => {
     assert.match(slackEnvelope?.redacted_summary ?? "", /Slack delivery recovered/);
   });
 
+  it("excludes OpenClaw dreaming SQLite chunks before privacy triage", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-openclaw-sqlite-dream-"));
+    const dbPath = join(root, "main.sqlite");
+    await execFileAsync("sqlite3", [dbPath, `
+      CREATE TABLE chunks (
+        id TEXT PRIMARY KEY,
+        path TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'memory',
+        start_line INTEGER NOT NULL,
+        end_line INTEGER NOT NULL,
+        hash TEXT NOT NULL,
+        model TEXT NOT NULL,
+        text TEXT NOT NULL,
+        embedding TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      INSERT INTO chunks (id, path, source, start_line, end_line, hash, model, text, embedding, updated_at)
+      VALUES
+        ('dream-1', 'memory/dreaming/light/2026-05-29.md', 'memory', 1, 4, 'hash-dream', 'text-embedding', 'Candidate: Assistant replay validation failed. evidence: memory/.dreams/session-corpus/2026-05-29.txt:1-1', '[]', 1770000002),
+        ('memory-1', 'memory/2026-04-30.md', 'memory', 5, 7, 'hash-memory', 'text-embedding', 'Run self-test after changing OpenClaw code.', '[]', 1770000001);
+    `]);
+    const source = await addExperienceSource(root, {
+      name: "local-openclaw-memory",
+      agent: "openclaw",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: dbPath,
+      now: "2026-05-30T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-30T01:00:00.000Z",
+    });
+
+    assert.equal(result.scanned, 1);
+    assert.equal(result.fetched, 1);
+    assert.equal(result.envelopes.length, 1);
+    assert.match(result.envelopes[0].redacted_summary, /self-test/);
+    assert.equal(result.envelopes[0].source_ref.includes("dreaming"), false);
+  });
+
+  it("excludes trusted remote OpenClaw dreaming export items before privacy triage", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-remote-openclaw-dream-"));
+    const source = await addExperienceSource(root, {
+      name: "guanzhicheng-openclaw",
+      agent: "openclaw",
+      sourceType: "ssh",
+      scopeDefault: "personal",
+      host: "root@example.test",
+      path: "/root/.openclaw/praxisbase/latest.json",
+      privacyTrust: "trusted_personal_remote",
+      now: "2026-05-30T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      now: "2026-05-30T01:00:00.000Z",
+      runCommand: async () => JSON.stringify({
+        items: [
+          {
+            id: "dream-1",
+            source_ref: "openclaw-ssh://guanzhicheng/memory/dreaming/light/2026-05-19.md:168:182",
+            summary: "Candidate: Assistant nightly follow-up failed. confidence: 0.58 evidence: memory/.dreams/session-corpus/2026-05-18.txt:9-9 status: staged",
+          },
+          {
+            id: "memory-1",
+            source_ref: "openclaw-ssh://guanzhicheng/memory/2026-04-30.md:1:3",
+            summary: "Run self-test after changing OpenClaw code and report the verification result.",
+          },
+        ],
+      }),
+    });
+
+    assert.equal(result.scanned, 2);
+    assert.equal(result.fetched, 1);
+    assert.equal(result.skipped, 1);
+    assert.equal(result.envelopes.length, 1);
+    assert.equal(result.envelopes[0].source_ref, "openclaw-ssh://guanzhicheng/memory/2026-04-30.md:1:3");
+    assert.equal(result.envelopes[0].redacted_summary.includes("Candidate:"), false);
+  });
+
   it("dispatches agentmemory source type to the dedicated adapter", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-agentmemory-"));
     const source = await addExperienceSource(root, {
