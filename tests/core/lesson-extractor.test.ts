@@ -129,6 +129,35 @@ test("LLM extractor rejects weak one-off run reports even when AI emits a lesson
   assert.equal(lessons.length, 0);
 });
 
+test("LLM extractor rejects generic placeholder lessons", async () => {
+  const client = {
+    generateJson: async () => ({
+      ok: true as const,
+      json: {
+        lessons: [{
+          ...makeLesson(),
+          claim: "Reusable agent lesson.",
+          safe_claim: "Reusable agent lesson.",
+          problem: "The evidence describes a reusable agent failure mode.",
+          trigger: "When the same condition appears again.",
+          action: "Apply the reusable lesson from the evidence.",
+          verification: "Apply the reusable lesson from the evidence.",
+          confidence: 0.5,
+        }],
+      },
+    }),
+  };
+
+  const lessons = await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+  });
+
+  assert.equal(lessons.length, 0);
+});
+
 test("LLM extractor retries once on malformed output", async () => {
   let calls = 0;
   const client = {

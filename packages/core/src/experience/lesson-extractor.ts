@@ -75,7 +75,7 @@ const CUE_VALUES = new Set([
   "llm_inferred",
 ]);
 
-const EXTRACTOR_PROMPT_VERSION = "m25-lesson-extractor-v1";
+const EXTRACTOR_PROMPT_VERSION = "m25-lesson-extractor-v2";
 
 export async function extractLessonsWithAi(
   spans: EvidenceSpan[],
@@ -313,7 +313,9 @@ function buildLessonFromDraft(
     .filter((span): span is EvidenceSpan => Boolean(span));
   if (evidenceSpans.length === 0) return undefined;
 
-  const claim = asNonEmptyString(draft.claim) ?? "Reusable agent lesson.";
+  const claim = asNonEmptyString(draft.claim);
+  if (!claim) return undefined;
+  if (isGenericPlaceholderLessonDraft(claim, draft)) return undefined;
   if (isWeakOneOffLessonDraft(claim, draft, evidenceSpans)) return undefined;
   const lesson = {
     lesson_id: `ai_${computeHash(claim).slice("sha256:".length, "sha256:".length + 16)}`,
@@ -343,6 +345,31 @@ function buildLessonFromDraft(
   } catch {
     return undefined;
   }
+}
+
+function isGenericPlaceholderLessonDraft(claim: string, draft: AiLessonDraft): boolean {
+  const fields = [
+    claim,
+    asOptionalString(draft.safe_claim),
+    asOptionalString(draft.problem),
+    asOptionalString(draft.trigger),
+    asOptionalString(draft.action),
+    asOptionalString(draft.verification),
+    asOptionalString(draft.negative_case),
+  ].filter((field): field is string => typeof field === "string");
+  const normalized = fields.map((field) => field.trim().toLowerCase());
+  const placeholderPhrases = [
+    "reusable agent lesson",
+    "the evidence describes a reusable agent failure mode",
+    "when the same condition appears again",
+    "apply the reusable lesson from the evidence",
+  ];
+  if (normalized.some((field) => placeholderPhrases.includes(field.replace(/\.$/, "")))) return true;
+
+  const combined = normalized.join(" ");
+  const hasConcreteVerb = /\b(confirm|verify|acknowledge|redact|failover|self-test|restart|query|route|dispatch|cache|collate|upload|truncate|summarize)\b/.test(combined);
+  const hasPlaceholderNoun = /\b(reusable lesson|same condition|agent failure mode|from the evidence)\b/.test(combined);
+  return hasPlaceholderNoun && !hasConcreteVerb;
 }
 
 function isWeakOneOffLessonDraft(
