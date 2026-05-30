@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -159,6 +159,43 @@ test("LLM extractor retries once on malformed output", async () => {
   assert.equal(calls, 2);
   assert.equal(lessons.length, 1);
   assert.equal(lessons[0]!.evidence_spans[0]!.span_id, "s1");
+});
+
+test("LLM extractor quarantines malformed output after repair fails", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-lesson-ai-quarantine-"));
+  let calls = 0;
+  const client = {
+    generateJson: async () => {
+      calls += 1;
+      return {
+        ok: true as const,
+        json: {
+          lessons: [{ ...makeLesson(), confidence: 2 }],
+        },
+      };
+    },
+  };
+
+  const lessons = await extractLessonsWithAi([makeSpan()], {
+    client,
+    now: "2026-05-29T00:00:00.000Z",
+    agent: "openclaw",
+    scope: "personal",
+    cache: { root, identity: "glm-4.7" },
+  });
+
+  assert.equal(calls, 2);
+  assert.equal(lessons.length, 0);
+  const files = await readdir(join(root, protocolPaths.reportsLessonQuarantine));
+  assert.equal(files.length, 1);
+  const raw = JSON.parse(await readFile(join(root, protocolPaths.reportsLessonQuarantine, files[0]!), "utf8")) as {
+    type: string;
+    attempts: Array<{ invalid: number }>;
+    span_ids: string[];
+  };
+  assert.equal(raw.type, "lesson_extractor_quarantine");
+  assert.deepEqual(raw.span_ids, ["s1"]);
+  assert.deepEqual(raw.attempts.map((attempt) => attempt.invalid), [1, 1]);
 });
 
 test("LLM extractor reuses cache by prompt model and span identity", async () => {

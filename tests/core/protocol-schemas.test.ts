@@ -760,6 +760,15 @@ describe("protocol schemas", () => {
     assert.equal(protocolPaths.catalog, ".praxisbase/catalog");
   });
 
+  it("protocol paths include M25 lesson report surfaces", () => {
+    assert.equal(protocolPaths.reportsSourceInventory, ".praxisbase/reports/source-inventory");
+    assert.equal(protocolPaths.reportsLessonExtraction, ".praxisbase/reports/lesson-extraction");
+    assert.equal(protocolPaths.reportsLessonCache, ".praxisbase/reports/lesson-cache");
+    assert.equal(protocolPaths.reportsGoldenValidation, ".praxisbase/reports/golden-validation");
+    assert.equal(protocolPaths.reportsRuntimeLessons, ".praxisbase/reports/runtime-lessons");
+    assert.equal(protocolPaths.reportsLessonQuarantine, ".praxisbase/reports/lesson-quarantine");
+  });
+
   it("LifecycleDecisionSchema accepts all decision values", () => {
     for (const d of ["promote", "decay", "archive", "conflict", "no_op"] as const) {
       assert.equal(LifecycleDecisionSchema.parse(d), d);

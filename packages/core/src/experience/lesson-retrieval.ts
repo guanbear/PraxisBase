@@ -4,6 +4,12 @@ import type { ExperienceLesson } from "./lesson-model.js";
 export interface RetrieveRuntimeLessonsOptions {
   query?: string;
   agent?: string;
+  agents?: string[];
+  systems?: string[];
+  tags?: string[];
+  portability?: ExperienceLesson["portability"][];
+  scopes?: ExperienceLesson["scope"][];
+  states?: string[];
   maxHits?: number;
 }
 
@@ -22,7 +28,8 @@ export function retrieveRuntimeLessons(
   return lessons
     .filter((lesson) =>
       (lesson.privacy_tier === "safe" || lesson.privacy_tier === "personal_only") &&
-      isRuntimeEligibleLessonState((lesson as { state?: unknown }).state),
+      isRuntimeEligibleLessonState((lesson as { state?: unknown }).state) &&
+      matchesRuntimeLessonFilters(lesson, options),
     )
     .map((lesson) => ({ ...lesson, score: runtimeLessonScore(lesson, queryTerms, options.agent) }))
     .filter((lesson) => lesson.score > 0)
@@ -32,6 +39,30 @@ export function retrieveRuntimeLessons(
 
 function isRuntimeEligibleLessonState(state: unknown): boolean {
   return state === "active_personal" || state === "wiki_ready" || state === "skill_ready";
+}
+
+function matchesRuntimeLessonFilters(lesson: ExperienceLesson, options: RetrieveRuntimeLessonsOptions): boolean {
+  const state = String((lesson as { state?: unknown }).state ?? "");
+  const agents = options.agents ?? (options.agent ? [options.agent] : []);
+  if (agents.length > 0 && !agents.some((agent) => lesson.applies_to_agents.includes(agent))) return false;
+
+  if (options.systems?.length && !options.systems.some((system) => lesson.applies_to_systems.includes(system))) {
+    return false;
+  }
+
+  if (options.tags?.length) {
+    const tags = new Set([
+      ...lesson.applies_to_systems,
+      ...(((lesson as { tags?: unknown }).tags ?? []) as unknown[]).filter((tag): tag is string => typeof tag === "string"),
+    ]);
+    if (!options.tags.some((tag) => tags.has(tag))) return false;
+  }
+
+  if (options.portability?.length && !options.portability.includes(lesson.portability)) return false;
+  if (options.scopes?.length && !options.scopes.includes(lesson.scope)) return false;
+  if (options.states?.length && !options.states.includes(state)) return false;
+
+  return true;
 }
 
 export function renderRuntimeLessonBlock(

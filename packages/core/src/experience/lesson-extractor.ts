@@ -119,10 +119,24 @@ export async function extractLessonsWithAi(
     buildRepairPrompt(spans),
     JSON.stringify(first.json),
   );
-  if (!retry.ok) return parsed.valid;
+  if (!retry.ok) {
+    if (options.cache) {
+      await writeLessonExtractorQuarantine(options.cache.root, spans, options, [
+        { phase: "initial", invalid: parsed.invalid, json: first.json },
+        { phase: "repair", invalid: 1, error: retry.error },
+      ]);
+    }
+    return parsed.valid;
+  }
 
   const repaired = parseLessonDrafts(retry.json, spans, options);
   const lessons = [...parsed.valid, ...repaired.valid];
+  if (repaired.invalid > 0 && options.cache) {
+    await writeLessonExtractorQuarantine(options.cache.root, spans, options, [
+      { phase: "initial", invalid: parsed.invalid, json: first.json },
+      { phase: "repair", invalid: repaired.invalid, json: retry.json },
+    ]);
+  }
   if (cachePath && options.cache) {
     await writeCachedLessons(options.cache.root, cachePath, lessons);
     options.cache.stats && (options.cache.stats.writes += 1);
@@ -179,6 +193,39 @@ async function writeCachedLessons(root: string, cachePath: string, lessons: Expe
     type: "lesson_extract_cache",
     extractor: EXTRACTOR_PROMPT_VERSION,
     lessons,
+  });
+}
+
+async function writeLessonExtractorQuarantine(
+  root: string,
+  spans: EvidenceSpan[],
+  options: ExtractLessonsWithAiOptions,
+  attempts: Array<{ phase: "initial" | "repair"; invalid: number; json?: unknown; error?: string }>,
+): Promise<void> {
+  const id = computeHash(JSON.stringify({
+    extractor: EXTRACTOR_PROMPT_VERSION,
+    identity: options.cache?.identity ?? "uncached",
+    agent: options.agent ?? "generic",
+    scope: options.scope ?? "personal",
+    spans: spans.map((span) => ({
+      source_ref: span.source_ref,
+      source_hash: span.source_hash,
+      span_id: span.span_id,
+      excerpt_hash: span.excerpt_hash,
+    })),
+    attempts,
+  })).replace(/^sha256:/, "");
+  await writeJson(root, `${protocolPaths.reportsLessonQuarantine}/${id}.json`, {
+    type: "lesson_extractor_quarantine",
+    extractor: EXTRACTOR_PROMPT_VERSION,
+    model_identity: options.cache?.identity ?? "uncached",
+    agent: options.agent ?? "generic",
+    scope: options.scope ?? "personal",
+    span_ids: spans.map((span) => span.span_id),
+    source_refs: unique(spans.map((span) => span.source_ref)),
+    source_hashes: unique(spans.map((span) => span.source_hash)),
+    attempts,
+    created_at: options.now,
   });
 }
 

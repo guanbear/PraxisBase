@@ -125,3 +125,43 @@ test("abstracts database connection strings", () => {
   assert.doesNotMatch(result.lesson.safe_claim, /admin:secret|db\.internal/);
   assert.equal(result.lesson.privacy_tier, "human_required");
 });
+
+test("abstracts private details inside evidence span excerpts", () => {
+  const result = abstractLessonPrivacy({
+    safe_claim: "Confirm the target machine before remote restart.",
+    claim: "Confirm the target machine before remote restart.",
+    problem: "Remote operations can hit the wrong machine.",
+    trigger: "Before remote restart.",
+    action: "Confirm the target machine.",
+    verification: "Target was checked.",
+    applies_to_agents: ["openclaw"],
+    applies_to_systems: ["remote-ops"],
+    portability: "environment",
+    privacy_tier: "team_allowed",
+    scope: "team",
+    confidence: 0.91,
+    cue_family: "native_memory",
+    source_refs: ["source-inventory://openclaw/MEMORY.md"],
+    source_hashes: ["sha256:m"],
+    evidence_spans: [{
+      source_item_id: "memory",
+      source_ref: "source-inventory://openclaw/MEMORY.md",
+      source_hash: "sha256:m",
+      span_id: "s1",
+      line_start: 1,
+      line_end: 1,
+      byte_start: 0,
+      byte_end: 100,
+      heading_path: ["Remote"],
+      excerpt: "Restart root@guanzhicheng.com through macmini-ssh using ~/.ssh/openclaw_key.",
+      excerpt_hash: "sha256:e",
+      span_kind: "bullet",
+    }],
+    redaction_notes: [],
+    created_at: "2026-05-29T00:00:00.000Z",
+  } as any, { mode: "team-git" });
+
+  assert.doesNotMatch(result.lesson.evidence_spans[0].excerpt, /root@guanzhicheng\.com|macmini-ssh|openclaw_key/);
+  assert.match(result.lesson.evidence_spans[0].excerpt, /\[REDACTED_/);
+  assert.equal(result.lesson.privacy_tier, "human_required");
+});

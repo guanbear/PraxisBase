@@ -365,10 +365,24 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 	    <article><span>Lesson AI cache misses</span><strong>${escapeHtml(String(report.lessons.ai_cache.misses))}</strong></article>` : ""}
 	    ${report.lessons.golden_validation && report.lessons.golden_validation.length > 0 ? report.lessons.golden_validation.map((gv) => `<article><span>Golden ${escapeHtml(gv.fixture)}</span><strong>${escapeHtml(String(gv.matches))} matches / ${escapeHtml(String(gv.privateLeakCount))} leaks</strong></article>`).join("\n") : ""}` : ""}
 	  </div>
+  ${report.lessons?.details && report.lessons.details.length > 0 ? renderLessonDetails(report.lessons.details) : ""}
   ${renderAgentMemoryStatus(report)}
   ${renderGBrainStatus(report)}
   ${contextJuice && contextJuice.warnings.length > 0 ? `<p class="muted">Context juice warnings: ${escapeHtml(contextJuice.warnings.join("; "))}</p>` : ""}
 </section>`;
+}
+
+function renderLessonDetails(details: NonNullable<DailyReportSummary["lessons"]>["details"]): string {
+  return `<div class="review-section" id="lesson-candidates">
+    <h2>Lesson Candidates</h2>
+    <ol class="link-list">
+      ${details.map((lesson) => `<li>
+        <strong>${escapeHtml(lesson.safe_claim)}</strong>
+        <span>${escapeHtml(lesson.state)} / ${escapeHtml(lesson.privacy_tier)}${lesson.applies_to_systems.length > 0 ? ` / ${escapeHtml(lesson.applies_to_systems.join(", "))}` : ""}</span>
+        ${lesson.span_refs.length > 0 ? `<br><code>${escapeHtml(lesson.span_refs.slice(0, 2).join(" "))}</code>` : ""}
+      </li>`).join("\n")}
+    </ol>
+  </div>`;
 }
 
 interface AgentBundleReportSummary {
@@ -1182,6 +1196,13 @@ interface DailyReportSummary {
 	      matches: number;
 	      privateLeakCount: number;
 	    }>;
+	    details: Array<{
+	      safe_claim: string;
+	      state: string;
+	      privacy_tier: string;
+	      applies_to_systems: string[];
+	      span_refs: string[];
+	    }>;
 	    report_ref?: string;
 	  };
 	  agentmemory_sources: Array<{
@@ -1377,6 +1398,12 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
   const contextEconomy = latest.context_economy;
   const contextJuice = latest.context_juice;
   const gbrain = latest.brain_backends?.gbrain;
+  const latestLessons = latest.lessons && (latest.lessons as Record<string, unknown>).enabled
+    ? latest.lessons as Record<string, unknown>
+    : undefined;
+  const lessonDetails = typeof latestLessons?.report_ref === "string"
+    ? await collectLessonDetails(root, latestLessons.report_ref)
+    : [];
 
   return {
     created_at: latest.created_at,
@@ -1445,8 +1472,8 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	        : {},
 	      candidates_without_passing: typeof latest.skill_validation.candidates_without_passing === "number" ? latest.skill_validation.candidates_without_passing : 0,
 	    } : undefined,
-	    lessons: latest.lessons && (latest.lessons as Record<string, unknown>).enabled ? (() => {
-	      const l = latest.lessons as Record<string, unknown>;
+	    lessons: latestLessons ? (() => {
+	      const l = latestLessons;
 	      const gv = Array.isArray(l.golden_validation) ? (l.golden_validation as Array<Record<string, unknown>>).filter((item) => item && typeof item === "object").map((item) => ({
 	        fixture: typeof item.fixture === "string" ? item.fixture : "",
 	        matches: typeof item.matches === "number" ? item.matches : 0,
@@ -1475,6 +1502,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	          };
 	        })() : undefined,
 	        golden_validation: gv,
+	        details: lessonDetails,
 	        report_ref: typeof l.report_ref === "string" ? l.report_ref : undefined,
 	      };
 	    })() : undefined,
@@ -1500,6 +1528,39 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
       },
     } : undefined,
   };
+}
+
+async function collectLessonDetails(
+  root: string,
+  reportRef: string,
+): Promise<NonNullable<DailyReportSummary["lessons"]>["details"]> {
+  try {
+    const report = await readJson<Record<string, unknown>>(root, reportRef);
+    const lessons = Array.isArray(report.lessons) ? report.lessons : [];
+    return lessons
+      .filter((lesson): lesson is Record<string, unknown> => Boolean(lesson) && typeof lesson === "object")
+      .slice(0, 8)
+      .map((lesson) => {
+        const spans = Array.isArray(lesson.evidence_spans) ? lesson.evidence_spans : [];
+        return {
+          safe_claim: typeof lesson.safe_claim === "string" ? lesson.safe_claim : "Untitled lesson",
+          state: typeof lesson.state === "string" ? lesson.state : "candidate",
+          privacy_tier: typeof lesson.privacy_tier === "string" ? lesson.privacy_tier : "human_required",
+          applies_to_systems: Array.isArray(lesson.applies_to_systems)
+            ? lesson.applies_to_systems.filter((item): item is string => typeof item === "string")
+            : [],
+          span_refs: spans
+            .filter((span): span is Record<string, unknown> => Boolean(span) && typeof span === "object")
+            .map((span) => {
+              const sourceRef = typeof span.source_ref === "string" ? span.source_ref : "unknown-source";
+              const spanId = typeof span.span_id === "string" ? span.span_id : "unknown-span";
+              return `${sourceRef}#${spanId}`;
+            }),
+        };
+      });
+  } catch {
+    return [];
+  }
 }
 
 async function collectLatestAgentBundleReport(root: string): Promise<AgentBundleReportSummary | null> {

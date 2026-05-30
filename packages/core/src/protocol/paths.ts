@@ -83,6 +83,12 @@ export const protocolPaths = {
   configAi: ".praxisbase/ai/config.json",
   reportsLifecycle: ".praxisbase/reports/lifecycle",
   reportsSkillValidation: ".praxisbase/reports/skill-validation",
+  reportsSourceInventory: ".praxisbase/reports/source-inventory",
+  reportsLessonExtraction: ".praxisbase/reports/lesson-extraction",
+  reportsLessonCache: ".praxisbase/reports/lesson-cache",
+  reportsGoldenValidation: ".praxisbase/reports/golden-validation",
+  reportsRuntimeLessons: ".praxisbase/reports/runtime-lessons",
   reportsLessons: ".praxisbase/reports/lessons",
+  reportsLessonQuarantine: ".praxisbase/reports/lesson-quarantine",
   catalog: ".praxisbase/catalog",
 } as const;

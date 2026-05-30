@@ -1,5 +1,6 @@
 import type { ExperienceLesson } from "./lesson-model.js";
 import type { EvidenceSpan } from "./lesson-model.js";
+import { computeHash } from "../protocol/id.js";
 
 type LessonPrivacyMode = "personal-local" | "team-git";
 
@@ -138,6 +139,21 @@ export function abstractLessonPrivacy(
 
   for (const field of ["claim", "safe_claim", "problem", "trigger", "action", "verification", "negative_case"] as const) {
     applyField(field);
+  }
+
+  if (Array.isArray(abstractedLesson.evidence_spans)) {
+    abstractedLesson.evidence_spans = abstractedLesson.evidence_spans.map((span) => {
+      const result = redactLessonText(span.excerpt);
+      if (!result.changed) return span;
+      changed = true;
+      redactedAnyField = true;
+      for (const reason of result.reasons) addReason(reason);
+      return {
+        ...span,
+        excerpt: result.value,
+        excerpt_hash: computeHash(result.value),
+      };
+    });
   }
 
   if (

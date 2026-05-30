@@ -231,6 +231,50 @@ describe("M25 production integration", () => {
   it("renders lesson metrics from the latest daily report on the wiki site", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-m25-site-"));
     await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, protocolPaths.reportsLessons), { recursive: true });
+    await writeFile(join(root, protocolPaths.reportsLessons, "lesson_daily.json"), JSON.stringify({
+      id: "lesson_daily",
+      protocol_version: PROTOCOL_VERSION,
+      type: "lesson_pipeline_report",
+      source_items: 2,
+      selected_spans: 5,
+      deterministic_lessons: 2,
+      ai_lessons: 1,
+      lessons: [
+        lesson({
+          lesson_id: "ready_ack",
+          state: "wiki_ready",
+          privacy_tier: "safe",
+          safe_claim: "Send ACK before slow tool work.",
+          applies_to_systems: ["agent-runtime", "dispatch"],
+        }),
+        lesson({
+          lesson_id: "human_remote",
+          state: "human_required",
+          privacy_tier: "human_required",
+          safe_claim: "Confirm private route before remote restart.",
+          evidence_spans: [{
+            source_item_id: "remote",
+            source_ref: "source-inventory://openclaw/remote/MEMORY.md",
+            source_hash: "sha256:remote",
+            span_id: "span_private",
+            line_start: 1,
+            line_end: 1,
+            byte_start: 0,
+            byte_end: 80,
+            heading_path: ["Remote"],
+            excerpt: "Use root@guanzhicheng.com through macmini-ssh.",
+            excerpt_hash: "sha256:private",
+            span_kind: "bullet",
+          }],
+        }),
+      ],
+      counts_by_state: { wiki_ready: 1, human_required: 1 },
+      privacy: { abstracted: 1, human_required: 1, rejected: 0 },
+      wiki_evidence: 1,
+      source_reports: [],
+      created_at: "2026-05-29T01:00:00.000Z",
+    }));
     await writeFile(join(root, ".praxisbase/reports/daily/daily_lessons.json"), JSON.stringify({
       id: "daily_lessons",
       protocol_version: PROTOCOL_VERSION,
@@ -288,6 +332,15 @@ describe("M25 production integration", () => {
     assert.ok(index.includes("Lesson wiki ready"));
     assert.ok(index.includes("Lesson AI cache hits"));
     assert.ok(index.includes("Golden openclaw-local"));
+    assert.ok(index.includes("Lesson Candidates"));
+    assert.ok(index.includes("Send ACK before slow tool work."));
+    assert.ok(index.includes("wiki_ready"));
+    assert.ok(index.includes("safe"));
+    assert.ok(index.includes("agent-runtime"));
+    assert.ok(index.includes("source-inventory://openclaw/ready_ack/MEMORY.md#span_ready_ack"));
+    assert.ok(index.includes("Confirm private route before remote restart."));
+    assert.ok(!index.includes("root@guanzhicheng.com"));
+    assert.ok(!index.includes("macmini-ssh"));
   });
 
   it("feeds safe lesson reports into wiki evidence and excludes private lessons", async () => {

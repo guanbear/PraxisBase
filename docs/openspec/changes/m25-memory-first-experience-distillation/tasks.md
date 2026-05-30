@@ -3,7 +3,7 @@
 ## 1. Schemas And Reports
 
 - [x] Add `ExperienceLesson`, `EvidenceSpan`, `SourceInventoryItem`, lesson state, portability, cue family, and privacy abstraction schemas.
-- [ ] Add report paths for source inventory, lesson extraction, lesson cache, golden validation, and runtime lesson injection.
+- [x] Add report paths for source inventory, lesson extraction, lesson cache, golden validation, and runtime lesson injection.
 - [x] Add protocol cache path for AI lesson extraction cache at `.praxisbase/cache/lesson-extract`.
 - [x] Add protocol cache path for governed lesson state cache at `.praxisbase/cache/lesson-state`.
 - [x] Add local-only staging path for trusted remote OpenClaw raw evidence at `.praxisbase/staging/trusted-remote-openclaw`.
@@ -38,7 +38,7 @@
 ## 5. LLM Lesson Extraction
 
 - [x] Add strict JSON lesson extractor prompts and zod validation.
-- [ ] Add malformed-output repair and quarantine.
+- [x] Add malformed-output repair and quarantine.
 - [x] Add AI lesson extraction cache identity using prompt version, CLI/daily model identity, agent, scope, source hash, span id, and excerpt hash.
 - [x] Include planner/reducer/parser identity in lesson AI cache keys where reduced or planned span inputs affect extraction.
 - [x] Require `safe_claim`, `portability`, `privacy_tier`, `applies_to_agents`, `applies_to_systems`, and evidence spans.
@@ -49,7 +49,7 @@
 - [x] Add abstraction rules for hostnames, IPs, paths, key paths, accounts, raw platform user ids, private wrapper commands, and private remote names.
 - [x] Add team-mode stricter routing for personal/private evidence.
 - [ ] Block stable output leakage into `kb/`, `skills/`, `dist/`, GBrain export, and AgentMemory export.
-- [ ] Add tests with remote OpenClaw private details.
+- [x] Add tests with remote OpenClaw private details.
 
 ## 7. Lesson Stability And Dedupe
 
@@ -76,7 +76,7 @@
 
 ## 10. Runtime Personal Injection
 
-- [ ] Add personal runtime lesson retrieval by query, agents, systems, tags, portability, and state.
+- [x] Add personal runtime lesson retrieval by query, agents, systems, tags, portability, and state.
 - [x] Add bounded `Relevant PB Experience` rendering through M24 context bundles.
 - [x] Ensure stable PB pages and promoted skills outrank lesson hits.
 - [x] Exclude personal runtime lessons from team bundles by default.
@@ -87,8 +87,8 @@
 - [x] Add CLI/report surfaces for inventory, lesson extraction, lesson cache, golden validation, and injection preview.
 - [x] Add explicit `lesson extract --ai` provider path while keeping default lesson inspection deterministic-only.
 - [x] Reuse cached AI lesson extraction output for repeated `lesson extract --ai` CLI runs with the same model/span identity.
-- [ ] Show lesson states, privacy routing, source spans, and golden validation on the HTML site.
-- [ ] Keep raw private evidence hidden by default.
+- [x] Show lesson states, privacy routing, source spans, and golden validation on the HTML site.
+- [x] Keep raw private evidence hidden by default.
 
 ## 12. Golden Validation
 
