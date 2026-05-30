@@ -379,6 +379,87 @@ describe("M25 production integration", () => {
     assert.equal(pool.items.every((item) => item.kind === "distilled_experience"), true);
   });
 
+  it("feeds only the latest lesson report into wiki evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-m25-latest-evidence-"));
+    await mkdir(join(root, protocolPaths.reportsLessons), { recursive: true });
+    await writeFile(join(root, protocolPaths.reportsLessons, "lesson_old.json"), JSON.stringify({
+      id: "lesson_old",
+      protocol_version: PROTOCOL_VERSION,
+      type: "lesson_pipeline_report",
+      authority_mode: "personal-local",
+      source_items: 1,
+      selected_spans: 1,
+      deterministic_lessons: 1,
+      ai_lessons: 0,
+      lessons: [
+        lesson({
+          lesson_id: "old_noisy_ack",
+          state: "wiki_ready",
+          safe_claim: "Old noisy candidate should not enter the current wiki evidence.",
+          source_refs: ["source-inventory://openclaw/old/MEMORY.md"],
+          source_hashes: ["sha256:old"],
+          evidence_spans: [{
+            source_item_id: "old",
+            source_ref: "source-inventory://openclaw/old/MEMORY.md",
+            source_hash: "sha256:old",
+            span_id: "old-span",
+            line_start: 1,
+            line_end: 1,
+            byte_start: 0,
+            byte_end: 80,
+            heading_path: ["Old"],
+            excerpt: "Candidate: stale session-corpus noise",
+            excerpt_hash: "sha256:old-excerpt",
+            span_kind: "bullet",
+          }],
+        }),
+      ],
+      counts_by_state: { wiki_ready: 1 },
+      privacy: { abstracted: 0, human_required: 0, rejected: 0 },
+      wiki_evidence: 1,
+      source_reports: [],
+      created_at: "2026-05-29T01:00:00.000Z",
+    }));
+    await writeFile(join(root, protocolPaths.reportsLessons, "lesson_new.json"), JSON.stringify({
+      id: "lesson_new",
+      protocol_version: PROTOCOL_VERSION,
+      type: "lesson_pipeline_report",
+      authority_mode: "personal-local",
+      source_items: 1,
+      selected_spans: 1,
+      deterministic_lessons: 1,
+      ai_lessons: 0,
+      lessons: [
+        lesson({
+          lesson_id: "new_target_machine",
+          state: "wiki_ready",
+          safe_claim: "Confirm target machine before restart.",
+          source_refs: ["source-inventory://openclaw/new/MEMORY.md"],
+          source_hashes: ["sha256:new"],
+        }),
+        lesson({
+          lesson_id: "new_self_test",
+          state: "wiki_ready",
+          safe_claim: "Run self-test after changes.",
+          source_refs: ["source-inventory://openclaw/new/MEMORY.md"],
+          source_hashes: ["sha256:new"],
+        }),
+      ],
+      counts_by_state: { wiki_ready: 1 },
+      privacy: { abstracted: 0, human_required: 0, rejected: 0 },
+      wiki_evidence: 2,
+      source_reports: [],
+      created_at: "2026-05-30T01:00:00.000Z",
+    }));
+
+    const pool = await buildWikiEvidencePoolFromRoot(root);
+    assert.deepEqual(pool.items.map((item) => item.title).sort(), [
+      "Confirm target machine before restart.",
+      "Run self-test after changes.",
+    ]);
+    assert.equal(JSON.stringify(pool.items).includes("stale session-corpus noise"), false);
+  });
+
   it("does not feed safe lesson candidates into wiki evidence before wiki-ready state", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-m25-evidence-state-"));
     await mkdir(join(root, protocolPaths.reportsLessons), { recursive: true });

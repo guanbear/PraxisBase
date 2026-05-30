@@ -99,6 +99,37 @@ test("extracts target machine confirmation", () => {
   assert.match(lessons[0]!.action, /target/i);
 });
 
+test("extracts remote OpenClaw Chinese operating lessons without AI", () => {
+  const spans = [
+    makeSpan("语音是主交付，日报没语音不算完成。", "voice"),
+    makeSpan("改完必须自测，不让用户当测试员。", "self-test"),
+    makeSpan("修改后必须自测，不要让用户反复测试。", "self-test-remote"),
+    makeSpan("确认目标机器再执行，避免在错机器上重启。", "target"),
+    makeSpan("明确确认目标机器", "target-short-remote"),
+    makeSpan("前端更新后使用 ?v=timestamp 强刷，避免浏览器缓存。", "cache"),
+    makeSpan("数据库查询使用 COLLATE NOCASE，避免大小写坑。", "nocase"),
+    makeSpan("智谱限流时切 OmniRoute 回退。", "failover"),
+  ];
+
+  const lessons = extractDeterministicLessons(spans, options);
+
+  assert.equal(lessons.length, 8);
+  assert.deepEqual(
+    lessons.map((lesson) => lesson.lesson_id.replace(/^det_/, "").replace(/_[^_]+$/, "")),
+    [
+      "voice_primary_delivery",
+      "self_test_after_changes",
+      "self_test_after_changes",
+      "target_machine_confirmation",
+      "target_machine_confirmation",
+      "cache_busting",
+      "case_insensitive_db_collation",
+      "rate_limit_model_failover",
+    ],
+  );
+  assert.ok(lessons.every((lesson) => lesson.evidence_spans.length === 1));
+});
+
 test("skips generic run report", () => {
   const span = makeSpan("Build passed.");
 

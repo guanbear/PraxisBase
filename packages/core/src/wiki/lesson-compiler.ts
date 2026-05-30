@@ -8,15 +8,30 @@ import {
 
 type WikiEvidenceLesson = ExperienceLesson & { state?: string };
 
+export interface BuildWikiEvidenceFromLessonsOptions {
+  authorityMode?: "personal-local" | "team-git";
+}
+
 function isWikiEvidenceReady(lesson: WikiEvidenceLesson): boolean {
   return lesson.state === "wiki_ready" || lesson.state === "skill_ready";
 }
 
-export function buildWikiEvidenceFromLessons(lessons: WikiEvidenceLesson[]): WikiEvidenceItem[] {
+function privacyTierAllowed(
+  lesson: WikiEvidenceLesson,
+  options: BuildWikiEvidenceFromLessonsOptions,
+): boolean {
+  if (lesson.privacy_tier === "safe" || lesson.privacy_tier === "team_allowed") return true;
+  return options.authorityMode === "personal-local" && lesson.privacy_tier === "personal_only";
+}
+
+export function buildWikiEvidenceFromLessons(
+  lessons: WikiEvidenceLesson[],
+  options: BuildWikiEvidenceFromLessonsOptions = {},
+): WikiEvidenceItem[] {
   return lessons
     .filter((lesson) =>
       isWikiEvidenceReady(lesson) &&
-      (lesson.privacy_tier === "safe" || lesson.privacy_tier === "team_allowed"),
+      privacyTierAllowed(lesson, options),
     )
     .map((lesson) => WikiEvidenceItemSchema.parse({
       id: makeId("wiki-evidence-lesson", `${lesson.lesson_id}:${lessonStableKey(lesson)}`),

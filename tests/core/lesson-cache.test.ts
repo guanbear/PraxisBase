@@ -50,6 +50,20 @@ test("safe high confidence lesson becomes active personal", () => {
   assert.equal(state, "active_personal");
 });
 
+test("abstracted personal-only lesson can become wiki-ready only in personal mode", () => {
+  const state = classifyLessonState(
+    makeLesson({ privacy_tier: "personal_only", portability: "environment", confidence: 0.92 }),
+    { mode: "personal-local", sourceCount: 1, verified: true },
+  );
+  assert.equal(state, "wiki_ready");
+
+  const teamState = classifyLessonState(
+    makeLesson({ privacy_tier: "personal_only", portability: "environment", confidence: 0.92 }),
+    { mode: "team-git", sourceCount: 1, verified: true },
+  );
+  assert.equal(teamState, "candidate");
+});
+
 test("forgotten lesson remains forgotten", () => {
   const state = classifyLessonState(
     makeLesson({ privacy_tier: "safe" }),

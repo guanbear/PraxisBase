@@ -147,7 +147,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
     counts[lesson.state] = (counts[lesson.state] ?? 0) + 1;
     return counts;
   }, {});
-  const wikiEvidence = buildWikiEvidenceFromLessons(lessons).length;
+  const wikiEvidence = buildWikiEvidenceFromLessons(lessons, { authorityMode: mode }).length;
   const authorityContract = buildLessonAuthorityContract(lessons, wikiEvidence);
   return {
     source_items: inventory.length,

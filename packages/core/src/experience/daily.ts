@@ -1755,7 +1755,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     }
 
     const lessons = dedupeLessons(lessonReports.flatMap((report) => report.lessons));
-    const lessonWikiEvidence = buildWikiEvidenceFromLessons(lessons).length;
+    const lessonWikiEvidence = buildWikiEvidenceFromLessons(lessons, { authorityMode: input.authorityMode }).length;
     lessonReport = {
       source_items: lessonReports.reduce((sum, report) => sum + report.source_items, 0),
       selected_spans: lessonReports.reduce((sum, report) => sum + report.selected_spans, 0),
@@ -1791,6 +1791,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         id: lessonId,
         protocol_version: PROTOCOL_VERSION,
         type: "lesson_pipeline_report",
+        authority_mode: input.authorityMode,
         ...lessonReport,
         created_at: now,
       });

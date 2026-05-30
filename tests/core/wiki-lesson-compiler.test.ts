@@ -137,6 +137,55 @@ test("lesson-derived wiki evidence excludes private or human-required stable les
   assert.equal(evidence.length, 0);
 });
 
+test("lesson-derived wiki evidence allows abstracted personal-only lessons only in personal mode", () => {
+  const personalOnlyLesson = {
+    lesson_id: "lesson_private_route",
+    claim: "Use a concrete private route for a concrete machine.",
+    safe_claim: "Use the configured private route before operating on a personal remote machine.",
+    problem: "Remote operations can target the wrong or unsafe route.",
+    trigger: "Before operating on a personal remote machine.",
+    action: "Use the configured private route and confirm the target before mutating the machine.",
+    verification: "The route and target are confirmed before execution.",
+    negative_case: "Do not publish concrete private route details into shared knowledge.",
+    applies_to_agents: ["openclaw"],
+    applies_to_systems: ["remote-access"],
+    portability: "environment",
+    privacy_tier: "personal_only",
+    scope: "personal",
+    confidence: 0.92,
+    cue_family: "native_memory",
+    source_refs: ["source-inventory://openclaw/MEMORY.md"],
+    source_hashes: ["sha256:m"],
+    state: "wiki_ready",
+    evidence_spans: [{
+      source_item_id: "memory",
+      source_ref: "source-inventory://openclaw/MEMORY.md",
+      source_hash: "sha256:m",
+      span_id: "s1",
+      line_start: 1,
+      line_end: 1,
+      byte_start: 0,
+      byte_end: 80,
+      heading_path: ["Remote"],
+      excerpt: "Use [REDACTED_REMOTE_COMMAND] through [REDACTED_HOSTNAME].",
+      excerpt_hash: "sha256:e",
+      span_kind: "bullet",
+    }],
+    redaction_notes: ["private remote wrapper command"],
+    created_at: "2026-05-29T00:00:00.000Z",
+  } as any;
+
+  assert.equal(buildWikiEvidenceFromLessons([personalOnlyLesson]).length, 0);
+
+  const personalEvidence = buildWikiEvidenceFromLessons([personalOnlyLesson], {
+    authorityMode: "personal-local",
+  });
+
+  assert.equal(personalEvidence.length, 1);
+  assert.equal(personalEvidence[0]!.privacy_verdict, "personal_only");
+  assert.doesNotMatch(JSON.stringify(personalEvidence[0]), /root@|100\.95|U0AL|\/Users\/guanbear/);
+});
+
 test("lesson-derived wiki proposals render applicability and span provenance", async () => {
   const evidence = buildWikiEvidenceFromLessons([{
     lesson_id: "lesson_ack",
@@ -194,4 +243,5 @@ test("lesson-derived wiki proposals render applicability and span provenance", a
   assert.match(result.proposal.body_markdown, /## Span Provenance/);
   assert.match(result.proposal.body_markdown, /source-inventory:\/\/openclaw\/MEMORY\.md#ack-1/);
   assert.match(result.proposal.body_markdown, /lines 12-14/);
+  assert.doesNotMatch(result.proposal.body_markdown, /ACK before tools/);
 });

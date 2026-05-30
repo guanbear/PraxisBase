@@ -134,7 +134,9 @@ const GENERIC_CUE_FAMILIES: GenericCueFamily[] = [
 const PATTERN_FAMILIES: PatternFamily[] = [
   {
     id: "ack_before_slow_work",
-    matches: (excerpt) => /ack|acknowledg/i.test(excerpt) && /slow|tool|network|dispatch|long/i.test(excerpt),
+    matches: (excerpt) =>
+      (/ack|acknowledg/i.test(excerpt) && /slow|tool|network|dispatch|long/i.test(excerpt)) ||
+      /(?:工具|联网|派发|委派|分发|超过几秒|耗时|慢).*(?:ack|确认|收到|先发|回复)|(?:ack|确认|收到|先发|回复).*(?:工具|联网|派发|委派|分发|超过几秒|耗时|慢)/i.test(excerpt),
     problem: "Slow tool, network, dispatch, or long-running work can leave users without timely feedback.",
     trigger: "Before starting slow work or work involving tools, network calls, or delegation dispatch.",
     action: "Send a short acknowledgement first, then proceed with the slow operation.",
@@ -146,7 +148,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "fail_closed_honesty",
-    matches: (excerpt) => /fail.closed|must not pretend|do not claim.*success/i.test(excerpt),
+    matches: (excerpt) => /fail.closed|must not pretend|do not claim.*success|不能假装.*成功|不要假装.*成功|失败.*不能.*成功|没.*派发.*不能.*成功/i.test(excerpt),
     problem: "Agents can mislead users if failures are reported as successful outcomes.",
     trigger: "When an operation, delegation, or guard fails or returns uncertain status.",
     action: "Fail closed and state the failure honestly instead of claiming success.",
@@ -169,7 +171,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "main_session_completion_honesty",
-    matches: (excerpt) => /main session.*(already|directly).*(did|completed|wrote)|do not say.*dispatch.*failed.*already/i.test(excerpt),
+    matches: (excerpt) => /main session.*(already|directly).*(did|completed|wrote)|do not say.*dispatch.*failed.*already|主会话.*(已经|直接).*(完成|做了|写了)|已经.*完成.*不能.*派发失败/i.test(excerpt),
     problem: "Agents can misreport task state when fallback or main-session work already completed the user-visible task.",
     trigger: "When delegation failed but the main session already completed or directly handled the work.",
     action: "Report the completed main-session work accurately instead of saying the task was not dispatched.",
@@ -181,7 +183,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "memory_truncation",
-    matches: (excerpt) => /memory.*truncat|truncat.*memory|MEMORY\.md.*truncat/i.test(excerpt),
+    matches: (excerpt) => /memory.*truncat|truncat.*memory|MEMORY\.md.*truncat|MEMORY\.md.*(?:12000|截断|失忆)|(?:12000|截断|失忆).*MEMORY\.md/i.test(excerpt),
     problem: "Long memory files can be truncated during context injection and lose important instructions.",
     trigger: "When memory content grows large or depends on MEMORY.md injection.",
     action: "Keep critical memory concise and account for truncation limits during injection.",
@@ -192,7 +194,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "daily_log_long_term_memory_distinction",
-    matches: (excerpt) => /daily.*log.*raw|raw.*record.*MEMORY|long.term.*memory|distill.*MEMORY/i.test(excerpt),
+    matches: (excerpt) => /daily.*log.*raw|raw.*record.*MEMORY|long.term.*memory|distill.*MEMORY|每日日志.*原始记录|原始记录.*长期记忆|提炼.*长期记忆|提炼.*MEMORY/i.test(excerpt),
     problem: "Raw daily logs and long-term memory have different roles, and mixing them can bury reusable guidance.",
     trigger: "When maintaining agent memory over time.",
     action: "Distill durable lessons from raw daily logs into concise long-term memory.",
@@ -217,7 +219,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "target_machine_confirmation",
-    matches: (excerpt) => /target.*machine|confirm.*target|target.*host/i.test(excerpt),
+    matches: (excerpt) => /target.*machine|confirm.*target|target.*host|确认.*目标(?:机器|主机|环境)|目标(?:机器|主机|环境).*确认|错(?:机器|主机|环境).*重启/i.test(excerpt),
     problem: "Actions on the wrong target machine or host can cause unsafe operational changes.",
     trigger: "Before restarting, modifying, or operating on a target machine or host.",
     action: "Confirm the target machine or host before taking action.",
@@ -229,7 +231,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "voice_primary_delivery",
-    matches: (excerpt) => /voice.*primary|primary.*delivery.*voice|daily report.*voice|no voice.*not.*complete/i.test(excerpt),
+    matches: (excerpt) => /voice.*primary|primary.*delivery.*voice|daily report.*voice|no voice.*not.*complete|语音.*(?:主交付|不算完成|必须|不能缺)|日报.*(?:语音|音频).*不算完成/i.test(excerpt),
     problem: "Some workflows define voice output as the primary deliverable, so text-only completion can be incomplete.",
     trigger: "When producing daily reports or deliverables whose channel policy requires voice.",
     action: "Produce the required voice artifact as part of the deliverable.",
@@ -241,7 +243,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "private_route_remote_access",
-    matches: (excerpt) => /private route|tailscale|mac mini|macmini|trusted.*route/i.test(excerpt),
+    matches: (excerpt) => /private route|tailscale|mac mini|macmini|trusted.*route|内网入口|私有(?:线路|入口|路由)|公网 IP|优先用 Tailscale/i.test(excerpt),
     problem: "Remote personal infrastructure access can be unsafe or unreliable when it bypasses the trusted private route.",
     trigger: "Before accessing personal remote machines or services.",
     action: "Use the configured private route or trusted access path instead of an ad hoc public route.",
@@ -253,7 +255,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "self_test_after_changes",
-    matches: (excerpt) => /self.test|test after.*change|verify after.*change/i.test(excerpt),
+    matches: (excerpt) => /self.test|test after.*change|verify after.*change|改完.*(?:自测|测试|验证)|修改后.*(?:自测|测试|验证)|(?:自测|测试|验证).*(?:改完|修改后)|不让.*(?:用户|你).*测试员/i.test(excerpt),
     problem: "Changes can introduce regressions when not tested after modification.",
     trigger: "After making code, configuration, or operational changes.",
     action: "Run a self-test or verification after the change.",
@@ -265,7 +267,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "cache_busting",
-    matches: (excerpt) => /cache.*bust|bust.*cache|timestamp.*cache|cache.*timestamp/i.test(excerpt),
+    matches: (excerpt) => /cache.*bust|bust.*cache|timestamp.*cache|cache.*timestamp|\?v=timestamp|浏览器缓存|强刷|缓存.*(?:强刷|timestamp)|timestamp.*强刷/i.test(excerpt),
     problem: "Stale caches can hide current behavior or serve outdated assets.",
     trigger: "When cache-sensitive content changes or stale results are suspected.",
     action: "Use explicit cache busting such as timestamped cache keys where appropriate.",
@@ -276,7 +278,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "case_insensitive_db_collation",
-    matches: (excerpt) => /collate.*nocase|case.insensitive.*collat|nocase/i.test(excerpt),
+    matches: (excerpt) => /collate.*nocase|case.insensitive.*collat|nocase|大小写.*坑|大小写.*(?:查询|匹配)|数据库.*大小写/i.test(excerpt),
     problem: "Case-sensitive database comparisons can miss logically equivalent values.",
     trigger: "When database lookups or uniqueness checks should ignore case.",
     action: "Use case-insensitive collation such as NOCASE for the relevant comparison or index.",
@@ -287,7 +289,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "rate_limit_model_failover",
-    matches: (excerpt) => /rate.limit|failover|model.*fallback|fallback.*model/i.test(excerpt),
+    matches: (excerpt) => /rate.limit|failover|model.*fallback|fallback.*model|限流.*(?:回退|切|fallback|failover|OmniRoute)|(?:回退|fallback|failover|OmniRoute).*限流/i.test(excerpt),
     problem: "Rate limits or model failures can interrupt agent work without a fallback path.",
     trigger: "When a model call is rate-limited, unavailable, or otherwise fails.",
     action: "Fail over to an approved fallback model or fallback path.",
@@ -311,7 +313,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
   },
   {
     id: "slack_raw_user_id",
-    matches: (excerpt) => /slack.*\bU[A-Z0-9]{8,}|raw.*user.*id/i.test(excerpt),
+    matches: (excerpt) => /slack.*\bU[A-Z0-9]{8,}|raw.*user.*id|Slack.*原始用户 ID|user:U[A-Z0-9]{8,}|原始.*U\.\.\.|原始.*用户.*ID/i.test(excerpt),
     problem: "Some integrations require raw platform user identifiers, but those identifiers can leak private routing details.",
     trigger: "When handling Slack or chat user identifiers in delivery or team-visible notes.",
     action: "Use the required raw user identifier only at the integration boundary and redact it from shared knowledge.",
@@ -365,7 +367,8 @@ export function extractDeterministicLessons(
 
 function isWeakSpan(excerpt: string): boolean {
   if (excerpt.length < 10) {
-    return true;
+    const cjkChars = excerpt.match(/[\u4e00-\u9fff]/g)?.length ?? 0;
+    return cjkChars < 5;
   }
   return WEAK_SPAN_PATTERNS.some((pattern) => pattern.test(excerpt));
 }

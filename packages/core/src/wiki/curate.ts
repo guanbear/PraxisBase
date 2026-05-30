@@ -500,7 +500,12 @@ async function collectLessonReportEvidence(root: string): Promise<WikiEvidenceIt
     throw error;
   }
 
-  const lessons: Array<ExperienceLesson & { state?: string }> = [];
+  const reports: Array<{
+    file: string;
+    createdAt: string;
+    authorityMode?: "personal-local" | "team-git";
+    lessons: Array<ExperienceLesson & { state?: string }>;
+  }> = [];
   for (const file of files.sort()) {
     if (!file.endsWith(".json")) continue;
     let raw: unknown;
@@ -510,21 +515,40 @@ async function collectLessonReportEvidence(root: string): Promise<WikiEvidenceIt
       continue;
     }
     if (!isRecord(raw) || raw.type !== "lesson_pipeline_report" || !Array.isArray(raw.lessons)) continue;
+    const lessons: Array<ExperienceLesson & { state?: string }> = [];
     for (const candidate of raw.lessons) {
       const parsed = ExperienceLessonSchema.safeParse(candidate);
       if (!parsed.success) continue;
       const state = isRecord(candidate) && typeof candidate.state === "string" ? candidate.state : undefined;
       lessons.push(state ? { ...parsed.data, state } : parsed.data);
     }
+    reports.push({
+      file,
+      createdAt: typeof raw.created_at === "string" ? raw.created_at : file,
+      authorityMode: raw.authority_mode === "personal-local" || raw.authority_mode === "team-git"
+        ? raw.authority_mode
+        : undefined,
+      lessons,
+    });
   }
 
-  return buildWikiEvidenceFromLessons(lessons);
+  const latest = reports.sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt) || b.file.localeCompare(a.file),
+  )[0];
+  if (!latest) return [];
+
+  return buildWikiEvidenceFromLessons(latest.lessons, {
+    authorityMode: latest.authorityMode === "personal-local" ? "personal-local" : "team-git",
+  });
 }
 
 function mergeEvidenceItems(items: WikiEvidenceItem[]): WikiEvidenceItem[] {
   const deduped = new Map<string, WikiEvidenceItem>();
   for (const item of items) {
-    const key = `${item.source_ref}:${item.source_hash}`;
+    const lessonSignature = item.signatures.find((signature) => signature.startsWith("lesson:"));
+    const key = item.kind === "distilled_experience" && lessonSignature
+      ? `lesson:${lessonSignature}:${item.id}`
+      : `${item.source_ref}:${item.source_hash}`;
     if (!deduped.has(key)) deduped.set(key, item);
   }
   return Array.from(deduped.values()).sort((a, b) => a.id.localeCompare(b.id));
@@ -764,8 +788,7 @@ function renderSpanProvenance(evidence: WikiEvidenceItem[]): string[] {
         ? ` lines ${span.line_start}-${span.line_end}`
         : "";
       const heading = span.heading_path.length > 0 ? ` (${span.heading_path.join(" > ")})` : "";
-      const excerpt = span.excerpt ? ` - ${span.excerpt}` : "";
-      return `- ${span.source_ref}#${span.span_id}${lines}${heading}${excerpt}`;
+      return `- ${span.source_ref}#${span.span_id}${lines}${heading}`;
     });
   return spanLines.length > 0 ? spanLines : [];
 }

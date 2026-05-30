@@ -170,3 +170,51 @@ test("planner carries nearest heading context with selected memory spans", () =>
     ["heading-ops", "memory-target-machine"],
   );
 });
+
+test("planner preserves diverse golden memory lessons under noisy equal-score memory", () => {
+  const makeSpan = (spanId: string, line: number, excerpt: string, kind: "heading" | "bullet" | "paragraph" = "bullet") => ({
+    source_item_id: "memory",
+    source_ref: "source-inventory://openclaw/remote/MEMORY.md",
+    source_hash: "sha256:m",
+    span_id: spanId,
+    line_start: line,
+    line_end: line,
+    byte_start: line * 10,
+    byte_end: line * 10 + excerpt.length,
+    heading_path: ["Important lessons"],
+    excerpt,
+    excerpt_hash: `sha256:${spanId}`,
+    span_kind: kind,
+  });
+  const noisy = Array.from({ length: 60 }, (_, index) =>
+    makeSpan(
+      `noise-${index}`,
+      100 + index,
+      "Slack daily report generated successfully with cache fallback and important verified delivery notes.",
+    ),
+  );
+  const golden = [
+    makeSpan("self-test", 10, "修改后必须自测，不要让用户反复测试。", "paragraph"),
+    makeSpan("target-machine", 11, "执行重启或停止命令前必须明确确认目标机器，避免在错机器上操作。"),
+    makeSpan("cache-bust", 12, "前端更新后使用 ?v=timestamp 强刷，避免浏览器缓存。"),
+    makeSpan("nocase", 13, "数据库查询使用 COLLATE NOCASE，避免大小写坑。"),
+    makeSpan("failover", 14, "智谱限流时切 OmniRoute 回退，保留降级状态。"),
+  ];
+
+  const selected = planLessonSpans(
+    [{
+      source_item_id: "memory",
+      source_kind: "memory_file",
+      authority_hint: "agent_native_memory",
+      content_spans: [...noisy, ...golden],
+    } as any],
+    { maxSpans: 10 },
+  );
+
+  for (const spanId of ["self-test", "target-machine", "cache-bust", "nocase", "failover"]) {
+    assert.ok(
+      selected.some((span) => span.span_id === spanId),
+      `expected selected spans to include ${spanId}`,
+    );
+  }
+});

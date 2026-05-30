@@ -96,10 +96,12 @@ export function classifyLessonState(
   const sourceCount = options.sourceCount ?? lesson.source_refs?.length ?? 1;
   const privacyAllowsPromotion =
     lesson.privacy_tier === "safe" ||
-    (mode === "team-git" && lesson.privacy_tier === "team_allowed");
+    (mode === "team-git" && lesson.privacy_tier === "team_allowed") ||
+    (mode === "personal-local" && lesson.privacy_tier === "personal_only");
   if (!privacyAllowsPromotion) return "candidate";
 
   const skillReady =
+    lesson.privacy_tier !== "personal_only" &&
     lesson.confidence >= 0.9 &&
     Boolean(lesson.verification) &&
     Boolean(lesson.negative_case) &&
