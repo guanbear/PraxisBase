@@ -18,7 +18,118 @@ type PatternFamily = {
   applies_to_systems: string[];
   portability: ExperienceLesson["portability"];
   confidence: number;
+  cue_family?: ExperienceLesson["cue_family"];
 };
+
+type GenericCueFamily = {
+  id: string;
+  matches: (excerpt: string) => boolean;
+  cue_family: ExperienceLesson["cue_family"];
+  problem: string;
+  trigger: string;
+  actionPrefix: string;
+  verification?: string;
+  negative_case?: string;
+  portability: ExperienceLesson["portability"];
+  confidence: number;
+};
+
+const GENERIC_CUE_FAMILIES: GenericCueFamily[] = [
+  {
+    id: "explicit_veto",
+    matches: (excerpt) => /^(never|do not|don't|avoid)\b|without explicit approval|^(禁止|不要|不能)/i.test(excerpt),
+    cue_family: "explicit_user",
+    problem: "Explicit user vetoes can be lost when agents treat them as ordinary transcript text.",
+    trigger: "When a future action intersects a recorded veto or approval boundary.",
+    actionPrefix: "Avoid the forbidden action",
+    verification: "Confirm the requested action does not violate the recorded veto or has explicit approval.",
+    negative_case: "Do not bypass explicit user vetoes from memory or session evidence.",
+    portability: "agent_family",
+    confidence: 0.92,
+  },
+  {
+    id: "explicit_preference",
+    matches: (excerpt) => /(?:^|\b)(user preference|preference)\s*:|用户偏好|我偏好|\bI prefer\b/i.test(excerpt),
+    cue_family: "explicit_user",
+    problem: "Explicit user preferences can be buried in raw memory or session records.",
+    trigger: "When future work matches the recorded preference.",
+    actionPrefix: "Follow the explicit preference",
+    verification: "Check the response or command path follows the recorded preference.",
+    portability: "agent_family",
+    confidence: 0.9,
+  },
+  {
+    id: "recorded_decision",
+    matches: (excerpt) => /^(decision|decided)\s*:|^决策[:：]/i.test(excerpt),
+    cue_family: "reflection",
+    problem: "Recorded decisions lose value if agents rediscover or contradict them later.",
+    trigger: "When planning work in the same decision area.",
+    actionPrefix: "Use the recorded decision as the default",
+    verification: "Confirm the plan is consistent with the recorded decision or explicitly supersedes it.",
+    negative_case: "Do not reopen settled decisions without new evidence.",
+    portability: "project",
+    confidence: 0.86,
+  },
+  {
+    id: "unresolved_task",
+    matches: (excerpt) => /^(todo|unresolved|open task|follow.?up)\b|^(待办|未解决)[:：]/i.test(excerpt),
+    cue_family: "reflection",
+    problem: "Unresolved work can disappear after the originating session ends.",
+    trigger: "When resuming related work or planning the next iteration.",
+    actionPrefix: "Track and revisit the unresolved task",
+    verification: "Confirm whether the task is now completed, obsolete, or still pending.",
+    negative_case: "Do not treat unresolved tasks as completed lessons.",
+    portability: "project",
+    confidence: 0.78,
+  },
+  {
+    id: "reflection_lesson",
+    matches: (excerpt) => /^(reflection|lesson learned|retrospective)\s*:|^(反思|教训|总结)[:：]/i.test(excerpt),
+    cue_family: "reflection",
+    problem: "Reflections are useful only after they are converted into reusable future guidance.",
+    trigger: "When the same context, failure, or workflow appears again.",
+    actionPrefix: "Apply the reflected lesson",
+    verification: "Check the new work avoids the reflected failure mode.",
+    portability: "agent_family",
+    confidence: 0.84,
+  },
+  {
+    id: "repeated_failure",
+    matches: (excerpt) => /\brepeated failure\b|failed repeatedly|repeatedly failed|反复失败/i.test(excerpt),
+    cue_family: "repeated_failure",
+    problem: "Repeated failures indicate a reusable failure signature rather than a one-off event.",
+    trigger: "When the same failure signature appears again.",
+    actionPrefix: "Start from the recovered failure path",
+    verification: "Verify both the fix and the absence of the repeated failure signature.",
+    negative_case: "Do not keep retrying the same failing path without changing diagnosis.",
+    portability: "agent_family",
+    confidence: 0.88,
+  },
+  {
+    id: "tool_sequence",
+    matches: (excerpt) => /\btool sequence\b|^sequence\s*:|^steps\s*:|first .+\bthen\b/i.test(excerpt),
+    cue_family: "tool_sequence",
+    problem: "Useful tool ordering can be lost if agents remember only the final outcome.",
+    trigger: "When the same workflow needs to be repeated or debugged.",
+    actionPrefix: "Follow the recorded tool sequence",
+    verification: "Confirm each step completes before moving to the next recorded step.",
+    negative_case: "Do not skip ordering-sensitive tool steps.",
+    portability: "agent_family",
+    confidence: 0.86,
+  },
+  {
+    id: "verified_fix",
+    matches: (excerpt) => /\bverified fix\b|fixed .+\b(verified|passed)\b|verification passed/i.test(excerpt),
+    cue_family: "verified_fix",
+    problem: "Verified fixes should become reusable repair guidance instead of remaining session anecdotes.",
+    trigger: "When the same failure or repair context appears again.",
+    actionPrefix: "Reuse the verified fix path",
+    verification: "Run the same or equivalent verification before claiming completion.",
+    negative_case: "Do not reuse a fix without repeating the relevant verification.",
+    portability: "agent_family",
+    confidence: 0.9,
+  },
+];
 
 const PATTERN_FAMILIES: PatternFamily[] = [
   {
@@ -90,6 +201,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
     applies_to_systems: ["memory", "context-injection", "daily-logs"],
     portability: "agent_family",
     confidence: 0.9,
+    cue_family: "reflection",
   },
   {
     id: "openclaw_export_mapping",
@@ -195,6 +307,7 @@ const PATTERN_FAMILIES: PatternFamily[] = [
     applies_to_systems: ["recovery", "operations", "agent-runtime"],
     portability: "agent_family",
     confidence: 0.89,
+    cue_family: "repeated_failure",
   },
   {
     id: "slack_raw_user_id",
@@ -228,35 +341,22 @@ export function extractDeterministicLessons(
       continue;
     }
 
+    let matchedPattern = false;
     for (const family of PATTERN_FAMILIES) {
       if (!family.matches(excerpt)) {
         continue;
       }
 
-      const hash = computeHash(`${family.id}\n${span.source_hash}\n${span.span_id}\n${excerpt}`).slice("sha256:".length, 18);
-      const lesson = ExperienceLessonSchema.parse({
-        lesson_id: `det_${family.id}_${hash}`,
-        claim: excerpt,
-        safe_claim: buildSafeClaim(family),
-        problem: family.problem,
-        trigger: family.trigger,
-        action: family.action,
-        verification: family.verification,
-        negative_case: family.negative_case,
-        applies_to_agents: [options.agent || "generic"],
-        applies_to_systems: family.applies_to_systems,
-        portability: family.portability,
-        privacy_tier: "safe",
-        scope: options.scope,
-        confidence: family.confidence,
-        cue_family: span.source_ref.includes("MEMORY.md") ? "native_memory" : "reflection",
-        source_refs: [span.source_ref],
-        source_hashes: [span.source_hash],
-        evidence_spans: [span],
-        redaction_notes: [],
-        created_at: options.now,
-      });
-      lessons.push(lesson);
+      lessons.push(buildPatternLesson(family, span, excerpt, options));
+      matchedPattern = true;
+    }
+    if (matchedPattern) {
+      continue;
+    }
+
+    const genericFamily = GENERIC_CUE_FAMILIES.find((family) => family.matches(excerpt));
+    if (genericFamily) {
+      lessons.push(buildGenericLesson(genericFamily, span, excerpt, options));
     }
   }
 
@@ -270,10 +370,99 @@ function isWeakSpan(excerpt: string): boolean {
   return WEAK_SPAN_PATTERNS.some((pattern) => pattern.test(excerpt));
 }
 
+function buildGenericLesson(
+  family: GenericCueFamily,
+  span: EvidenceSpan,
+  excerpt: string,
+  options: DeterministicLessonOptions,
+): ExperienceLesson {
+  const statement = cleanCueStatement(excerpt);
+  const systems = inferSystems(excerpt);
+  const hash = computeHash(`${family.id}\n${span.source_hash}\n${span.span_id}\n${excerpt}`).slice("sha256:".length, 18);
+  return ExperienceLessonSchema.parse({
+    lesson_id: `det_${family.id}_${hash}`,
+    claim: excerpt,
+    safe_claim: `${family.actionPrefix}: ${statement}.`,
+    problem: family.problem,
+    trigger: family.trigger,
+    action: `${family.actionPrefix}: ${statement}.`,
+    verification: family.verification,
+    negative_case: family.negative_case,
+    applies_to_agents: [options.agent || "generic"],
+    applies_to_systems: systems.length > 0 ? systems : ["agent-runtime"],
+    portability: family.portability,
+    privacy_tier: "safe",
+    scope: options.scope,
+    confidence: family.confidence,
+    cue_family: family.cue_family,
+    source_refs: [span.source_ref],
+    source_hashes: [span.source_hash],
+    evidence_spans: [span],
+    redaction_notes: [],
+    created_at: options.now,
+  });
+}
+
+function buildPatternLesson(
+  family: PatternFamily,
+  span: EvidenceSpan,
+  excerpt: string,
+  options: DeterministicLessonOptions,
+): ExperienceLesson {
+  const hash = computeHash(`${family.id}\n${span.source_hash}\n${span.span_id}\n${excerpt}`).slice("sha256:".length, 18);
+  return ExperienceLessonSchema.parse({
+    lesson_id: `det_${family.id}_${hash}`,
+    claim: excerpt,
+    safe_claim: buildSafeClaim(family),
+    problem: family.problem,
+    trigger: family.trigger,
+    action: family.action,
+    verification: family.verification,
+    negative_case: family.negative_case,
+    applies_to_agents: [options.agent || "generic"],
+    applies_to_systems: family.applies_to_systems,
+    portability: family.portability,
+    privacy_tier: "safe",
+    scope: options.scope,
+    confidence: family.confidence,
+    cue_family: family.cue_family ?? (span.source_ref.includes("MEMORY.md") ? "native_memory" : "reflection"),
+    source_refs: [span.source_ref],
+    source_hashes: [span.source_hash],
+    evidence_spans: [span],
+    redaction_notes: [],
+    created_at: options.now,
+  });
+}
+
 function buildSafeClaim(family: PatternFamily): string {
   const trigger = family.trigger.replace(/\.$/, "");
   const action = family.action.replace(/\.$/, "");
   return `${trigger}, ${lowercaseFirst(action)}.`;
+}
+
+function cleanCueStatement(excerpt: string): string {
+  const cleaned = excerpt
+    .replace(/^(user preference|preference|decision|decided|todo|unresolved|open task|follow.?up|reflection|lesson learned|retrospective|repeated failure|tool sequence|sequence|steps|verified fix)\s*[:：-]\s*/i, "")
+    .replace(/^(用户偏好|决策|待办|未解决|反思|教训|总结)\s*[:：-]\s*/i, "")
+    .trim()
+    .replace(/\.$/, "");
+  return cleaned.length > 0 ? cleaned : excerpt.replace(/\.$/, "");
+}
+
+function inferSystems(excerpt: string): string[] {
+  const lower = excerpt.toLowerCase();
+  const systems = new Set<string>();
+  if (lower.includes("openclaw")) systems.add("openclaw");
+  if (lower.includes("codex")) systems.add("codex");
+  if (lower.includes("opencode")) systems.add("opencode");
+  if (lower.includes("claude")) systems.add("claude-code");
+  if (lower.includes("gitlab")) systems.add("gitlab");
+  if (lower.includes("git ")) systems.add("git");
+  if (lower.includes("memory") || lower.includes("memory.md")) systems.add("memory");
+  if (lower.includes("ssh") || lower.includes("remote")) systems.add("remote-access");
+  if (lower.includes("site") || lower.includes("html")) systems.add("html-site");
+  if (lower.includes("test") || lower.includes("verify") || lower.includes("passed")) systems.add("verification");
+  return [...systems];
 }
 
 function lowercaseFirst(text: string): string {

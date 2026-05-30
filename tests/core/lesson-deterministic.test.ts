@@ -1,7 +1,10 @@
 /// <reference types="node" />
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractDeterministicLessons } from "@praxisbase/core";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { buildSourceInventory, extractDeterministicLessons } from "@praxisbase/core";
 
 function makeSpan(excerpt: string, spanId = "s1") {
   return {
@@ -88,4 +91,96 @@ test("skips generic run report", () => {
   const lessons = extractDeterministicLessons([span], options);
 
   assert.equal(lessons.length, 0);
+});
+
+test("extracts generic memory-first cue families without AI", () => {
+  const spans = [
+    makeSpan("User preference: use rg before grep when searching code.", "pref"),
+    makeSpan("Never run git reset --hard without explicit approval.", "veto"),
+    makeSpan("Decision: GitLab is the team authority for shared knowledge.", "decision"),
+    makeSpan("TODO unresolved: add SSH remote OpenClaw fetch retry.", "unresolved"),
+    makeSpan("Reflection: raw logs bury durable memory unless distilled into MEMORY.md.", "reflection"),
+    makeSpan("Repeated failure: OpenClaw dispatch failed until runner presence was checked.", "repeat"),
+    makeSpan("Tool sequence: run source doctor, fetch memory, daily run, then verify site.", "sequence"),
+    makeSpan("Verified fix: restored memory recall and pnpm check passed.", "verified"),
+  ];
+
+  const lessons = extractDeterministicLessons(spans, options);
+
+  assert.equal(lessons.length, 8);
+  assert.deepEqual(
+    lessons.map((lesson) => lesson.cue_family),
+    [
+      "explicit_user",
+      "explicit_user",
+      "reflection",
+      "reflection",
+      "reflection",
+      "repeated_failure",
+      "tool_sequence",
+      "verified_fix",
+    ],
+  );
+  assert.deepEqual(lessons.map((lesson) => lesson.evidence_spans[0]!.span_id), [
+    "pref",
+    "veto",
+    "decision",
+    "unresolved",
+    "reflection",
+    "repeat",
+    "sequence",
+    "verified",
+  ]);
+  assert.ok(lessons.find((lesson) => lesson.evidence_spans[0]!.span_id === "veto")!.negative_case);
+  assert.match(lessons.find((lesson) => lesson.evidence_spans[0]!.span_id === "sequence")!.action, /sequence|steps/i);
+});
+
+test("extracts OpenHuman-style trajectory transcript cues after source inventory parsing", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pb-m25-openhuman-style-"));
+  const dir = join(root, "sessions");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "trajectory.jsonl"), [
+    JSON.stringify({
+      type: "message",
+      role: "assistant",
+      content: "Reflection: repeated OpenClaw dispatch failure was traced to missing runner presence checks.",
+    }),
+    JSON.stringify({
+      type: "tool_call",
+      tool: "shell",
+      arguments: { cmd: "praxisbase source doctor --json && praxisbase memory fetch --json" },
+    }),
+    JSON.stringify({
+      type: "tool_result",
+      tool: "shell",
+      result: "Tool sequence: run source doctor, fetch memory, run daily, then verify the generated site.",
+    }),
+    JSON.stringify({
+      type: "message",
+      role: "assistant",
+      summary: "Verified fix: remote OpenClaw memory fetch retry restored ingest and pnpm check passed.",
+    }),
+  ].join("\n"), "utf8");
+
+  const inventory = await buildSourceInventory(root, {
+    agent: "openhuman",
+    path: dir,
+    scope: "personal",
+    origin: "local",
+  });
+  const spans = inventory.flatMap((item) => item.content_spans);
+
+  const lessons = extractDeterministicLessons(spans, {
+    ...options,
+    agent: "openhuman",
+    scope: "personal",
+  });
+
+  assert.ok(spans.some((span) => span.span_kind === "tool_call"));
+  assert.ok(spans.some((span) => span.span_kind === "tool_result"));
+  assert.deepEqual(
+    lessons.map((lesson) => lesson.cue_family),
+    ["repeated_failure", "tool_sequence", "verified_fix"],
+  );
+  assert.ok(lessons.every((lesson) => lesson.source_refs[0]!.startsWith("source-inventory://openhuman/")));
 });

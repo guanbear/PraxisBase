@@ -31,9 +31,9 @@
 
 ## 4. Deterministic Lesson Extraction
 
-- [ ] Add deterministic extraction for explicit preferences, vetoes, decisions, unresolved tasks, reflections, repeated failures, tool sequences, and verified fixes.
+- [x] Add deterministic extraction for explicit preferences, vetoes, decisions, unresolved tasks, reflections, repeated failures, tool sequences, and verified fixes.
 - [x] Preserve source refs, source hashes, and evidence span ids in every extracted seed.
-- [ ] Add tests based on OpenHuman-style transcript ingest behavior without copying OpenHuman code.
+- [x] Add tests based on OpenHuman-style transcript ingest behavior without copying OpenHuman code.
 
 ## 5. LLM Lesson Extraction
 
