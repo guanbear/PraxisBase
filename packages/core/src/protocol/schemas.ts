@@ -1019,6 +1019,7 @@ export const DailyExperienceReportSchema = z.object({
     })),
     production_ready: z.boolean(),
     blocking_reasons: z.array(z.string()),
+    warnings: z.array(z.string()).default([]),
   }).optional(),
 	  outputs: z.array(z.string()),
   warnings: z.array(z.string()).default([]),

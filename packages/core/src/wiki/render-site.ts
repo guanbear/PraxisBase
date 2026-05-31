@@ -393,6 +393,7 @@ function renderPersonalGaSection(report: NonNullable<DailyReportSummary["persona
       <article><span>Leakage scan</span><strong>${escapeHtml(report.leakage_scan.passed ? "passed" : "blocked")}</strong></article>
     </div>
     ${report.blocking_reasons.length > 0 ? `<p class="muted">Blockers: ${escapeHtml(report.blocking_reasons.join("; "))}</p>` : ""}
+    ${report.warnings && report.warnings.length > 0 ? `<p class="muted">Warnings: ${escapeHtml(report.warnings.join("; "))}</p>` : ""}
     <h3>Experience Sources</h3>
     <ol class="link-list">
       ${report.source_coverage.length > 0 ? report.source_coverage.map((source) => `<li>
@@ -1316,6 +1317,7 @@ interface DailyReportSummary {
 	    }>;
 	    production_ready: boolean;
 	    blocking_reasons: string[];
+	    warnings: string[];
 	  };
 	  agentmemory_sources: Array<{
     name: string;
@@ -1965,6 +1967,7 @@ function parsePersonalGaSummary(value: unknown): DailyReportSummary["personal_ga
     dispositions,
     production_ready: report.production_ready === true,
     blocking_reasons: stringArray(report.blocking_reasons),
+    warnings: stringArray(report.warnings),
   };
 }
 

@@ -6,6 +6,34 @@ import {
   summarizePersonalSourceCoverage,
 } from "@praxisbase/core";
 
+function productionGaInput(overrides: Partial<Parameters<typeof buildPersonalGaReport>[0]> = {}): Parameters<typeof buildPersonalGaReport>[0] {
+  return {
+    mode: "production_ai",
+    sourceCoverage: [{ agent: "openclaw", source_kind: "memory_file", configured: true, available: true, items: 3 }],
+    lessons: [{ lesson_id: "lesson-1" }],
+    dispositions: [
+      {
+        lesson_id: "lesson-1",
+        state: "active_personal",
+        decision: "active_personal_context",
+        reason: "lesson_available_for_personal_runtime_context",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "personal_only",
+        portability: "agent_family",
+        applies_to_agents: ["openclaw", "codex"],
+        applies_to_systems: ["openclaw"],
+      } as any,
+    ],
+    goldenValidation: { matched: 1, required: 1, missed: [] },
+    leakageScan: { passed: true, findings: [] },
+    cache: { hits: 1, misses: 0, writes: 0 },
+    html: { index: "dist/index.html", review: "dist/review.html" },
+    agentConsumption: [{ surface: "pb_context", available: true, authority: ["stable_pb_page", "active_personal_lesson"] }],
+    ...overrides,
+  };
+}
+
 test("Personal GA report is not production ready when AI is disabled", () => {
   const report = buildPersonalGaReport({
     mode: "degraded_no_ai",
@@ -23,6 +51,158 @@ test("Personal GA report is not production ready when AI is disabled", () => {
   assert.ok(report.blocking_reasons.includes("ai_lesson_extraction_disabled"));
 });
 
+test("Personal GA report treats sidecar source failures as warnings when PB core output is usable", () => {
+  const report = buildPersonalGaReport(productionGaInput({
+    sourceCoverage: [
+      { agent: "openclaw", source_kind: "memory_file", configured: true, available: true, items: 3 },
+      { agent: "agentmemory", source_kind: "sidecar_import", configured: true, available: false, items: 0, blocking: true },
+      { agent: "gbrain", source_kind: "sidecar_import", configured: true, available: false, items: 0, blocking: true },
+    ],
+  }));
+
+  assert.equal(report.production_ready, true);
+  assert.deepEqual(report.blocking_reasons, []);
+  assert.deepEqual(report.warnings, [
+    "optional_sidecar_unavailable:agentmemory:sidecar_import",
+    "optional_sidecar_unavailable:gbrain:sidecar_import",
+  ]);
+});
+
+test("Personal GA report requires at least one PB-authoritative knowledge output", () => {
+  const report = buildPersonalGaReport(productionGaInput({
+    lessons: [{ lesson_id: "lesson-1" }],
+    dispositions: [
+      {
+        lesson_id: "lesson-1",
+        state: "wiki_ready",
+        decision: "queued_for_next_run",
+        reason: "lesson_ready_but_processing_limit_reached",
+        blocking_reason: "proposal_or_processing_limit",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "safe",
+        portability: "universal",
+        applies_to_agents: ["codex"],
+        applies_to_systems: [],
+      } as any,
+    ],
+    agentConsumption: [{ surface: "pb_context", available: false, authority: ["stable_pb_page", "active_personal_lesson"] }],
+  }));
+
+  assert.equal(report.production_ready, false);
+  assert.ok(report.blocking_reasons.includes("no_personal_knowledge_output"));
+  assert.ok(report.blocking_reasons.includes("agent_context_unavailable"));
+});
+
+test("Personal GA report does not let proposal queue limits block when a usable PB output exists", () => {
+  const report = buildPersonalGaReport(productionGaInput({
+    lessons: [{ lesson_id: "lesson-1" }, { lesson_id: "lesson-2" }],
+    dispositions: [
+      {
+        lesson_id: "lesson-1",
+        state: "active_personal",
+        decision: "active_personal_context",
+        reason: "lesson_available_for_personal_runtime_context",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "personal_only",
+        portability: "agent_family",
+        applies_to_agents: ["openclaw"],
+        applies_to_systems: ["openclaw"],
+      } as any,
+      {
+        lesson_id: "lesson-2",
+        state: "wiki_ready",
+        decision: "queued_for_next_run",
+        reason: "lesson_ready_but_processing_limit_reached",
+        blocking_reason: "proposal_or_processing_limit",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "safe",
+        portability: "universal",
+        applies_to_agents: ["codex"],
+        applies_to_systems: [],
+      } as any,
+    ],
+  }));
+
+  assert.equal(report.production_ready, true);
+  assert.equal(report.blocking_reasons.includes("proposal_or_processing_limit"), false);
+});
+
+test("Personal GA report warns on current-run privacy review without blocking usable personal output", () => {
+  const report = buildPersonalGaReport(productionGaInput({
+    lessons: [{ lesson_id: "usable" }, { lesson_id: "private-tail" }],
+    dispositions: [
+      {
+        lesson_id: "usable",
+        state: "active_personal",
+        decision: "active_personal_context",
+        reason: "lesson_available_for_personal_runtime_context",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "personal_only",
+        portability: "agent_family",
+        applies_to_agents: ["openclaw"],
+        applies_to_systems: ["openclaw"],
+      } as any,
+      {
+        lesson_id: "private-tail",
+        state: "human_required",
+        decision: "blocked_by_privacy",
+        reason: "privacy_abstraction_or_review_required",
+        blocking_reason: "privacy_abstraction_required",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "human_required",
+        portability: "private_instance",
+        applies_to_agents: ["openclaw"],
+        applies_to_systems: ["remote"],
+      } as any,
+    ],
+  }));
+
+  assert.equal(report.production_ready, true);
+  assert.equal(report.blocking_reasons.includes("privacy_hard_blocker"), false);
+  assert.ok(report.warnings.includes("privacy_review_required:private-tail"));
+});
+
+test("Personal GA report blocks current-run rejected private material", () => {
+  const report = buildPersonalGaReport(productionGaInput({
+    lessons: [{ lesson_id: "usable" }, { lesson_id: "secret" }],
+    dispositions: [
+      {
+        lesson_id: "usable",
+        state: "active_personal",
+        decision: "active_personal_context",
+        reason: "lesson_available_for_personal_runtime_context",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "personal_only",
+        portability: "agent_family",
+        applies_to_agents: ["openclaw"],
+        applies_to_systems: ["openclaw"],
+      } as any,
+      {
+        lesson_id: "secret",
+        state: "rejected",
+        decision: "blocked_by_privacy",
+        reason: "privacy_abstraction_or_review_required",
+        blocking_reason: "privacy_abstraction_required",
+        source_refs: [],
+        source_hashes: [],
+        privacy_tier: "reject",
+        portability: "private_instance",
+        applies_to_agents: ["openclaw"],
+        applies_to_systems: ["remote"],
+      } as any,
+    ],
+  }));
+
+  assert.equal(report.production_ready, false);
+  assert.ok(report.blocking_reasons.includes("privacy_hard_blocker"));
+});
+
 test("Personal GA report blocks missing configured sources and missing dispositions", () => {
   const report = buildPersonalGaReport({
     mode: "production_ai",
@@ -38,8 +218,10 @@ test("Personal GA report blocks missing configured sources and missing dispositi
 
   assert.equal(report.production_ready, false);
   assert.deepEqual(report.blocking_reasons, [
+    "agent_context_unavailable",
     "lesson_missing_disposition:lesson-1",
-    "source_unavailable:codex:session",
+    "no_personal_knowledge_output",
+    "required_source_unavailable:codex:session",
   ]);
 });
 

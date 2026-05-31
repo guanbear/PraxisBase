@@ -405,6 +405,7 @@ describe("runDailyExperience", () => {
     assert.equal(report.sources[0].status, "failed");
     assert.ok(report.sources[0].warnings.some((warning) => warning.includes("agentmemory_health_failed")));
     assert.ok(report.warnings.some((warning) => warning.includes("agentmemory_health_failed")));
+    assert.equal((report as any).personal_ga.agent_consumption.find((item: any) => item.surface === "agentmemory")?.available, false);
     assert.ok(report.outputs.some((output) => output.startsWith(protocolPaths.reportsDaily)));
     assert.ok(report.outputs.some((output) => output.startsWith(protocolPaths.runsDaily)));
   });
@@ -1325,6 +1326,8 @@ describe("runDailyExperience", () => {
     assert.equal(report.ai_distill.budget_used_uncached, 1);
     assert.equal(report.ai_distill.skipped_by_budget, 0);
     assert.match(report.ai_distill.warnings.join("\n"), /max_uncached_ai_chunks_reached:1/);
+    assert.equal((report as any).personal_ga.mode, "production_ai");
+    assert.equal((report as any).personal_ga.blocking_reasons.includes("ai_budget_exhausted"), false);
     assert.ok(progressEvents.some((event) => {
       const chunk = (event as { current_chunk?: { uncached_ai_chunks?: number; max_uncached_ai_chunks?: number } }).current_chunk;
       return chunk?.uncached_ai_chunks === 1 && chunk.max_uncached_ai_chunks === 1;

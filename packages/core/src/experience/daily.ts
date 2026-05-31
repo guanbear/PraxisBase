@@ -271,13 +271,7 @@ function dailyPersonalGaMode(
   aiDistill: DailyAiDistill,
 ): PersonalGaMode {
   if (aiMode !== "production") return "degraded_no_ai";
-  if (
-    aiDistill.skipped_by_budget > 0 ||
-    aiDistill.warnings.some((warning) =>
-      warning === "lesson_ai_skipped_by_finite_budget" ||
-      warning.startsWith("max_uncached_ai_chunks_reached:")
-    )
-  ) {
+  if (aiDistill.skipped_by_budget > 0 || aiDistill.budget_max_uncached === 0) {
     return "budget_exhausted";
   }
   return "production_ai";
@@ -2250,7 +2244,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         },
         {
           surface: "agentmemory",
-          available: sourceReports.some((source) => source.imported > 0),
+          available: sourceReports.some((source) =>
+            source.agent === "agentmemory" &&
+            source.status !== "failed" &&
+            (source.imported > 0 || source.enveloped > 0 || source.fetched > 0)
+          ),
           authority: ["sidecar_after_pb"],
         },
         {
