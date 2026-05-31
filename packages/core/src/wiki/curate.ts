@@ -1902,6 +1902,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       source_count: proposal.source_count,
       confidence: proposal.confidence,
     })),
+    ...(limit !== undefined ? { proposal_limit: limit, limit_reason: "max_curation_proposals" } : {}),
     warnings: [
       ...(degraded ? ["AI curator degraded mode is not production-ready."] : []),
       ...(minSourceCount > 1 ? [`min_source_count:${minSourceCount}`] : []),

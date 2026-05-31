@@ -308,6 +308,8 @@ export const WikiCurationReportSchema = z.object({
     source_count: z.number().int().min(1),
     confidence: z.number().min(0).max(1),
   })),
+  proposal_limit: z.number().int().min(0).optional(),
+  limit_reason: z.string().optional(),
   warnings: z.array(z.string()).default([]),
 });
 

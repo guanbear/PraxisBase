@@ -1100,6 +1100,8 @@ function renderWikiCompilerSection(report: WikiCurationReportSummary): string {
     <article><span>Hard blocks</span><strong>${escapeHtml(String(report.compiler_hard_blocks))}</strong></article>
     <article><span>Quality review needed</span><strong>${escapeHtml(String(report.compiler_human_required_quality))}</strong></article>
     <article><span>Written proposals</span><strong>${escapeHtml(String(report.output_written_proposals))}</strong></article>
+    ${report.proposal_limit !== undefined ? `<article><span>Proposal limit</span><strong>${escapeHtml(String(report.proposal_limit))}</strong></article>` : ""}
+    ${report.limit_reason ? `<article><span>Limit reason</span><strong>${escapeHtml(report.limit_reason)}</strong></article>` : ""}
     ${report.input_human_required > 0 ? `<article><span>Input/privacy triage</span><strong>${escapeHtml(String(report.input_human_required))}</strong></article>` : ""}
     ${hasRelationshipCounts ? relationshipCards.map((card) =>
       `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(String(card.value))}</strong></article>`
@@ -1360,6 +1362,8 @@ interface WikiCurationReportSummary {
   output_curated_proposals: number;
   output_written_proposals: number;
   output_conflicts: number;
+  proposal_limit?: number;
+  limit_reason?: string;
   compiler_observations: number;
   compiler_topics: number;
   compiler_page_plans_create: number;
@@ -1838,6 +1842,8 @@ async function collectLatestWikiCurationReport(root: string): Promise<WikiCurati
     output_curated_proposals: numberValue(outputCounts.curated_proposals) ?? 0,
     output_written_proposals: numberValue(outputCounts.written_proposals) ?? 0,
     output_conflicts: numberValue(outputCounts.conflicts) ?? 0,
+    proposal_limit: numberValue(latest.proposal_limit),
+    limit_reason: stringValue(latest.limit_reason),
     compiler_observations: numberValue(compilerCounts.observations) ?? 0,
     compiler_topics: numberValue(compilerCounts.topics) ?? 0,
     compiler_page_plans_create: numberValue(pagePlans.create) ?? 0,

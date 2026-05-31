@@ -6,6 +6,8 @@ import {
   buildWikiEvidenceFromLessons,
   clusterWikiEvidence,
   synthesizeCuratedWikiProposal,
+  WikiCurationReportSchema,
+  PROTOCOL_VERSION,
 } from "@praxisbase/core";
 
 test("lesson-derived wiki evidence is synthesized and span-cited", () => {
@@ -244,4 +246,50 @@ test("lesson-derived wiki proposals render applicability and span provenance", a
   assert.match(result.proposal.body_markdown, /source-inventory:\/\/openclaw\/MEMORY\.md#ack-1/);
   assert.match(result.proposal.body_markdown, /lines 12-14/);
   assert.doesNotMatch(result.proposal.body_markdown, /ACK before tools/);
+});
+
+test("curation report schema exposes proposal_limit and limit_reason when a limit is set", () => {
+  const report = WikiCurationReportSchema.parse({
+    id: "test-curation-report",
+    protocol_version: PROTOCOL_VERSION,
+    type: "wiki_curation_report",
+    created_at: "2026-05-29T01:00:00.000Z",
+    mode: "dry-run",
+    ai: { configured: false, mode: "degraded" },
+    input_counts: { evidence_items: 8, filtered_noise: 0, human_required: 0, rejected: 0, clusters: 8 },
+    output_counts: { curated_proposals: 3, written_proposals: 0, conflicts: 0 },
+    proposals: [
+      { id: "p1", target_path: "kb/procedures/a.md", title: "A", source_count: 1, confidence: 0.9 },
+      { id: "p2", target_path: "kb/procedures/b.md", title: "B", source_count: 1, confidence: 0.9 },
+      { id: "p3", target_path: "kb/procedures/c.md", title: "C", source_count: 1, confidence: 0.9 },
+    ],
+    proposal_limit: 3,
+    limit_reason: "max_curation_proposals",
+    warnings: [],
+  });
+
+  assert.equal(report.proposal_limit, 3);
+  assert.equal(report.limit_reason, "max_curation_proposals");
+  assert.equal(report.output_counts.curated_proposals, 3);
+});
+
+test("curation report schema allows missing proposal_limit for unlimited runs", () => {
+  const report = WikiCurationReportSchema.parse({
+    id: "test-curation-unlimited",
+    protocol_version: PROTOCOL_VERSION,
+    type: "wiki_curation_report",
+    created_at: "2026-05-29T01:00:00.000Z",
+    mode: "review",
+    ai: { configured: true, mode: "production", model: "test" },
+    input_counts: { evidence_items: 5, filtered_noise: 0, human_required: 0, rejected: 0, clusters: 5 },
+    output_counts: { curated_proposals: 5, written_proposals: 5, conflicts: 0 },
+    proposals: Array.from({ length: 5 }, (_, i) => ({
+      id: `p${i}`, target_path: `kb/note/${i}.md`, title: `Note ${i}`, source_count: 1, confidence: 0.8,
+    })),
+    warnings: [],
+  });
+
+  assert.equal(report.proposal_limit, undefined);
+  assert.equal(report.limit_reason, undefined);
+  assert.equal(report.output_counts.curated_proposals, 5);
 });

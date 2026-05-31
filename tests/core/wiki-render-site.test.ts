@@ -787,6 +787,8 @@ Body.
           human_required_quality: 4,
         },
         proposals: [],
+        proposal_limit: 3,
+        limit_reason: "max_curation_proposals",
         warnings: [],
       }),
       "utf8",
@@ -816,6 +818,9 @@ Body.
     assert.match(index, /<strong>4<\/strong>/);
     assert.ok(index.includes("Written proposals"));
     assert.match(index, /<strong>7<\/strong>/);
+    assert.ok(index.includes("Proposal limit"));
+    assert.ok(index.includes("Limit reason"));
+    assert.ok(index.includes("max_curation_proposals"));
     assert.ok(index.includes("2026-05-22"));
     assert.ok(index.includes("review"));
     assert.ok(index.includes("AI production"));
@@ -827,6 +832,8 @@ Body.
     assert.ok(review.includes("Wiki Compiler"));
     assert.ok(review.includes("Observations"));
     assert.match(review, /<strong>42<\/strong>/);
+    assert.ok(review.includes("Proposal limit"));
+    assert.ok(review.includes("max_curation_proposals"));
   });
 
   it("shows relationship counts and link explanations in wiki compiler section and review cards", async () => {

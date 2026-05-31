@@ -283,7 +283,7 @@ function dailyPersonalGaMode(
   return "production_ai";
 }
 
-function buildDailyLessonDispositions(input: {
+export function buildDailyLessonDispositions(input: {
   lessons: DailyLessonReport["lessons"];
   curationReport: { proposals: Array<{ target_path: string; title: string }> };
   personalGaMode: PersonalGaMode;

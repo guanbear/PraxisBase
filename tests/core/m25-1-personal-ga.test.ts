@@ -90,6 +90,91 @@ test("lesson disposition gives priority to blockers and explicit queues", () => 
   );
 });
 
+test("eight wiki-ready lessons with proposal limit three produce three materialized and five queued dispositions", () => {
+  const lessons = Array.from({ length: 8 }, (_, i) => ({
+    lesson_id: `wiki-${i + 1}`,
+    state: "wiki_ready",
+    privacy_tier: "safe",
+    portability: "universal",
+    applies_to_agents: ["codex"],
+    applies_to_systems: [],
+    source_refs: [`s${i + 1}`],
+    source_hashes: [`h${i + 1}`],
+  }));
+
+  const materializedWikiTargets = new Map<string, { target: string; action: "create" | "update" | "merge" | "promote" }>([
+    ["wiki-1", { target: "kb/procedures/lesson-1.md", action: "create" }],
+    ["wiki-2", { target: "kb/procedures/lesson-2.md", action: "create" }],
+    ["wiki-3", { target: "kb/procedures/lesson-3.md", action: "create" }],
+  ]);
+  const queuedLessonIds = new Set(["wiki-4", "wiki-5", "wiki-6", "wiki-7", "wiki-8"]);
+
+  const dispositions = buildLessonDispositions(lessons, {
+    materializedWikiTargets,
+    materializedSkillTargets: new Map(),
+    queuedLessonIds,
+    delayedByBudgetIds: new Set(),
+    privacyBlockedIds: new Set(),
+  });
+
+  assert.equal(dispositions.length, 8, "all eight lessons must receive a disposition");
+
+  const materialized = dispositions.filter((d) => d.decision === "promoted_to_wiki" || d.decision === "merged_into_existing_page");
+  const queued = dispositions.filter((d) => d.decision === "queued_for_next_run");
+
+  assert.equal(materialized.length, 3, "three lessons must be materialized as wiki proposals");
+  assert.equal(queued.length, 5, "five lessons must be queued for next run");
+
+  for (const d of queued) {
+    assert.equal(d.blocking_reason, "proposal_or_processing_limit");
+    assert.equal(d.reason, "lesson_ready_but_processing_limit_reached");
+  }
+
+  const lessonIds = dispositions.map((d) => d.lesson_id).sort();
+  assert.deepEqual(lessonIds, lessons.map((l) => l.lesson_id).sort(), "every lesson appears exactly once");
+});
+
+test("eight wiki-ready lessons with three materialized and two budget-delayed produce correct mixed dispositions", () => {
+  const lessons = Array.from({ length: 8 }, (_, i) => ({
+    lesson_id: `wiki-${i + 1}`,
+    state: "wiki_ready",
+    privacy_tier: "safe",
+    portability: "universal",
+    applies_to_agents: ["codex"],
+    applies_to_systems: [],
+    source_refs: [`s${i + 1}`],
+    source_hashes: [`h${i + 1}`],
+  }));
+
+  const materializedWikiTargets = new Map<string, { target: string; action: "create" | "update" | "merge" | "promote" }>([
+    ["wiki-1", { target: "kb/procedures/lesson-1.md", action: "create" }],
+    ["wiki-2", { target: "kb/procedures/lesson-2.md", action: "create" }],
+    ["wiki-3", { target: "kb/procedures/lesson-3.md", action: "create" }],
+  ]);
+  const delayedByBudgetIds = new Set(["wiki-6", "wiki-7"]);
+  const queuedLessonIds = new Set(["wiki-4", "wiki-5", "wiki-8"]);
+
+  const dispositions = buildLessonDispositions(lessons, {
+    materializedWikiTargets,
+    materializedSkillTargets: new Map(),
+    queuedLessonIds,
+    delayedByBudgetIds,
+    privacyBlockedIds: new Set(),
+  });
+
+  assert.equal(dispositions.length, 8);
+
+  const byDecision = new Map<string, number>();
+  for (const d of dispositions) byDecision.set(d.decision, (byDecision.get(d.decision) ?? 0) + 1);
+
+  assert.equal(byDecision.get("promoted_to_wiki"), 3);
+  assert.equal(byDecision.get("delayed_by_budget"), 2);
+  assert.equal(byDecision.get("queued_for_next_run"), 3);
+
+  const lessonIds = dispositions.map((d) => d.lesson_id).sort();
+  assert.deepEqual(lessonIds, lessons.map((l) => l.lesson_id).sort(), "every lesson appears exactly once");
+});
+
 test("summarizes personal source coverage by agent and source kind", () => {
   const summary = summarizePersonalSourceCoverage(
     [

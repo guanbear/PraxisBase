@@ -7,15 +7,16 @@ import {
   PROTOCOL_VERSION,
   protocolPaths,
   buildWikiEvidencePoolFromRoot,
+  type LessonState,
   type ExperienceLesson,
 } from "@praxisbase/core";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
-import { runDailyExperience } from "@praxisbase/core/experience/daily.js";
+import { buildDailyLessonDispositions, runDailyExperience } from "@praxisbase/core/experience/daily.js";
 
-type ReportLesson = ExperienceLesson & { state?: string };
+type ReportLesson = ExperienceLesson & { state: LessonState };
 
-function lesson(overrides: Partial<ExperienceLesson> & { state?: string } = {}): ReportLesson {
+function lesson(overrides: Partial<ExperienceLesson> & { state?: LessonState } = {}): ReportLesson {
   const id = overrides.lesson_id ?? "lesson_ack";
   return {
     lesson_id: id,
@@ -51,6 +52,7 @@ function lesson(overrides: Partial<ExperienceLesson> & { state?: string } = {}):
     }],
     redaction_notes: [],
     created_at: "2026-05-29T00:00:00.000Z",
+    state: "candidate",
     ...overrides,
   };
 }
@@ -467,6 +469,66 @@ describe("M25 production integration", () => {
       "Run self-test after changes.",
     ]);
     assert.equal(JSON.stringify(pool.items).includes("stale session-corpus noise"), false);
+  });
+
+  it("produces queued dispositions for wiki-ready lessons that exceed the curation proposal limit", () => {
+    const wikiReadyLessons = Array.from({ length: 8 }, (_, i) =>
+      lesson({
+        lesson_id: `wiki_ready_${i + 1}`,
+        state: "wiki_ready",
+        privacy_tier: "safe",
+        safe_claim: `Wiki-ready lesson ${i + 1}: reusable practice for agent runtime.`,
+        applies_to_agents: ["openclaw"],
+        applies_to_systems: ["agent-runtime"],
+        source_refs: [`source-inventory://openclaw/wiki_${i + 1}/MEMORY.md`],
+        source_hashes: [`sha256:wiki_${i + 1}`],
+        evidence_spans: [{
+          source_item_id: `wiki_${i + 1}`,
+          source_ref: `source-inventory://openclaw/wiki_${i + 1}/MEMORY.md`,
+          source_hash: `sha256:wiki_${i + 1}`,
+          span_id: `span_wiki_${i + 1}`,
+          line_start: 1,
+          line_end: 1,
+          byte_start: 0,
+          byte_end: 80,
+          heading_path: ["Runtime"],
+          excerpt: `Wiki-ready lesson ${i + 1} excerpt.`,
+          excerpt_hash: `sha256:wiki_${i + 1}_excerpt`,
+          span_kind: "bullet",
+        }],
+      }),
+    );
+
+    const dispositions = buildDailyLessonDispositions({
+      lessons: wikiReadyLessons,
+      curationReport: {
+        proposals: wikiReadyLessons.slice(0, 3).map((candidate) => ({
+          target_path: `kb/procedures/${candidate.lesson_id}.md`,
+          title: candidate.safe_claim,
+        })),
+      },
+      personalGaMode: "production_ai",
+    });
+
+    assert.equal(dispositions.length, 8);
+
+    const materialized = dispositions.filter(
+      (disposition) => disposition.decision === "promoted_to_wiki" || disposition.decision === "merged_into_existing_page",
+    );
+    const queued = dispositions.filter(
+      (disposition) => disposition.decision === "queued_for_next_run",
+    );
+
+    assert.equal(materialized.length, 3);
+    assert.equal(queued.length, 5);
+
+    for (const disposition of queued) {
+      assert.equal(disposition.blocking_reason, "proposal_or_processing_limit");
+      assert.equal(disposition.reason, "lesson_ready_but_processing_limit_reached");
+    }
+
+    const lessonIds = new Set(dispositions.map((disposition) => disposition.lesson_id));
+    assert.equal(lessonIds.size, dispositions.length, "every lesson appears exactly once");
   });
 
   it("does not feed safe lesson candidates into wiki evidence before wiki-ready state", async () => {
