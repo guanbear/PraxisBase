@@ -65,7 +65,13 @@ function sourcePrivacyScope(item: Pick<SourceInventoryItem, "scope_hint">): Pers
 }
 
 export function summarizePersonalSourceCoverage(
-  items: Array<Pick<SourceInventoryItem, "agent" | "source_kind" | "origin" | "scope_hint" | "content_spans">>,
+  items: Array<{
+    agent: string;
+    source_kind: string;
+    origin: SourceInventoryItem["origin"];
+    scope_hint: SourceInventoryItem["scope_hint"];
+    content_spans?: unknown[];
+  }>,
   configuredSources: PersonalSourceCoverageRequirement[] = [],
 ): PersonalSourceCoverage[] {
   const coverage = new Map<string, PersonalSourceCoverage>();

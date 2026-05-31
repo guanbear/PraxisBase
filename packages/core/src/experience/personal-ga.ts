@@ -44,6 +44,7 @@ export interface PersonalGaReport {
   cache: { hits: number; misses: number; writes: number };
   html: { index?: string; review?: string };
   agent_consumption: Array<{ surface: string; available: boolean; authority: string[] }>;
+  dispositions: PersonalGaDispositionRef[];
   production_ready: boolean;
   blocking_reasons: string[];
 }
@@ -81,6 +82,7 @@ export function buildPersonalGaReport(input: PersonalGaReportInput): PersonalGaR
     cache: input.cache,
     html: input.html,
     agent_consumption: input.agentConsumption,
+    dispositions: input.dispositions,
     production_ready: blocking.size === 0 && input.mode === "production_ai",
     blocking_reasons: [...blocking].sort(),
   };

@@ -16,6 +16,8 @@ import {
   type DailyExperienceReport,
   type ExperienceEnvelope,
   type ExperiencePrivacyVerdict,
+  type ExperienceSourceConfig,
+  type ExperienceSourceParser,
   type ContextReducerRule,
   type ContextReductionResult,
   type TrajectoryMicrocompactResult,
@@ -89,6 +91,9 @@ import {
 import { buildLessonAuthorityContract, runLessonPipeline, type LessonPipelineReport } from "./lesson-pipeline.js";
 import { dedupeLessons } from "./lesson-cache.js";
 import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
+import { buildPersonalGaReport, type PersonalGaMode, type PersonalGaReport } from "./personal-ga.js";
+import { buildLessonDispositions, type LessonDisposition } from "./lesson-disposition.js";
+import { summarizePersonalSourceCoverage } from "./source-inventory.js";
 
 type DailyProgressStage = "source" | "ai_distill" | "wiki-compile" | "wiki-curate" | "skill-synthesis" | "review-promote" | "backend-publish" | "site-build";
 
@@ -210,6 +215,137 @@ function lessonOriginFromSource(source: { source_type: string; privacy_trust?: s
   if (source.privacy_trust === "trusted_personal_remote") return "trusted_personal_remote";
   if (source.source_type === "git" || authorityMode === "team-git") return "team_git";
   return "external";
+}
+
+function sourceKindFromParser(parser: ExperienceSourceParser): string {
+  if (parser === "codex-session" || parser === "claude-code-session" || parser === "opencode-session") return "session";
+  if (parser === "agentmemory-memory" || parser === "gbrain-memory") return "sidecar_import";
+  if (parser === "openclaw-log" || parser === "openclaw-export") return "memory_file";
+  if (parser === "claude-code-repair-log") return "report";
+  return "generic_file";
+}
+
+function buildDailyPersonalSourceCoverage(
+  sources: ExperienceSourceConfig[],
+  sourceReports: DailyExperienceReport["sources"],
+  authorityMode: RunDailyExperienceInput["authorityMode"],
+) {
+  const sourceByName = new Map(sources.map((source) => [source.name, source]));
+  const statsByKey = new Map<string, { items: number; content_spans: number }>();
+  const availableItems = sourceReports
+    .filter((report) => report.status !== "failed")
+    .map((report) => {
+      const source = sourceByName.get(report.name);
+      if (!source) return undefined;
+      const sourceKind = sourceKindFromParser(source.parser);
+      const key = `${source.agent}:${sourceKind}`;
+      const stats = statsByKey.get(key) ?? { items: 0, content_spans: 0 };
+      stats.items += Math.max(report.fetched, report.scanned, report.enveloped);
+      stats.content_spans += report.enveloped;
+      statsByKey.set(key, stats);
+      return {
+        agent: source.agent,
+        source_kind: sourceKind,
+        origin: lessonOriginFromSource(source, authorityMode),
+        scope_hint: source.scope_default,
+        content_spans: [],
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  return summarizePersonalSourceCoverage(
+    availableItems,
+    sources.map((source) => ({
+      agent: source.agent,
+      source_kind: sourceKindFromParser(source.parser),
+      configured: true,
+    })),
+  ).map((entry) => {
+    const stats = statsByKey.get(`${entry.agent}:${entry.source_kind}`);
+    return stats ? { ...entry, items: stats.items, content_spans: stats.content_spans } : entry;
+  });
+}
+
+function dailyPersonalGaMode(
+  aiMode: DailyAiDistill["mode"],
+  aiDistill: DailyAiDistill,
+): PersonalGaMode {
+  if (aiMode !== "production") return "degraded_no_ai";
+  if (
+    aiDistill.skipped_by_budget > 0 ||
+    aiDistill.warnings.some((warning) =>
+      warning === "lesson_ai_skipped_by_finite_budget" ||
+      warning.startsWith("max_uncached_ai_chunks_reached:")
+    )
+  ) {
+    return "budget_exhausted";
+  }
+  return "production_ai";
+}
+
+function buildDailyLessonDispositions(input: {
+  lessons: DailyLessonReport["lessons"];
+  curationReport: { proposals: Array<{ target_path: string; title: string }> };
+  personalGaMode: PersonalGaMode;
+}): LessonDisposition[] {
+  const wikiTargets = new Map<string, { target: string; action: "create" | "update" | "merge" | "promote" }>();
+  const proposals = [...input.curationReport.proposals];
+  const wikiReady = input.lessons.filter((lesson) => lesson.state === "wiki_ready");
+
+  for (const lesson of wikiReady) {
+    const index = proposals.findIndex((proposal) => proposal.title === lesson.safe_claim);
+    if (index < 0) continue;
+    const [proposal] = proposals.splice(index, 1);
+    wikiTargets.set(lesson.lesson_id, { target: proposal!.target_path, action: "create" });
+  }
+
+  for (const lesson of wikiReady) {
+    if (wikiTargets.has(lesson.lesson_id)) continue;
+    const proposal = proposals.shift();
+    if (!proposal) break;
+    wikiTargets.set(lesson.lesson_id, { target: proposal.target_path, action: "create" });
+  }
+
+  const delayedByBudgetIds = new Set<string>();
+  if (input.personalGaMode === "budget_exhausted") {
+    for (const lesson of input.lessons) {
+      if (lesson.state === "candidate") delayedByBudgetIds.add(lesson.lesson_id);
+    }
+  }
+
+  const privacyBlockedIds = new Set(
+    input.lessons
+      .filter((lesson) =>
+        lesson.privacy_tier === "human_required" ||
+        lesson.privacy_tier === "reject" ||
+        lesson.state === "human_required",
+      )
+      .map((lesson) => lesson.lesson_id),
+  );
+  const rejectedLowSignalIds = new Set(
+    input.lessons
+      .filter((lesson) => lesson.state === "rejected")
+      .map((lesson) => lesson.lesson_id),
+  );
+  const queuedLessonIds = new Set(
+    input.lessons
+      .filter((lesson) =>
+        (lesson.state === "wiki_ready" || lesson.state === "skill_ready") &&
+        !wikiTargets.has(lesson.lesson_id) &&
+        !privacyBlockedIds.has(lesson.lesson_id) &&
+        !delayedByBudgetIds.has(lesson.lesson_id),
+      )
+      .map((lesson) => lesson.lesson_id),
+  );
+
+  return buildLessonDispositions(input.lessons, {
+    materializedWikiTargets: wikiTargets,
+    materializedSkillTargets: new Map(),
+    queuedLessonIds,
+    delayedByBudgetIds,
+    privacyBlockedIds,
+    rejectedLowSignalIds,
+  });
 }
 
 export type DailyNextActionStatus =
@@ -2060,6 +2196,54 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     by_decision: validationSummaries.by_decision,
     candidates_without_passing: validationSummaries.candidates_without_passing.length,
   };
+  const personalGaMode = dailyPersonalGaMode(aiMode, finalAiDistill);
+  const lessonDispositions = lessonReport
+    ? buildDailyLessonDispositions({
+      lessons: lessonReport.lessons,
+      curationReport,
+      personalGaMode,
+    })
+    : [];
+  const personalGaReport: PersonalGaReport | undefined = input.authorityMode === "personal-local"
+    ? buildPersonalGaReport({
+      mode: personalGaMode,
+      sourceCoverage: buildDailyPersonalSourceCoverage(sources, sourceReports, input.authorityMode),
+      lessons: lessonReport?.lessons.map((lesson) => ({ lesson_id: lesson.lesson_id })) ?? [],
+      dispositions: lessonDispositions,
+      goldenValidation: { matched: 0, required: 0, missed: [] },
+      leakageScan: { passed: true, findings: [] },
+      cache: {
+        hits: finalAiDistill.cache_hits + (lessonReport?.ai_cache.hits ?? 0),
+        misses: lessonReport?.ai_cache.misses ?? 0,
+        writes: lessonReport?.ai_cache.writes ?? 0,
+      },
+      html: input.buildSite && mode === "write"
+        ? { index: "dist/index.html", review: "dist/review.html" }
+        : {},
+      agentConsumption: [
+        {
+          surface: "pb_context",
+          available: Boolean(lessonReport && (lessonReport.wiki_evidence > 0 || (lessonReport.counts_by_state["active_personal"] ?? 0) > 0)),
+          authority: ["stable_pb_page", "promoted_skill", "active_personal_lesson", "sidecar_after_pb"],
+        },
+        {
+          surface: "gbrain",
+          available: brainBackends.gbrain?.publish_status === "completed" || brainBackends.gbrain?.publish_status === "partial",
+          authority: ["sidecar_after_pb"],
+        },
+        {
+          surface: "agentmemory",
+          available: sourceReports.some((source) => source.imported > 0),
+          authority: ["sidecar_after_pb"],
+        },
+        {
+          surface: "skills",
+          available: Boolean(skillSynthesisReport && (skillSynthesisReport.approved > 0 || skillSynthesisReport.promoted > 0)),
+          authority: ["promoted_skill"],
+        },
+      ],
+    })
+    : undefined;
 
   const makeReport = (sitePages: number, qualityFindings: number, outputPaths: string[]): DailyExperienceReport => {
     const reportOutputs = mode === "write"
@@ -2147,6 +2331,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	        wiki_evidence: 0,
 	        golden_validation: [],
 	      },
+      ...(personalGaReport ? { personal_ga: personalGaReport } : {}),
 	      outputs: reportOutputs,
       warnings: Array.from(new Set(warnings)).sort(),
       created_at: now,

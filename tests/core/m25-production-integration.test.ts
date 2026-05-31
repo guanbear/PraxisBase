@@ -105,6 +105,12 @@ describe("M25 production integration", () => {
     assert.equal(report.lessons.authority_contract.wiki_semantic_input, "lesson_clusters");
     assert.equal(report.lessons.authority_contract.promotion_evidence.lesson_state_authority, true);
     assert.ok(report.lessons.report_ref);
+    assert.equal((report as any).personal_ga.mode, "degraded_no_ai");
+    assert.equal((report as any).personal_ga.production_ready, false);
+    assert.ok((report as any).personal_ga.blocking_reasons.includes("ai_lesson_extraction_disabled"));
+    assert.equal((report as any).personal_ga.lesson_count, report.lessons.active_personal + report.lessons.wiki_ready + report.lessons.skill_ready + report.lessons.human_required + report.lessons.rejected);
+    assert.equal((report as any).personal_ga.lesson_count, (report as any).personal_ga.disposition_count);
+    assert.ok((report as any).personal_ga.dispositions.length > 0);
 
     const lessonReport = JSON.parse(await readFile(join(root, report.lessons.report_ref!), "utf8")) as {
       source_reports?: Array<{ source_name: string; lessons: number }>;
@@ -228,6 +234,9 @@ describe("M25 production integration", () => {
     assert.equal(report.lessons.enabled, true);
     assert.equal(report.lessons.ai_lessons, 0);
     assert.ok(report.warnings.some((warning) => warning === "lesson_ai_skipped_by_finite_budget"));
+    assert.equal((report as any).personal_ga.mode, "budget_exhausted");
+    assert.equal((report as any).personal_ga.production_ready, false);
+    assert.ok((report as any).personal_ga.blocking_reasons.includes("ai_budget_exhausted"));
   });
 
   it("renders lesson metrics from the latest daily report on the wiki site", async () => {
