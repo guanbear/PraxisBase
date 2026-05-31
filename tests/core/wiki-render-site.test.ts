@@ -363,6 +363,130 @@ Body.
     await assert.rejects(stat(join(root, "dist/experience.html")));
   });
 
+  it("renders Personal GA experience status without raw private refs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-personal-ga-"));
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(
+      join(root, ".praxisbase/reports/daily/daily_personal_ga.json"),
+      JSON.stringify({
+        id: "daily_personal_ga",
+        protocol_version: "0.1",
+        type: "daily_experience_report",
+        created_at: "2026-05-30T10:00:00.000Z",
+        authority_mode: "personal-local",
+        sources: [],
+        ai_distill: { privacy_required: 0, review_required: 0, rejected_low_signal: 0, rejected_quality: 0 },
+        proposal_candidates: 0,
+        site_pages: 2,
+        personal_ga: {
+          type: "personal_ga_report",
+          mode: "budget_exhausted",
+          source_coverage: [
+            { agent: "openclaw", source_kind: "memory_file", configured: true, available: true, items: 4, content_spans: 8, origin: "local", privacy_scope: "personal" },
+            { agent: "codex", source_kind: "session", configured: true, available: false, items: 0, content_spans: 0, origin: "local", privacy_scope: "personal", blocking: true },
+          ],
+          lesson_count: 4,
+          disposition_count: 4,
+          golden_validation: { matched: 2, required: 3, missed: ["codex_verified_repair"] },
+          leakage_scan: { passed: true, findings: [] },
+          cache: { hits: 6, misses: 2, writes: 2 },
+          html: { index: "dist/index.html", review: "dist/review.html" },
+          agent_consumption: [
+            { surface: "pb_context", available: true, authority: ["stable_pb_page", "active_personal_lesson"] },
+            { surface: "gbrain", available: false, authority: ["sidecar_after_pb"] },
+          ],
+          dispositions: [
+            {
+              lesson_id: "lesson-wiki",
+              state: "wiki_ready",
+              decision: "promoted_to_wiki",
+              target: "kb/procedures/openclaw-target-confirmation.md",
+              reason: "lesson_materialized_as_wiki_output",
+              source_refs: ["ssh://root@guanzhicheng.com/Users/guanbear/private"],
+              source_hashes: ["sha256:wiki"],
+              privacy_tier: "personal_only",
+              portability: "project",
+              applies_to_agents: ["openclaw"],
+              applies_to_systems: ["openclaw"],
+            },
+            {
+              lesson_id: "lesson-queued",
+              state: "wiki_ready",
+              decision: "queued_for_next_run",
+              reason: "lesson_ready_but_processing_limit_reached",
+              blocking_reason: "proposal_or_processing_limit",
+              source_refs: ["openclaw://macmini-ssh/private"],
+              source_hashes: ["sha256:queued"],
+              privacy_tier: "safe",
+              portability: "universal",
+              applies_to_agents: ["codex", "openclaw"],
+              applies_to_systems: ["delegation"],
+            },
+            {
+              lesson_id: "lesson-privacy",
+              state: "human_required",
+              decision: "blocked_by_privacy",
+              reason: "privacy_abstraction_or_review_required",
+              blocking_reason: "privacy_abstraction_required",
+              source_refs: ["slack://U123SECRET"],
+              source_hashes: ["sha256:privacy"],
+              privacy_tier: "human_required",
+              portability: "private_instance",
+              applies_to_agents: ["openclaw"],
+              applies_to_systems: ["slack"],
+            },
+            {
+              lesson_id: "lesson-budget",
+              state: "candidate",
+              decision: "delayed_by_budget",
+              reason: "uncached_ai_work_delayed_by_budget",
+              blocking_reason: "ai_budget_exhausted",
+              source_refs: ["codex://session/token=abc123456789"],
+              source_hashes: ["sha256:budget"],
+              privacy_tier: "safe",
+              portability: "project",
+              applies_to_agents: ["codex"],
+              applies_to_systems: ["praxisbase"],
+            },
+          ],
+          production_ready: false,
+          blocking_reasons: ["ai_budget_exhausted", "source_blocked:codex:session"],
+        },
+        outputs: [],
+        warnings: [],
+      }),
+      "utf8",
+    );
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    for (const html of [index, review]) {
+      assert.ok(html.includes("Personal GA"));
+      assert.ok(html.includes("Experience Sources"));
+      assert.ok(html.includes("openclaw / memory_file"));
+      assert.ok(html.includes("codex / session"));
+      assert.ok(html.includes("Lesson Disposition"));
+      assert.ok(html.includes("queued_for_next_run"));
+      assert.ok(html.includes("delayed_by_budget"));
+      assert.ok(html.includes("Golden Validation"));
+      assert.ok(html.includes("2 / 3"));
+      assert.ok(html.includes("Privacy Review"));
+      assert.ok(html.includes("privacy_abstraction_required"));
+      assert.ok(html.includes("Agent Use"));
+      assert.ok(html.includes("pb_context"));
+      assert.ok(html.includes("source_blocked:codex:session"));
+      assert.doesNotMatch(html, /root@guanzhicheng\.com/);
+      assert.doesNotMatch(html, /macmini-ssh/);
+      assert.doesNotMatch(html, /\/Users\/guanbear/);
+      assert.doesNotMatch(html, /U123SECRET/);
+      assert.doesNotMatch(html, /abc123456789/);
+    }
+  });
+
   it("shows pending wiki proposal candidates with confirmation guidance", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-pending-"));
     await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });

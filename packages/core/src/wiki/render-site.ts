@@ -366,10 +366,70 @@ function renderDailyUpdateSection(report: DailyReportSummary): string {
 	    ${report.lessons.golden_validation && report.lessons.golden_validation.length > 0 ? report.lessons.golden_validation.map((gv) => `<article><span>Golden ${escapeHtml(gv.fixture)}</span><strong>${escapeHtml(String(gv.matches))} matches / ${escapeHtml(String(gv.privateLeakCount))} leaks</strong></article>`).join("\n") : ""}` : ""}
 	  </div>
   ${report.lessons?.details && report.lessons.details.length > 0 ? renderLessonDetails(report.lessons.details) : ""}
+  ${report.personal_ga ? renderPersonalGaSection(report.personal_ga) : ""}
   ${renderAgentMemoryStatus(report)}
   ${renderGBrainStatus(report)}
   ${contextJuice && contextJuice.warnings.length > 0 ? `<p class="muted">Context juice warnings: ${escapeHtml(contextJuice.warnings.join("; "))}</p>` : ""}
 </section>`;
+}
+
+function renderPersonalGaSection(report: NonNullable<DailyReportSummary["personal_ga"]>): string {
+  const dispositionCounts = countBy(report.dispositions, (item) => item.decision);
+  const blockerCounts = countBy(
+    report.dispositions.filter((item) => item.blocking_reason),
+    (item) => item.blocking_reason ?? "blocked",
+  );
+  const queued = report.dispositions
+    .filter((item) => item.decision === "queued_for_next_run" || item.decision === "delayed_by_budget" || item.decision === "blocked_by_privacy")
+    .slice(0, 8);
+  return `<div class="review-section" id="personal-ga">
+    <h2>Personal GA</h2>
+    <div class="metrics">
+      <article><span>Mode</span><strong>${escapeHtml(report.mode)}</strong></article>
+      <article><span>Production ready</span><strong>${escapeHtml(report.production_ready ? "yes" : "no")}</strong></article>
+      <article><span>Lessons</span><strong>${escapeHtml(String(report.lesson_count))}</strong></article>
+      <article><span>Dispositions</span><strong>${escapeHtml(String(report.disposition_count))}</strong></article>
+      <article><span>AI cache</span><strong>${escapeHtml(`${report.cache.hits}/${report.cache.misses}`)}</strong></article>
+      <article><span>Leakage scan</span><strong>${escapeHtml(report.leakage_scan.passed ? "passed" : "blocked")}</strong></article>
+    </div>
+    ${report.blocking_reasons.length > 0 ? `<p class="muted">Blockers: ${escapeHtml(report.blocking_reasons.join("; "))}</p>` : ""}
+    <h3>Experience Sources</h3>
+    <ol class="link-list">
+      ${report.source_coverage.length > 0 ? report.source_coverage.map((source) => `<li>
+        <strong>${escapeHtml(`${source.agent} / ${source.source_kind}`)}</strong>
+        <span>${escapeHtml(source.available ? "available" : "missing")} / items ${escapeHtml(String(source.items))}${typeof source.content_spans === "number" ? ` / spans ${escapeHtml(String(source.content_spans))}` : ""}</span>
+      </li>`).join("\n") : "<li>No configured personal sources reported.</li>"}
+    </ol>
+    <h3>Lesson Disposition</h3>
+    <div class="metrics">
+      ${Object.entries(dispositionCounts).sort(([a], [b]) => a.localeCompare(b)).map(([decision, count]) => `<article><span>${escapeHtml(decision)}</span><strong>${escapeHtml(String(count))}</strong></article>`).join("\n")}
+    </div>
+    ${queued.length > 0 ? `<ol class="link-list">
+      ${queued.map((item) => `<li><strong>${escapeHtml(item.lesson_id)}</strong><span>${escapeHtml(item.decision)}${item.blocking_reason ? ` / ${escapeHtml(item.blocking_reason)}` : ""}</span></li>`).join("\n")}
+    </ol>` : ""}
+    <h3>Golden Validation</h3>
+    <p>${escapeHtml(`${report.golden_validation.matched} / ${report.golden_validation.required}`)} matched${report.golden_validation.missed.length > 0 ? `; missed ${escapeHtml(report.golden_validation.missed.join(", "))}` : ""}</p>
+    <h3>Privacy Review</h3>
+    ${Object.keys(blockerCounts).length > 0 ? `<div class="metrics">
+      ${Object.entries(blockerCounts).sort(([a], [b]) => a.localeCompare(b)).map(([reason, count]) => `<article><span>${escapeHtml(reason)}</span><strong>${escapeHtml(String(count))}</strong></article>`).join("\n")}
+    </div>` : "<p>No privacy blockers reported.</p>"}
+    <h3>Agent Use</h3>
+    <ol class="link-list">
+      ${report.agent_consumption.length > 0 ? report.agent_consumption.map((item) => `<li>
+        <strong>${escapeHtml(item.surface)}</strong>
+        <span>${escapeHtml(item.available ? "available" : "unavailable")} / ${escapeHtml(item.authority.join(", "))}</span>
+      </li>`).join("\n") : "<li>No agent consumption surfaces reported.</li>"}
+    </ol>
+  </div>`;
+}
+
+function countBy<T>(items: T[], keyFn: (item: T) => string): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const item of items) {
+    const key = keyFn(item);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
 }
 
 function renderLessonDetails(details: NonNullable<DailyReportSummary["lessons"]>["details"]): string {
@@ -801,6 +861,7 @@ function renderReviewPage(
     <a class="metric-link" href="#rejected"><span>Rejected</span><strong>${escapeHtml(String(counts.rejected))}</strong></a>
     <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
   </section>
+  ${dailyReport?.personal_ga ? renderPersonalGaSection(dailyReport.personal_ga) : ""}
   ${curationReport ? renderWikiCompilerSection(curationReport) : ""}
   <section class="review-section" data-status="pending">
     <h2>Confirm from Terminal</h2>
@@ -1205,6 +1266,55 @@ interface DailyReportSummary {
 	    }>;
 	    report_ref?: string;
 	  };
+	  personal_ga?: {
+	    mode: string;
+	    source_coverage: Array<{
+	      agent: string;
+	      source_kind: string;
+	      configured: boolean;
+	      available: boolean;
+	      items: number;
+	      content_spans?: number;
+	      origin?: string;
+	      privacy_scope?: string;
+	      blocking?: boolean;
+	    }>;
+	    lesson_count: number;
+	    disposition_count: number;
+	    golden_validation: {
+	      matched: number;
+	      required: number;
+	      missed: string[];
+	    };
+	    leakage_scan: {
+	      passed: boolean;
+	      findings: string[];
+	    };
+	    cache: {
+	      hits: number;
+	      misses: number;
+	      writes: number;
+	    };
+	    agent_consumption: Array<{
+	      surface: string;
+	      available: boolean;
+	      authority: string[];
+	    }>;
+	    dispositions: Array<{
+	      lesson_id: string;
+	      state: string;
+	      decision: string;
+	      target?: string;
+	      reason: string;
+	      blocking_reason?: string;
+	      privacy_tier: string;
+	      portability: string;
+	      applies_to_agents: string[];
+	      applies_to_systems: string[];
+	    }>;
+	    production_ready: boolean;
+	    blocking_reasons: string[];
+	  };
 	  agentmemory_sources: Array<{
     name: string;
     status: string;
@@ -1363,6 +1473,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	      golden_validation?: Array<Record<string, unknown>>;
 	      report_ref?: string;
 	    };
+	    personal_ga?: Record<string, unknown>;
     brain_backends?: {
       gbrain?: {
         enabled?: boolean;
@@ -1506,6 +1617,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	        report_ref: typeof l.report_ref === "string" ? l.report_ref : undefined,
 	      };
 	    })() : undefined,
+	    personal_ga: latest.personal_ga ? parsePersonalGaSummary(latest.personal_ga) : undefined,
 	    agentmemory_sources: sources
       .filter((source) => source.source_type === "agentmemory")
       .map((source) => ({
@@ -1782,6 +1894,76 @@ async function collectLatestExperienceSummaries(root: string, limit = 8): Promis
 
 function detailsRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function parsePersonalGaSummary(value: unknown): DailyReportSummary["personal_ga"] | undefined {
+  const report = detailsRecord(value);
+  if (Object.keys(report).length === 0) return undefined;
+  const golden = detailsRecord(report.golden_validation);
+  const leakage = detailsRecord(report.leakage_scan);
+  const cache = detailsRecord(report.cache);
+  const sources = Array.isArray(report.source_coverage)
+    ? report.source_coverage.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item)).map((item) => ({
+      agent: stringValue(item.agent) ?? "unknown",
+      source_kind: stringValue(item.source_kind) ?? "unknown",
+      configured: item.configured === true,
+      available: item.available === true,
+      items: numberValue(item.items) ?? 0,
+      content_spans: numberValue(item.content_spans),
+      origin: stringValue(item.origin),
+      privacy_scope: stringValue(item.privacy_scope),
+      blocking: item.blocking === true,
+    }))
+    : [];
+  const dispositions = Array.isArray(report.dispositions)
+    ? report.dispositions.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item)).map((item) => ({
+      lesson_id: stringValue(item.lesson_id) ?? "unknown-lesson",
+      state: stringValue(item.state) ?? "unknown",
+      decision: stringValue(item.decision) ?? "needs_human",
+      target: stringValue(item.target),
+      reason: stringValue(item.reason) ?? "n/a",
+      blocking_reason: stringValue(item.blocking_reason),
+      privacy_tier: stringValue(item.privacy_tier) ?? "human_required",
+      portability: stringValue(item.portability) ?? "project",
+      applies_to_agents: stringArray(item.applies_to_agents),
+      applies_to_systems: stringArray(item.applies_to_systems),
+    }))
+    : [];
+  const agentConsumption = Array.isArray(report.agent_consumption)
+    ? report.agent_consumption.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item)).map((item) => ({
+      surface: stringValue(item.surface) ?? "unknown",
+      available: item.available === true,
+      authority: stringArray(item.authority),
+    }))
+    : [];
+  return {
+    mode: stringValue(report.mode) ?? "degraded_no_ai",
+    source_coverage: sources,
+    lesson_count: numberValue(report.lesson_count) ?? 0,
+    disposition_count: numberValue(report.disposition_count) ?? dispositions.length,
+    golden_validation: {
+      matched: numberValue(golden.matched) ?? 0,
+      required: numberValue(golden.required) ?? 0,
+      missed: stringArray(golden.missed),
+    },
+    leakage_scan: {
+      passed: leakage.passed === true,
+      findings: stringArray(leakage.findings),
+    },
+    cache: {
+      hits: numberValue(cache.hits) ?? 0,
+      misses: numberValue(cache.misses) ?? 0,
+      writes: numberValue(cache.writes) ?? 0,
+    },
+    agent_consumption: agentConsumption,
+    dispositions,
+    production_ready: report.production_ready === true,
+    blocking_reasons: stringArray(report.blocking_reasons),
+  };
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredRecord[]> {
