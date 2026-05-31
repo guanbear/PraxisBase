@@ -17,6 +17,9 @@ describe("wiki lint guards", () => {
     assert.equal(isAllowedWikiPatchPath("../outside.md"), false);
     assert.equal(isAllowedWikiPatchPath(".praxisbase/raw-vault/session.json"), false);
     assert.equal(containsPrivateMaterial("user token abc was present"), true);
+    assert.equal(containsPrivateMaterial("Restart root@guanzhicheng.com through macmini-ssh."), true);
+    assert.equal(containsPrivateMaterial("Read /Users/guanbear/.openclaw/MEMORY.md before running."), true);
+    assert.equal(containsPrivateMaterial("Upload audio to Slack raw user U1234567890."), true);
     assert.equal(containsPrivateMaterial("normal redacted summary"), false);
   });
 

@@ -913,8 +913,24 @@ async function preSummarizeChunkForDaily(
   };
 }
 
+export function privacyExceptionSignatureForEnvelope(envelope: ExperienceEnvelope): string {
+  return computeHash(JSON.stringify({
+    agent: envelope.agent,
+    channel: envelope.channel,
+    privacy_mode: envelope.privacy.mode,
+    privacy_reasons: [...new Set(envelope.privacy.reasons)].sort(),
+    privacy_verdict: envelope.privacy.verdict,
+    problem_signature: envelope.problem_signature ?? null,
+    scope_hint: envelope.scope_hint,
+    signature: envelope.signature ?? null,
+    source_hash: envelope.source_hash,
+    source_id: envelope.source_id,
+    source_ref: envelope.source_ref,
+  }));
+}
+
 function privacyExceptionPathForEnvelope(envelope: ExperienceEnvelope): string {
-  const suffix = computeHash(`${envelope.id}:${envelope.privacy.verdict}:${envelope.privacy.reasons.join(",")}`).slice(7, 23);
+  const suffix = privacyExceptionSignatureForEnvelope(envelope).slice(7, 23);
   const id = makeId("exception", `daily-experience_${suffix}`);
   return `${protocolPaths.exceptionsHumanRequired}/${id}.json`;
 }
@@ -990,6 +1006,7 @@ async function writePrivacyException(
       source_ref: envelope.source_ref,
       source_hash: envelope.source_hash,
       redacted_summary: redactSensitiveValues(envelope.redacted_summary, 1200),
+      privacy_signature: privacyExceptionSignatureForEnvelope(envelope),
       privacy: envelope.privacy,
       ...(existingTriage ? { triage: existingTriage } : {}),
     },

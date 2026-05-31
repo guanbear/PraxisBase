@@ -42,9 +42,9 @@
 
 ## 7. Privacy Abstraction And Triage Reuse
 
-- [ ] Add or tighten abstraction rules for host/IP/SSH alias, local paths, Slack user ids, account/login strings, private machine names, and secrets.
-- [ ] Add privacy signature reuse so repeated trusted remote blockers do not create fresh daily human-required items.
-- [ ] Add leakage tests for stable wiki, skills, generated HTML, GBrain export, and AgentMemory export.
+- [x] Add or tighten abstraction rules for host/IP/SSH alias, local paths, Slack user ids, account/login strings, private machine names, and secrets.
+- [x] Add privacy signature reuse so repeated trusted remote blockers do not create fresh daily human-required items.
+- [x] Add leakage tests for stable wiki, skills, generated HTML, GBrain export, and AgentMemory export.
 
 ## 8. HTML Experience View
 

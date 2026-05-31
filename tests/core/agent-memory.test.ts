@@ -369,7 +369,7 @@ describe("ingestAgentMemory", () => {
     const source = join(root, "openclaw-export.json");
     await writeFile(source, JSON.stringify({
       items: [{
-        id: "remote-workspace-lock-1",
+        id: "ssh-one",
         summary: "OpenClaw workspace lock was detected and cleared.",
         signature: "openclaw:workspace-lock-stuck",
         raw_log: "RAW REMOTE LOG SHOULD NOT BE WRITTEN",

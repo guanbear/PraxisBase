@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
-import { deriveDailyNextActions, runDailyExperience } from "@praxisbase/core/experience/daily.js";
+import { deriveDailyNextActions, privacyExceptionSignatureForEnvelope, runDailyExperience } from "@praxisbase/core/experience/daily.js";
 import { listSourceItemLedgerEntries } from "@praxisbase/core/experience/source-item-ledger.js";
 import { MICROCOMPACT_PLACEHOLDER } from "@praxisbase/core/experience/context-juice.js";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
@@ -64,6 +64,40 @@ describe("runDailyExperience", () => {
     },
     golden_validation: [],
   };
+
+  it("uses stable privacy exception signatures across regenerated envelope ids", () => {
+    const baseEnvelope: Parameters<typeof privacyExceptionSignatureForEnvelope>[0] = {
+      id: "experience-envelope_first",
+      protocol_version: PROTOCOL_VERSION,
+      type: "experience_envelope",
+      source_id: "remote-openclaw",
+      agent: "openclaw",
+      channel: "terminal",
+      source_ref: "ssh://trusted-remote/MEMORY.md",
+      source_hash: "sha256:memory-first-source",
+      scope_hint: "personal",
+      redacted_summary: "Use a trusted remote shell wrapper before operating on the target machine.",
+      fetched_at: "2026-05-21T00:00:00.000Z",
+      privacy: {
+        mode: "personal-local",
+        verdict: "human_required",
+        reasons: ["private_material_detected", "trusted_personal_remote"],
+      },
+      warnings: [],
+    };
+
+    const first = privacyExceptionSignatureForEnvelope(baseEnvelope);
+    const regenerated = privacyExceptionSignatureForEnvelope({
+      ...baseEnvelope,
+      id: "experience-envelope_second",
+      privacy: {
+        ...baseEnvelope.privacy,
+        reasons: ["trusted_personal_remote", "private_material_detected"],
+      },
+    });
+
+    assert.equal(first, regenerated);
+  });
 
   it("derives clear personal next actions from daily report counts", () => {
     const nextActions = deriveDailyNextActions({
@@ -411,7 +445,7 @@ describe("runDailyExperience", () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-privacy-context-"));
     const sessions = join(root, "sessions");
     await mkdir(sessions, { recursive: true });
-    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw auth after token=abc123456789 was printed.", "utf8");
+    await writeFile(join(sessions, "session-1.txt"), "Fixed OpenClaw auth on root@guanzhicheng.com through macmini-ssh after token=abc123456789 was printed in /Users/guanbear/.openclaw/MEMORY.md.", "utf8");
     await addExperienceSource(root, {
       name: "local-codex",
       agent: "codex",
@@ -433,6 +467,9 @@ describe("runDailyExperience", () => {
     const exception = JSON.parse(await readFile(join(root, ".praxisbase/exceptions/human-required", exceptions[0]), "utf8"));
     assert.match(exception.details.redacted_summary, /OpenClaw auth/);
     assert.equal(exception.details.redacted_summary.includes("abc123456789"), false);
+    assert.equal(exception.details.redacted_summary.includes("root@guanzhicheng.com"), false);
+    assert.equal(exception.details.redacted_summary.includes("macmini-ssh"), false);
+    assert.equal(exception.details.redacted_summary.includes("/Users/guanbear"), false);
     assert.match(exception.details.redacted_summary, /\[REDACTED\]/);
   });
 

@@ -3,7 +3,7 @@ import { normalize, isAbsolute } from "node:path";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { makeId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
-import { appearsToBeRawLog } from "../protocol/redact.js";
+import { appearsToBeRawLog, redactSensitiveReferences } from "../protocol/redact.js";
 import { writeJson } from "../store/file-store.js";
 import { hasAgentUseGuidance } from "./agent-use.js";
 import { assessBodyProvenanceConsistency, type ProvenanceRef } from "./provenance-consistency.js";
@@ -71,6 +71,7 @@ const PRIVATE_PATTERNS = [
 ];
 
 export function containsPrivateMaterial(text: string): boolean {
+  if (redactSensitiveReferences(text).changed) return true;
   for (const pattern of PRIVATE_PATTERNS) {
     if (pattern.test(text)) return true;
   }

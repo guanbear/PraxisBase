@@ -463,6 +463,9 @@ export async function ingestAgentMemory(
     }
 
     const experienceEnvelope = parseExperienceEnvelope(rawContent);
+    const stagedOpenClawEnvelope = !experienceEnvelope && candidate.agent === "openclaw"
+      ? parseStagedOpenClawEnvelope(rawContent)
+      : undefined;
     if (experienceEnvelope && experienceEnvelope.privacy_verdict !== "allow") {
       unsafe++;
       if (mode === "write") {
@@ -489,7 +492,7 @@ export async function ingestAgentMemory(
       continue;
     }
 
-    const privateScanText = experienceEnvelope?.redacted_summary ?? rawContent;
+    const privateScanText = experienceEnvelope?.redacted_summary ?? stagedOpenClawEnvelope?.redacted_summary ?? rawContent;
     if (containsPrivateMaterial(privateScanText)) {
       unsafe++;
       if (mode === "write") {
@@ -517,7 +520,7 @@ export async function ingestAgentMemory(
     }
 
     // Security: redacted summary must never contain raw source body
-    const summary = experienceEnvelope?.redacted_summary ?? generateRedactedSummary(rawContent, candidate.summary_hint);
+    const summary = experienceEnvelope?.redacted_summary ?? stagedOpenClawEnvelope?.redacted_summary ?? generateRedactedSummary(rawContent, candidate.summary_hint);
 
     if (containsPrivateMaterial(summary)) {
       unsafe++;
