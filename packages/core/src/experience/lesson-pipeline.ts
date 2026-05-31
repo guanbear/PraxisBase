@@ -268,6 +268,47 @@ export async function runM25GoldenValidation(now = "2026-05-29T00:00:00.000Z"): 
         "- Do not expose raw Slack user id U1234567890 in team notes.",
       ].join("\n"),
     },
+    {
+      fixture: "codex-app",
+      agent: "codex" as const,
+      expectedTargets: [
+        "explicit_preference",
+        "self_test_after_changes",
+        "verified_fix",
+        "target_machine_confirmation",
+        "explicit_veto",
+      ],
+      text: [
+        "# Codex App Session Memory",
+        "## User preferences",
+        "- User preference: use the repo's existing patterns before adding a new abstraction.",
+        "- After code changes, run a self-test and report the verification result.",
+        "## Repair trace",
+        "- Verified fix: fixed the failing wiki render test and tests passed after the patch.",
+        "- Confirm target machine before restart or deployment commands.",
+        "- Do not commit generated runtime directories such as dist, dist-tests, node_modules, or .praxisbase.",
+      ].join("\n"),
+    },
+    {
+      fixture: "codex-cliproxyapi",
+      agent: "codex" as const,
+      expectedTargets: [
+        "ack_before_slow_work",
+        "repeated_failure",
+        "tool_sequence",
+        "verified_fix",
+        "recorded_decision",
+      ],
+      text: [
+        "# Codex CLI Proxy API Session Memory",
+        "## Session lessons",
+        "- Need tools or network and slow commands: send a short ACK before running the long operation.",
+        "- Repeated failure: GLM JSON responses sometimes returned malformed fields until the schema repair path was added.",
+        "- Tool sequence: first inspect the failing report, then patch the parser, then rerun the focused test.",
+        "- Verified fix: fixed the GLM response normalization and verification passed with the focused AI client tests.",
+        "- Decision: keep provider API keys in local config env references instead of storing secret values in knowledge outputs.",
+      ].join("\n"),
+    },
   ];
 
   const results: GoldenValidationResult[] = [];
