@@ -32,6 +32,97 @@ export interface BuildSourceInventoryOptions {
   origin: "local" | "trusted_personal_remote" | "team_git" | "external";
 }
 
+export interface PersonalSourceCoverageRequirement {
+  agent: string;
+  source_kind: SourceInventoryItem["source_kind"] | string;
+  configured: boolean;
+}
+
+export interface PersonalSourceCoverage {
+  agent: string;
+  source_kind: string;
+  origin: string;
+  trust: "local_personal" | "trusted_remote_personal" | "team" | "sidecar";
+  privacy_scope: "personal" | "team_candidate";
+  configured: boolean;
+  available: boolean;
+  blocking: boolean;
+  items: number;
+  content_spans: number;
+}
+
+function sourceTrust(item: Pick<SourceInventoryItem, "origin">): PersonalSourceCoverage["trust"] {
+  if (item.origin === "trusted_personal_remote") return "trusted_remote_personal";
+  if (item.origin === "team_git") return "team";
+  if (item.origin === "external") return "sidecar";
+  return "local_personal";
+}
+
+function sourcePrivacyScope(item: Pick<SourceInventoryItem, "scope_hint">): PersonalSourceCoverage["privacy_scope"] {
+  return item.scope_hint === "team" || item.scope_hint === "org" || item.scope_hint === "global"
+    ? "team_candidate"
+    : "personal";
+}
+
+export function summarizePersonalSourceCoverage(
+  items: Array<Pick<SourceInventoryItem, "agent" | "source_kind" | "origin" | "scope_hint" | "content_spans">>,
+  configuredSources: PersonalSourceCoverageRequirement[] = [],
+): PersonalSourceCoverage[] {
+  const coverage = new Map<string, PersonalSourceCoverage>();
+
+  const ensure = (
+    agent: string,
+    sourceKind: string,
+    configured: boolean,
+    seed?: Pick<SourceInventoryItem, "origin" | "scope_hint">,
+  ): PersonalSourceCoverage => {
+    const key = `${agent}:${sourceKind}`;
+    const existing = coverage.get(key);
+    if (existing) {
+      existing.configured = existing.configured || configured;
+      return existing;
+    }
+    const origin = seed?.origin ?? "local";
+    const scope_hint = seed?.scope_hint ?? "personal";
+    const next: PersonalSourceCoverage = {
+      agent,
+      source_kind: sourceKind,
+      origin,
+      trust: sourceTrust({ origin } as Pick<SourceInventoryItem, "origin">),
+      privacy_scope: sourcePrivacyScope({ scope_hint } as Pick<SourceInventoryItem, "scope_hint">),
+      configured,
+      available: false,
+      blocking: false,
+      items: 0,
+      content_spans: 0,
+    };
+    coverage.set(key, next);
+    return next;
+  };
+
+  for (const requirement of configuredSources) {
+    ensure(requirement.agent, requirement.source_kind, requirement.configured);
+  }
+
+  for (const item of items) {
+    const entry = ensure(item.agent, item.source_kind, true, item);
+    entry.available = true;
+    entry.items++;
+    entry.content_spans += item.content_spans?.length ?? 0;
+    entry.origin = item.origin;
+    entry.trust = sourceTrust(item);
+    entry.privacy_scope = sourcePrivacyScope(item);
+  }
+
+  for (const entry of coverage.values()) {
+    entry.blocking = entry.configured && !entry.available;
+  }
+
+  return [...coverage.values()].sort((a, b) =>
+    a.agent.localeCompare(b.agent) || a.source_kind.localeCompare(b.source_kind),
+  );
+}
+
 function expandSourcePath(sourcePath: string, root: string): string {
   if (sourcePath === "~") return homedir();
   if (sourcePath.startsWith("~/")) return join(homedir(), sourcePath.slice(2));
