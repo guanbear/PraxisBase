@@ -339,7 +339,10 @@ describe("experience CLI commands", () => {
       });
       const parsed = JSON.parse(output);
       assert.equal(parsed.ok, true);
-      assert.ok(parsed.context.items.some((item: { path: string }) => item.path === "agentmemory://smart-search/mem-1"));
+      const sidecar = parsed.context.items.find((item: { path: string }) => item.path === "agentmemory://smart-search/mem-1");
+      assert.ok(sidecar);
+      assert.equal(sidecar.source_rank, "agentmemory_sidecar");
+      assert.equal(sidecar.promotion_evidence, false);
     } finally {
       globalThis.fetch = originalFetch;
     }

@@ -57,10 +57,10 @@
 
 ## 9. Agent Consumption Authority
 
-- [ ] Add authority labels to context output and backend publish reports.
-- [ ] Ensure stable PB pages and promoted skills outrank runtime lessons.
-- [ ] Ensure sidecar hits never count as promotion evidence unless imported through PB.
-- [ ] Add tests for CLI context and publish report authority labels.
+- [x] Add authority labels to context output and backend publish reports.
+- [x] Ensure stable PB pages and promoted skills outrank runtime lessons.
+- [x] Ensure sidecar hits never count as promotion evidence unless imported through PB.
+- [x] Add tests for CLI context and publish report authority labels.
 
 ## 10. Golden Validation And Real Smoke
 

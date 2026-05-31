@@ -152,6 +152,11 @@ describe("exportAgentMemory", () => {
     assert.equal(result.summary.pages_scanned, 3);
     assert.equal(result.summary.payloads_generated, 3);
     assert.equal(result.summary.idempotency, "provenance_hash");
+    assert.deepEqual(result.summary.authority, {
+      exported_from: ["stable_pb_page", "promoted_skill"],
+      backend_role: "sidecar_export_sink",
+      promotion_evidence: false,
+    });
     assert.deepEqual(result.errors, []);
     assert.deepEqual(result.payloads.map((p) => p.pagePath).sort(), [
       "kb/known-fixes/auth.md",
@@ -160,7 +165,10 @@ describe("exportAgentMemory", () => {
     ].sort());
     const auth = result.payloads.find((payload) => payload.pagePath === "kb/known-fixes/auth.md");
     const runbook = result.payloads.find((payload) => payload.pagePath === "kb/procedures/runbook.md");
+    const skill = result.payloads.find((payload) => payload.pagePath === "skills/openclaw/auth/SKILL.md");
     assert.ok(auth);
+    assert.equal(auth.authority, "stable_pb_page");
+    assert.equal(skill?.authority, "promoted_skill");
     assert.equal(auth.payload.title, "Auth Repair");
     assert.deepEqual(auth.payload.files, ["kb/known-fixes/auth.md"]);
     assert.ok(auth.payload.concepts?.includes("known_fix"));

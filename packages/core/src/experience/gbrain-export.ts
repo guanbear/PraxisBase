@@ -15,6 +15,7 @@ export interface GBrainExportPayload {
   type: string;
   title: string;
   content: string;
+  authority: "stable_pb_page" | "promoted_skill" | "knowledge_catalog";
   provenanceHash: string;
   idempotencyKey: string;
 }
@@ -49,6 +50,11 @@ export interface ExportGBrainResult {
     skills_exported: number;
     catalog_exported: number;
     idempotency: "provenance_hash";
+    authority: {
+      exported_from: Array<"stable_pb_page" | "promoted_skill" | "knowledge_catalog">;
+      backend_role: "sidecar_export_sink";
+      promotion_evidence: false;
+    };
   };
 }
 
@@ -61,6 +67,11 @@ function exportSummary(input: { pages: number; payloads: number; exported: numbe
     skills_exported: input.skillsExported,
     catalog_exported: input.catalogExported,
     idempotency: "provenance_hash",
+    authority: {
+      exported_from: ["stable_pb_page", "promoted_skill", "knowledge_catalog"],
+      backend_role: "sidecar_export_sink",
+      promotion_evidence: false,
+    },
   };
 }
 
@@ -168,6 +179,7 @@ function catalogPayload(catalogJson: string, catalogId: string): GBrainExportPay
     type: "knowledge_catalog",
     title: "PraxisBase Knowledge Catalog",
     content: catalogJson,
+    authority: "knowledge_catalog",
     provenanceHash,
     idempotencyKey: provenanceHash,
   };
@@ -186,6 +198,7 @@ function pageToPayload(page: WikiSitePage): GBrainExportPayload {
     type: page.page_kind ?? "note",
     title: page.title,
     content: compactContent(page, provenanceHash),
+    authority: page.path.startsWith("skills/") ? "promoted_skill" : "stable_pb_page",
     provenanceHash,
     idempotencyKey: provenanceHash,
   };
@@ -249,6 +262,7 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
       type: "skill",
       title: page.title,
       content: compactSkillContent(page, provenanceHash),
+      authority: "promoted_skill" as const,
       provenanceHash,
       idempotencyKey: provenanceHash,
     };

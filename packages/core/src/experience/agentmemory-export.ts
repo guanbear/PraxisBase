@@ -15,6 +15,7 @@ const MAX_REMEMBER_CONTENT_CHARS = 4000;
 export interface AgentMemoryExportPayload {
   payload: AgentMemoryRememberPayload;
   pagePath: string;
+  authority: "stable_pb_page" | "promoted_skill";
   provenanceHash: string;
   idempotencyKey: string;
 }
@@ -47,6 +48,11 @@ export interface ExportAgentMemoryResult {
     already_present: number;
     skipped: number;
     idempotency: "provenance_hash";
+    authority: {
+      exported_from: Array<"stable_pb_page" | "promoted_skill">;
+      backend_role: "sidecar_export_sink";
+      promotion_evidence: false;
+    };
   };
 }
 
@@ -72,14 +78,7 @@ function emptyResult(mode: "personal" | "team", errors: string[] = [], warnings:
     skipped: 0,
     errors,
     warnings,
-    summary: {
-      pages_scanned: 0,
-      payloads_generated: 0,
-      exported: 0,
-      already_present: 0,
-      skipped: 0,
-      idempotency: "provenance_hash",
-    },
+    summary: exportSummary({ pages: 0, payloads: 0, exported: 0, alreadyPresent: 0, skipped: 0 }),
   };
 }
 
@@ -97,6 +96,11 @@ function exportSummary(input: {
     already_present: input.alreadyPresent,
     skipped: input.skipped,
     idempotency: "provenance_hash",
+    authority: {
+      exported_from: ["stable_pb_page", "promoted_skill"],
+      backend_role: "sidecar_export_sink",
+      promotion_evidence: false,
+    },
   };
 }
 
@@ -256,6 +260,7 @@ function pageToExportPayload(page: StablePage): AgentMemoryExportPayload {
   return {
     payload: kbPageToRememberPayload(page, provenanceHash),
     pagePath: page.relativePath,
+    authority: page.relativePath.startsWith("skills/") ? "promoted_skill" : "stable_pb_page",
     provenanceHash,
     idempotencyKey: provenanceHash,
   };

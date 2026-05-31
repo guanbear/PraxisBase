@@ -42,6 +42,13 @@ Refresh auth and retry.
     assert.match(wikiPayload.content, /generated_by: praxisbase/);
     assert.match(wikiPayload.content, /praxisbase_path: kb\/procedures\/openclaw-auth-refresh\.md/);
     assert.match(wikiPayload.content, /source_hashes:/);
+    assert.equal(wikiPayload.authority, "stable_pb_page");
+    assert.equal(result.payloads.find((p) => p.type === "knowledge_catalog")?.authority, "knowledge_catalog");
+    assert.deepEqual(result.summary.authority, {
+      exported_from: ["stable_pb_page", "promoted_skill", "knowledge_catalog"],
+      backend_role: "sidecar_export_sink",
+      promotion_evidence: false,
+    });
     assert.doesNotMatch(JSON.stringify(result.payloads), /Human required|Review candidate/);
   });
 
@@ -211,6 +218,7 @@ Not broken.
     assert.ok(result.payloads.length >= 3, "Should have wiki page, skill page, and catalog payload");
     const skillPayload = result.payloads.find((p) => p.type === "skill");
     assert.ok(skillPayload, "Should have a skill payload");
+    assert.equal(skillPayload.authority, "promoted_skill");
     assert.match(skillPayload.content, /When OpenClaw breaks/);
     assert.match(skillPayload.content, /Check logs/);
     assert.equal(result.skills_exported, 1);
