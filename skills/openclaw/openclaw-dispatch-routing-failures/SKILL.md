@@ -60,8 +60,16 @@ Use this when OpenClaw or OctoClaw delegation, runner dispatch, or task routing 
 - Long-running agent work should acknowledge first, then verify and report the real execution path.
 
 ## Agent Use
-- Load this skill for OpenClaw, OctoClaw, dispatch, delegation, runner, spawn, and route mismatch tasks.
+Use this page when:
+- OpenClaw, OctoClaw, dispatch, delegation, runner, spawn, or route mismatch symptoms appear.
+
+Apply it by:
+- Load this skill and compare the current task against the trigger and procedure.
 - Prefer stable PraxisBase wiki evidence over raw session text when deciding whether this skill applies.
+
+Verify by:
+- Confirm the dispatch path has concrete execution evidence before reporting delegation success.
+- Check the related wiki page for current failure signatures.
 
 ## Pitfalls
 - Do not confuse a healthy CLI/version check with a successful delegated task.

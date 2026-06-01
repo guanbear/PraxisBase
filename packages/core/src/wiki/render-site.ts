@@ -91,6 +91,21 @@ function pageKind(source: WikiSource, metadata: SourceMetadata): string {
   return source.knowledge_type ?? "note";
 }
 
+function skillPageSlug(path: string | undefined): string | undefined {
+  if (!path?.startsWith("skills/")) return undefined;
+  const withoutSkill = path.replace(/\\/g, "/").replace(/^skills\//, "").replace(/\/SKILL\.md$/i, "");
+  return makeWikiSlug(`skill ${withoutSkill.replace(/\//g, " ")}`);
+}
+
+function pageIdentity(source: WikiSource, metadata: SourceMetadata, title: string): { id: string; slug: string } {
+  if (source.kind === "skill") {
+    const slug = skillPageSlug(source.path) ?? makeWikiSlug(`skill ${metadata.id ?? title}`);
+    return { id: slug, slug };
+  }
+  const slug = makeWikiSlug(metadata.id ?? title);
+  return { id: metadata.id ?? slug, slug };
+}
+
 export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
   const sources = (await collectWikiSources(root)).filter(isStableSource);
   const pages: WikiSitePage[] = [];
@@ -98,11 +113,11 @@ export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
   for (const source of sources) {
     const metadata = await sourceMetadata(root, source);
     const title = source.title;
-    const slug = makeWikiSlug(metadata.id ?? title);
+    const identity = pageIdentity(source, metadata, title);
     const body = source.body ?? source.summary;
     pages.push({
-      id: metadata.id ?? slug,
-      slug,
+      id: identity.id,
+      slug: identity.slug,
       title,
       page_kind: pageKind(source, metadata),
       scope: metadata.scope ?? source.scope,
@@ -159,20 +174,33 @@ function wikiLinkIndex(pages: WikiSitePage[]): Map<string, WikiSitePage | null> 
       index.set(normalized, null);
     }
   };
-  const pathAliases = (path: string | undefined): string[] => {
+  const pathAliases = (path: string | undefined, options: { includeLeaf?: boolean } = {}): string[] => {
     if (!path) return [];
-    const parts = path.replace(/\\/g, "/").split("/");
+    const normalized = path.replace(/\\/g, "/").replace(/^\.\/+/, "");
+    const parts = normalized.split("/");
     const leaf = parts[parts.length - 1] ?? "";
     const withoutExtension = leaf === "SKILL.md" ? parts[parts.length - 2] ?? "" : leaf.replace(/\.md$/i, "");
     const slug = makeWikiSlug(withoutExtension);
-    return slug.startsWith("wiki-") ? [slug, slug.slice(5)] : [slug];
+    const aliases = [
+      normalized,
+      normalized.replace(/\.md$/i, ""),
+      normalized.replace(/\/SKILL\.md$/i, ""),
+      ...(options.includeLeaf === false ? [] : [
+        slug,
+        ...(slug.startsWith("wiki-") ? [slug.slice(5)] : []),
+      ]),
+    ];
+    return Array.from(new Set(aliases.filter(Boolean)));
   };
   for (const page of pages) {
     add(page.slug, page);
     add(page.id, page);
-    add(page.title, page);
-    add(makeWikiSlug(page.title), page);
-    for (const alias of pathAliases(page.path)) {
+    const isSkill = page.page_kind === "skill";
+    if (!isSkill) {
+      add(page.title, page);
+      add(makeWikiSlug(page.title), page);
+    }
+    for (const alias of pathAliases(page.path, { includeLeaf: !isSkill })) {
       add(alias, page);
     }
   }

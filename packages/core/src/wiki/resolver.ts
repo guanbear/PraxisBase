@@ -98,6 +98,19 @@ function pathLeafAliases(path: string | undefined): string[] {
   return slug.startsWith("wiki-") ? [slug, slug.slice(5)] : [slug];
 }
 
+function pathAliases(path: string | undefined, options: { includeLeaf?: boolean } = {}): string[] {
+  if (!path) return [];
+  const normalized = path.replace(/\\/g, "/").replace(/^\.\/+/, "");
+  const withoutMarkdown = normalized.replace(/\.md$/i, "");
+  const withoutSkillMarkdown = normalized.replace(/\/SKILL\.md$/i, "");
+  return Array.from(new Set([
+    normalized,
+    withoutMarkdown,
+    withoutSkillMarkdown,
+    ...(options.includeLeaf === false ? [] : pathLeafAliases(path)),
+  ].filter(Boolean)));
+}
+
 export function resolveWikiLinks(
   pages: WikiPage[]
 ): Pick<WikiGraph, "links" | "broken_links"> {
@@ -105,9 +118,12 @@ export function resolveWikiLinks(
   for (const page of pages) {
     addAlias(targetIndex, page.slug, page.id);
     addAlias(targetIndex, page.id, page.id);
-    addAlias(targetIndex, page.title, page.id);
-    addAlias(targetIndex, makeWikiSlug(page.title), page.id);
-    for (const alias of pathLeafAliases(page.path)) {
+    const isSkill = page.page_kind === "skill";
+    if (!isSkill) {
+      addAlias(targetIndex, page.title, page.id);
+      addAlias(targetIndex, makeWikiSlug(page.title), page.id);
+    }
+    for (const alias of pathAliases(page.path, { includeLeaf: !isSkill })) {
       addAlias(targetIndex, alias, page.id);
     }
   }
@@ -214,7 +230,7 @@ export function buildWikiGraph(pages: WikiPage[]): WikiGraph {
   for (const page of pages) {
     pushGroup(idGroups, page.id, page.id);
     pushGroup(slugGroups, page.slug, page.id);
-    pushGroup(titleGroups, page.title.toLowerCase(), page.id);
+    pushGroup(titleGroups, `${page.page_kind ?? "unknown"}:${page.title.toLowerCase()}`, page.id);
   }
 
   for (const [value, pageIds] of idGroups) {
@@ -231,11 +247,11 @@ export function buildWikiGraph(pages: WikiPage[]): WikiGraph {
       });
     }
   }
-  for (const [value, pageIds] of titleGroups) {
+  for (const [key, pageIds] of titleGroups) {
     if (pageIds.length > 1) {
       duplicates.push({
         field: "title",
-        value,
+        value: key.slice(key.indexOf(":") + 1),
         page_ids: [...pageIds].sort(),
       });
     }

@@ -176,6 +176,57 @@ See [[improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw|A
     assert.ok(page.includes(">ACK handling</a>"));
   });
 
+  it("keeps promoted skill pages distinct from related wiki pages and resolves path wikilinks", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-skill-namespace-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await mkdir(join(root, "skills/openclaw/openclaw-dispatch-routing-failures"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/openclaw-dispatch-routing-failures.md"), `---
+id: openclaw-dispatch-routing-failures
+type: known_fix
+scope: personal
+maturity: draft
+sources: [{ uri: "raw-vault://codex/session-1", hash: "sha256:s1" }]
+---
+# OpenClaw dispatch routing failures
+
+Verify runner execution before reporting dispatch success.
+`);
+    await writeFile(join(root, "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"), `---
+name: OpenClaw dispatch routing failures
+origin: praxisbase_synthesized
+status: promoted
+scope: personal
+maturity: draft
+source_hashes: ["sha256:s1"]
+related_wiki_paths:
+  - kb/known-fixes/openclaw-dispatch-routing-failures.md
+---
+# OpenClaw dispatch routing failures
+
+## When To Use
+Use this for OpenClaw dispatch routing failures.
+
+## Related Wiki Pages
+- [[kb/known-fixes/openclaw-dispatch-routing-failures.md]]
+`);
+
+    const result = await buildWikiSite(root);
+
+    assert.equal(result.health.broken_links, 0);
+    assert.equal(result.health.duplicates, 0);
+    assert.equal(result.health.quality_findings, 0);
+    assert.ok(result.outputs.includes("dist/pages/openclaw-dispatch-routing-failures.html"));
+    assert.ok(result.outputs.includes("dist/pages/skill-openclaw-openclaw-dispatch-routing-failures.html"));
+
+    const graph = JSON.parse(await readFile(join(root, "dist/graph.json"), "utf8"));
+    assert.equal(graph.nodes.some((node: { id: string }) => node.id === "openclaw-dispatch-routing-failures"), true);
+    assert.equal(graph.nodes.some((node: { id: string }) => node.id === "skill-openclaw-openclaw-dispatch-routing-failures"), true);
+    assert.equal(graph.links.some((link: { from: string; to: string }) =>
+      link.from === "skill-openclaw-openclaw-dispatch-routing-failures"
+      && link.to === "openclaw-dispatch-routing-failures"
+    ), true);
+  });
+
   it("removes stale generated page artifacts when stable wiki pages disappear", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-stale-pages-"));
     const pagePath = join(root, "kb/notes/transient.md");

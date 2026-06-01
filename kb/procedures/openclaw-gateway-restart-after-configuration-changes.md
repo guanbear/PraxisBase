@@ -35,7 +35,7 @@ updated_at: "2026-05-24T13:43:18.884Z"
 Use this procedure when configuration changes have been made to the OpenClaw environment (e.g., modifying the default model in the configuration file) that require a service restart to take effect. This is typically necessary after updating provider settings, API keys, or routing logic.
 
 ## Symptoms or Context
-Configuration updates (such as changing the primary model from `cliproxyapi/gpt-5.5` to `zhipu/GLM-5.1`) do not reflect in the active system behavior immediately. Users may inquire about streaming issues or model discrepancies, indicating the gateway is still operating on cached or previous settings.
+Configuration updates (such as changing the primary or fallback model provider) do not reflect in the active system behavior immediately. Users may inquire about streaming issues or model discrepancies, indicating the gateway is still operating on cached or previous settings.
 
 ## Procedure
 
