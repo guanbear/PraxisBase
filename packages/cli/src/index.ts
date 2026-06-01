@@ -580,7 +580,7 @@ program
 
 program
   .command("personal")
-  .argument("<sub>", "subcommand (init|connect|doctor|run|schedule|profile)")
+  .argument("<sub>", "subcommand (init|connect|doctor|release-audit|run|schedule|profile)")
   .argument("[target]", "connect target or profile action")
   .argument("[value]", "profile key or instruction")
   .option("--agent <agent>", "agent profile", "codex")

@@ -183,6 +183,10 @@
       "types": "./src/experience/personal-learning.ts",
       "default": "./dist/experience/personal-learning.js"
     },
+    "./experience/personal-release-audit.js": {
+      "types": "./src/experience/personal-release-audit.ts",
+      "default": "./dist/experience/personal-release-audit.js"
+    },
     "./experience/payload-presummary.js": {
       "types": "./src/experience/payload-presummary.ts",
       "default": "./dist/experience/payload-presummary.js"

@@ -139,6 +139,55 @@ describe("personal command", () => {
     assert.match(parsed.launchd, /praxisbase personal run --json/);
   });
 
+  it("audits personal release gates without rerunning daily", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-release-audit-"));
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/reports/daily/daily.json"), JSON.stringify({
+      id: "daily",
+      created_at: "2026-06-01T00:00:00.000Z",
+      personal_ga: {
+        type: "personal_ga_report",
+        mode: "production_ai",
+        production_ready: true,
+        blocking_reasons: [],
+        warnings: [],
+        source_coverage: [],
+        lesson_count: 1,
+        disposition_count: 1,
+        golden_validation: { matched: 0, required: 0, missed: [] },
+        leakage_scan: { passed: true, findings: [] },
+        cache: { hits: 1, misses: 0, writes: 0 },
+        html: {},
+        agent_consumption: [{ surface: "pb_context", available: true, authority: ["active_personal_lesson"] }],
+        dispositions: [{
+          lesson_id: "l1",
+          state: "active_personal",
+          decision: "active_personal_context",
+          reason: "usable",
+          source_refs: [],
+          source_hashes: [],
+          privacy_tier: "personal_only",
+          portability: "agent_family",
+          applies_to_agents: ["openclaw"],
+          applies_to_systems: ["openclaw"],
+        }],
+      },
+      skill_synthesis: { enabled: true, signals: 1, rejected_signals: 0, clusters: 1, candidates: 1, reviewed: 0, approved: 0, rejected: 0, needs_human: 1, skipped: 0, promoted: 0 },
+      brain_backends: {},
+    }), "utf8");
+
+    const output = await personalCommand(root, "release-audit", { json: true, now: "2026-06-01T01:00:00.000Z" });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.wiki_context_ga, "pass");
+    assert.equal(parsed.skill_compiler_ga, "fail");
+    assert.equal(parsed.gbrain_runtime_ga, "fail");
+    assert.ok(parsed.blocking_reasons.includes("no_promoted_injectable_skill"));
+    assert.ok(parsed.next_commands.includes("praxisbase skill synthesize --mode personal --review --json"));
+    assert.ok(parsed.next_commands.includes("praxisbase gbrain export --mode personal --write --json"));
+  });
+
   it("lists, pins, forgets, and rebuilds personal profile facets", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-personal-profile-"));
     await mkdir(join(root, ".praxisbase/personal"), { recursive: true });

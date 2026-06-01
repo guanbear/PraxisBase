@@ -39,6 +39,35 @@ export const ContextStageSchema = z.enum(["diagnosis", "repair", "verification",
 const DateTimeSchema = z.string().datetime();
 const NonEmptyStringArray = z.array(z.string().min(1)).min(1);
 
+export const PersonalReleaseGateStatusSchema = z.enum(["pass", "fail", "warning", "not_run"]);
+export const PersonalReleaseAuditGateSchema = z.object({
+  status: PersonalReleaseGateStatusSchema,
+  blockers: z.array(z.string()),
+  warnings: z.array(z.string()),
+  evidence_reports: z.array(z.string()),
+  next_commands: z.array(z.string()),
+});
+export const PersonalReleaseAuditReportSchema = z.object({
+  type: z.literal("personal_release_audit_report"),
+  ok: z.boolean(),
+  personal_ga: PersonalReleaseGateStatusSchema,
+  wiki_context_ga: PersonalReleaseGateStatusSchema,
+  skill_compiler_ga: PersonalReleaseGateStatusSchema,
+  gbrain_runtime_ga: PersonalReleaseGateStatusSchema,
+  gates: z.object({
+    wiki_context_ga: PersonalReleaseAuditGateSchema,
+    skill_compiler_ga: PersonalReleaseAuditGateSchema,
+    gbrain_runtime_ga: PersonalReleaseAuditGateSchema,
+  }),
+  blocking_reasons: z.array(z.string()),
+  warnings: z.array(z.string()),
+  evidence_reports: z.array(z.string()),
+  next_commands: z.array(z.string()),
+  latest_daily_report: z.string().optional(),
+  promoted_skills: z.array(z.string()),
+  generated_at: DateTimeSchema,
+});
+
 export const KnowledgeReferencePhaseSchema = z.enum(["diagnosis", "repair", "verification", "proposal"]);
 export const KnowledgeReferenceEffectSchema = z.enum(["helped_fix", "guided_action"]);
 export const KnowledgeReferenceOutcomeSchema = z.enum([

@@ -20,6 +20,7 @@ import { DistilledExperienceSchema } from "@praxisbase/core/ai/distill.js";
 import type { PersonalLearningFacet } from "@praxisbase/core/protocol/schemas.js";
 import { readAiProviderConfig } from "@praxisbase/core/ai/config.js";
 import { readGBrainConfig, gbrainExecutable } from "@praxisbase/core/experience/gbrain-config.js";
+import { readPersonalReleaseAuditReport } from "@praxisbase/core/experience/personal-release-audit.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { writeText } from "@praxisbase/core/store/file-store.js";
 import { diagnoseAgentMemorySource } from "./agentmemory-diagnostics.js";
@@ -400,6 +401,20 @@ export async function personalCommand(root: string, subcommand: string, options:
     if (subcommand === "doctor") {
       const result = await doctor(root);
       return options.json ? JSON.stringify(result, null, 2) : result.checks.map((check) => `${check.ok ? "OK" : "WARN"} ${check.id}: ${check.message}`).join("\n");
+    }
+
+    if (subcommand === "release-audit") {
+      const result = await readPersonalReleaseAuditReport(root, { now: options.now });
+      return options.json
+        ? JSON.stringify(result, null, 2)
+        : [
+          `Personal GA: ${result.personal_ga}`,
+          `Gate 1 PB wiki/context: ${result.wiki_context_ga}`,
+          `Gate 2A PB skill compiler: ${result.skill_compiler_ga}`,
+          `Gate 2B GBrain runtime: ${result.gbrain_runtime_ga}`,
+          ...(result.blocking_reasons.length > 0 ? [`Blockers: ${result.blocking_reasons.join(", ")}`] : []),
+          ...result.next_commands.map((command) => `Run: ${command}`),
+        ].join("\n");
     }
 
     if (subcommand === "run") {

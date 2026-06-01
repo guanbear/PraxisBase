@@ -56,6 +56,7 @@ export * from "./experience/lesson-authority.js";
 export * from "./experience/lesson-model.js";
 export * from "./experience/source-inventory.js";
 export * from "./experience/personal-ga.js";
+export * from "./experience/personal-release-audit.js";
 export * from "./experience/lesson-disposition.js";
 export * from "./experience/session-presummary.js";
 export * from "./experience/lesson-planner.js";
