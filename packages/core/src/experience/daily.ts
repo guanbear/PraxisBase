@@ -91,7 +91,7 @@ import {
 import { buildLessonAuthorityContract, runLessonPipeline, type LessonPipelineReport } from "./lesson-pipeline.js";
 import { dedupeLessons } from "./lesson-cache.js";
 import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
-import { buildPersonalGaReport, type PersonalGaMode, type PersonalGaReport } from "./personal-ga.js";
+import { buildPersonalGaReport, type PersonalGaMode, type PersonalGaReport, type PersonalQueueReport } from "./personal-ga.js";
 import { buildLessonDispositions, type LessonDisposition } from "./lesson-disposition.js";
 import { summarizePersonalSourceCoverage } from "./source-inventory.js";
 
@@ -266,12 +266,117 @@ function buildDailyPersonalSourceCoverage(
   });
 }
 
+type PersonalHighPrioritySourceRole = PersonalQueueReport["high_priority_sources"][number]["role"];
+type DailyPersonalQueueSourceRef = PersonalQueueReport["high_priority_sources"][number];
+
+function personalHighPriorityRole(source: ExperienceSourceConfig): PersonalHighPrioritySourceRole | undefined {
+  const nameAndPath = `${source.name} ${source.path ?? ""}`.toLowerCase();
+  if (source.agent === "openclaw") {
+    if (source.privacy_trust === "trusted_personal_remote" || source.source_type === "ssh") {
+      return "trusted_remote_openclaw";
+    }
+    if (source.source_type === "local" || source.source_type === "file") {
+      return "local_openclaw";
+    }
+  }
+  if (source.agent === "codex") {
+    if (nameAndPath.includes("cliproxyapi")) return "codex_cliproxyapi";
+    if (nameAndPath.includes(".codex") || nameAndPath.includes("codex-app") || source.parser === "codex-session") {
+      return "codex_app";
+    }
+  }
+  return undefined;
+}
+
+function sourceItemLedgerInputForDailyChunk(input: {
+  chunk: ExperienceChunk;
+  source: ExperienceSourceConfig;
+  authorityMode: RunDailyExperienceInput["authorityMode"];
+  model: string;
+}): SourceItemLedgerKeyInput {
+  return {
+    source_id: input.chunk.source_id,
+    source_ref: input.chunk.source_ref,
+    source_hash: input.chunk.source_hash,
+    chunk_hash: input.chunk.chunk_hash,
+    authority_mode: input.authorityMode,
+    model: input.model,
+    parser: input.source.parser,
+    reducer_identity_salt: input.chunk.reducer_identity_salt,
+  };
+}
+
+async function summarizeHighPriorityLedgerCoverage(root: string, input: {
+  chunks: ExperienceChunk[];
+  source: ExperienceSourceConfig;
+  authorityMode: RunDailyExperienceInput["authorityMode"];
+  model: string;
+}): Promise<{ complete: number; remaining: number }> {
+  let complete = 0;
+  let remaining = 0;
+  for (const chunk of input.chunks) {
+    const ledger = await readSourceItemLedger(root, sourceItemLedgerInputForDailyChunk({
+      chunk,
+      source: input.source,
+      authorityMode: input.authorityMode,
+      model: input.model,
+    }));
+    if (ledger?.status === "distilled" || ledger?.status === "human_required") {
+      complete++;
+    } else {
+      remaining++;
+    }
+  }
+  return { complete, remaining };
+}
+
+function buildDailyPersonalQueueReport(input: {
+  queueSources: DailyPersonalQueueSourceRef[];
+  sourceReports: DailyExperienceReport["sources"];
+  aiDistill: DailyAiDistill;
+  lessonReport?: DailyLessonReport;
+  cacheHits: number;
+}): PersonalQueueReport {
+  const highPrioritySources = input.queueSources;
+  const remainingHighPriority = highPrioritySources.reduce(
+    (sum, source) => sum + source.remaining_high_priority_items + (source.blocking && source.remaining_high_priority_items === 0 ? 1 : 0),
+    0,
+  );
+  const skippedLowPriority = Math.max(0, input.aiDistill.skipped_by_budget - remainingHighPriority);
+  const blockingHighPriority = highPrioritySources.some((source) => source.blocking);
+  const fullRun = highPrioritySources.length > 0 && !blockingHighPriority && remainingHighPriority === 0;
+
+  return {
+    type: "personal_queue_report",
+    run_kind: fullRun ? "full" : "bounded_smoke",
+    full_run: fullRun,
+    bounded_smoke: !fullRun,
+    planned_source_items: highPrioritySources.length > 0
+      ? highPrioritySources.reduce((sum, source) => sum + source.planned_items, 0)
+      : input.sourceReports.reduce((sum, report) => sum + report.scanned, 0),
+    selected_spans: input.lessonReport?.selected_spans ?? 0,
+    processed_spans: input.aiDistill.chunks,
+    cache_hits: input.cacheHits,
+    uncached_ai_calls: input.aiDistill.budget_used_uncached,
+    skipped_low_priority_items: skippedLowPriority,
+    remaining_high_priority_items: remainingHighPriority,
+    resume_state: fullRun ? "complete" : "resumable",
+    high_priority_sources: highPrioritySources,
+  };
+}
+
 function dailyPersonalGaMode(
   aiMode: DailyAiDistill["mode"],
   aiDistill: DailyAiDistill,
+  queueReport?: PersonalQueueReport,
 ): PersonalGaMode {
   if (aiMode !== "production") return "degraded_no_ai";
-  if (aiDistill.skipped_by_budget > 0 || aiDistill.budget_max_uncached === 0) {
+  const highPriorityRemaining = queueReport?.remaining_high_priority_items ?? aiDistill.skipped_by_budget;
+  const queueDrained = queueReport?.full_run === true && highPriorityRemaining === 0;
+  if (aiDistill.skipped_by_budget > 0 && highPriorityRemaining > 0) {
+    return "budget_exhausted";
+  }
+  if (aiDistill.budget_max_uncached === 0 && !queueDrained) {
     return "budget_exhausted";
   }
   return "production_ai";
@@ -1178,6 +1283,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const outputs: string[] = [];
   const warnings: string[] = [];
   const sourceReports: DailyExperienceReport["sources"] = [];
+  const personalQueueSources: DailyPersonalQueueSourceRef[] = [];
   const progressPath = liveDailyProgressPath(now);
   const runStartedAtMs = Date.now();
   const stageStartedAtMs = new Map<DailyProgressStage, number>();
@@ -1346,6 +1452,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     const writtenEnvelopePaths: string[] = [];
     let rawLessonSourcePath: string | undefined;
     let imported = 0;
+    const personalQueueRole = input.authorityMode === "personal-local" ? personalHighPriorityRole(source) : undefined;
+    let personalQueueChunks: ExperienceChunk[] = [];
+    let personalQueuePreprocessedItems = 0;
+    let personalQueueUnselectedItems = 0;
+    let personalQueueWarning: string | undefined;
 
     if (aiMode === "production") {
       let chunks: ExperienceChunk[] = [];
@@ -1359,6 +1470,19 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
             now,
             contextReducer: contextReducerForSource,
           });
+          if (personalQueueRole) {
+            try {
+              const plannedChunks = await chunkExperienceSource(root, source, {
+                now,
+                contextReducer: contextReducerForSource
+                  ? { projectRules: projectRulesResult.rules }
+                  : undefined,
+              });
+              personalQueueUnselectedItems = Math.max(0, plannedChunks.length - chunks.length);
+            } catch (error) {
+              personalQueueWarning = `source_queue_inventory_failed: ${error instanceof Error ? error.message : String(error)}`;
+            }
+          }
         } catch (error) {
           sourceWarnings.push(`source_chunk_failed: ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -1366,6 +1490,10 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         const resolved = await resolveExperienceSource(root, source, resolveOptions);
         const preblocked = resolved.envelopes.filter((envelope) => envelope.privacy.verdict !== "allow");
         blocked.push(...preblocked);
+        if (personalQueueRole) {
+          personalQueuePreprocessedItems += preblocked.length;
+          personalQueueUnselectedItems += resolved.skipped;
+        }
         rejected += preblocked.filter((envelope) => envelope.privacy.verdict === "reject").length;
         humanRequired += preblocked.filter((envelope) => envelope.privacy.verdict === "human_required").length;
         chunks = chunksFromEnvelopes(
@@ -1394,20 +1522,17 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         }
         chunks = summarizedChunks;
       }
+      personalQueueChunks = chunks;
 
       scanned = chunks.length + blocked.length;
       fetched = chunks.length + blocked.length;
 
       const distillTasks: ExperienceChunk[] = [];
-      const ledgerInputForChunk = (chunk: ExperienceChunk): SourceItemLedgerKeyInput => ({
-        source_id: chunk.source_id,
-        source_ref: chunk.source_ref,
-        source_hash: chunk.source_hash,
-        chunk_hash: chunk.chunk_hash,
-        authority_mode: input.authorityMode,
+      const ledgerInputForChunk = (chunk: ExperienceChunk): SourceItemLedgerKeyInput => sourceItemLedgerInputForDailyChunk({
+        chunk,
+        source,
+        authorityMode: input.authorityMode,
         model: distillModelName,
-        parser: source.parser,
-        reducer_identity_salt: chunk.reducer_identity_salt,
       });
       let sourceLedgerReuse = 0;
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
@@ -1713,6 +1838,10 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       rejected = resolved.rejected;
       humanRequired = resolved.humanRequired;
       sourceWarnings = resolved.warnings;
+      if (personalQueueRole) {
+        personalQueuePreprocessedItems = resolved.enveloped;
+        personalQueueUnselectedItems = resolved.skipped;
+      }
     }
 
     if (mode === "write" && blocked.length > 0) {
@@ -1787,17 +1916,48 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       }
     }
 
+    if (personalQueueWarning) sourceWarnings.push(personalQueueWarning);
+    const sourceStatus = statusFromCounts({
+      warnings: sourceWarnings,
+      rejected,
+      humanRequired,
+      enveloped,
+    });
+    if (personalQueueRole) {
+      const ledgerCoverage = await summarizeHighPriorityLedgerCoverage(root, {
+        chunks: personalQueueChunks,
+        source,
+        authorityMode: input.authorityMode,
+        model: distillModelName,
+      });
+      const plannedItems = personalQueueChunks.length + personalQueuePreprocessedItems + personalQueueUnselectedItems;
+      const processedItems = ledgerCoverage.complete + personalQueuePreprocessedItems;
+      const remainingItems = ledgerCoverage.remaining + personalQueueUnselectedItems;
+      const blocking = Boolean(personalQueueWarning) || sourceStatus === "failed" || plannedItems === 0 || remainingItems > 0;
+      personalQueueSources.push({
+        role: personalQueueRole,
+        source_name: source.name,
+        agent: source.agent,
+        configured: true,
+        planned_items: plannedItems,
+        processed_items: processedItems,
+        remaining_high_priority_items: remainingItems,
+        blocking,
+        ...(blocking
+          ? {
+            reason: personalQueueWarning
+              ?? (remainingItems > 0 ? `remaining_high_priority_items:${remainingItems}` : `source_status_${sourceStatus}`),
+          }
+          : {}),
+      });
+    }
+
     sourceReports.push({
       name: source.name,
       agent: source.agent,
       channel: source.channel,
       source_type: source.source_type,
-      status: statusFromCounts({
-        warnings: sourceWarnings,
-        rejected,
-        humanRequired,
-        enveloped,
-      }),
+      status: sourceStatus,
       scanned,
       fetched,
       enveloped,
@@ -2207,7 +2367,21 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     by_decision: validationSummaries.by_decision,
     candidates_without_passing: validationSummaries.candidates_without_passing.length,
   };
-  const personalGaMode = dailyPersonalGaMode(aiMode, finalAiDistill);
+  const personalGaCache = {
+    hits: finalAiDistill.cache_hits + (lessonReport?.ai_cache.hits ?? 0),
+    misses: lessonReport?.ai_cache.misses ?? 0,
+    writes: lessonReport?.ai_cache.writes ?? 0,
+  };
+  const personalQueueReport = input.authorityMode === "personal-local"
+    ? buildDailyPersonalQueueReport({
+      queueSources: personalQueueSources,
+      sourceReports,
+      aiDistill: finalAiDistill,
+      lessonReport,
+      cacheHits: personalGaCache.hits,
+    })
+    : undefined;
+  const personalGaMode = dailyPersonalGaMode(aiMode, finalAiDistill, personalQueueReport);
   const lessonDispositions = lessonReport
     ? buildDailyLessonDispositions({
       lessons: lessonReport.lessons,
@@ -2223,14 +2397,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       dispositions: lessonDispositions,
       goldenValidation: { matched: 0, required: 0, missed: [] },
       leakageScan: { passed: true, findings: [] },
-      cache: {
-        hits: finalAiDistill.cache_hits + (lessonReport?.ai_cache.hits ?? 0),
-        misses: lessonReport?.ai_cache.misses ?? 0,
-        writes: lessonReport?.ai_cache.writes ?? 0,
-      },
+      cache: personalGaCache,
       html: input.buildSite && mode === "write"
         ? { index: "dist/index.html", review: "dist/review.html" }
         : {},
+      queue: personalQueueReport,
       agentConsumption: [
         {
           surface: "pb_context",

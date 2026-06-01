@@ -19,6 +19,30 @@ function baseInput(overrides: Partial<PersonalReleaseAuditInput> = {}): Personal
         type: "personal_ga_report",
         mode: "production_ai",
         production_ready: true,
+        queue: {
+          type: "personal_queue_report",
+          run_kind: "full",
+          full_run: true,
+          bounded_smoke: false,
+          planned_source_items: 4,
+          selected_spans: 4,
+          processed_spans: 4,
+          cache_hits: 2,
+          uncached_ai_calls: 0,
+          skipped_low_priority_items: 0,
+          remaining_high_priority_items: 0,
+          resume_state: "complete",
+          high_priority_sources: [{
+            role: "local_openclaw",
+            source_name: "local-openclaw-memory",
+            agent: "openclaw",
+            configured: true,
+            planned_items: 2,
+            processed_items: 2,
+            remaining_high_priority_items: 0,
+            blocking: false,
+          }],
+        },
         blocking_reasons: [],
         warnings: [],
         source_coverage: [{ agent: "openclaw", source_kind: "memory_file", configured: true, available: true, items: 2 }],
@@ -80,6 +104,45 @@ test("release audit separates PB wiki/context readiness from final personal GA",
   assert.ok(report.blocking_reasons.includes("gbrain_publish_missing"));
   assert.ok(report.evidence_reports.includes(".praxisbase/reports/daily/daily-good.json"));
   assert.ok(report.next_commands.includes("praxisbase skill synthesize --mode personal --review --json"));
+});
+
+test("release audit blocks Gate 1 when old PB readiness lacks full queue evidence", () => {
+  const dailyReport = baseInput().dailyReport as Record<string, unknown>;
+  const personalGa = { ...(dailyReport.personal_ga as Record<string, unknown>) };
+  delete personalGa.queue;
+  const report = buildPersonalReleaseAuditReport(baseInput({
+    dailyReport: {
+      ...dailyReport,
+      personal_ga: personalGa,
+    },
+  }));
+
+  assert.equal(report.wiki_context_ga, "fail");
+  assert.ok(report.blocking_reasons.includes("personal_queue_report_missing"));
+});
+
+test("release audit blocks bounded smoke runs with remaining high-priority queue", () => {
+  const dailyReport = baseInput().dailyReport as Record<string, unknown>;
+  const personalGa = { ...(dailyReport.personal_ga as Record<string, unknown>) };
+  personalGa.queue = {
+    ...((personalGa.queue as Record<string, unknown>)),
+    run_kind: "bounded_smoke",
+    full_run: false,
+    bounded_smoke: true,
+    remaining_high_priority_items: 2,
+    resume_state: "resumable",
+  };
+  const report = buildPersonalReleaseAuditReport(baseInput({
+    dailyReport: {
+      ...dailyReport,
+      personal_ga: personalGa,
+    },
+  }));
+
+  assert.equal(report.wiki_context_ga, "fail");
+  assert.ok(report.blocking_reasons.includes("personal_queue_bounded_smoke"));
+  assert.ok(report.blocking_reasons.includes("high_priority_queue_remaining:2"));
+  assert.ok(report.next_commands.includes("praxisbase personal run --json"));
 });
 
 test("release audit passes only when all personal GA gates pass", () => {

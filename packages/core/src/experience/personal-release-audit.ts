@@ -102,13 +102,21 @@ function buildWikiContextGate(input: PersonalReleaseAuditInput): PersonalRelease
   const blockers = stringArray(personalGa.blocking_reasons);
   const warnings = stringArray(personalGa.warnings);
   const productionReady = personalGa.production_ready === true;
+  const queue = isRecord(personalGa.queue) ? personalGa.queue : undefined;
+  if (!queue) {
+    blockers.push("personal_queue_report_missing");
+  } else {
+    if (queue.full_run !== true) blockers.push("personal_queue_bounded_smoke");
+    const remainingHighPriority = numberValue(queue.remaining_high_priority_items);
+    if (remainingHighPriority > 0) blockers.push(`high_priority_queue_remaining:${remainingHighPriority}`);
+  }
   if (!productionReady && blockers.length === 0) blockers.push("pb_wiki_context_not_ready");
   return gate(
-    productionReady ? "pass" : "fail",
+    productionReady && blockers.length === 0 ? "pass" : "fail",
     blockers,
     warnings,
     evidence,
-    productionReady ? [] : ["praxisbase personal run --json"],
+    productionReady && blockers.length === 0 ? [] : ["praxisbase personal run --json"],
   );
 }
 

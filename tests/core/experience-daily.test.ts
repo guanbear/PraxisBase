@@ -1227,6 +1227,9 @@ describe("runDailyExperience", () => {
     assert.equal(distillCalls, 1);
     assert.equal(report.ai_distill.chunks, 1);
     assert.match(report.warnings.join("\n"), /max_ai_chunks_reached:1/);
+    assert.equal((report as any).personal_ga.queue.run_kind, "bounded_smoke");
+    assert.equal((report as any).personal_ga.queue.full_run, false);
+    assert.ok((report as any).personal_ga.queue.remaining_high_priority_items >= 1);
     const progressPath = report.outputs.find((output) => output.startsWith(".praxisbase/runs/live/"));
     assert.ok(progressPath);
     const progress = JSON.parse(await readFile(join(root, progressPath), "utf8"));
@@ -1328,10 +1331,109 @@ describe("runDailyExperience", () => {
     assert.match(report.ai_distill.warnings.join("\n"), /max_uncached_ai_chunks_reached:1/);
     assert.equal((report as any).personal_ga.mode, "production_ai");
     assert.equal((report as any).personal_ga.blocking_reasons.includes("ai_budget_exhausted"), false);
+    assert.equal((report as any).personal_ga.queue.run_kind, "full");
+    assert.equal((report as any).personal_ga.queue.full_run, true);
+    assert.equal((report as any).personal_ga.queue.bounded_smoke, false);
+    assert.equal((report as any).personal_ga.queue.uncached_ai_calls, 1);
+    assert.equal((report as any).personal_ga.queue.cache_hits, 2);
+    assert.equal((report as any).personal_ga.queue.remaining_high_priority_items, 0);
     assert.ok(progressEvents.some((event) => {
       const chunk = (event as { current_chunk?: { uncached_ai_chunks?: number; max_uncached_ai_chunks?: number } }).current_chunk;
       return chunk?.uncached_ai_chunks === 1 && chunk.max_uncached_ai_chunks === 1;
     }));
+  });
+
+  it("does not block personal GA when only low-priority chunks remain after high-priority ledger drains", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-low-priority-budget-"));
+    const highPrioritySessions = join(root, "high-priority-sessions");
+    const lowPriorityLogs = join(root, "low-priority-logs");
+    await mkdir(highPrioritySessions, { recursive: true });
+    await writeFile(join(highPrioritySessions, "session-1.txt"), "Fixed OpenClaw dispatch routing and pnpm test passed.", "utf8");
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "a-codex",
+      agent: "codex",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: highPrioritySessions,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const aiClient = {
+      async generateJson(input: { schemaName: string; user: string }) {
+        if (input.schemaName === "CuratedWikiProposalDraft") return { ok: false as const, error: "curation not relevant for this test" };
+        const prompt = JSON.parse(input.user) as {
+          source: {
+            source_ref: string;
+            source_hash: string;
+            chunk_hash: string;
+            agent: string;
+            scope_hint: "personal";
+          };
+        };
+        return {
+          ok: true as const,
+          json: {
+            source_ref: prompt.source.source_ref,
+            source_hash: prompt.source.source_hash,
+            chunk_hashes: [prompt.source.chunk_hash],
+            agent: prompt.source.agent,
+            scope_hint: prompt.source.scope_hint,
+            summary: "OpenClaw dispatch routing fix was verified.",
+            actions: ["Verified dispatch routing evidence before reporting success."],
+            failed_attempts: [],
+            outcome: "success",
+            verification: ["pnpm test passed"],
+            reusable_lessons: ["Verify dispatch routing evidence before reporting success."],
+            risks: [],
+            suggested_tags: ["openclaw", "dispatch"],
+            suggested_wiki_kind: "known_fix",
+            skill_candidate: { should_create: false },
+            confidence: 0.91,
+          },
+        };
+      },
+    };
+
+    await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxAiChunks: 1,
+      maxCurationProposals: 0,
+      aiClient,
+    });
+
+    await mkdir(lowPriorityLogs, { recursive: true });
+    await writeFile(join(lowPriorityLogs, "log-1.txt"), "Generic integration log one passed.", "utf8");
+    await writeFile(join(lowPriorityLogs, "log-2.txt"), "Generic integration log two passed.", "utf8");
+    await addExperienceSource(root, {
+      name: "z-generic",
+      agent: "generic",
+      sourceType: "local",
+      scopeDefault: "personal",
+      path: lowPriorityLogs,
+      now: "2026-05-21T02:00:00.000Z",
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T03:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      limit: 3,
+      maxAiChunks: 0,
+      maxCurationProposals: 0,
+      aiClient,
+    });
+
+    assert.equal(report.ai_distill.skipped_by_budget, 2);
+    assert.equal((report as any).personal_ga.queue.run_kind, "full");
+    assert.equal((report as any).personal_ga.queue.remaining_high_priority_items, 0);
+    assert.equal((report as any).personal_ga.queue.skipped_low_priority_items, 2);
+    assert.equal((report as any).personal_ga.mode, "production_ai");
+    assert.equal((report as any).personal_ga.blocking_reasons.includes("ai_budget_exhausted"), false);
   });
 
   it("does not let cached chunks in one source consume uncached AI budget for later sources", async () => {

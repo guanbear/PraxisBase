@@ -24,6 +24,34 @@ export interface PersonalGaDispositionRef {
   privacy_tier?: string;
 }
 
+export interface PersonalQueueSourceRef {
+  role: "local_openclaw" | "trusted_remote_openclaw" | "codex_app" | "codex_cliproxyapi";
+  source_name: string;
+  agent: string;
+  configured: boolean;
+  planned_items: number;
+  processed_items: number;
+  remaining_high_priority_items: number;
+  blocking: boolean;
+  reason?: string;
+}
+
+export interface PersonalQueueReport {
+  type: "personal_queue_report";
+  run_kind: "full" | "bounded_smoke";
+  full_run: boolean;
+  bounded_smoke: boolean;
+  planned_source_items: number;
+  selected_spans: number;
+  processed_spans: number;
+  cache_hits: number;
+  uncached_ai_calls: number;
+  skipped_low_priority_items: number;
+  remaining_high_priority_items: number;
+  resume_state: "complete" | "resumable" | "blocked";
+  high_priority_sources: PersonalQueueSourceRef[];
+}
+
 export interface PersonalGaReportInput {
   mode: PersonalGaMode;
   sourceCoverage: PersonalGaSourceCoverage[];
@@ -34,6 +62,7 @@ export interface PersonalGaReportInput {
   cache: { hits: number; misses: number; writes: number };
   html: { index?: string; review?: string };
   agentConsumption: Array<{ surface: string; available: boolean; authority: string[] }>;
+  queue?: PersonalQueueReport;
 }
 
 export interface PersonalGaReport {
@@ -47,6 +76,7 @@ export interface PersonalGaReport {
   cache: { hits: number; misses: number; writes: number };
   html: { index?: string; review?: string };
   agent_consumption: Array<{ surface: string; available: boolean; authority: string[] }>;
+  queue?: PersonalQueueReport;
   dispositions: PersonalGaDispositionRef[];
   production_ready: boolean;
   blocking_reasons: string[];
@@ -131,6 +161,7 @@ export function buildPersonalGaReport(input: PersonalGaReportInput): PersonalGaR
     cache: input.cache,
     html: input.html,
     agent_consumption: input.agentConsumption,
+    ...(input.queue ? { queue: input.queue } : {}),
     dispositions: input.dispositions,
     production_ready: blocking.size === 0 && input.mode === "production_ai",
     blocking_reasons: [...blocking].sort(),
