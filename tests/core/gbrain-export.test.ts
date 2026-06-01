@@ -216,8 +216,10 @@ Not broken.
 
     assert.equal(result.ok, true);
     assert.ok(result.payloads.length >= 3, "Should have wiki page, skill page, and catalog payload");
-    const skillPayload = result.payloads.find((p) => p.type === "skill");
+    const skillPayload = result.payloads.find((p) => p.authority === "promoted_skill");
     assert.ok(skillPayload, "Should have a skill payload");
+    assert.equal(skillPayload.type, "procedure");
+    assert.equal(skillPayload.slug, "praxisbase/skills/openclaw/repair");
     assert.equal(skillPayload.authority, "promoted_skill");
     assert.match(skillPayload.content, /When OpenClaw breaks/);
     assert.match(skillPayload.content, /Check logs/);

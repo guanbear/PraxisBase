@@ -71,7 +71,7 @@ function errorMessage(error: unknown): string {
 
 function isMissingBinary(error: unknown): boolean {
   if (!isRecord(error)) return false;
-  return error.code === "ENOENT" || /ENOENT|not found/i.test(String(error.message ?? ""));
+  return error.code === "ENOENT" || /spawn .* ENOENT/i.test(String(error.message ?? ""));
 }
 
 async function defaultRunCommand(command: string, args: string[], options?: { timeoutMs?: number }): Promise<GBrainCommandResult> {

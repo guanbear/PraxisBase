@@ -3,6 +3,8 @@ import { gbrainExecutable, resolveGBrainConfig, writeGBrainConfig, type GBrainCo
 import { exportGBrain } from "@praxisbase/core/experience/gbrain-export.js";
 import { importGBrain } from "@praxisbase/core/experience/gbrain-import.js";
 import type { FetchLike } from "@praxisbase/core/experience/gbrain-remote.js";
+import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
+import { writeJson } from "@praxisbase/core/store/file-store.js";
 
 export interface GBrainCommandOptions {
   json?: boolean;
@@ -89,7 +91,28 @@ export async function gbrainCommand(root: string, subcommand: string, options: G
       config,
       runCommand: options.runCommand,
     });
-    if (options.json) return JSON.stringify(result, null, 2);
+    let reportRef: string | undefined;
+    if (options.write) {
+      const createdAt = new Date().toISOString();
+      reportRef = `${protocolPaths.reportsGBrainExport}/gbrain-export_${createdAt.replace(/[:.]/g, "-").toLowerCase()}.json`;
+      await writeJson(root, reportRef, {
+        type: "gbrain_export_report",
+        created_at: createdAt,
+        source_id: sourceId,
+        ...result,
+        payloads: result.payloads.map((payload) => ({
+          pagePath: payload.pagePath,
+          slug: payload.slug,
+          type: payload.type,
+          title: payload.title,
+          authority: payload.authority,
+          provenanceHash: payload.provenanceHash,
+          idempotencyKey: payload.idempotencyKey,
+        })),
+      });
+    }
+    const output = reportRef ? { ...result, report_ref: reportRef } : result;
+    if (options.json) return JSON.stringify(output, null, 2);
     return `GBrain export ${result.ok ? "ok" : "failed"}: ${result.exported} exported, ${result.skipped} skipped, ${result.errors.length} error(s).`;
   }
 

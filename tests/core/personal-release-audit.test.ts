@@ -121,7 +121,7 @@ test("release audit blocks Gate 1 when old PB readiness lacks full queue evidenc
   assert.ok(report.blocking_reasons.includes("personal_queue_report_missing"));
 });
 
-test("release audit blocks bounded smoke runs with remaining high-priority queue", () => {
+test("release audit treats resumable backlog as a warning when personal PB context is production-ready", () => {
   const dailyReport = baseInput().dailyReport as Record<string, unknown>;
   const personalGa = { ...(dailyReport.personal_ga as Record<string, unknown>) };
   personalGa.queue = {
@@ -139,10 +139,11 @@ test("release audit blocks bounded smoke runs with remaining high-priority queue
     },
   }));
 
-  assert.equal(report.wiki_context_ga, "fail");
-  assert.ok(report.blocking_reasons.includes("personal_queue_bounded_smoke"));
-  assert.ok(report.blocking_reasons.includes("high_priority_queue_remaining:2"));
-  assert.ok(report.next_commands.includes("praxisbase personal run --json"));
+  assert.equal(report.wiki_context_ga, "pass");
+  assert.equal(report.blocking_reasons.includes("personal_queue_bounded_smoke"), false);
+  assert.equal(report.blocking_reasons.includes("high_priority_queue_remaining:2"), false);
+  assert.ok(report.warnings.includes("personal_queue_resumable_backlog:2"));
+  assert.equal(report.next_commands.includes("praxisbase personal run --json"), false);
 });
 
 test("release audit passes only when all personal GA gates pass", () => {
@@ -255,6 +256,75 @@ test("release audit reads the newest daily report and promoted PraxisBase skills
   assert.equal(report.skill_compiler_ga, "pass");
   assert.equal(report.gbrain_runtime_ga, "fail");
   assert.deepEqual(report.promoted_skills, ["skills/openclaw/openclaw-dispatch-routing/SKILL.md"]);
+});
+
+test("release audit accepts standalone GBrain export and retrieval evidence", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-release-audit-gbrain-standalone-"));
+  await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+  await mkdir(join(root, ".praxisbase/reports/context"), { recursive: true });
+  await mkdir(join(root, ".praxisbase/reports/gbrain-export"), { recursive: true });
+  await writeFile(join(root, ".praxisbase/reports/daily/new.json"), JSON.stringify({
+    ...baseInput({
+      dailyReport: {
+        ...(baseInput().dailyReport as Record<string, unknown>),
+        id: "new",
+        created_at: "2026-06-01T00:00:00.000Z",
+        skill_synthesis: {
+          ...((baseInput().dailyReport as Record<string, unknown>).skill_synthesis as Record<string, unknown>),
+          promoted: 1,
+          approved: 1,
+          needs_human: 0,
+        },
+      },
+    }).dailyReport,
+  }), "utf8");
+  await writeFile(join(root, ".praxisbase/reports/context/context.json"), JSON.stringify({
+    id: "context",
+    created_at: "2026-06-01T00:10:00.000Z",
+    query: "openclaw dispatch routing failure",
+    items: [{
+      path: "gbrain://query/praxisbase%2Fkb%2Fknown-fixes%2Fopenclaw-dispatch-routing-failures",
+      source_rank: "gbrain_sidecar",
+      summary: "OpenClaw dispatch routing failures",
+    }],
+  }), "utf8");
+  await writeFile(join(root, ".praxisbase/reports/gbrain-export/gbrain-export.json"), JSON.stringify({
+    type: "gbrain_export_report",
+    created_at: "2026-06-01T00:05:00.000Z",
+    ok: true,
+    mode: "personal",
+    source_id: "praxisbase",
+    pages: 1,
+    exported: 1,
+    skipped: 0,
+    skills_exported: 1,
+    catalog_exported: 1,
+    errors: [],
+    warnings: [],
+  }), "utf8");
+  await mkdir(join(root, "skills/openclaw/openclaw-dispatch-routing"), { recursive: true });
+  await writeFile(join(root, "skills/openclaw/openclaw-dispatch-routing/SKILL.md"), [
+    "---",
+    "name: OpenClaw Dispatch Routing",
+    "origin: praxisbase_synthesized",
+    "status: promoted",
+    "scope: personal",
+    "---",
+    "# OpenClaw Dispatch Routing",
+    "",
+    "## When To Use",
+    "Use when OpenClaw dispatch routing fails.",
+    "",
+    "## Procedure",
+    "- Confirm dispatch evidence before reporting success.",
+  ].join("\n"), "utf8");
+
+  const report = await readPersonalReleaseAuditReport(root, { now: "2026-06-01T01:00:00.000Z" });
+
+  assert.equal(report.gbrain_runtime_ga, "pass");
+  assert.equal(report.personal_ga, "pass");
+  assert.equal(report.ok, true);
+  assert.ok(report.evidence_reports.includes(".praxisbase/reports/gbrain-export/gbrain-export.json"));
 });
 
 test("release audit requires a promoted PraxisBase skill to be injectable", async () => {

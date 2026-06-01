@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readdir, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gbrainCommand } from "@praxisbase/cli/commands/gbrain.js";
@@ -215,5 +215,46 @@ describe("gbrain doctor command", () => {
         process.env.PRAXISBASE_TEST_GBRAIN_IMPORT_SECRET = previousSecret;
       }
     }
+  });
+
+  it("writes a durable export report for standalone GBrain publish", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-gbrain-export-report-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/openclaw-dispatch-routing-failures.md"), [
+      "---",
+      "title: OpenClaw dispatch routing failures",
+      "type: known_fix",
+      "scope: personal",
+      "---",
+      "# OpenClaw dispatch routing failures",
+      "",
+      "Verify runner execution before reporting delegation success.",
+    ].join("\n"), "utf8");
+
+    const output = await gbrainCommand(root, "export", {
+      json: true,
+      write: true,
+      source: "praxisbase",
+      runCommand: async (_command, args) => {
+        assert.equal(args[0], "capture");
+        assert.ok(args.includes("--source"));
+        assert.ok(args.includes("praxisbase"));
+        return {
+          stdout: JSON.stringify({ ok: true, slug: args[args.indexOf("--slug") + 1] }),
+          stderr: "",
+        };
+      },
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.exported, 2);
+    assert.match(parsed.report_ref, /^\.praxisbase\/reports\/gbrain-export\/gbrain-export_/);
+
+    const report = JSON.parse(await readFile(join(root, parsed.report_ref), "utf8"));
+    assert.equal(report.type, "gbrain_export_report");
+    assert.equal(report.ok, true);
+    assert.equal(report.exported, 2);
+    assert.equal(report.source_id, "praxisbase");
   });
 });

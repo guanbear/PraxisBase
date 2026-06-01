@@ -20,6 +20,15 @@ export interface PersonalReleaseAuditInput {
   latestDailyReportPath?: string;
   dailyReport?: Record<string, unknown>;
   promotedSkillPaths?: string[];
+  gbrainPublish?: {
+    available: boolean;
+    ok?: boolean;
+    exported?: number;
+    skipped?: number;
+    errors?: string[];
+    warnings?: string[];
+    report_ref?: string;
+  };
   gbrainRetrieval?: {
     available: boolean;
     source_id?: string;
@@ -117,9 +126,15 @@ function buildWikiContextGate(input: PersonalReleaseAuditInput): PersonalRelease
   if (!queue) {
     blockers.push("personal_queue_report_missing");
   } else {
-    if (queue.full_run !== true) blockers.push("personal_queue_bounded_smoke");
     const remainingHighPriority = numberValue(queue.remaining_high_priority_items);
-    if (remainingHighPriority > 0) blockers.push(`high_priority_queue_remaining:${remainingHighPriority}`);
+    if (queue.full_run !== true) {
+      if (productionReady) warnings.push("personal_queue_bounded_smoke");
+      else blockers.push("personal_queue_bounded_smoke");
+    }
+    if (remainingHighPriority > 0) {
+      if (productionReady) warnings.push(`personal_queue_resumable_backlog:${remainingHighPriority}`);
+      else blockers.push(`high_priority_queue_remaining:${remainingHighPriority}`);
+    }
   }
   if (!productionReady && blockers.length === 0) blockers.push("pb_wiki_context_not_ready");
   return gate(
@@ -181,23 +196,30 @@ function buildGBrainRuntimeGate(input: PersonalReleaseAuditInput): PersonalRelea
     : undefined;
   const evidence = [
     ...(input.latestDailyReportPath ? [input.latestDailyReportPath] : []),
+    ...(input.gbrainPublish?.report_ref ? [input.gbrainPublish.report_ref] : []),
     ...(input.gbrainRetrieval?.report_ref ? [input.gbrainRetrieval.report_ref] : []),
   ];
   const blockers: string[] = [];
   const warnings = [
     ...stringArray(gbrain?.warnings),
     ...stringArray(gbrain?.errors).map((error) => `gbrain_error:${error}`),
+    ...stringArray(input.gbrainPublish?.warnings),
+    ...stringArray(input.gbrainPublish?.errors).map((error) => `gbrain_error:${error}`),
   ];
 
-  if (!gbrain || gbrain.enabled !== true) {
-    blockers.push("gbrain_publish_missing");
-  } else {
+  if (gbrain && gbrain.enabled === true) {
     const publishStatus = typeof gbrain.publish_status === "string" ? gbrain.publish_status : "not_requested";
     if (publishStatus !== "completed" && publishStatus !== "partial") {
       blockers.push(publishStatus === "not_requested" ? "gbrain_publish_missing" : `gbrain_publish_${publishStatus}`);
     }
     if (numberValue(gbrain.exported) === 0) blockers.push("gbrain_export_empty");
     if (gbrain.doctor_status === "failed") blockers.push("gbrain_doctor_failed");
+  } else if (input.gbrainPublish?.available === true) {
+    const exported = numberValue(input.gbrainPublish.exported);
+    if (exported === 0) blockers.push("gbrain_export_empty");
+    if (input.gbrainPublish.ok !== true) warnings.push("gbrain_publish_partial");
+  } else {
+    blockers.push("gbrain_publish_missing");
   }
   if (input.gbrainRetrieval?.available !== true) blockers.push("gbrain_retrieval_missing");
 
@@ -373,6 +395,20 @@ async function latestGBrainContextEvidence(root: string): Promise<PersonalReleas
   };
 }
 
+async function latestGBrainPublishEvidence(root: string): Promise<PersonalReleaseAuditInput["gbrainPublish"]> {
+  const latest = await latestJsonReport(root, protocolPaths.reportsGBrainExport);
+  if (!latest) return { available: false };
+  return {
+    available: true,
+    ok: latest.value.ok === true,
+    exported: numberValue(latest.value.exported),
+    skipped: numberValue(latest.value.skipped),
+    errors: stringArray(latest.value.errors),
+    warnings: stringArray(latest.value.warnings),
+    report_ref: latest.path,
+  };
+}
+
 export async function readPersonalReleaseAuditReport(
   root: string,
   options: { now?: string } = {},
@@ -383,6 +419,7 @@ export async function readPersonalReleaseAuditReport(
     latestDailyReportPath: latestDaily?.path,
     dailyReport: latestDaily?.value,
     promotedSkillPaths: await listPromotedPraxisBaseSkills(root),
+    gbrainPublish: await latestGBrainPublishEvidence(root),
     gbrainRetrieval: await latestGBrainContextEvidence(root),
   });
 }

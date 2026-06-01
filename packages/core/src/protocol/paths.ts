@@ -31,6 +31,7 @@ export const protocolPaths = {
   reportsDecay: ".praxisbase/reports/decay",
   reportsDistill: ".praxisbase/reports/distill",
   reportsContext: ".praxisbase/reports/context",
+  reportsGBrainExport: ".praxisbase/reports/gbrain-export",
   reportsMemory: ".praxisbase/reports/memory",
   reportsMemoryIngest: ".praxisbase/reports/memory-ingest",
   reportsMemoryFetch: ".praxisbase/reports/memory-fetch",

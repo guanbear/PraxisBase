@@ -92,7 +92,11 @@ function emptyResult(mode: "personal" | "team", errors: string[] = [], warnings:
 }
 
 function slugForPage(page: WikiSitePage): string {
-  return `praxisbase/${page.path.replace(/\.md$/i, "").replace(/[^a-zA-Z0-9/_-]+/g, "-").replace(/^-+|-+$/g, "")}`;
+  return `praxisbase/${page.path.replace(/\.md$/i, "").replace(/[^a-zA-Z0-9/_-]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase()}`;
+}
+
+function slugForSkillPage(page: WikiSitePage): string {
+  return slugForPage(page).replace(/\/skill$/i, "");
 }
 
 function compactContent(page: WikiSitePage, provenanceHash: string): string {
@@ -258,8 +262,8 @@ export async function exportGBrain(root: string, options: ExportGBrainOptions): 
     }));
     return {
       pagePath: page.path,
-      slug: slugForPage(page),
-      type: "skill",
+      slug: slugForSkillPage(page),
+      type: "procedure",
       title: page.title,
       content: compactSkillContent(page, provenanceHash),
       authority: "promoted_skill" as const,
