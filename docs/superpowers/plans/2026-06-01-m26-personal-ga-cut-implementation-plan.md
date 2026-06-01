@@ -47,7 +47,12 @@
 ## Task 2: Gate 1 PB Wiki/Context GA
 
 - [ ] Add tests for high-priority source coverage across local OpenClaw, trusted remote OpenClaw, Codex app, and codex-cliproxyapi.
-- [ ] Define and persist full personal queue evidence: planned, selected, processed, cached, skipped low-priority, remaining high-priority, resume state.
+- [ ] Define and persist full personal queue evidence: planned source items, selected spans, processed spans, cache hits, uncached AI calls, skipped low-priority items, remaining high-priority items, high-priority source refs, and resume state.
+- [ ] Replace any implementation that infers bounded smoke from `--max-ai-chunks` alone. The implementation must enumerate current high-priority chunks and check the source-item ledger keyed by source id/ref/hash, chunk hash, parser, model, authority mode, and reducer identity.
+- [ ] Count high-priority chunks as complete only when the current ledger status is `distilled` or `human_required`.
+- [ ] Count high-priority chunks as remaining when the ledger entry is missing, stale, `skipped`, or unresolved `failed`.
+- [ ] Allow finite-budget resume runs to pass Gate 1 when the ledger proves the high-priority queue is drained.
+- [ ] Treat missing queue evidence in old reports as `personal_queue_report_missing`.
 - [ ] Ensure release audit distinguishes bounded smoke from full queue evidence.
 - [ ] Verify stable wiki or active personal lesson output is required.
 - [ ] Verify OpenClaw and Codex `context get` can return PB-authoritative knowledge without sidecars.
@@ -79,6 +84,7 @@
 ## Task 5: Gate 2B GBrain Publish And Retrieval
 
 - [ ] Add release audit tests for GBrain config, doctor, publish status, source id, and retrieval evidence.
+- [ ] Assert PB wiki/context and PB skill compiler gates can pass when GBrain is missing, while final `personal_ga` remains failed.
 - [ ] Ensure GBrain export includes stable wiki, promoted skills, and catalog only.
 - [ ] Ensure GBrain export excludes candidate skills, pending proposals, human-required records, rejected records, raw evidence, and private material.
 - [ ] Verify `context get --with-gbrain` ranks PB stable results before GBrain sidecar hits.

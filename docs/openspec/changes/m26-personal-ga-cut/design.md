@@ -27,6 +27,20 @@ PB stable wiki / promoted skills > active personal lessons > GBrain sidecar > Ag
 
 GBrain can store and retrieve PB outputs. It cannot promote PB candidates, replace PB privacy gates, or turn raw evidence into stable PB knowledge by itself.
 
+## Dependency Semantics
+
+GBrain is not a dependency of the PB compiler path. Source discovery, privacy triage, AI lesson extraction, lesson routing, wiki/context generation, governed skill synthesis, HTML generation, and `praxisbase personal release-audit --json` must remain runnable when GBrain is not installed or not reachable.
+
+GBrain is required for final personal GA because the complete product promise includes agent runtime retrieval through the preferred long-term brain. Therefore:
+
+```text
+PB Wiki/Context GA may pass without GBrain.
+PB Skill Compiler GA may pass without GBrain.
+Final Personal GA cannot pass until GBrain Runtime GA also passes.
+```
+
+This distinction prevents GBrain runtime outages from masking PB compiler regressions, while still making GBrain publish/retrieval a hard release gate for the complete personal product.
+
 ## Release Gates
 
 ### Gate 1: PB Wiki/Context GA
@@ -139,7 +153,18 @@ The full queue report records:
 - remaining high-priority items;
 - resume token or ledger state.
 
+The queue report must be derived from the source-item ledger, not from the CLI budget flag alone. A finite `--max-ai-chunks` run can still be a valid full/resume pass when every high-priority chunk is already represented by a current ledger entry whose key includes source id, source ref, source hash, chunk hash, authority mode, parser, model, and reducer identity. Conversely, a run with a large budget is still a bounded smoke if high-priority chunks remain skipped, missing, failed without a retry path, or only represented by stale ledger entries.
+
+Ledger status semantics:
+
+- `distilled`: processed and eligible to contribute to PB lessons when privacy permits.
+- `human_required`: processed but blocked from stable output until privacy/review is resolved.
+- `failed`: not processed; Gate 1 remains blocked unless an explicit external blocker is recorded.
+- `skipped`: not processed; Gate 1 remains blocked when the skipped chunk is high-priority.
+
 Gate 1 can pass with low-priority items remaining. It cannot pass while required high-priority memory/session sources are unprocessed unless the blocker is explicit and actionable.
+
+The release audit must fail old successful daily reports that do not contain queue evidence. Historical `personal_ga.production_ready=true` is no longer sufficient release evidence.
 
 ## Release Audit
 
@@ -166,6 +191,12 @@ The report shape:
 ```
 
 The audit reads current stable files and latest reports rather than rerunning expensive stages by default. It may offer `next_commands` for missing evidence, such as daily run, skill validation/promote, GBrain export, or site rebuild.
+
+The audit is the only readiness truth. Individual daily, lesson, skill, or GBrain reports are evidence, not release verdicts. A final pass requires:
+
+- Gate 1 `pass`: PB compiler produced usable wiki/context from the drained high-priority personal queue.
+- Gate 2A `pass`: at least one governed PB skill is promoted and injectable for a realistic personal query.
+- Gate 2B `pass`: stable PB wiki/skills were published to GBrain and retrieved from the configured runtime source.
 
 ## HTML Contract
 

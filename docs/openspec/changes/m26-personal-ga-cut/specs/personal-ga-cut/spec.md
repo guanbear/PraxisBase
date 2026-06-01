@@ -33,6 +33,8 @@ PraxisBase SHALL require high-priority personal source coverage for local OpenCl
 
 PraxisBase SHALL distinguish a resumable full personal queue from a bounded smoke run.
 
+PraxisBase SHALL compute full queue completion from current source chunks and source-item ledger entries. A finite AI budget SHALL NOT by itself make the run a bounded smoke when all high-priority chunks were already processed through valid cache or ledger reuse. A large or unlimited budget SHALL NOT by itself make the run full when high-priority chunks are missing, skipped, failed, or only represented by stale ledger entries.
+
 #### Scenario: Smoke run succeeds but high-priority queue remains
 
 - **GIVEN** a production daily smoke used a finite small AI budget
@@ -41,6 +43,22 @@ PraxisBase SHALL distinguish a resumable full personal queue from a bounded smok
 - **THEN** the audit reports the smoke evidence
 - **AND** `wiki_context_ga` remains blocked by undrained high-priority queue items
 - **AND** `next_commands` include the resume/full queue command
+
+#### Scenario: Finite budget resumes from ledger and drains the queue
+
+- **GIVEN** high-priority source chunks already have current `distilled` or `human_required` source-item ledger entries
+- **AND** a new run uses a finite uncached AI budget
+- **WHEN** no high-priority chunks are skipped or failed
+- **THEN** the queue report is allowed to be `full`
+- **AND** Gate 1 is not blocked by the finite budget flag alone
+
+#### Scenario: Old readiness report lacks queue evidence
+
+- **GIVEN** an older daily report has `personal_ga.production_ready` set to true
+- **BUT** it has no `personal_ga.queue` evidence
+- **WHEN** personal release audit runs
+- **THEN** `wiki_context_ga` is `fail`
+- **AND** blockers include `personal_queue_report_missing`
 
 ### Requirement: Stable Wiki And Context Must Be PB-Authoritative
 
@@ -103,6 +121,8 @@ PraxisBase SHALL publish only stable wiki pages and promoted skills to GBrain.
 ### Requirement: GBrain Runtime GA Requires Retrieval Evidence
 
 PraxisBase SHALL require proof that GBrain can retrieve PB-published personal experience for final personal GA.
+
+PraxisBase SHALL keep PB compiler commands independent of GBrain runtime availability. GBrain absence or retrieval failure SHALL fail `gbrain_runtime_ga` and final `personal_ga`; it SHALL NOT by itself fail PB wiki/context GA or PB skill compiler GA.
 
 #### Scenario: Publish succeeds but retrieval is unavailable
 

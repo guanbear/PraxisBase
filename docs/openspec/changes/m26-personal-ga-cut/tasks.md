@@ -13,6 +13,9 @@
 - [ ] Define full personal queue report fields: planned source items, selected spans, processed spans, cache hits, uncached calls, remaining high-priority items, resume state.
 - [ ] Add tests proving high-priority local OpenClaw, trusted remote OpenClaw, Codex app, and codex-cliproxyapi sources are represented in the queue/audit.
 - [ ] Ensure full queue can run resumably with cache and bounded uncached AI calls.
+- [ ] Compute `remaining_high_priority_items` from current source chunks and source-item ledger entries, not from `--max-ai-chunks` alone.
+- [ ] Treat a finite `--max-ai-chunks` run as full only when all high-priority chunks have current ledger entries and no high-priority `skipped` or unresolved `failed` entries remain.
+- [ ] Treat missing queue evidence in older successful daily reports as `personal_queue_report_missing`.
 - [ ] Block Gate 1 when high-priority source coverage is missing without an explicit external blocker.
 - [ ] Block Gate 1 when no stable wiki or active personal context exists.
 - [ ] Verify `context get` for OpenClaw and Codex returns PB-authoritative items without sidecars.
@@ -32,6 +35,7 @@
 ## 4. Gate 2B GBrain Runtime GA
 
 - [ ] Add release audit checks for GBrain config, doctor status, source id, publish status, and retrieval status.
+- [ ] Keep all PB compiler commands usable when GBrain is unavailable; surface GBrain absence only as Gate 2B/final GA failure.
 - [ ] Publish stable PB wiki pages and promoted skills to GBrain source `praxisbase`.
 - [ ] Verify GBrain export excludes pending proposals, human-required, rejected, raw, private, and candidate skill material.
 - [ ] Verify `context get --with-gbrain` returns PB stable results first and GBrain sidecar hits after them.

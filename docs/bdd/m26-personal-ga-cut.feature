@@ -25,6 +25,20 @@ Feature: M26 personal GA cut
     And low-priority skipped items do not fail the gate
     And the queue report records resume state and remaining high-priority items
 
+  Scenario: Finite AI budget can still pass when the high-priority ledger is drained
+    Given high-priority personal chunks have current source-item ledger entries
+    And the run uses a finite uncached AI budget
+    When no high-priority chunks are skipped or failed
+    Then the queue report can be full
+    And Gate 1 is not blocked by the budget flag alone
+
+  Scenario: Historical PB readiness without queue evidence is not enough
+    Given an older daily report says personal_ga.production_ready is true
+    But the report has no personal queue evidence
+    When I run the personal release audit
+    Then PB wiki/context GA fails
+    And the blockers include personal_queue_report_missing
+
   Scenario: Agent context uses PB authority without relying on sidecars
     Given stable PB wiki pages or active personal lessons exist
     And GBrain and AgentMemory sidecar retrieval are unavailable
@@ -63,6 +77,15 @@ Feature: M26 personal GA cut
     Then PB stable context appears first
     And GBrain sidecar hits appear after PB stable context
     And the release audit records GBrain retrieval evidence
+
+  Scenario: GBrain is required for final GA but not for PB compiler gates
+    Given PB wiki/context GA passes
+    And PB skill compiler GA passes
+    But GBrain publish or retrieval evidence is missing
+    When I run the personal release audit
+    Then GBrain runtime GA fails
+    And final personal GA fails
+    And PB wiki/context GA and PB skill compiler GA keep their pass status
 
   Scenario: HTML separates stable output from queues
     Given the latest release audit has mixed gate status
