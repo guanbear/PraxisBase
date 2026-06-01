@@ -256,3 +256,48 @@ test("release audit reads the newest daily report and promoted PraxisBase skills
   assert.equal(report.gbrain_runtime_ga, "fail");
   assert.deepEqual(report.promoted_skills, ["skills/openclaw/openclaw-dispatch-routing/SKILL.md"]);
 });
+
+test("release audit requires a promoted PraxisBase skill to be injectable", async () => {
+  const root = await mkdtemp(join(tmpdir(), "praxisbase-release-audit-noninjectable-skill-"));
+  await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+  await writeFile(join(root, ".praxisbase/reports/daily/new.json"), JSON.stringify({
+    ...baseInput({
+      dailyReport: {
+        ...(baseInput().dailyReport as Record<string, unknown>),
+        id: "new",
+        created_at: "2026-06-01T00:00:00.000Z",
+        skill_synthesis: {
+          ...((baseInput().dailyReport as Record<string, unknown>).skill_synthesis as Record<string, unknown>),
+          promoted: 1,
+          approved: 1,
+          needs_human: 0,
+        },
+      },
+    }).dailyReport,
+  }), "utf8");
+  await mkdir(join(root, "skills/misc/unmatched"), { recursive: true });
+  await writeFile(join(root, "skills/misc/unmatched/SKILL.md"), [
+    "---",
+    "name: Unmatched",
+    "origin: praxisbase_synthesized",
+    "status: promoted",
+    "scope: personal",
+    "---",
+    "# Unmatched",
+    "",
+    "## When To Use",
+    "Use when preparing unrelated spreadsheet macros.",
+    "",
+    "## Procedure",
+    "- This should not match the personal agent experience audit query.",
+    "",
+    "## Provenance",
+    "- PB synthesized",
+  ].join("\n"), "utf8");
+
+  const report = await readPersonalReleaseAuditReport(root, { now: "2026-06-01T01:00:00.000Z" });
+
+  assert.equal(report.skill_compiler_ga, "fail");
+  assert.ok(report.blocking_reasons.includes("no_promoted_injectable_skill"));
+  assert.deepEqual(report.promoted_skills, []);
+});

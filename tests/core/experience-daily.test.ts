@@ -2477,6 +2477,35 @@ describe("runDailyExperience", () => {
     await writeFile(join(sessions, "session-2.txt"), "Repeated OpenClaw memory import used export, hash verification, and provenance import.", "utf8");
     await writeFile(join(sessions, "session-3.txt"), "OpenClaw ACK timing repair: send ACK before slow tool work, then verify replay.", "utf8");
     await writeFile(join(sessions, "session-4.txt"), "Repeated OpenClaw ACK timing repair: send ACK before slow tool work, then verify replay.", "utf8");
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-memory-import.md"), [
+      "---",
+      "id: openclaw-memory-import",
+      "protocol_version: \"0.1\"",
+      "type: procedure",
+      "knowledge_type: procedure",
+      "scope: personal",
+      "maturity: verified",
+      "sources:",
+      "  - uri: raw-vault://codex/session-1",
+      "    hash: sha256:distilled1",
+      "  - uri: raw-vault://codex/session-2",
+      "    hash: sha256:distilled2",
+      "updated_at: \"2026-05-26T00:00:00.000Z\"",
+      "---",
+      "# OpenClaw memory import",
+      "",
+      "## When To Use",
+      "Use when importing OpenClaw memory into PraxisBase.",
+      "",
+      "## Procedure",
+      "1. Export memory JSON.",
+      "2. Verify hash.",
+      "3. Import with provenance.",
+      "",
+      "## Verification",
+      "- Daily smoke passed.",
+    ].join("\n"), "utf8");
     await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
     await addExperienceSource(root, {
       name: "local-codex",

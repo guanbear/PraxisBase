@@ -23,14 +23,14 @@
 
 ## 3. Gate 2A PB Skill Compiler GA
 
-- [ ] Restrict stable skill synthesis inputs to stable wiki, approved/`skill_ready` lessons, and safe active personal lessons.
-- [ ] Exclude raw, dreaming, session-corpus, untriaged staging, sidecar-only, and legacy-distill-only sources from stable skill eligibility.
-- [ ] Add a skill source authority report showing why each signal was accepted or rejected.
-- [ ] Auto-repair fixable skill shape defects once before human review.
-- [ ] Validate required skill sections, concrete trigger, actionable procedure, verification, pitfalls, do-not-use, related wiki, provenance, and leak safety.
-- [ ] Add promotion audit path for personal skills that records proposal id, candidate id, validation id, semantic review id, source hashes, and reviewer/policy.
+- [x] Restrict stable skill synthesis inputs to stable wiki, approved/`skill_ready` lessons, and safe active personal lessons.
+- [x] Exclude raw, dreaming, session-corpus, untriaged staging, sidecar-only, and legacy-distill-only sources from stable skill eligibility.
+- [x] Add a skill source authority report showing why each signal was accepted or rejected.
+- [x] Auto-repair fixable skill shape defects once before human review.
+- [x] Validate required skill sections, concrete trigger, actionable procedure, verification, pitfalls, do-not-use, related wiki, provenance, and leak safety.
+- [x] Add promotion audit path for personal skills that records proposal id, candidate id, validation id, semantic review id, source hashes, and reviewer/policy.
 - [ ] Promote at least one real personal skill in the final validation run.
-- [ ] Verify `skill inject-preview` returns the promoted skill for a realistic OpenClaw/Codex query.
+- [x] Verify `skill inject-preview` returns the promoted skill for a realistic OpenClaw/Codex query.
 
 ## 4. Gate 2B GBrain Runtime GA
 

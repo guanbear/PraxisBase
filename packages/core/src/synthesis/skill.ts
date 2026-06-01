@@ -7,13 +7,25 @@ import type { AiJsonClient } from "../ai/client.js";
 import { writeJson } from "../store/file-store.js";
 import { protocolPaths } from "../protocol/paths.js";
 import type { ClassifiedLesson } from "../experience/lesson-cache.js";
-import { collectSkillSignalsFromDistilledExperiences, collectSkillSignalsFromLessons, collectSkillSignalsFromStableWikiPages } from "./skill-signals.js";
+import {
+  collectSkillSignalsFromDistilledExperiences,
+  collectSkillSignalsFromLessons,
+  collectSkillSignalsFromStableWikiPages,
+  explainLessonSkillAuthority,
+} from "./skill-signals.js";
+import type { SkillSignalCandidate } from "./skill-signals.js";
 import { clusterSkillSignals } from "./skill-stability.js";
 import { loadStableSkillInventory, matchStableSkills } from "./skill-inventory.js";
 import { proposeSkillCandidate } from "./skill-proposer.js";
 import { reviewSkillCandidateSemanticallyDetailed } from "./skill-review.js";
 import { decideSemanticSkillAction } from "./skill-review-policy.js";
-import { SkillSynthesisReportSchema, type SkillSynthesisCandidate, type SkillSynthesisReport } from "./skill-model.js";
+import {
+  SkillSynthesisReportSchema,
+  type SkillSourceAuthorityEntry,
+  type SkillSourceAuthorityReport,
+  type SkillSynthesisCandidate,
+  type SkillSynthesisReport,
+} from "./skill-model.js";
 import { collectWikiPages } from "../wiki/render-site.js";
 
 export interface SkillSynthesisInput {
@@ -251,6 +263,85 @@ export interface SynthesizeSkillCandidatesResult {
   candidates: SkillSynthesisCandidate[];
 }
 
+function sourceAuthorityEntryId(entry: Omit<SkillSourceAuthorityEntry, "id">): string {
+  return `skill_source_auth_${computeHash(JSON.stringify({
+    kind: entry.source_kind,
+    decision: entry.decision,
+    reason: entry.reason,
+    source_ref: entry.source_ref,
+    source_hash: entry.source_hash ?? "",
+    signal_id: entry.signal_id ?? "",
+    evidence_id: entry.evidence_id ?? "",
+  })).slice(7, 19)}`;
+}
+
+function authorityEntry(entry: Omit<SkillSourceAuthorityEntry, "id">): SkillSourceAuthorityEntry {
+  return { id: sourceAuthorityEntryId(entry), ...entry };
+}
+
+function authorityEntriesFromSignals(
+  sourceKind: SkillSourceAuthorityEntry["source_kind"],
+  signals: SkillSignalCandidate[],
+  decision: SkillSourceAuthorityEntry["decision"],
+  reason: string,
+): SkillSourceAuthorityEntry[] {
+  return signals.map((signal) => authorityEntry({
+    source_kind: sourceKind,
+    decision,
+    reason,
+    stable_eligible: decision === "accepted",
+    source_ref: signal.source_ref,
+    source_hash: signal.source_hash,
+    signal_id: signal.id,
+    evidence_id: signal.evidence_id,
+    scope: signal.scope,
+  }));
+}
+
+function authorityEntriesFromLessons(
+  lessons: ClassifiedLesson[],
+  options: { authorityMode: "personal-local" | "team-git" },
+): SkillSourceAuthorityEntry[] {
+  return lessons.map((lesson) => {
+    const decision = explainLessonSkillAuthority(lesson, options);
+    return authorityEntry({
+      source_kind: "lesson",
+      decision: decision.accepted ? "accepted" : "rejected",
+      reason: decision.reason,
+      stable_eligible: decision.accepted,
+      source_ref: lesson.source_refs[0],
+      source_hash: lesson.source_hashes[0],
+      evidence_id: lesson.lesson_id,
+      scope: lesson.scope,
+    });
+  });
+}
+
+function buildSourceAuthorityReport(entries: SkillSourceAuthorityEntry[]): SkillSourceAuthorityReport {
+  const bySourceKind: Record<string, number> = {};
+  const byReason: Record<string, number> = {};
+  let accepted = 0;
+  let rejected = 0;
+  let degraded = 0;
+
+  for (const entry of entries) {
+    bySourceKind[entry.source_kind] = (bySourceKind[entry.source_kind] ?? 0) + 1;
+    byReason[entry.reason] = (byReason[entry.reason] ?? 0) + 1;
+    if (entry.decision === "accepted") accepted++;
+    else if (entry.decision === "degraded") degraded++;
+    else rejected++;
+  }
+
+  return {
+    accepted,
+    rejected,
+    degraded,
+    by_source_kind: bySourceKind,
+    by_reason: byReason,
+    entries: entries.sort((a, b) => a.id.localeCompare(b.id)),
+  };
+}
+
 export function skillCandidateToKnowledgeProposal(candidate: SkillSynthesisCandidate): Proposal {
   return ProposalSchema.parse({
     id: candidate.id,
@@ -285,14 +376,30 @@ export function skillCandidateToKnowledgeProposal(candidate: SkillSynthesisCandi
 export async function synthesizeSkillCandidates(root: string, input: SynthesizeSkillCandidatesInput): Promise<SynthesizeSkillCandidatesResult> {
   const now = input.now ?? new Date().toISOString();
   const pages = await collectWikiPages(root);
-  const legacyDistillMode = input.legacyDistillMode ?? "compat";
-  const legacyDistillSignals = legacyDistillMode === "disabled"
-    ? []
-    : collectSkillSignalsFromDistilledExperiences(input.experiences, { authorityMode: input.authorityMode });
+  const legacyDistillMode = input.legacyDistillMode ?? "disabled";
+  const lessonSignals = collectSkillSignalsFromLessons(input.lessons ?? [], { authorityMode: input.authorityMode });
+  const wikiSignals = collectSkillSignalsFromStableWikiPages(pages, { authorityMode: input.authorityMode });
+  const collectableLegacyDistillSignals = collectSkillSignalsFromDistilledExperiences(input.experiences, { authorityMode: input.authorityMode });
+  const legacyDistillSignals = legacyDistillMode === "compat" ? collectableLegacyDistillSignals : [];
+  const sourceAuthorityEntries: SkillSourceAuthorityEntry[] = [
+    ...authorityEntriesFromLessons(input.lessons ?? [], { authorityMode: input.authorityMode }),
+    ...authorityEntriesFromSignals("stable_wiki", wikiSignals, "accepted", "stable_wiki_procedure"),
+    ...authorityEntriesFromSignals(
+      "legacy_distill",
+      collectableLegacyDistillSignals,
+      legacyDistillMode === "compat" ? "accepted" : legacyDistillMode === "degraded" ? "degraded" : "rejected",
+      legacyDistillMode === "compat"
+        ? "legacy_distill_compat"
+        : legacyDistillMode === "degraded"
+          ? "legacy_distill_degraded_non_promotable"
+          : "legacy_distill_not_stable_authority",
+    ),
+  ];
+  const sourceAuthority = buildSourceAuthorityReport(sourceAuthorityEntries);
   const signals = [
-    ...collectSkillSignalsFromLessons(input.lessons ?? [], { authorityMode: input.authorityMode }),
+    ...lessonSignals,
     ...legacyDistillSignals,
-    ...collectSkillSignalsFromStableWikiPages(pages, { authorityMode: input.authorityMode }),
+    ...wikiSignals,
   ];
   const clusters = clusterSkillSignals(signals, { maxClusters: input.maxClusters });
   const clusteredSignalCount = clusters.reduce((sum, cluster) => sum + cluster.source_count, 0);
@@ -306,11 +413,14 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
   let skipped = 0;
   const outputs: string[] = [];
   const warnings: string[] = [];
-  if (legacyDistillMode === "disabled" && input.experiences.length > 0) {
+  if (legacyDistillMode === "disabled" && collectableLegacyDistillSignals.length > 0) {
     warnings.push("legacy_distill_skill_signals_disabled:lesson_state_authority_required");
   }
-  if (legacyDistillMode === "degraded" && input.experiences.length > 0) {
-    warnings.push("legacy_distill_skill_signals_enabled:explicit_degraded_mode");
+  if (legacyDistillMode === "degraded" && collectableLegacyDistillSignals.length > 0) {
+    warnings.push("legacy_distill_skill_signals_degraded:non_promotable");
+  }
+  if (legacyDistillMode === "compat" && collectableLegacyDistillSignals.length > 0) {
+    warnings.push("legacy_distill_skill_signals_enabled:compat_mode_not_ga");
   }
 
   for (const cluster of clusters) {
@@ -384,6 +494,7 @@ export async function synthesizeSkillCandidates(root: string, input: SynthesizeS
     needs_human: needsHuman,
     skipped,
     promoted: 0,
+    source_authority: sourceAuthority,
     outputs,
     warnings,
     created_at: now,

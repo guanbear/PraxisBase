@@ -186,6 +186,7 @@ describe("Skill synthesis", () => {
         base,
         { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
       ],
+      legacyDistillMode: "compat",
       aiClient: {
         async generateJson(input) {
           if (input.schemaName === "semantic_skill_review") {
@@ -267,6 +268,121 @@ describe("Skill synthesis", () => {
     assert.ok(result.report.warnings.includes("legacy_distill_skill_signals_disabled:lesson_state_authority_required"));
   });
 
+  it("defaults to governed PB sources and rejects legacy distilled-only skill signals", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-m26-default-authority-"));
+    const base: DistilledExperience = {
+      source_ref: "raw-vault://codex/session-1",
+      source_hash: "sha256:distilled1",
+      chunk_hashes: ["sha256:chunk1"],
+      agent: "codex",
+      scope_hint: "personal",
+      summary: "OpenClaw memory import repair.",
+      problem: "OpenClaw memory import needed provenance.",
+      actions: ["Exported memory JSON.", "Verified hash.", "Imported with provenance."],
+      failed_attempts: [],
+      outcome: "success",
+      verification: ["pnpm test passed"],
+      reusable_lessons: ["Export memory, verify hash, then import with provenance."],
+      risks: [],
+      suggested_tags: ["openclaw"],
+      suggested_wiki_kind: "procedure",
+      skill_candidate: {
+        should_create: true,
+        title: "OpenClaw memory import operations",
+        trigger: "Need to import OpenClaw memory into PraxisBase",
+        procedure: ["Export memory JSON.", "Verify hash.", "Import with provenance."],
+      },
+      confidence: 0.91,
+    };
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "dry-run",
+      authorityMode: "personal-local",
+      now: "2026-06-01T00:00:00.000Z",
+      experiences: [
+        base,
+        { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
+      ],
+    });
+
+    assert.equal(result.report.signals, 0);
+    assert.equal(result.report.candidates, 0);
+    assert.equal(result.report.source_authority.accepted, 0);
+    assert.equal(result.report.source_authority.rejected, 2);
+    assert.ok(result.report.source_authority.by_reason.legacy_distill_not_stable_authority >= 2);
+    assert.ok(result.report.warnings.includes("legacy_distill_skill_signals_disabled:lesson_state_authority_required"));
+  });
+
+  it("accepts safe active personal lessons as governed personal skill signals", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-m26-active-lesson-"));
+    const baseLesson = {
+      lesson_id: "lesson_ack_1",
+      state: "active_personal",
+      safe_claim: "Send a brief ACK before long-running tool work.",
+      claim: "Send a brief ACK before long-running tool work.",
+      problem: "The user sees silence during slow work.",
+      trigger: "Before long-running tool work.",
+      action: "Send a short acknowledgement before using tools.",
+      verification: "ACK was sent before the tool call.",
+      negative_case: "Do not stay silent.",
+      applies_to_agents: ["codex", "openclaw"],
+      applies_to_systems: ["agent-runtime"],
+      portability: "agent_family",
+      privacy_tier: "safe",
+      scope: "personal",
+      confidence: 0.91,
+      cue_family: "native_memory",
+      source_refs: ["source-inventory://codex/MEMORY.md#ack-1"],
+      source_hashes: ["sha256:ack1"],
+      evidence_spans: [],
+      redaction_notes: [],
+      created_at: "2026-06-01T00:00:00.000Z",
+    } as any;
+
+    const result = await synthesizeSkillCandidates(root, {
+      mode: "review",
+      authorityMode: "personal-local",
+      now: "2026-06-01T00:00:00.000Z",
+      experiences: [],
+      lessons: [
+        baseLesson,
+        {
+          ...baseLesson,
+          lesson_id: "lesson_ack_2",
+          source_refs: ["source-inventory://openclaw/MEMORY.md#ack-2"],
+          source_hashes: ["sha256:ack2"],
+        },
+      ],
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "semantic_skill_review") {
+            return { ok: true, json: {
+              decision: "approve_candidate",
+              quality_score: 0.91,
+              class_level: true,
+              actionable: true,
+              reusable: true,
+              safe_for_future_agents: true,
+              evidence_support: "strong",
+              should_update_existing: null,
+              fatal_issues: [],
+              missing_requirements: [],
+              reason: "Safe active personal lesson is reusable.",
+              reviewed_at: "2026-06-01T00:00:00.000Z",
+            } };
+          }
+          return { ok: true, json: {} };
+        },
+      },
+    });
+
+    assert.equal(result.report.signals, 2);
+    assert.equal(result.report.candidates, 1);
+    assert.equal(result.report.source_authority.accepted, 2);
+    assert.equal(result.report.source_authority.rejected, 0);
+    assert.equal(result.report.source_authority.by_reason.lesson_active_personal_safe, 2);
+  });
+
   it("reports low-signal skill signals rejected by stability clustering", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-skill-synthesis-rejected-signals-"));
     const result = await synthesizeSkillCandidates(root, {
@@ -297,6 +413,7 @@ describe("Skill synthesis", () => {
         },
         confidence: 0.8,
       }],
+      legacyDistillMode: "compat",
     });
 
     assert.equal(result.report.signals, 1);
@@ -340,6 +457,7 @@ describe("Skill synthesis", () => {
         base,
         { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
       ],
+      legacyDistillMode: "compat",
     });
 
     assert.equal(result.report.clusters, 1);
@@ -385,6 +503,7 @@ describe("Skill synthesis", () => {
         base,
         { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
       ],
+      legacyDistillMode: "compat",
       aiClient: {
         async generateJson(input) {
           if (input.schemaName === "semantic_skill_review") {
@@ -438,6 +557,7 @@ describe("Skill synthesis", () => {
         base,
         { ...base, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
       ],
+      legacyDistillMode: "compat",
       aiClient: {
         async generateJson(input) {
           if (input.schemaName === "skill_synthesis_candidate") {

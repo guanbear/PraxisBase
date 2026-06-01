@@ -2220,8 +2220,8 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	      experiences: distilledExperiences,
 	      lessons: lessonReport?.lessons ?? [],
 	      legacyDistillMode: lessonReport
-	        ? (input.degraded || input.skillSynthesis ? "degraded" : "disabled")
-	        : "compat",
+	        ? (input.degraded ? "degraded" : "disabled")
+	        : "disabled",
 	      aiClient,
 	      now,
 	      maxClusters: input.maxSkillCandidates,

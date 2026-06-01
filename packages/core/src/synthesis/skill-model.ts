@@ -9,6 +9,37 @@ const SKILL_PROMOTION_PATH = /^skills\/[^/]+\/[^/]+\/(SKILL\.md|references\/[^/]
 
 export type SkillCauseClassification = "skill_problem" | "agent_problem" | "environment_problem" | "weak_signal";
 
+export const SkillSourceAuthorityEntrySchema = z.object({
+  id: z.string().min(1),
+  source_kind: z.enum(["stable_wiki", "lesson", "legacy_distill"]),
+  decision: z.enum(["accepted", "rejected", "degraded"]),
+  reason: z.string().min(1),
+  stable_eligible: z.boolean(),
+  source_ref: z.string().min(1),
+  source_hash: z.string().min(1).optional(),
+  signal_id: z.string().min(1).optional(),
+  evidence_id: z.string().min(1).optional(),
+  scope: ScopeSchema.optional(),
+});
+
+export const SkillSourceAuthorityReportSchema = z.object({
+  accepted: z.number().int().nonnegative(),
+  rejected: z.number().int().nonnegative(),
+  degraded: z.number().int().nonnegative(),
+  by_source_kind: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  by_reason: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  entries: z.array(SkillSourceAuthorityEntrySchema).default([]),
+});
+
+const emptySkillSourceAuthorityReport = () => ({
+  accepted: 0,
+  rejected: 0,
+  degraded: 0,
+  by_source_kind: {},
+  by_reason: {},
+  entries: [],
+});
+
 function validSkillTarget(path: string, action: "skill_create" | "skill_update" | "skill_support_file" | "skill_optimize_description" | "skip"): boolean {
   if (!SAFE_RELATIVE_PATH.test(path)) return false;
   if (action === "skip") return true;
@@ -105,6 +136,7 @@ export const SkillSynthesisReportSchema = z.object({
   needs_human: z.number().int().nonnegative(),
   skipped: z.number().int().nonnegative().default(0),
   promoted: z.number().int().nonnegative().default(0),
+  source_authority: SkillSourceAuthorityReportSchema.default(emptySkillSourceAuthorityReport),
   outputs: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),
   created_at: z.string().datetime(),
@@ -148,3 +180,5 @@ export type SkillSynthesisCandidate = z.infer<typeof SkillSynthesisCandidateSche
 export type SemanticSkillReview = z.infer<typeof SemanticSkillReviewSchema>;
 export type SkillSynthesisReport = z.infer<typeof SkillSynthesisReportSchema>;
 export type SkillPromotionAudit = z.infer<typeof SkillPromotionAuditSchema>;
+export type SkillSourceAuthorityEntry = z.infer<typeof SkillSourceAuthorityEntrySchema>;
+export type SkillSourceAuthorityReport = z.infer<typeof SkillSourceAuthorityReportSchema>;

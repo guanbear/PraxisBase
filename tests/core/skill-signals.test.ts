@@ -128,4 +128,33 @@ describe("collectSkillSignalsFromDistilledExperiences", () => {
     assert.equal(signals.length, 1);
     assert.match(signals[0].procedure.join(" "), /ack/i);
   });
+
+  it("collects skill signals from approved lessons for forward compatibility", () => {
+    const signals = collectSkillSignalsFromLessons([{
+      lesson_id: "lesson_approved",
+      state: "approved",
+      safe_claim: "Confirm target machine before remote execution.",
+      claim: "Confirm target machine before remote execution.",
+      problem: "Commands can run on the wrong machine.",
+      trigger: "Before remote execution.",
+      action: "Confirm the target machine and connection route.",
+      verification: "Command output identifies the expected target.",
+      negative_case: "Do not execute when the target is ambiguous.",
+      applies_to_agents: ["openclaw"],
+      applies_to_systems: ["remote-execution"],
+      portability: "agent_family",
+      privacy_tier: "safe",
+      scope: "personal",
+      confidence: 0.94,
+      cue_family: "verified_fix",
+      source_refs: ["source-inventory://openclaw/MEMORY.md"],
+      source_hashes: ["sha256:approved"],
+      evidence_spans: [],
+      redaction_notes: [],
+      created_at: "2026-06-01T00:00:00.000Z",
+    } as any], { authorityMode: "personal-local" });
+
+    assert.equal(signals.length, 1);
+    assert.match(signals[0].trigger, /remote execution/i);
+  });
 });

@@ -2,6 +2,7 @@ import { computeHash } from "../protocol/id.js";
 import type { DistilledExperience } from "../ai/distill.js";
 import type { ClassifiedLesson } from "../experience/lesson-cache.js";
 import type { WikiPage } from "../wiki/resolver.js";
+import { stableOutputLeakReasons } from "../experience/stable-output-safety.js";
 
 export type SkillSignalScope = "personal" | "project" | "team" | "org" | "global";
 export type SkillCueFamily =
@@ -24,6 +25,11 @@ export interface SkillSignalCandidate {
   confidence: number;
   cue_family: SkillCueFamily;
   related_wiki_paths: string[];
+}
+
+export interface LessonSkillAuthorityDecision {
+  accepted: boolean;
+  reason: string;
 }
 
 function normalizeText(value: string): string {
@@ -140,6 +146,65 @@ function stableWikiKind(kind: string | undefined): boolean {
   return kind === "procedure" || kind === "known_fix" || kind === "pitfall" || kind === "preference";
 }
 
+function forbiddenSourceReason(sourceRef: string): string | undefined {
+  const normalized = sourceRef.toLowerCase();
+  if (/dream(?:ing)?|dream-diary/.test(normalized)) return "forbidden_dreaming_source";
+  if (/session-corpus|raw-transcript|raw_log|raw-log/.test(normalized)) return "forbidden_raw_session_source";
+  if (/^gbrain:\/\//.test(normalized) || /^agentmemory:\/\//.test(normalized)) return "forbidden_sidecar_only_source";
+  if (/\.praxisbase\/(?:staging|inbox)\//.test(normalized)) return "forbidden_untriaged_staging_source";
+  return undefined;
+}
+
+function lessonTextForLeakScan(lesson: ClassifiedLesson): string {
+  return [
+    lesson.safe_claim,
+    lesson.problem,
+    lesson.trigger,
+    lesson.action,
+    lesson.verification ?? "",
+    lesson.negative_case ?? "",
+  ].join("\n");
+}
+
+export function explainLessonSkillAuthority(
+  lesson: ClassifiedLesson,
+  options: { authorityMode: "personal-local" | "team-git" },
+): LessonSkillAuthorityDecision {
+  const state = (lesson as { state?: string }).state ?? lesson.state;
+  if (lesson.privacy_tier === "reject" || lesson.privacy_tier === "human_required") {
+    return { accepted: false, reason: `lesson_privacy_${lesson.privacy_tier}` };
+  }
+  if (lesson.portability === "private_instance") {
+    return { accepted: false, reason: "lesson_private_instance_not_skill_authority" };
+  }
+  const forbidden = lesson.source_refs.map(forbiddenSourceReason).find(Boolean);
+  if (forbidden) return { accepted: false, reason: forbidden };
+  if (options.authorityMode === "team-git" && (lesson.privacy_tier === "personal_only" || lesson.scope === "personal")) {
+    return { accepted: false, reason: "lesson_team_incompatible_personal_scope" };
+  }
+
+  if (state === "approved" || state === "skill_ready") {
+    if (stableOutputLeakReasons(lessonTextForLeakScan(lesson)).length > 0) {
+      return { accepted: false, reason: "lesson_stable_output_leak_risk" };
+    }
+    return { accepted: true, reason: state === "approved" ? "lesson_approved" : "lesson_skill_ready" };
+  }
+
+  if (
+    state === "active_personal" &&
+    options.authorityMode === "personal-local" &&
+    lesson.scope === "personal" &&
+    (lesson.privacy_tier === "safe" || lesson.privacy_tier === "personal_only")
+  ) {
+    if (stableOutputLeakReasons(lessonTextForLeakScan(lesson)).length > 0) {
+      return { accepted: false, reason: "lesson_stable_output_leak_risk" };
+    }
+    return { accepted: true, reason: "lesson_active_personal_safe" };
+  }
+
+  return { accepted: false, reason: `lesson_state_${state}_not_skill_authority` };
+}
+
 export function collectSkillSignalsFromStableWikiPages(
   pages: WikiPage[],
   options: { authorityMode: "personal-local" | "team-git" },
@@ -181,10 +246,7 @@ export function collectSkillSignalsFromLessons(
 ): SkillSignalCandidate[] {
   const signals: SkillSignalCandidate[] = [];
   for (const lesson of lessons) {
-    if (lesson.state !== "skill_ready") continue;
-    if (lesson.privacy_tier === "reject" || lesson.privacy_tier === "human_required") continue;
-    if (lesson.portability === "private_instance") continue;
-    if (options.authorityMode === "team-git" && lesson.privacy_tier === "personal_only") continue;
+    if (!explainLessonSkillAuthority(lesson, options).accepted) continue;
     const procedure = [lesson.action, lesson.verification].filter((item): item is string => Boolean(item));
     if (procedure.length === 0) continue;
     const trigger = normalizeText(lesson.trigger);

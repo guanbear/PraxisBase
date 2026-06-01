@@ -61,6 +61,35 @@ describe("skill CLI command", () => {
       experience: { ...experience, source_ref: "raw-vault://codex/session-2", source_hash: "sha256:distilled2", chunk_hashes: ["sha256:chunk2"] },
       created_at: "2026-05-26T00:00:00.000Z",
     }), "utf8");
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await writeFile(join(root, "kb/procedures/openclaw-memory-import.md"), [
+      "---",
+      "id: openclaw-memory-import",
+      "protocol_version: \"0.1\"",
+      "type: procedure",
+      "knowledge_type: procedure",
+      "scope: personal",
+      "maturity: verified",
+      "sources:",
+      "  - uri: raw-vault://codex/session-1",
+      "    hash: sha256:distilled1",
+      "  - uri: raw-vault://codex/session-2",
+      "    hash: sha256:distilled2",
+      "updated_at: \"2026-05-26T00:00:00.000Z\"",
+      "---",
+      "# OpenClaw memory import",
+      "",
+      "## When To Use",
+      "Use when importing OpenClaw memory into PraxisBase.",
+      "",
+      "## Procedure",
+      "1. Export memory JSON.",
+      "2. Verify hash.",
+      "3. Import with provenance.",
+      "",
+      "## Verification",
+      "- Daily smoke passed.",
+    ].join("\n"), "utf8");
 
     const output = await skillCommand(root, "synthesize", {
       mode: "personal",
@@ -446,6 +475,33 @@ Use when repairing OpenClaw memory recall.
     assert.match(output.text, /\[PB-SKILL:openclaw-memory\]/);
     assert.ok(output.decisions.some((decision: { skill_id: string; decision: string }) => decision.skill_id === "openclaw-memory" && decision.decision === "matched"));
     assert.equal(output.text.includes("candidate body"), false);
+  });
+
+  it("does not inject external skills unless explicitly requested", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-skill-inject-external-"));
+    await mkdir(join(root, "skills/external/openclaw-memory"), { recursive: true });
+    await writeFile(join(root, "skills/external/openclaw-memory/SKILL.md"), [
+      "# External OpenClaw Memory",
+      "",
+      "## When To Use",
+      "Use when repairing OpenClaw memory recall.",
+      "",
+      "## Procedure",
+      "- External installed skill without PraxisBase promotion metadata.",
+    ].join("\n"), "utf8");
+
+    const output = JSON.parse(await skillCommand(root, "inject-preview", {
+      query: "OpenClaw memory recall",
+      json: true,
+    }));
+
+    assert.equal(output.ok, true);
+    assert.equal(output.text, "");
+    assert.ok(output.decisions.some((decision: { skill_id: string; decision: string; reason: string }) =>
+      decision.skill_id === "openclaw-memory" &&
+      decision.decision === "skipped" &&
+      /not a promoted PraxisBase/.test(decision.reason)
+    ));
   });
 
   it("summarizes the skill review queue while building the review site", async () => {

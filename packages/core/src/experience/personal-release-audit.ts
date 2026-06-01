@@ -3,6 +3,7 @@ import { join, relative } from "node:path";
 import matter from "gray-matter";
 import { protocolPaths } from "../protocol/paths.js";
 import { PersonalReleaseAuditReportSchema } from "../protocol/schemas.js";
+import { matchPromotedSkills, type PromotedSkill } from "../agent-access/skill-injection.js";
 
 export type PersonalReleaseGateStatus = "pass" | "fail" | "warning" | "not_run";
 
@@ -54,6 +55,16 @@ interface LatestJsonReport {
   value: Record<string, unknown>;
   sortKey: string;
 }
+
+const RELEASE_AUDIT_SKILL_QUERIES = [
+  "openclaw dispatch routing failure",
+  "openclaw memory import",
+  "remote openclaw memory harvest",
+  "codex session repair",
+  "long running tool work acknowledgement",
+  "agent must self test after changes",
+  "confirm target machine before remote execution",
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -310,7 +321,33 @@ async function listPromotedPraxisBaseSkills(root: string): Promise<string[]> {
     try {
       const parsed = matter(await readFile(join(root, path), "utf8"));
       if (parsed.data.origin === "praxisbase_synthesized" && parsed.data.status === "promoted") {
-        skills.push(path);
+        const id = typeof parsed.data.name === "string" && parsed.data.name.trim()
+          ? parsed.data.name.trim()
+          : path.split("/").slice(-2, -1)[0] ?? path;
+        const skill: PromotedSkill = {
+          id,
+          path,
+          title: typeof parsed.data.description === "string" && parsed.data.description.trim()
+            ? parsed.data.description.trim()
+            : id,
+          origin: parsed.data.origin,
+          status: parsed.data.status,
+          scope: parsed.data.scope === "team" || parsed.data.scope === "org" || parsed.data.scope === "project" || parsed.data.scope === "global"
+            ? parsed.data.scope
+            : "personal",
+          body: parsed.content.trim(),
+          when_to_use: parsed.content.match(/## When To Use\s+([\s\S]*?)(?:\n## |\n# |$)/i)?.[1]?.trim(),
+          tags: stringArray(parsed.data.tags),
+          related_wiki_paths: stringArray(parsed.data.related_wiki_paths),
+          catalog_terms: stringArray(parsed.data.catalog_terms),
+          promotion_id: typeof parsed.data.promotion_id === "string" ? parsed.data.promotion_id : undefined,
+          audit_id: typeof parsed.data.audit_id === "string" ? parsed.data.audit_id : undefined,
+        };
+        const injectable = RELEASE_AUDIT_SKILL_QUERIES.some((query) => matchPromotedSkills({
+          query,
+          skills: [skill],
+        }).matches.length > 0);
+        if (injectable) skills.push(path);
       }
     } catch {
       continue;
