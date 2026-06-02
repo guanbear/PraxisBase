@@ -17,6 +17,7 @@ describe("SRE-autopilot adapter", () => {
 
     const episode = IncidentEpisodeSchema.parse(result.episode);
     assert.equal(episode.type, "incident_episode");
+    assert.equal(episode.scope, "team");
     assert.equal(episode.result, "confirmed");
     assert.equal(episode.problem_signature, "k8s:pod-oomkilled");
     assert.equal(episode.agent_type, "live_incident_analyzer");
@@ -24,7 +25,24 @@ describe("SRE-autopilot adapter", () => {
     assert.equal(result.proposal, undefined);
   });
 
-  it("converts ruled-out result correctly", () => {
+  it("converts explicit incident result states correctly", () => {
+    for (const expected of ["ruled_out", "inconclusive", "data_gap"] as const) {
+      const result = adaptDirectionResult({
+        problem_signature: "k8s:pod-crashloop-imagepull",
+        environment_id: "staging",
+        run_id: `trace-${expected}`,
+        agent_id: "sre-agent",
+        result: expected,
+        evidence_summary: "Not reproducible.",
+        source_refs: ["k8s://cluster-b/staging"],
+      });
+
+      assert.equal(result.episode.result, expected);
+      assert.equal(result.episode.scope, "team");
+    }
+  });
+
+  it("keeps boolean confirmed input backwards compatible", () => {
     const result = adaptDirectionResult({
       problem_signature: "k8s:pod-crashloop-imagepull",
       environment_id: "staging",
@@ -53,10 +71,13 @@ describe("SRE-autopilot adapter", () => {
 
     assert.ok(result.proposal);
     const proposal = ProposalSchema.parse(result.proposal);
+    assert.equal(proposal.scope, "team");
     assert.equal(proposal.target_type, "known_fix");
     assert.equal(proposal.evidence.source_uri, "k8s-event://cluster-a/prod/order-api/OOMKilling");
     assert.ok(proposal.evidence.source_hash.startsWith("sha256:"));
     assert.ok(proposal.evidence.source_hash.length > 10);
+    assert.equal(proposal.evidence.source_refs?.[0].uri, "k8s-event://cluster-a/prod/order-api/OOMKilling");
+    assert.ok(proposal.evidence.redacted_summary);
   });
 
   it("source_hash is deterministic for same input", () => {

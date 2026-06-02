@@ -3,7 +3,7 @@
   "protocol_version": "0.1",
   "type": "knowledge_proposal",
   "scope": "team",
-  "action": "create",
+  "action": "patch",
   "target_type": "known_fix",
   "target_id": "k8s-pod-oomkilled",
   "agent_id": "sre-autopilot-cp",
@@ -18,9 +18,12 @@
     "repair_result": "success",
     "verification": "Pod stable after memory limit increase.",
     "source_refs": [
-      { "uri": "prometheus://cluster-a/prod/order-api?query=memory", "hash": "sha256:prom-hash" }
+      {
+        "uri": "prometheus://cluster-a/prod/order-api?query=memory",
+        "hash": "sha256:prom-hash"
+      }
     ],
-    "redacted_summary": "Memory limit increased from 256Mi to 512Mi; secrets redacted."
+    "redacted_summary": "Memory limit increased after owner approval; secrets redacted."
   },
   "patch": {
     "path": "kb/known-fixes/k8s-pod-oomkilled.md",

@@ -1,0 +1,15 @@
+{
+  "protocol_version": "0.1",
+  "bundle_id": "k8s-incident",
+  "generated_at": "2026-05-18T10:00:00Z",
+  "commit_sha": "abc123",
+  "compatible_cli": ">=0.1.0",
+  "entries": [
+    {
+      "signature": "k8s:pod-oomkilled",
+      "path": "k8s-incident/pod-oomkilled.json",
+      "checksum": "sha256:example",
+      "risk": "medium"
+    }
+  ]
+}
