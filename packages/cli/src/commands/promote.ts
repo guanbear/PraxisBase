@@ -16,20 +16,30 @@ export async function promoteAuto(root: string): Promise<void> {
   const proposalFiles = await readdir(proposalDir).catch(() => []);
   const reviewFiles = await readdir(reviewDir).catch(() => []);
 
-  const proposals = new Map<string, Proposal>();
-  for (const file of proposalFiles.filter((name) => name.endsWith(".json"))) {
-    const proposal = parsePromotableProposal(JSON.parse(await readFile(join(proposalDir, file), "utf8")));
-    proposals.set(proposal.id, proposal);
-  }
-
   let promoted = 0;
   let skipped = 0;
   let failed = 0;
   const errors: string[] = [];
   let firstError: Error | null = null;
 
+  const proposals = new Map<string, Proposal>();
+  for (const file of proposalFiles.filter((name) => name.endsWith(".json"))) {
+    const raw = JSON.parse(await readFile(join(proposalDir, file), "utf8"));
+    if (raw?.type === "skill_synthesis_candidate") {
+      skipped++;
+      continue;
+    }
+    const proposal = parsePromotableProposal(raw);
+    proposals.set(proposal.id, proposal);
+  }
+
   for (const file of reviewFiles.filter((name) => name.endsWith(".json"))) {
-    const review = ReviewSchema.parse(JSON.parse(await readFile(join(reviewDir, file), "utf8")));
+    const reviewRecord = ReviewSchema.safeParse(JSON.parse(await readFile(join(reviewDir, file), "utf8")));
+    if (!reviewRecord.success) {
+      skipped++;
+      continue;
+    }
+    const review = reviewRecord.data;
     if (!shouldAutoMergeReview(review)) {
       skipped++;
       continue;
@@ -70,11 +80,16 @@ export async function promoteAuto(root: string): Promise<void> {
   }
 
   const finishedAt = new Date().toISOString();
+  const status = failed > 0
+    ? promoted > 0
+      ? "partial"
+      : "failed"
+    : "completed";
   const runRecord: RunRecord = {
     id: `run_promote_${randomUUID().slice(0, 8)}`,
     protocol_version: PROTOCOL_VERSION,
     command: "promote",
-    status: failed > 0 ? "failed" : "completed",
+    status,
     started_at: startedAt,
     finished_at: finishedAt,
     counts: { promoted, skipped, failed },
@@ -84,7 +99,7 @@ export async function promoteAuto(root: string): Promise<void> {
   await mkdir(join(root, protocolPaths.runsPromote), { recursive: true });
   await writeJson(root, `${protocolPaths.runsPromote}/${runRecord.id}.json`, runRecord);
 
-  if (firstError) throw firstError;
+  if (firstError && promoted === 0) throw firstError;
 }
 
 function parsePromotableProposal(value: unknown): Proposal {

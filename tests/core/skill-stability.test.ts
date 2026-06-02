@@ -41,4 +41,18 @@ describe("clusterSkillSignals", () => {
     ], { maxClusters: 1 });
     assert.equal(clusters.length, 1);
   });
+
+  it("keeps source refs paired with their original source hashes", () => {
+    const clusters = clusterSkillSignals([
+      signal("one", { source_ref: "raw-vault://z-source", source_hash: "sha256:a-hash" }),
+      signal("two", { source_ref: "raw-vault://a-source", source_hash: "sha256:z-hash" }),
+    ]);
+
+    assert.equal(clusters.length, 1);
+    const pairs = clusters[0].source_refs.map((ref, index) => [ref, clusters[0].source_hashes[index]]);
+    assert.deepEqual(pairs, [
+      ["raw-vault://a-source", "sha256:z-hash"],
+      ["raw-vault://z-source", "sha256:a-hash"],
+    ]);
+  });
 });

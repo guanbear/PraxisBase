@@ -1,0 +1,29 @@
+{
+  "protocol_version": "0.1",
+  "scenario": "openclaw",
+  "problem_signature": "openclaw:dispatch-routing-failure",
+  "known_fixes": [
+    "kb/known-fixes/openclaw-dispatch-routing-failures.md"
+  ],
+  "skills": [
+    "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"
+  ],
+  "diagnostic_commands": [
+    "openclaw status"
+  ],
+  "forbidden_operations": [
+    "modify production systems",
+    "delete user workspace data",
+    "print secrets into chat"
+  ],
+  "verification_steps": [
+    "Run dispatch smoke tests and verify route metadata."
+  ],
+  "rollback_steps": [
+    "Do not change production routing without Git review."
+  ],
+  "escalation_conditions": [
+    "Dispatch proof remains unavailable after smoke verification."
+  ],
+  "truncated": false
+}

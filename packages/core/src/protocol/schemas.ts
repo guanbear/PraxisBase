@@ -68,6 +68,41 @@ export const PersonalReleaseAuditReportSchema = z.object({
   generated_at: DateTimeSchema,
 });
 
+export const TeamReleaseGateStatusSchema = z.enum(["pass", "fail", "warning", "not_run"]);
+export const TeamReleaseAuditGateSchema = z.object({
+  status: TeamReleaseGateStatusSchema,
+  blockers: z.array(z.string()),
+  warnings: z.array(z.string()),
+  evidence_reports: z.array(z.string()),
+  next_commands: z.array(z.string()),
+});
+export const TeamReleaseAuditReportSchema = z.object({
+  type: z.literal("team_release_audit_report"),
+  ok: z.boolean(),
+  team_ga: TeamReleaseGateStatusSchema,
+  team_repair_loop_ga: TeamReleaseGateStatusSchema,
+  skill_self_evolution_ga: TeamReleaseGateStatusSchema,
+  governance_ga: TeamReleaseGateStatusSchema,
+  privacy_boundary_ga: TeamReleaseGateStatusSchema,
+  k8s_bundle_ga: TeamReleaseGateStatusSchema,
+  incident_episode_intake_ga: TeamReleaseGateStatusSchema,
+  k8s_boundary_ga: TeamReleaseGateStatusSchema,
+  gates: z.object({
+    team_repair_loop_ga: TeamReleaseAuditGateSchema,
+    skill_self_evolution_ga: TeamReleaseAuditGateSchema,
+    governance_ga: TeamReleaseAuditGateSchema,
+    privacy_boundary_ga: TeamReleaseAuditGateSchema,
+    k8s_bundle_ga: TeamReleaseAuditGateSchema,
+    incident_episode_intake_ga: TeamReleaseAuditGateSchema,
+    k8s_boundary_ga: TeamReleaseAuditGateSchema,
+  }),
+  blocking_reasons: z.array(z.string()),
+  warnings: z.array(z.string()),
+  evidence_reports: z.array(z.string()),
+  next_commands: z.array(z.string()),
+  generated_at: DateTimeSchema,
+});
+
 export const KnowledgeReferencePhaseSchema = z.enum(["diagnosis", "repair", "verification", "proposal"]);
 export const KnowledgeReferenceEffectSchema = z.enum(["helped_fix", "guided_action"]);
 export const KnowledgeReferenceOutcomeSchema = z.enum([

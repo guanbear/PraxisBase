@@ -191,6 +191,10 @@
       "types": "./src/experience/personal-release-audit.ts",
       "default": "./dist/experience/personal-release-audit.js"
     },
+    "./experience/team-release-audit.js": {
+      "types": "./src/experience/team-release-audit.ts",
+      "default": "./dist/experience/team-release-audit.js"
+    },
     "./experience/payload-presummary.js": {
       "types": "./src/experience/payload-presummary.ts",
       "default": "./dist/experience/payload-presummary.js"

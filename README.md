@@ -177,6 +177,8 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 
 ## Current Documents
 
+- [Roadmap Index (2026-06)](docs/ROADMAP-2026-06.md)
+- [Convergence & Team Roadmap (anchor)](docs/superpowers/specs/2026-06-02-convergence-and-team-roadmap-design.md)
 - [Deployment Guide](docs/deployment.md)
 - [AI-First Daily Usage](docs/ai-first-daily-usage.md)
 - [Agent Knowledge Substrate Design](docs/superpowers/specs/2026-05-17-agent-knowledge-substrate-design.md)

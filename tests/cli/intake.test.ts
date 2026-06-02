@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { submitEpisode } from "@praxisbase/cli/commands/episode.js";
+import { submitEpisode, syncOutbox } from "@praxisbase/cli/commands/episode.js";
 import { submitProposal } from "@praxisbase/cli/commands/propose.js";
 
 describe("episode and proposal intake", () => {
@@ -107,5 +107,20 @@ describe("episode and proposal intake", () => {
     assert.equal(parsed.knowledge_references[0].used_in_phase, "diagnosis");
     assert.equal(parsed.knowledge_references[0].effect, "helped_fix");
     assert.equal(parsed.knowledge_references[0].outcome, "success");
+  });
+
+  it("syncs outbox episodes and proposals idempotently into inbox", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-outbox-sync-"));
+
+    await submitEpisode(root, "tests/fixtures/m28/openclaw/episodes/dispatch-routing-success.json", { offlineOk: true });
+    await submitProposal(root, "tests/fixtures/m28/openclaw/proposals/dispatch-routing-known-fix-patch.json", { offlineOk: true });
+
+    const first = await syncOutbox(root);
+    const second = await syncOutbox(root);
+
+    assert.deepEqual(first, { episodes: 1, proposals: 1, skipped: 0 });
+    assert.deepEqual(second, { episodes: 0, proposals: 0, skipped: 2 });
+    assert.equal((await readdir(join(root, ".praxisbase/inbox/episodes"))).length, 1);
+    assert.equal((await readdir(join(root, ".praxisbase/inbox/proposals"))).length, 1);
   });
 });

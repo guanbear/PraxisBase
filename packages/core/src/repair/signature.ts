@@ -1,8 +1,31 @@
+export interface OpenClawSignatureCandidate {
+  signature: string;
+  terms?: string[];
+}
+
+function signatureTerms(signature: string): string[] {
+  return signature
+    .replace(/^[a-z0-9-]+:/i, "")
+    .split(/[^a-z0-9]+/i)
+    .map((term) => term.toLowerCase())
+    .filter((term) => term.length >= 3);
+}
+
+function matchesCandidate(normalizedLogs: string, candidate: OpenClawSignatureCandidate): boolean {
+  const terms = Array.from(new Set([...(candidate.terms ?? []), ...signatureTerms(candidate.signature)]))
+    .map((term) => term.toLowerCase())
+    .filter((term) => term.length >= 3);
+  if (terms.length === 0) return false;
+  const matched = terms.filter((term) => normalizedLogs.includes(term));
+  return matched.length >= Math.min(2, terms.length);
+}
+
 /**
  * Deterministic OpenClaw log signature detection.
- * Maps known log patterns to problem signatures.
+ * Built-in patterns cover bootstrap signatures; repository candidates are
+ * supplied from stable knowledge frontmatter `signatures:` metadata.
  */
-export function detectOpenClawProblemSignature(logs: string): string {
+export function detectOpenClawProblemSignature(logs: string, candidates: OpenClawSignatureCandidate[] = []): string {
   const normalized = logs.toLowerCase();
 
   if (
@@ -19,6 +42,10 @@ export function detectOpenClawProblemSignature(logs: string): string {
 
   if (normalized.includes("node: command not found") || normalized.includes("node runtime")) {
     return "openclaw:node-runtime-missing";
+  }
+
+  for (const candidate of candidates) {
+    if (matchesCandidate(normalized, candidate)) return candidate.signature;
   }
 
   return "openclaw:unknown";

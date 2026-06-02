@@ -54,8 +54,16 @@ export function clusterSkillSignals(
     const confidence = Math.min(1, bucket.reduce((sum, signal) => sum + signal.confidence, 0) / bucket.length + Math.min(0.08, (bucket.length - 1) * 0.03));
     if (!isEligible(bucket, confidence)) continue;
     const first = bucket.sort((a, b) => b.confidence - a.confidence || a.id.localeCompare(b.id))[0];
-    const sourceRefs = Array.from(new Set(bucket.map((signal) => signal.source_ref))).sort();
-    const sourceHashes = Array.from(new Set(bucket.map((signal) => signal.source_hash))).sort();
+    const sourcePairs = Array.from(
+      new Map(
+        bucket.map((signal) => [
+          `${signal.source_ref}\u0000${signal.source_hash}`,
+          { ref: signal.source_ref, hash: signal.source_hash },
+        ]),
+      ).values(),
+    ).sort((a, b) => a.ref.localeCompare(b.ref) || a.hash.localeCompare(b.hash));
+    const sourceRefs = sourcePairs.map((pair) => pair.ref);
+    const sourceHashes = sourcePairs.map((pair) => pair.hash);
     const evidenceIds = Array.from(new Set(bucket.map((signal) => signal.evidence_id))).sort();
     clusters.push({
       id: `skill_cluster_${key}`,

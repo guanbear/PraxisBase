@@ -135,6 +135,10 @@
       "types": "./src/commands/personal.ts",
       "default": "./dist/commands/personal.js"
     },
+    "./commands/team.js": {
+      "types": "./src/commands/team.ts",
+      "default": "./dist/commands/team.js"
+    },
     "./commands/harvest.js": {
       "types": "./src/commands/harvest.ts",
       "default": "./dist/commands/harvest.js"

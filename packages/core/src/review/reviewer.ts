@@ -7,7 +7,10 @@ import { classifyProposalRisk } from "./risk.js";
  * In production this would be replaced by an AI reviewer agent.
  */
 export function reviewProposal(proposal: Proposal): Review {
-  const risk = classifyProposalRisk({ action: proposal.action, target_type: proposal.target_type });
+  const teamSkillRequiresHuman = proposal.scope === "team" && proposal.target_type === "skill";
+  const risk = teamSkillRequiresHuman
+    ? "high"
+    : classifyProposalRisk({ action: proposal.action, target_type: proposal.target_type });
   const hasVerification = proposal.evidence.verification.trim().length > 0;
   const hasEvidence = proposal.evidence.source_uri.trim().length > 0 && proposal.evidence.source_hash.trim().length > 0;
   const decision = risk === "high" || !hasVerification || !hasEvidence ? "needs_human" : "approve";
@@ -23,6 +26,9 @@ export function reviewProposal(proposal: Proposal): Review {
     risk,
     confidence: decision === "approve" ? 0.82 : 0.65,
     reasons:
+      teamSkillRequiresHuman
+        ? ["Team skill proposals require human/Git review before promotion."]
+        :
       decision === "approve"
         ? ["Evidence and verification are present."]
         : ["Proposal is high risk or lacks evidence required for auto-merge."],

@@ -2,7 +2,7 @@
 import { Command } from "commander";
 import { initializeWorkspace } from "./commands/init.js";
 import { repairContextCommand } from "./commands/repair-context.js";
-import { submitEpisode } from "./commands/episode.js";
+import { submitEpisode, syncOutbox } from "./commands/episode.js";
 import { submitProposal } from "./commands/propose.js";
 import { reviewAuto, reviewPolicyInit, reviewAutoWithPolicy } from "./commands/review.js";
 import { promoteAuto } from "./commands/promote.js";
@@ -36,6 +36,7 @@ import { agentmemoryCommand } from "./commands/agentmemory.js";
 import { skillCommand } from "./commands/skill.js";
 import { gbrainCommand } from "./commands/gbrain.js";
 import { lessonCommand } from "./commands/lesson.js";
+import { teamCommand } from "./commands/team.js";
 
 const program = new Command();
 
@@ -69,14 +70,23 @@ program
 
 program
   .command("episode")
-  .argument("<sub>", "subcommand (submit)")
-  .argument("<file>")
+  .argument("<sub>", "subcommand (submit|sync-outbox)")
+  .argument("[file]")
   .option("--offline-ok")
-  .action(async (sub: string, file: string, options: { offlineOk?: boolean }) => {
-    if (sub !== "submit") {
-      program.error(`Unknown subcommand "episode ${sub}". Use "episode submit <file>".`, { exitCode: 1 });
+  .option("--json")
+  .action(async (sub: string, file: string | undefined, options: { offlineOk?: boolean; json?: boolean }) => {
+    if (sub === "sync-outbox") {
+      const result = await syncOutbox(process.cwd());
+      console.log(options.json ? JSON.stringify(result, null, 2) : `Synced ${result.episodes} episodes and ${result.proposals} proposals.`);
+      return;
     }
-    await submitEpisode(process.cwd(), file, { offlineOk: options.offlineOk });
+    if (sub !== "submit") {
+      program.error(`Unknown subcommand "episode ${sub}". Use "episode submit <file> or episode sync-outbox".`, { exitCode: 1 });
+    }
+    if (!file) {
+      program.error("Missing episode file. Use episode submit <file>.", { exitCode: 1 });
+    }
+    await submitEpisode(process.cwd(), file!, { offlineOk: options.offlineOk });
   });
 
 program
@@ -636,6 +646,17 @@ program
       aiConcurrency: options.aiConcurrency ? parseInt(options.aiConcurrency, 10) : undefined,
       maxCurationProposals: options.maxCurationProposals ? parseInt(options.maxCurationProposals, 10) : undefined,
     }));
+  });
+
+program
+  .command("team")
+  .argument("<sub>", "subcommand (release-audit)")
+  .option("--json")
+  .action(async (
+    sub: string,
+    options: { json?: boolean },
+  ) => {
+    console.log(await teamCommand(process.cwd(), sub, options));
   });
 
 program
