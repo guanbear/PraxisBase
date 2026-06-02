@@ -522,4 +522,44 @@ Refresh auth, retry the run, and verify the result.
     assert.equal(output.items[0]?.source_rank, "pb_stable");
     assert.ok(output.items.some((item) => item.path === "agentmemory://smart-search/supporting-memory"));
   });
+
+  it("keeps at least one GBrain sidecar item when budget trimming context", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-context-gbrain-budget-"));
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    for (let index = 0; index < 8; index += 1) {
+      await writeFile(join(root, `kb/procedures/stale-cache-${index}.md`), `---
+id: stale-cache-${index}
+type: procedure
+scope: personal
+maturity: verified
+---
+# Stale cache ${index}
+
+## When to Use
+Use this stable PB procedure when stale cache behavior hides current deployed behavior.
+
+## What To Do
+Add cache busting, verify the response payload, and avoid claiming the fix without validation.
+${"stable detail ".repeat(80)}
+`, "utf8");
+    }
+
+    const output = await buildContext({
+      root,
+      agent: "codex",
+      workspace: root,
+      stage: "repair",
+      query: "stale cache",
+      maxBytes: 1800,
+      withGbrain: true,
+      gbrainRunCommand: async () => ({
+        stdout: "[0.9500] gbrain-stale-cache -- GBrain supporting recall for stale cache cache-busting procedures.",
+        stderr: "",
+      }),
+    });
+
+    assert.equal(output.truncated, true);
+    assert.ok(output.items.some((item) => item.source_rank === "pb_stable"));
+    assert.ok(output.items.some((item) => item.source_rank === "gbrain_sidecar"));
+  });
 });

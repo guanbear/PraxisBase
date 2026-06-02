@@ -1,4 +1,5 @@
 import type { Proposal, Review } from "../protocol/schemas.js";
+import matter from "gray-matter";
 import { readText, writeText, isStableKnowledgePath, safePath } from "../store/file-store.js";
 import { shouldAutoMergeReview } from "../review/risk.js";
 import { appearsToBeRawLog } from "../protocol/redact.js";
@@ -38,6 +39,32 @@ function promotedPageQualityScore(content: string): number {
   return score;
 }
 
+function wikiMetadata(content: string): { sourceCount?: number; sourceUris: string[]; type?: string; knowledgeType?: string } {
+  const parsed = matter(content);
+  const data = parsed.data as Record<string, unknown>;
+  const sources = Array.isArray(data.sources) ? data.sources : [];
+  const sourceUris = sources
+    .map((source) => {
+      if (source && typeof source === "object" && "uri" in source) {
+        const uri = (source as { uri?: unknown }).uri;
+        return typeof uri === "string" ? uri : undefined;
+      }
+      return undefined;
+    })
+    .filter((uri): uri is string => Boolean(uri));
+  const sourceCount = typeof data.source_count === "number" && Number.isFinite(data.source_count)
+    ? data.source_count
+    : sourceUris.length > 0
+      ? sourceUris.length
+      : undefined;
+  return {
+    sourceCount,
+    sourceUris,
+    type: typeof data.type === "string" ? data.type : undefined,
+    knowledgeType: typeof data.knowledge_type === "string" ? data.knowledge_type : undefined,
+  };
+}
+
 async function assertNoStableKnowledgeDowngrade(root: string, patchPath: string, nextContent: string): Promise<void> {
   if (!patchPath.startsWith("kb/")) return;
   let existing: string;
@@ -55,6 +82,40 @@ async function assertNoStableKnowledgeDowngrade(root: string, patchPath: string,
   if (previousScore >= 6 && nextScore < previousScore) {
     const err = new Error(
       `Refusing to promote lower-quality rewrite over existing stable page: previous_score=${previousScore} next_score=${nextScore}`
+    ) as PromotionError;
+    err.code = "quality_gate_failure";
+    throw err;
+  }
+
+  const previousMeta = wikiMetadata(existing);
+  const nextMeta = wikiMetadata(nextContent);
+  const previousSourceCount = previousMeta.sourceCount ?? 0;
+  const nextSourceCount = nextMeta.sourceCount ?? 0;
+  const previousSourceUriCount = previousMeta.sourceUris.length;
+  const nextSourceUriCount = nextMeta.sourceUris.length;
+  const previousType = previousMeta.knowledgeType ?? previousMeta.type;
+  const nextType = nextMeta.knowledgeType ?? nextMeta.type;
+  const typeChanged = Boolean(previousType && nextType && previousType !== nextType);
+
+  if (previousSourceCount > 0 && nextSourceCount < previousSourceCount) {
+    const err = new Error(
+      `Refusing stable page metadata downgrade: source_count ${previousSourceCount} -> ${nextSourceCount}`
+    ) as PromotionError;
+    err.code = "quality_gate_failure";
+    throw err;
+  }
+
+  if (previousSourceUriCount > 0 && nextSourceUriCount < previousSourceUriCount) {
+    const err = new Error(
+      `Refusing stable page metadata downgrade: sources ${previousSourceUriCount} -> ${nextSourceUriCount}`
+    ) as PromotionError;
+    err.code = "quality_gate_failure";
+    throw err;
+  }
+
+  if (typeChanged) {
+    const err = new Error(
+      `Refusing stable page metadata downgrade: knowledge_type ${previousType} -> ${nextType}`
     ) as PromotionError;
     err.code = "quality_gate_failure";
     throw err;

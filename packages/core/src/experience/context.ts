@@ -287,6 +287,21 @@ function serializeSize(value: unknown): number {
   return Buffer.byteLength(JSON.stringify(value));
 }
 
+function isSidecarContextItem(item: ContextResponse["items"][number]): boolean {
+  return item.source_rank === "gbrain_sidecar" ||
+    item.source_rank === "agentmemory_sidecar" ||
+    item.path.startsWith("gbrain://") ||
+    item.path.startsWith("agentmemory://");
+}
+
+function removableContextItemIndex(items: ContextResponse["items"]): number {
+  const sidecarCount = items.filter(isSidecarContextItem).length;
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    if (!isSidecarContextItem(items[index]) || sidecarCount > 1) return index;
+  }
+  return items.length - 1;
+}
+
 function enforceBudget(output: BuildContextOutput, maxBytes: number): BuildContextOutput {
   if (serializeSize(output) <= maxBytes) return output;
 
@@ -307,7 +322,8 @@ function enforceBudget(output: BuildContextOutput, maxBytes: number): BuildConte
 
   const reduced: BuildContextOutput = { ...withoutBodies };
   while (serializeSize(reduced) > maxBytes && reduced.items.length > 1) {
-    const removed = reduced.items.pop();
+    const removeIndex = removableContextItemIndex(reduced.items);
+    const [removed] = reduced.items.splice(removeIndex, 1);
     if (removed) {
       reduced.citations = reduced.citations.filter((citation) => citation.path !== removed.path);
     }

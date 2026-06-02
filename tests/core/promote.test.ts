@@ -198,6 +198,104 @@ describe("promotion", () => {
     );
   });
 
+  it("rejects replacing an existing wiki page with fewer sources or a different knowledge type", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-provenance-downgrade-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(
+      join(root, "kb/known-fixes/ack-timing.md"),
+      [
+        "---",
+        "id: ack-timing",
+        "title: \"ACK timing\"",
+        "type: known_fix",
+        "knowledge_type: known_fix",
+        "sources:",
+        "  - uri: \"openclaw-memory://one\"",
+        "    hash: \"sha256:one\"",
+        "  - uri: \"openclaw-memory://two\"",
+        "    hash: \"sha256:two\"",
+        "  - uri: \"openclaw-memory://three\"",
+        "    hash: \"sha256:three\"",
+        "source_count: 3",
+        "---",
+        "# ACK timing",
+        "",
+        "## When to Use",
+        "Use this before long-running agent work.",
+        "",
+        "## Context",
+        "Users need prompt confirmation that work started.",
+        "",
+        "## Operating Rule",
+        "Send a brief acknowledgment before slow work.",
+        "",
+        "## Verify",
+        "Check the ACK appears before tool calls.",
+        "",
+        "## Reusable Lessons",
+        "- ACK first, then execute.",
+        "",
+        "## Provenance",
+        "- openclaw-memory://one (sha256:one)",
+        "- openclaw-memory://two (sha256:two)",
+        "- openclaw-memory://three (sha256:three)",
+        "",
+        "## Related Wiki Pages",
+        "- [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    await assert.rejects(
+      promoteApprovedProposal(root, {
+        proposal: {
+          ...proposal,
+          patch: {
+            path: "kb/known-fixes/ack-timing.md",
+            content: [
+              "---",
+              "id: ack-timing",
+              "title: \"ACK timing\"",
+              "type: pitfall",
+              "knowledge_type: pitfall",
+              "sources:",
+              "  - uri: \"source-inventory://openclaw/main.sqlite#one\"",
+              "    hash: \"sha256:new\"",
+              "source_count: 1",
+              "---",
+              "# ACK timing",
+              "",
+              "## When to Use",
+              "Use this before long-running agent work.",
+              "",
+              "## Context",
+              "Users need prompt confirmation that work started.",
+              "",
+              "## Operating Rule",
+              "Send a brief acknowledgment before slow work.",
+              "",
+              "## Verify",
+              "Check the ACK appears before tool calls.",
+              "",
+              "## Reusable Lessons",
+              "- ACK first, then execute.",
+              "",
+              "## Provenance",
+              "- source-inventory://openclaw/main.sqlite#one (sha256:new)",
+              "",
+              "## Related Wiki Pages",
+              "- [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]",
+              "",
+            ].join("\n"),
+          },
+        },
+        review,
+      }),
+      /stable page metadata downgrade|source_count|knowledge_type/
+    );
+  });
+
   it("safePath rejects prefix attack on root directory", () => {
     const root = join(tmpdir(), "praxisbase-prefix-test-abc");
     assert.throws(
