@@ -273,9 +273,9 @@ export async function resolveAgentMemorySource(
   const records: AgentMemoryRecord[] = mode === "smart-search"
     ? (fetched as { hits?: AgentMemoryRecord[] }).hits ?? []
     : (fetched as { memories?: AgentMemoryRecord[] }).memories ?? [];
-  const envelopes = records
-    .filter((record) => record.id)
-    .slice(0, limit)
+  const usableRecords = records.filter((record) => record.id);
+  const selectedRecords = usableRecords.slice(0, limit);
+  const envelopes = selectedRecords
     .map((record) => recordToEnvelope(source, record, mode, options));
 
   const rejected = envelopes.filter((envelope) => envelope.privacy.verdict === "reject").length;
@@ -293,6 +293,8 @@ export async function resolveAgentMemorySource(
     rejected,
     humanRequired,
     skipped: Math.max(0, records.length - envelopes.length),
+    skippedByFilter: Math.max(0, records.length - usableRecords.length),
+    skippedByLimit: Math.max(0, usableRecords.length - selectedRecords.length),
     envelopes,
     warnings,
   };
@@ -308,6 +310,8 @@ function emptyResult(source: ExperienceSourceConfig, warnings: string[]): Resolv
     rejected: 0,
     humanRequired: 0,
     skipped: 0,
+    skippedByFilter: 0,
+    skippedByLimit: 0,
     envelopes: [],
     warnings,
   };

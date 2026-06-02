@@ -65,6 +65,8 @@ export interface ResolvedExperienceSource {
   rejected: number;
   humanRequired: number;
   skipped: number;
+  skippedByFilter: number;
+  skippedByLimit: number;
   envelopes: ExperienceEnvelope[];
   warnings: string[];
 }
@@ -830,15 +832,17 @@ export async function resolveExperienceSource(
     warnings.push(`source_failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  const rawItems = resolvedItems
-    .filter((entry) => shouldUseItem(source, entry.item, entry.rawText))
-    .slice(0, limit);
+  const usableItems = resolvedItems
+    .filter((entry) => shouldUseItem(source, entry.item, entry.rawText));
+  const rawItems = usableItems.slice(0, limit);
   const envelopes = rawItems.map((entry, index) =>
     makeEnvelope(source, entry.item, entry.rawText, index, options, entry.filePath)
   );
   const rejected = envelopes.filter((envelope) => envelope.privacy.verdict === "reject").length;
   const humanRequired = envelopes.filter((envelope) => envelope.privacy.verdict === "human_required").length;
-  const skipped = Math.max(0, resolvedItems.length - envelopes.length);
+  const skippedByFilter = Math.max(0, resolvedItems.length - usableItems.length);
+  const skippedByLimit = Math.max(0, usableItems.length - envelopes.length);
+  const skipped = skippedByFilter + skippedByLimit;
   const status = warnings.length > 0 || rejected > 0 || humanRequired > 0
     ? (envelopes.length > 0 ? "partial" : "failed")
     : "completed";
@@ -852,6 +856,8 @@ export async function resolveExperienceSource(
     rejected,
     humanRequired,
     skipped,
+    skippedByFilter,
+    skippedByLimit,
     envelopes,
     warnings,
   };

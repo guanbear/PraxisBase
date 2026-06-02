@@ -1436,6 +1436,99 @@ describe("runDailyExperience", () => {
     assert.equal((report as any).personal_ga.blocking_reasons.includes("ai_budget_exhausted"), false);
   });
 
+  it("does not count filtered remote OpenClaw dreaming noise as high-priority remaining work", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-remote-openclaw-noise-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await addExperienceSource(root, {
+      name: "guanzhicheng-openclaw",
+      agent: "openclaw",
+      sourceType: "ssh",
+      scopeDefault: "personal",
+      path: "/root/.openclaw/praxisbase/latest.json",
+      host: "root@example.test",
+      privacyTrust: "trusted_personal_remote",
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const remoteExport = JSON.stringify({
+      items: [
+        {
+          id: "memory/2026-04-06.md:82:94",
+          source_ref: "openclaw-ssh://remote/memory/2026-04-06.md:82:94",
+          summary: "After updating OpenClaw, verify the actual deployment path and restart mechanism before reporting success.",
+          raw_log: "Use git pull, pnpm build, restart LaunchAgent, then verify OpenClaw is running.",
+          outcome: "success",
+        },
+        {
+          id: "memory/dreaming/light/2026-05-07.md:438:448",
+          source_ref: "openclaw-ssh://remote/memory/dreaming/light/2026-05-07.md:438:448",
+          summary: "Candidate: Assistant: nightly follow-up replay validation State: failed Route: runner",
+          raw_log: "Candidate: Assistant: nightly follow-up replay validation\nconfidence: 0.00\nevidence: memory/.dreams/session-corpus/2026-05-07.txt\nstatus: staged",
+        },
+        {
+          id: "memory/dreaming/light/2026-05-04.md:328:337",
+          source_ref: "openclaw-ssh://remote/memory/dreaming/light/2026-05-04.md:328:337",
+          summary: "Candidate: Assistant: default model not supported",
+          raw_log: "Candidate: Assistant: default model not supported\nconfidence: 0.58\nevidence: memory/.dreams/session-corpus/2026-05-04.txt\nstatus: staged",
+        },
+      ],
+    });
+
+    const report = await runDailyExperience(root, {
+      authorityMode: "personal-local",
+      mode: "write",
+      now: "2026-05-21T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      maxAiChunks: 1,
+      maxCurationProposals: 0,
+      runCommand: async () => remoteExport,
+      aiClient: {
+        async generateJson(input: { schemaName: string; user: string }) {
+          if (input.schemaName === "CuratedWikiProposalDraft") return { ok: false as const, error: "curation not relevant for this test" };
+          const prompt = JSON.parse(input.user) as {
+            source: {
+              source_ref: string;
+              source_hash: string;
+              chunk_hash: string;
+              agent: string;
+              scope_hint: "personal";
+            };
+          };
+          return {
+            ok: true as const,
+            json: {
+              source_ref: prompt.source.source_ref,
+              source_hash: prompt.source.source_hash,
+              chunk_hashes: [prompt.source.chunk_hash],
+              agent: prompt.source.agent,
+              scope_hint: prompt.source.scope_hint,
+              summary: "Verify remote OpenClaw deployment path and restart mechanism before reporting success.",
+              actions: ["Checked deployment path.", "Restarted the configured service.", "Verified the service was running."],
+              failed_attempts: [],
+              outcome: "success",
+              verification: ["OpenClaw running check passed"],
+              reusable_lessons: ["Confirm the actual remote deployment path and restart mechanism before reporting OpenClaw updates as complete."],
+              risks: [],
+              suggested_tags: ["openclaw", "remote"],
+              suggested_wiki_kind: "known_fix",
+              skill_candidate: { should_create: false },
+              confidence: 0.9,
+            },
+          };
+        },
+      },
+    });
+
+    const queue = (report as any).personal_ga.queue;
+    const remote = queue.high_priority_sources.find((source: any) => source.source_name === "guanzhicheng-openclaw");
+    assert.equal(remote.planned_items, 1);
+    assert.equal(remote.processed_items, 1);
+    assert.equal(remote.remaining_high_priority_items, 0);
+    assert.equal(remote.blocking, false);
+    assert.equal(queue.remaining_high_priority_items, 0);
+    assert.equal(queue.run_kind, "full");
+  });
+
   it("does not let cached chunks in one source consume uncached AI budget for later sources", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-daily-ai-cross-source-budget-"));
     const cachedSessions = join(root, "cached-sessions");

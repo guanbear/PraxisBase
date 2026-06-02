@@ -1492,7 +1492,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
         blocked.push(...preblocked);
         if (personalQueueRole) {
           personalQueuePreprocessedItems += preblocked.length;
-          personalQueueUnselectedItems += resolved.skipped;
+          personalQueueUnselectedItems += resolved.skippedByLimit;
         }
         rejected += preblocked.filter((envelope) => envelope.privacy.verdict === "reject").length;
         humanRequired += preblocked.filter((envelope) => envelope.privacy.verdict === "human_required").length;
@@ -1840,7 +1840,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       sourceWarnings = resolved.warnings;
       if (personalQueueRole) {
         personalQueuePreprocessedItems = resolved.enveloped;
-        personalQueueUnselectedItems = resolved.skipped;
+        personalQueueUnselectedItems = resolved.skippedByLimit;
       }
     }
 
