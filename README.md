@@ -49,9 +49,22 @@ Codex / Claude Code / OpenCode / Hermes / OpenHuman / OpenClaw / K8s / Feishu
        next agent starts smarter
 ```
 
-## Phase 1 MVP
+## Current Status
 
-The first MVP targets **OpenClaw sandbox auto-repair**:
+PraxisBase is currently organized around milestone gates rather than a single long-lived daemon:
+
+| Milestone | Status | Gate |
+| --- | --- | --- |
+| M27 Personal GA | Complete | `praxisbase personal release-audit --json` |
+| M28 Team OpenClaw repair self-evolution | Complete | `praxisbase team release-audit --json` |
+| M29 Container/K8s incident experience | Implemented and fixture-validated | `praxisbase team release-audit --json` with optional K8s gates |
+| M30 Feishu source integration | Designed, not started | Do not implement until M29 is explicitly closed |
+
+K8s is an optional team domain. In a workspace that has not been initialized with K8s seed knowledge, the three K8s audit gates report `not_run` and do not fail `team_ga`. Once K8s is enabled, those gates must pass with real bundle, incident intake, and boundary evidence.
+
+## OpenClaw Repair MVP
+
+The first production path targets **OpenClaw sandbox auto-repair**:
 
 - `praxisbase init` creates the agent knowledge substrate skeleton
 - `praxisbase repair-context openclaw --logs ...` returns a compact repair bundle
@@ -63,7 +76,7 @@ The first MVP targets **OpenClaw sandbox auto-repair**:
 - `praxisbase build` generates repair bundles, indexes, `llms.txt`, and HTML inspection output
 - GitLab Scheduled Pipelines run review, promotion, and build jobs
 
-MVP intentionally does **not** implement MCP server, Hermes runner, K8s runtime integration, external search, vector DB, blockchain, or a central master agent.
+PraxisBase intentionally does **not** implement a central master agent, external vector DB, blockchain, live Kubernetes writes, or sre-autopilot internals. K8s support is a read-only incident knowledge domain: PraxisBase builds recommendation bundles and accepts incident episodes/proposals from a peer system, but it does not operate a cluster.
 
 ## Knowledge Model
 
@@ -137,6 +150,27 @@ open dist/index.html
 
 `bootstrap personal` discovers only specific safe personal paths such as `~/.codex/sessions`, `~/.codex/archived_sessions`, `~/.codex-cli-cliproxyapi/sessions`, `~/.openclaw/memory/main.sqlite`, and `~/.openclaw/reports`. It does not scan the whole home directory.
 
+### Release Audits
+
+Use release audits to verify what is actually usable in a workspace:
+
+```bash
+praxisbase personal release-audit --json
+praxisbase team release-audit --json
+praxisbase kb audit --json
+```
+
+To enable the optional K8s incident domain in a workspace:
+
+```bash
+praxisbase init --profile k8s
+praxisbase build
+praxisbase bundle fetch k8s-incident --signature k8s:pod-oomkilled --json
+praxisbase team release-audit --json
+```
+
+Runtime protocol state under `.praxisbase/` and generated site/bundle output under `dist/` are local artifacts. Stable knowledge belongs in `kb/` and `skills/`; raw logs, full sessions, and private memory stay outside Git as source references plus hashes.
+
 ### Personal Daily Flow
 
 ```bash
@@ -179,6 +213,9 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 
 - [Roadmap Index (2026-06)](docs/ROADMAP-2026-06.md)
 - [Convergence & Team Roadmap (anchor)](docs/superpowers/specs/2026-06-02-convergence-and-team-roadmap-design.md)
+- [M27 Personal GA Status](docs/status/m27-personal-ga-freeze-2026-06-02.md)
+- [M28 Team Repair Self-Evolution Status](docs/status/m28-team-repair-self-evolution-2026-06-02.md)
+- [M29 Container Incident Experience Status](docs/status/m29-container-incident-experience-2026-06-02.md)
 - [Deployment Guide](docs/deployment.md)
 - [AI-First Daily Usage](docs/ai-first-daily-usage.md)
 - [Agent Knowledge Substrate Design](docs/superpowers/specs/2026-05-17-agent-knowledge-substrate-design.md)
@@ -195,11 +232,11 @@ PraxisBase makes the durable part explicit. It is the shared memory, skill regis
 
 ## Roadmap
 
-- **Phase 0**: Reframe PraxisBase from self-updating wiki to agent knowledge substrate
-- **Phase 1**: OpenClaw repair closed loop with file protocol, CLI, AI review, promotion, and static bundles
-- **Phase 2**: K8s incident ingest, Feishu workflows, and Hermes-like automatic skill synthesis
-- **Phase 3**: Multi-agent CLI adapters and native memory bridge for Codex, Claude Code, OpenCode, OpenClaw, Hermes, OpenHuman, and generic agents
-- **Phase 4**: Multi-repo federation, external search backends, stronger provenance, and cross-team synchronization
+- **M27**: Personal knowledge base GA, AI distill, personal wiki/skill output, GBrain sidecar export, and clean provenance gates.
+- **M28**: Team OpenClaw repair self-evolution through repair context, episode/proposal intake, review/promote, governance, and team release audit.
+- **M29**: Optional K8s incident experience domain with read-only bundles, sre-autopilot episode intake, and K8s boundary gates.
+- **M30**: Feishu source integration is designed but not started; it should only begin after M29 is explicitly closed.
+- **Later**: Multi-repo federation, stronger provenance, external retrieval integrations, and cross-team synchronization.
 
 ## Name
 
