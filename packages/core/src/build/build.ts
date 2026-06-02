@@ -9,6 +9,8 @@ import { renderInspectionHtml } from "./html.js";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import type { RunRecord } from "../protocol/schemas.js";
 import { protocolPaths } from "../protocol/paths.js";
+import { buildWikiSite } from "../wiki/render-site.js";
+import { applyReferenceGovernance } from "../wiki/reference-tracker.js";
 
 type KnowledgeProfile = "all" | "openclaw" | "k8s";
 
@@ -70,6 +72,15 @@ function splitLines(text: string | undefined): string[] {
   return text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
 }
 
+function knowledgeTypeFromPath(path: string): string {
+  const dir = path.split("/")[1] ?? "notes";
+  if (dir === "known-fixes") return "known_fix";
+  if (dir === "procedures") return "procedure";
+  if (dir === "pitfalls") return "pitfall";
+  if (dir === "notes") return "note";
+  return dir.replace(/s$/, "");
+}
+
 export interface BuildResult {
   bundles: string[];
   indexes: string[];
@@ -102,6 +113,8 @@ export async function buildStaticArtifacts(root: string): Promise<BuildResult> {
 }
 
 async function buildStaticArtifactsInner(root: string, buildStartedAt: string): Promise<BuildResult> {
+  await applyReferenceGovernance(root);
+
   const profile = await readKnowledgeProfile(root);
   const buildOpenClaw = profile !== "k8s";
   const buildK8s = profile !== "openclaw";
@@ -232,12 +245,37 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
   await writeJson(root, "dist/repair-bundles/manifest.json", manifest);
 
   const kbFiles = await listFiles(root, "kb");
-  const kbObjects = [];
+  const kbObjects: Array<{
+    id: string;
+    type: string;
+    path: string;
+    title?: string;
+    scope?: string;
+    status?: string;
+    maturity?: string;
+    reference_count?: number;
+    last_referenced_at?: string | null;
+    signatures?: string[];
+  }> = [];
   for (const file of kbFiles) {
     if (file.endsWith(".md")) {
-      const id = file.replace(/\.md$/, "").replace(/^kb\/[^/]+\//, "");
-      const type = file.split("/")[1]?.replace(/s$/, "") ?? "note";
-      kbObjects.push({ id, type, path: file });
+      const text = await readText(root, file);
+      const parsed = matter(text);
+      const data = parsed.data as Record<string, unknown>;
+      const fallbackId = file.replace(/\.md$/, "").replace(/^kb\/[^/]+\//, "");
+      const type = knowledgeTypeFromPath(file);
+      kbObjects.push({
+        id: typeof data.id === "string" ? data.id : fallbackId,
+        type,
+        path: file,
+        title: typeof data.title === "string" ? data.title : undefined,
+        scope: typeof data.scope === "string" ? data.scope : undefined,
+        status: typeof data.status === "string" ? data.status : undefined,
+        maturity: typeof data.maturity === "string" ? data.maturity : undefined,
+        reference_count: typeof data.reference_count === "number" ? data.reference_count : undefined,
+        last_referenced_at: typeof data.last_referenced_at === "string" ? data.last_referenced_at : null,
+        signatures: Array.isArray(data.signatures) ? data.signatures.filter((item): item is string => typeof item === "string") : undefined,
+      });
     }
   }
 
@@ -260,6 +298,60 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
     protocol_version: "0.1",
     documents: searchDocs,
   });
+
+  const activeKbObjects = kbObjects.filter((obj) => obj.maturity !== "archived" && obj.maturity !== "stale");
+  const catalogCategories = new Map<string, { type: string; count: number; proven: number; verified: number; draft: number }>();
+  for (const obj of activeKbObjects) {
+    const current = catalogCategories.get(obj.type) ?? { type: obj.type, count: 0, proven: 0, verified: 0, draft: 0 };
+    current.count += 1;
+    if (obj.maturity === "proven") current.proven += 1;
+    else if (obj.maturity === "verified") current.verified += 1;
+    else current.draft += 1;
+    catalogCategories.set(obj.type, current);
+  }
+  const layerACatalog = {
+    protocol_version: "0.1",
+    generated_at: new Date().toISOString(),
+    active_objects: activeKbObjects.length,
+    categories: [...catalogCategories.values()].sort((a, b) => a.type.localeCompare(b.type)),
+  };
+  const layerBKnownFixes = {
+    protocol_version: "0.1",
+    generated_at: new Date().toISOString(),
+    objects: activeKbObjects
+      .filter((obj) => obj.type === "known_fix")
+      .map((obj) => ({
+        id: obj.id,
+        title: obj.title,
+        path: obj.path,
+        maturity: obj.maturity ?? "draft",
+        reference_count: obj.reference_count ?? 0,
+        last_referenced_at: obj.last_referenced_at ?? null,
+        signatures: obj.signatures ?? [],
+      }))
+      .sort((a, b) => (b.reference_count - a.reference_count) || a.id.localeCompare(b.id)),
+  };
+  const layerCObjects = {
+    protocol_version: "0.1",
+    generated_at: new Date().toISOString(),
+    objects: activeKbObjects
+      .map((obj) => ({
+        id: obj.id,
+        type: obj.type,
+        title: obj.title,
+        path: obj.path,
+        scope: obj.scope,
+        status: obj.status,
+        maturity: obj.maturity ?? "draft",
+        reference_count: obj.reference_count ?? 0,
+        last_referenced_at: obj.last_referenced_at ?? null,
+        signatures: obj.signatures ?? [],
+      }))
+      .sort((a, b) => a.path.localeCompare(b.path)),
+  };
+  await writeJson(root, "dist/progressive-index/layer-a-catalog.json", layerACatalog);
+  await writeJson(root, "dist/progressive-index/layer-b-known-fixes.json", layerBKnownFixes);
+  await writeJson(root, "dist/progressive-index/layer-c-objects.json", layerCObjects);
 
   const llmsLines = [
     "# PraxisBase",
@@ -309,6 +401,8 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
     })
   );
 
+  const wikiSite = await buildWikiSite(root);
+
   const buildRun: RunRecord = {
     id: `run_build_${randomUUID().slice(0, 8)}`,
     protocol_version: PROTOCOL_VERSION,
@@ -316,7 +410,12 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
     status: "completed",
     started_at: buildStartedAt,
     finished_at: new Date().toISOString(),
-    counts: { bundles: builtBundles.length, kb_objects: kbObjects.length },
+    counts: {
+      bundles: builtBundles.length,
+      kb_objects: kbObjects.length,
+      wiki_pages: wikiSite.pages,
+      wiki_health_issues: wikiSite.health.broken_links + wikiSite.health.duplicates + wikiSite.health.orphans,
+    },
     errors: [],
   };
   await mkdir(join(root, protocolPaths.runsBuild), { recursive: true });
@@ -324,7 +423,18 @@ async function buildStaticArtifactsInner(root: string, buildStartedAt: string): 
 
   return {
     bundles: builtBundles,
-    indexes: ["dist/kb-index.json", "dist/search-index.json"],
+    indexes: [
+      "dist/kb-index.json",
+      "dist/search-index.json",
+      "dist/graph.json",
+      "dist/graph.jsonld",
+      "dist/progressive-index/layer-a-catalog.json",
+      "dist/progressive-index/layer-b-known-fixes.json",
+      "dist/progressive-index/layer-c-objects.json",
+      "dist/llms.txt",
+      "dist/llms-full.txt",
+      "dist/ai-readme.md",
+    ],
     manifest: "dist/repair-bundles/manifest.json",
   };
 }

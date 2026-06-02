@@ -24,7 +24,7 @@
   },
   "patch": {
     "path": "kb/known-fixes/k8s-pod-oomkilled.md",
-    "content": "# K8s Pod OOMKilled\n"
+    "content": "---\nid: k8s-pod-oomkilled\nprotocol_version: \"0.1\"\ntype: known_fix\nknowledge_type: known_fix\nscope: team\nrisk: medium\nstatus: draft\nmaturity: verified\nsignatures:\n  - k8s:pod-oomkilled\nskills:\n  - skills/k8s/incident-triage/SKILL.md\nsources:\n  - uri: k8s-event://cluster-a/prod/order-api-123/OOMKilling\n    hash: sha256:oom-event-hash\nconfidence: 0.82\nreference_count: 0\nlast_referenced_at:\nsupersedes: []\nsuperseded_by:\nupdated_at: 2026-05-18T10:30:00Z\n---\n\n# K8s Pod OOMKilled\n\n## When to Use\nUse this when a Kubernetes pod is OOMKilled after exceeding its memory limit.\n\n## Symptoms\nPod restart count increases and the last terminated reason is OOMKilled.\n\n## Fix\n- Check the last terminated reason, exit code, and memory limit before proposing remediation.\n- Record owner approval before changing resource limits through the owning deployment workflow.\n- Update the workload memory limit only through the approved deployment path, then watch restart count and memory headroom.\n\n## Verification\nConfirm restart count stops increasing and memory headroom remains healthy.\n\n## Reusable Lessons\nDo not delete production pods automatically; preserve the incident evidence and verify owner-approved mitigation.\n\n## Related Wiki Pages\n- [[k8s-pod-oomkilled]]\n\n## Provenance\n- k8s-event://cluster-a/prod/order-api-123/OOMKilling\n"
   },
   "created_at": "2026-05-18T10:30:00Z"
 }

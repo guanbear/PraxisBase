@@ -54,6 +54,106 @@
     "./commands/lint.js": {
       "types": "./src/commands/lint.ts",
       "default": "./dist/commands/lint.js"
+    },
+    "./commands/capture.js": {
+      "types": "./src/commands/capture.ts",
+      "default": "./dist/commands/capture.js"
+    },
+    "./commands/install.js": {
+      "types": "./src/commands/install.ts",
+      "default": "./dist/commands/install.js"
+    },
+    "./commands/memory.js": {
+      "types": "./src/commands/memory.ts",
+      "default": "./dist/commands/memory.js"
+    },
+    "./commands/doctor.js": {
+      "types": "./src/commands/doctor.ts",
+      "default": "./dist/commands/doctor.js"
+    },
+    "./commands/context.js": {
+      "types": "./src/commands/context.ts",
+      "default": "./dist/commands/context.js"
+    },
+    "./commands/distill.js": {
+      "types": "./src/commands/distill.ts",
+      "default": "./dist/commands/distill.js"
+    },
+    "./commands/watch.js": {
+      "types": "./src/commands/watch.ts",
+      "default": "./dist/commands/watch.js"
+    },
+    "./commands/wiki.js": {
+      "types": "./src/commands/wiki.ts",
+      "default": "./dist/commands/wiki.js"
+    },
+    "./commands/kb.js": {
+      "types": "./src/commands/kb.ts",
+      "default": "./dist/commands/kb.js"
+    },
+    "./commands/smoke.js": {
+      "types": "./src/commands/smoke.ts",
+      "default": "./dist/commands/smoke.js"
+    },
+    "./commands/remote.js": {
+      "types": "./src/commands/remote.ts",
+      "default": "./dist/commands/remote.js"
+    },
+    "./commands/source.js": {
+      "types": "./src/commands/source.ts",
+      "default": "./dist/commands/source.js"
+    },
+    "./commands/agentmemory.js": {
+      "types": "./src/commands/agentmemory.ts",
+      "default": "./dist/commands/agentmemory.js"
+    },
+    "./commands/gbrain.js": {
+      "types": "./src/commands/gbrain.ts",
+      "default": "./dist/commands/gbrain.js"
+    },
+    "./commands/lesson.js": {
+      "types": "./src/commands/lesson.ts",
+      "default": "./dist/commands/lesson.js"
+    },
+    "./commands/daily.js": {
+      "types": "./src/commands/daily.ts",
+      "default": "./dist/commands/daily.js"
+    },
+    "./commands/ai.js": {
+      "types": "./src/commands/ai.ts",
+      "default": "./dist/commands/ai.js"
+    },
+    "./commands/privacy.js": {
+      "types": "./src/commands/privacy.ts",
+      "default": "./dist/commands/privacy.js"
+    },
+    "./commands/bootstrap.js": {
+      "types": "./src/commands/bootstrap.ts",
+      "default": "./dist/commands/bootstrap.js"
+    },
+    "./commands/personal.js": {
+      "types": "./src/commands/personal.ts",
+      "default": "./dist/commands/personal.js"
+    },
+    "./commands/team.js": {
+      "types": "./src/commands/team.ts",
+      "default": "./dist/commands/team.js"
+    },
+    "./commands/harvest.js": {
+      "types": "./src/commands/harvest.ts",
+      "default": "./dist/commands/harvest.js"
+    },
+    "./commands/agent-tools.js": {
+      "types": "./src/commands/agent-tools.ts",
+      "default": "./dist/commands/agent-tools.js"
+    },
+    "./commands/mcp.js": {
+      "types": "./src/commands/mcp.ts",
+      "default": "./dist/commands/mcp.js"
+    },
+    "./commands/skill.js": {
+      "types": "./src/commands/skill.ts",
+      "default": "./dist/commands/skill.js"
     }
   },
   "bin": {

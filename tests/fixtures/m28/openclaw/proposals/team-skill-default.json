@@ -1,0 +1,26 @@
+{
+  "id": "proposal_m28_team_skill_default",
+  "protocol_version": "0.1",
+  "type": "knowledge_proposal",
+  "scope": "team",
+  "action": "create",
+  "target_type": "skill",
+  "target_id": "openclaw-dispatch-routing-failures",
+  "agent_id": "openclaw-repair-claude-1",
+  "agent_type": "temporary_repair_agent",
+  "environment_id": "team-sandbox-a",
+  "run_id": "run_m28_dispatch_002",
+  "idempotency_key": "m28-team-skill-default",
+  "evidence": {
+    "source_uri": "log://openclaw/team-sandbox-a/run_m28_dispatch_002",
+    "source_hash": "sha256:m28dispatch002",
+    "excerpt": "Repeated dispatch routing failures were fixed by the same procedure.",
+    "repair_result": "success",
+    "verification": "Two dispatch smokes passed after using the proposed skill."
+  },
+  "patch": {
+    "path": "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md",
+    "content": "---\nname: OpenClaw dispatch routing failures\nscope: team\nstatus: candidate\ndefault_enabled: true\n---\n# OpenClaw dispatch routing failures\n\n## When To Use\nUse this when dispatch routing failures repeat.\n\n## Procedure\nCheck runner, route, spawn id, and result evidence.\n\n## Verification\nRun dispatch smoke tests.\n"
+  },
+  "created_at": "2026-06-03T10:02:00.000Z"
+}

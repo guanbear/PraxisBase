@@ -1,0 +1,7 @@
+PraxisBase includes implementation ideas adapted from:
+
+- llm-wiki-compiler (MIT License), especially the static wiki lint and health-score
+  pattern under `.local-references/llm-wiki-compiler/src/linter` and `src/eval`.
+  PraxisBase's M27 provenance audit keeps the same static, no-LLM linting
+  discipline while using original TypeScript code for PraxisBase's kb/skill
+  provenance model.

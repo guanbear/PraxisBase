@@ -136,6 +136,72 @@ node /path/to/PraxisBase/packages/cli/dist/index.js episode submit repair-episod
 node /path/to/PraxisBase/packages/cli/dist/index.js propose knowledge-proposal.json --offline-ok
 ```
 
+## Multi-Agent Experience Commands
+
+For local personal use, install a lightweight adapter snippet and fetch bounded context before a task:
+
+```bash
+node /path/to/PraxisBase/packages/cli/dist/index.js install codex --dry-run --json
+node /path/to/PraxisBase/packages/cli/dist/index.js context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+```
+
+After a task, capture redacted evidence by reference only:
+
+```bash
+node /path/to/PraxisBase/packages/cli/dist/index.js capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
+node /path/to/PraxisBase/packages/cli/dist/index.js capture submit capture.json --json
+node /path/to/PraxisBase/packages/cli/dist/index.js distill run --json
+```
+
+To backfill agent-native memory or prepare reviewed knowledge for an agent:
+
+```bash
+node /path/to/PraxisBase/packages/cli/dist/index.js memory import --agent hermes --source hermes-memory.json --json
+node /path/to/PraxisBase/packages/cli/dist/index.js memory refresh --agent hermes --target instruction-snippet --source-refs kb/known-fixes/openclaw-auth-expired.md --json
+node /path/to/PraxisBase/packages/cli/dist/index.js watch --agent claude-code --workspace . --once --json
+```
+
+Team scheduled use should run `distill run`, review, promote, and build as separate jobs. `memory import`, `memory refresh`, `capture`, `watch`, and `distill` must not write stable `kb/` or `skills/` files directly; they produce reports, proposals, captures, refresh plans, or exceptions for review.
+
+## Daily Experience Loop
+
+PraxisBase can run a daily experience loop that collects agent experience from configured sources into the wiki.
+
+### Personal Daily
+
+Configure local sources and run a daily personal loop:
+
+```bash
+praxisbase source add local-codex --agent codex --type local --path ~/.codex/archived_sessions --scope personal
+praxisbase source add local-openclaw --agent openclaw --type local --path ~/.openclaw/exports/latest.json --scope project
+praxisbase daily run --mode personal --build-site --json
+```
+
+The personal loop writes redacted experience envelopes, harvest reports, daily reports, wiki compile reports, and proposal candidates. It builds the local static site. It does not mutate stable `kb/` or `skills/` unless the user explicitly enables review/promote.
+
+### Team GitLab Daily
+
+Configure team sources and add a scheduled daily harvest job:
+
+```bash
+praxisbase source add openclaw-bot --agent openclaw --channel feishu --type openclaw-api --remote bot-prod --scope team
+praxisbase source add claude-repair-log --agent claude-code --type http --url "$LOG_API" --scope team
+praxisbase daily run --mode team-git --branch "harvest/daily-$(date +%Y-%m-%d)" --commit --push --build-site --json
+```
+
+Add a GitLab scheduled pipeline with `PRAXISBASE_TASK=daily-harvest` to run the team daily loop automatically.
+
+Required CI variables for team mode:
+
+| Variable | Purpose |
+| --- | --- |
+| `PRAXISBASE_TASK` | Set to `daily-harvest` for the daily harvest job. |
+| `OPENCLAW_TOKEN` | OpenClaw API token (when using OpenClaw API sources). |
+| `OPENCLAW_BASE_URL` | OpenClaw API base URL (when using OpenClaw API sources). |
+| `PRAXISBASE_PUSH_TOKEN` | Masked token for push when writeback is enabled. |
+
+Team mode enforces privacy: personal scope, private chat content, and raw credentials are rejected before proposal generation.
+
 ## K8s Incident Integration
 
 Fetch optional incident context:

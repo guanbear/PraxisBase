@@ -27,12 +27,30 @@ describe("praxisbase init", () => {
     await assert.doesNotReject(stat(join(root, ".praxisbase/inbox/episodes")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/inbox/proposals")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/outbox/episodes")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/outbox/captures")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/exceptions/human-required")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/exceptions/conflicts")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/exceptions/failed-checks")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/runs/review")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/runs/promote")));
     await assert.doesNotReject(stat(join(root, ".praxisbase/runs/build")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/capture")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/distill")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/memory-import")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/memory-fetch")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/runs/harvest")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/reports/context")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/reports/distill")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/reports/memory")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/reports/memory-fetch")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/reports/harvest")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/remotes")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/staging/openclaw")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/staging/remote-imports")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/cache/remotes")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/adapters")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/memory-refresh")));
+    await assert.doesNotReject(stat(join(root, ".praxisbase/raw-vault/refs")));
     await assert.doesNotReject(stat(join(root, "kb/pitfalls")));
     await assert.doesNotReject(stat(join(root, "skills/openclaw/auth-repair/SKILL.md")));
     await assert.doesNotReject(stat(join(root, "skills/openclaw/baseline-diagnostics/SKILL.md")));
@@ -43,6 +61,13 @@ describe("praxisbase init", () => {
     const config = await readFile(join(root, ".praxisbase/config.yaml"), "utf8");
     assert.ok(config.includes('protocol_version: "0.1"'));
     assert.ok(config.includes("profile: all"));
+    const gitignore = await readFile(join(root, ".gitignore"), "utf8");
+    assert.ok(gitignore.includes(".praxisbase/staging/"));
+    assert.ok(gitignore.includes(".praxisbase/cache/"));
+    assert.ok(gitignore.includes(".praxisbase/reports/"));
+    assert.ok(gitignore.includes(".praxisbase/runs/"));
+    assert.ok(gitignore.includes(".praxisbase/sources/"));
+    assert.ok(gitignore.includes(".praxisbase/raw-vault/"));
   });
 
   it("creates an OpenClaw-only knowledge repo with --profile openclaw", async () => {

@@ -1,0 +1,718 @@
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import {
+  topicKeyForObservation,
+  buildWikiTopics,
+  loadExistingWikiPages,
+  planWikiPages,
+} from "@praxisbase/core";
+import type { WikiObservation, ExistingWikiPage } from "@praxisbase/core";
+import type { WikiRelationshipPlan } from "@praxisbase/core/wiki/relationship-planner.js";
+
+function obs(overrides: Partial<WikiObservation> = {}): WikiObservation {
+  return {
+    id: "obs-1",
+    evidence_id: "ev-obs-1",
+    source_ref: "raw-vault://codex/s1",
+    source_hash: "sha256:abc",
+    scope: "personal",
+    agent: "codex",
+    kind: "fix",
+    problem: "ACK timing slow",
+    action: "Refresh login",
+    outcome: "success",
+    verification: "Verification passed",
+    reusable_lesson: "Reuse this fix for the same trigger",
+    entities: ["openclaw", "auth"],
+    topics: [],
+    raw_excerpt: "ACK timing slow",
+    confidence: 0.85,
+    privacy_verdict: "safe",
+    filtered_out: false,
+    ...overrides,
+  };
+}
+
+describe("topicKeyForObservation", () => {
+  it("uses normalized problem + action + entities + scope, not source id/hash", () => {
+    const o1 = obs({ source_ref: "raw-vault://codex/s1", source_hash: "sha256:abc" });
+    const o2 = obs({ source_ref: "raw-vault://codex/s2", source_hash: "sha256:def" });
+    assert.equal(topicKeyForObservation(o1), topicKeyForObservation(o2));
+  });
+
+  it("produces different keys for different problems", () => {
+    const o1 = obs({ problem: "ACK timing slow" });
+    const o2 = obs({ problem: "stdin closed unexpectedly" });
+    assert.notEqual(topicKeyForObservation(o1), topicKeyForObservation(o2));
+  });
+
+  it("produces different keys for different scopes", () => {
+    const o1 = obs({ scope: "personal" });
+    const o2 = obs({ scope: "team" });
+    assert.notEqual(topicKeyForObservation(o1), topicKeyForObservation(o2));
+  });
+
+  it("sorts entities so order does not matter", () => {
+    const o1 = obs({ entities: ["auth", "openclaw"] });
+    const o2 = obs({ entities: ["openclaw", "auth"] });
+    assert.equal(topicKeyForObservation(o1), topicKeyForObservation(o2));
+  });
+
+  it("handles missing optional fields", () => {
+    const o = obs({ problem: undefined, action: undefined, entities: [] });
+    const key = topicKeyForObservation(o);
+    assert.ok(key.includes("unknown-problem"));
+    assert.ok(key.includes("unknown-action"));
+    assert.ok(key.includes("no-entities"));
+  });
+});
+
+describe("buildWikiTopics", () => {
+  it("merges repeated ACK timing observations into one topic", () => {
+    const observations = [
+      obs({
+        id: "obs-ack-1",
+        source_ref: "s://ack-1",
+        source_hash: "sha256:ack1",
+        problem: "ACK timing slow on repeated runs",
+        action: "Refresh OpenClaw login",
+        entities: ["openclaw", "auth"],
+      }),
+      obs({
+        id: "obs-ack-2",
+        source_ref: "s://ack-2",
+        source_hash: "sha256:ack2",
+        problem: "ACK timing slow on repeated runs",
+        action: "Refresh OpenClaw login",
+        entities: ["openclaw", "auth"],
+      }),
+    ];
+    const topics = buildWikiTopics(observations);
+    const ackTopics = topics.filter((t) =>
+      t.title.includes("ACK timing"),
+    );
+    assert.equal(ackTopics.length, 1);
+    assert.equal(ackTopics[0].observation_ids.length, 2);
+    assert.ok(ackTopics[0].source_refs.includes("s://ack-1"));
+    assert.ok(ackTopics[0].source_refs.includes("s://ack-2"));
+  });
+
+  it("merges repeated stdin-closed observations into one topic", () => {
+    const observations = [
+      obs({
+        id: "obs-stdin-1",
+        source_ref: "s://stdin-1",
+        source_hash: "sha256:stdin1",
+        problem: "stdin closed unexpectedly",
+        action: "Restart agent session",
+        entities: ["codex"],
+      }),
+      obs({
+        id: "obs-stdin-2",
+        source_ref: "s://stdin-2",
+        source_hash: "sha256:stdin2",
+        problem: "stdin closed unexpectedly",
+        action: "Restart agent session",
+        entities: ["codex"],
+      }),
+    ];
+    const topics = buildWikiTopics(observations);
+    const stdinTopics = topics.filter((t) =>
+      t.title.includes("stdin"),
+    );
+    assert.equal(stdinTopics.length, 1);
+    assert.equal(stdinTopics[0].observation_ids.length, 2);
+  });
+
+  it("merges ACK timing observations with different wording into one semantic topic", () => {
+    const observations = [
+      obs({
+        id: "obs-ack-openclaw",
+        source_ref: "openclaw://memory/ack",
+        source_hash: "sha256:ack-openclaw",
+        problem: "OpenClaw delegated work feels slow because it waits too long before the first response",
+        action: "Send a short acknowledgement before tools or dispatch",
+        entities: ["openclaw", "delegation"],
+        topics: [],
+      }),
+      obs({
+        id: "obs-ack-codex",
+        source_ref: "raw-vault://codex/ack",
+        source_hash: "sha256:ack-codex",
+        problem: "Long-running tool or network tasks should not appear silent",
+        action: "ACK first, then continue with the actual execution and final result",
+        entities: ["codex"],
+        topics: [],
+      }),
+    ];
+
+    const topics = buildWikiTopics(observations);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].source_count, 2);
+    assert.deepEqual(topics[0].source_refs.sort(), ["openclaw://memory/ack", "raw-vault://codex/ack"]);
+  });
+
+  it("uses a stable semantic title for Slack replay stability topics", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "obs-slack-1",
+        source_ref: "openclaw://stability/report-1",
+        source_hash: "sha256:slack-1",
+        problem: "Stability Smoke v2 post-deploy failed due live Slack delivery and replay_missing artifacts",
+        action: "Classify Slack replay missing data before treating it as product regression",
+        entities: ["openclaw", "slack"],
+      }),
+      obs({
+        id: "obs-slack-2",
+        source_ref: "openclaw://stability/report-2",
+        source_hash: "sha256:slack-2",
+        problem: "Nightly Slack replay lanes reported unknown because replay artifacts were missing",
+        action: "Verify replay artifacts before rerunning post-deploy stability checks",
+        entities: ["openclaw", "slack"],
+      }),
+    ]);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].title, "OpenClaw Slack replay and post-deploy stability failures");
+    assert.equal(topics[0].source_count, 2);
+  });
+
+  it("classifies repeated runner status checks as procedures", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "obs-runner-1",
+        source_ref: "openclaw://runner/status-1",
+        source_hash: "sha256:runner-1",
+        kind: "procedure",
+        problem: "OpenClaw task runner status was missing during dispatch debugging",
+        action: "Verify task runner presence before debugging dispatch",
+        verification: "Runner status check passed",
+        reusable_lesson: "Check runner presence before debugging dispatch hangs",
+        entities: ["openclaw", "runner"],
+      }),
+      obs({
+        id: "obs-runner-2",
+        source_ref: "codex://runner/status-2",
+        source_hash: "sha256:runner-2",
+        kind: "procedure",
+        problem: "OpenClaw hanging task investigation needed runner presence checks",
+        action: "Check task runner status before dispatch debugging",
+        verification: "Runner presence check passed",
+        reusable_lesson: "Verify runner presence first",
+        entities: ["openclaw", "runner"],
+      }),
+    ]);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].title, "OpenClaw task runner presence checks");
+    assert.equal(topics[0].page_kind, "procedure");
+    assert.match(topics[0].target_path, /^kb\/procedures\//);
+  });
+
+  it("keeps concrete runner repairs as known fixes", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "obs-runner-fix-1",
+        source_ref: "openclaw://runner/fix-1",
+        source_hash: "sha256:runner-fix-1",
+        kind: "fix",
+        problem: "OpenClaw runner failed after registration state drift",
+        action: "Check runner status and restart the registered runner",
+        verification: "Runner status check passed after restart",
+        reusable_lesson: "Restart the registered runner before retrying task dispatch",
+        entities: ["openclaw", "runner"],
+      }),
+      obs({
+        id: "obs-runner-fix-2",
+        source_ref: "codex://runner/fix-2",
+        source_hash: "sha256:runner-fix-2",
+        kind: "fix",
+        problem: "OpenClaw task runner failure blocked dispatch",
+        action: "Restart the runner and check status",
+        verification: "Task dispatch succeeded after runner restart",
+        reusable_lesson: "Treat runner registration drift as a concrete fix",
+        entities: ["openclaw", "runner"],
+      }),
+    ]);
+
+    assert.equal(topics.length, 1);
+    assert.equal(topics[0].page_kind, "known_fix");
+    assert.match(topics[0].target_path, /^kb\/known-fixes\//);
+  });
+
+  it("keeps separate topics for different problems", () => {
+    const observations = [
+      obs({ id: "o1", problem: "ACK timing slow", action: "Refresh" }),
+      obs({ id: "o2", problem: "stdin closed", action: "Restart" }),
+    ];
+    const topics = buildWikiTopics(observations);
+    assert.equal(topics.length, 2);
+  });
+
+  it("filters out observations with filtered_out=true", () => {
+    const observations = [
+      obs({ id: "o1", filtered_out: true }),
+      obs({ id: "o2", filtered_out: false }),
+    ];
+    const topics = buildWikiTopics(observations);
+    assert.equal(topics.length, 1);
+    assert.deepEqual(topics[0].observation_ids, ["o2"]);
+  });
+
+  it("filters out observations with privacy_verdict=reject", () => {
+    const observations = [
+      obs({ id: "o1", privacy_verdict: "reject" }),
+      obs({ id: "o2", privacy_verdict: "safe" }),
+    ];
+    const topics = buildWikiTopics(observations);
+    assert.equal(topics.length, 1);
+  });
+
+  it("returns empty array for no observations", () => {
+    assert.deepEqual(buildWikiTopics([]), []);
+  });
+});
+
+describe("loadExistingWikiPages", () => {
+  it("reads kb/ and skills/ markdown files", async () => {
+    const tmp = await mkdtemp(join(tmpdir(), "wiki-planner-"));
+    await mkdir(join(tmp, "kb", "known-fixes"), { recursive: true });
+    await mkdir(join(tmp, "skills", "my-skill"), { recursive: true });
+    await writeFile(
+      join(tmp, "kb", "known-fixes", "auth-expired.md"),
+      [
+        "---",
+        "title: OpenClaw auth expired",
+        "scope: project",
+        "signatures:",
+        "  - openclaw:auth-expired",
+        "sources:",
+        "  - uri: \"raw-vault://codex/s1\"",
+        "    hash: \"sha256:abc\"",
+        "---",
+        "# OpenClaw auth expired",
+      ].join("\n"),
+    );
+    await writeFile(
+      join(tmp, "skills", "my-skill", "SKILL.md"),
+      [
+        "---",
+        "title: My skill",
+        "scope: team",
+        "sources:",
+        "  - uri: \"skill://ref\"",
+        "    hash: \"sha256:skill1\"",
+        "---",
+        "# My skill",
+      ].join("\n"),
+    );
+
+    const pages = await loadExistingWikiPages(tmp);
+    assert.equal(pages.length, 2);
+    const authPage = pages.find((p) => p.title === "OpenClaw auth expired");
+    assert.ok(authPage);
+    assert.equal(authPage.scope, "project");
+    assert.deepEqual(authPage.source_hashes, ["sha256:abc"]);
+    assert.deepEqual(authPage.signatures, ["openclaw:auth-expired"]);
+    assert.ok(authPage.entities.includes("openclaw"));
+    assert.ok(authPage.entities.includes("auth"));
+    assert.ok(authPage.body_text?.includes("# OpenClaw auth expired"));
+    assert.equal(authPage.path, "kb/known-fixes/auth-expired.md");
+
+    const skillPage = pages.find((p) => p.title === "My skill");
+    assert.ok(skillPage);
+    assert.equal(skillPage.scope, "team");
+  });
+
+  it("uses frontmatter id as the resolvable slug for note pages", async () => {
+    const tmp = await mkdtemp(join(tmpdir(), "wiki-planner-"));
+    await mkdir(join(tmp, "kb", "notes"), { recursive: true });
+    await writeFile(
+      join(tmp, "kb", "notes", "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies.md"),
+      [
+        "---",
+        "id: wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+        "title: Asynchronous Task UX and Dispatch Mapping Anomalies",
+        "scope: personal",
+        "sources:",
+        "  - uri: \"raw-vault://openclaw/report\"",
+        "    hash: \"sha256:report\"",
+        "---",
+        "# Asynchronous Task UX and Dispatch Mapping Anomalies",
+      ].join("\n"),
+    );
+
+    const pages = await loadExistingWikiPages(tmp);
+    const note = pages.find((p) => p.title === "Asynchronous Task UX and Dispatch Mapping Anomalies");
+    assert.ok(note);
+    assert.equal(note.slug, "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies");
+  });
+
+  it("returns empty when kb/ and skills/ do not exist", async () => {
+    const tmp = await mkdtemp(join(tmpdir(), "wiki-planner-"));
+    const pages = await loadExistingWikiPages(tmp);
+    assert.deepEqual(pages, []);
+  });
+});
+
+describe("planWikiPages", () => {
+  it("creates plans when no existing pages", () => {
+    const topics = buildWikiTopics([
+      obs({ id: "o1", problem: "ACK timing slow", action: "Refresh" }),
+    ]);
+    const plans = planWikiPages(topics, []);
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "create");
+    assert.equal(plans[0].existing_path, undefined);
+  });
+
+  it("creates update plan when stable matching page exists by target path", () => {
+    const topics = buildWikiTopics([
+      obs({ id: "o1", problem: "ACK timing slow", action: "Refresh login", entities: ["openclaw"] }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: topics[0].target_path,
+        title: "ACK timing slow",
+        slug: "ack-timing-slow",
+        source_hashes: ["sha256:old"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const plans = planWikiPages(topics, existing);
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, topics[0].target_path);
+  });
+
+  it("creates update plan when source hash matches existing page", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "ACK timing slow",
+        action: "Refresh login",
+        source_hash: "sha256:same",
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/different-slug.md",
+        title: "Different title",
+        slug: "different-slug",
+        source_hashes: ["sha256:same"],
+        entities: [],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const plans = planWikiPages(topics, existing);
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, "kb/known-fixes/different-slug.md");
+    assert.equal(plans[0].existing_source_hash, "sha256:same");
+  });
+
+  it("same source hash does not produce multiple create plans", () => {
+    const observations = [
+      obs({
+        id: "o1",
+        problem: "Problem A",
+        action: "Fix A",
+        entities: ["x"],
+        source_hash: "sha256:shared",
+        source_ref: "s://1",
+      }),
+      obs({
+        id: "o2",
+        problem: "Problem B",
+        action: "Fix B",
+        entities: ["y"],
+        source_hash: "sha256:shared",
+        source_ref: "s://2",
+      }),
+    ];
+    const topics = buildWikiTopics(observations);
+    const plans = planWikiPages(topics, []);
+    const createPlans = plans.filter((p) => p.action === "create");
+    assert.equal(
+      createPlans.length,
+      plans.length - 1,
+      `Expected at most ${plans.length - 1} create plans, got ${createPlans.length}`,
+    );
+  });
+
+  it("produces update plan for existing page matching by normalized slug", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "OpenClaw auth expired",
+        action: "Refresh login",
+        entities: ["openclaw"],
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/openclaw-auth-expired.md",
+        title: "OpenClaw Auth Expired",
+        slug: "openclaw-auth-expired",
+        source_hashes: ["sha256:old"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const plans = planWikiPages(topics, existing);
+    assert.equal(plans[0].action, "update");
+  });
+
+  it("prefers updating existing pages that share lesson signatures", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "Slow tool work can leave users without timely feedback",
+        action: "Send a short acknowledgement first",
+        source_hash: "sha256:new",
+        entities: ["agent-runtime"],
+        topics: ["lesson:ack-before-slow-work", "portability:universal"],
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/procedures/ack-before-long-work.md",
+        title: "ACK before long work",
+        slug: "ack-before-long-work",
+        source_hashes: ["sha256:old"],
+        entities: ["agent-runtime"],
+        signatures: ["lesson:ack-before-slow-work", "portability:universal"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing);
+
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, "kb/procedures/ack-before-long-work.md");
+    assert.ok(plans[0].reasons.includes("signature_overlap"));
+  });
+});
+
+describe("planWikiPages with relationship plans", () => {
+  it("rewrites create to update when a canonical relationship exists", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "ACK timing slow",
+        action: "Refresh login",
+        entities: ["openclaw"],
+        source_hash: "sha256:ack",
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/openclaw-ack-timing.md",
+        title: "OpenClaw ACK timing",
+        slug: "openclaw-ack-timing",
+        source_hashes: ["sha256:ack"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/openclaw-ack-timing.md",
+        target_path: "kb/known-fixes/openclaw-ack-timing.md",
+        target_title: "OpenClaw ACK timing",
+        target_slug: "openclaw-ack-timing",
+        strength: "canonical",
+        reasons: ["shared_source_hash"],
+        required_link: true,
+        suggested_label: "OpenClaw ACK timing",
+        merge_candidate: true,
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing, { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, "kb/known-fixes/openclaw-ack-timing.md");
+    assert.ok(plans[0].reasons.includes("canonical_relationship"));
+    assert.equal(plans[0].existing_source_hash, "sha256:ack");
+  });
+
+  it("produces merge with ambiguous_merge_target when multiple canonical pages match", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "ACK timing slow",
+        action: "Refresh login",
+        entities: ["openclaw"],
+        source_hash: "sha256:shared",
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/openclaw-ack-v1.md",
+        title: "OpenClaw ACK v1",
+        slug: "openclaw-ack-v1",
+        source_hashes: ["sha256:shared"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+      {
+        path: "kb/known-fixes/openclaw-ack-v2.md",
+        title: "OpenClaw ACK v2",
+        slug: "openclaw-ack-v2",
+        source_hashes: ["sha256:shared"],
+        entities: ["openclaw"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/openclaw-ack-v1.md",
+        target_path: "kb/known-fixes/openclaw-ack-v1.md",
+        target_title: "OpenClaw ACK v1",
+        target_slug: "openclaw-ack-v1",
+        strength: "canonical",
+        reasons: ["shared_source_hash"],
+        required_link: true,
+        suggested_label: "OpenClaw ACK v1",
+        merge_candidate: true,
+      },
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/openclaw-ack-v2.md",
+        target_path: "kb/known-fixes/openclaw-ack-v2.md",
+        target_title: "OpenClaw ACK v2",
+        target_slug: "openclaw-ack-v2",
+        strength: "canonical",
+        reasons: ["shared_source_hash"],
+        required_link: true,
+        suggested_label: "OpenClaw ACK v2",
+        merge_candidate: true,
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing, { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "merge");
+    assert.ok(plans[0].reasons.includes("ambiguous_merge_target"));
+    assert.ok(plans[0].reasons.includes("multiple_canonical_targets"));
+    assert.equal(plans[0].existing_path, "kb/known-fixes/openclaw-ack-v1.md");
+  });
+
+  it("keeps create but adds required_links for strong relationships", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "New auth issue",
+        action: "Refresh token",
+        entities: ["openclaw", "auth"],
+        source_hash: "sha256:new-issue",
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/auth-expired.md",
+        title: "Auth expired fix",
+        slug: "auth-expired",
+        source_hashes: ["sha256:old"],
+        entities: ["auth"],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/known-fixes/auth-expired.md",
+        target_path: "kb/known-fixes/auth-expired.md",
+        target_title: "Auth expired fix",
+        target_slug: "auth-expired",
+        strength: "strong",
+        reasons: ["shared_signature"],
+        required_link: true,
+        suggested_label: "Auth expired fix",
+        merge_candidate: false,
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing, { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "create");
+    assert.ok(plans[0].required_links.includes("auth-expired"));
+  });
+
+  it("keeps create but adds related_paths for related relationships", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "New networking issue",
+        action: "Restart proxy",
+        entities: ["network", "proxy"],
+        source_hash: "sha256:net-issue",
+      }),
+    ]);
+    const relationships: WikiRelationshipPlan[] = [
+      {
+        topic_id: topics[0].id,
+        target_page_id: "kb/notes/proxy-notes.md",
+        target_path: "kb/notes/proxy-notes.md",
+        target_title: "Proxy notes",
+        target_slug: "proxy-notes",
+        strength: "related",
+        reasons: ["entity_overlap"],
+        required_link: false,
+        suggested_label: "Proxy notes",
+        merge_candidate: false,
+      },
+    ];
+
+    const plans = planWikiPages(topics, [], { relationships });
+
+    assert.equal(plans.length, 1);
+    assert.equal(plans[0].action, "create");
+    assert.ok(plans[0].related_paths.includes("kb/notes/proxy-notes.md"));
+  });
+
+  it("falls back to existing matching when no relationships are provided", () => {
+    const topics = buildWikiTopics([
+      obs({
+        id: "o1",
+        problem: "ACK timing slow",
+        action: "Refresh login",
+        source_hash: "sha256:same",
+        entities: ["openclaw"],
+      }),
+    ]);
+    const existing: ExistingWikiPage[] = [
+      {
+        path: "kb/known-fixes/different-slug.md",
+        title: "Different title",
+        slug: "different-slug",
+        source_hashes: ["sha256:same"],
+        entities: [],
+        scope: "personal",
+        frontmatter_sources: [],
+      },
+    ];
+
+    const plans = planWikiPages(topics, existing);
+    assert.equal(plans[0].action, "update");
+    assert.equal(plans[0].existing_path, "kb/known-fixes/different-slug.md");
+  });
+});

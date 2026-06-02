@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { describe, it } from "node:test";
@@ -28,7 +28,16 @@ const proposal = {
   },
   patch: {
     path: "kb/known-fixes/openclaw-auth-expired.md",
-    content: "# OpenClaw auth expired\n"
+    content: [
+      "# OpenClaw auth expired",
+      "",
+      "## When to Use",
+      "Use this when OpenClaw reports expired authentication during repair work.",
+      "",
+      "## Fix",
+      "Refresh the OpenClaw login and rerun the minimal verification call.",
+      "",
+    ].join("\n")
   },
   created_at: "2026-05-17T10:00:00Z"
 };
@@ -84,6 +93,206 @@ describe("promotion", () => {
         review
       }),
       /raw log content/
+    );
+  });
+
+  it("rejects stable skill promotion without a skill promotion audit", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-skill-audit-"));
+    await assert.rejects(
+      promoteApprovedProposal(root, {
+        proposal: {
+          ...proposal,
+          target_type: "skill",
+          patch: {
+            path: "skills/openclaw/openclaw-memory-operations/SKILL.md",
+            content: [
+              "# OpenClaw memory operations",
+              "",
+              "## When To Use",
+              "Use when importing OpenClaw memory into PraxisBase.",
+              "",
+              "## Procedure",
+              "1. Export memory JSON.",
+              "",
+              "## Verification",
+              "- Tests passed.",
+              "",
+              "## Provenance",
+              "- raw-vault://codex/session-1 (sha256:abc)",
+              "",
+            ].join("\n"),
+          },
+        },
+        review,
+      }),
+      /skill promotion audit/
+    );
+  });
+
+  it("rejects replacing an existing useful wiki page with a lower-quality rewrite", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-downgrade-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(
+      join(root, "kb/known-fixes/openclaw-gateway-restart.md"),
+      [
+        "# OpenClaw gateway restart after configuration changes",
+        "",
+        "## When to Use",
+        "Use this when OpenClaw configuration changes require the gateway to reload provider or routing settings.",
+        "",
+        "## Symptoms or Context",
+        "The active model or route does not match the updated configuration.",
+        "",
+        "## Procedure",
+        "1. Verify the changed configuration file.",
+        "2. Restart the OpenClaw gateway.",
+        "3. Confirm the active route and model.",
+        "",
+        "## Verify",
+        "Run the gateway status check and a minimal model identification request.",
+        "",
+        "## Reusable Lessons",
+        "Configuration edits do not affect the running gateway until the service is restarted.",
+        "",
+        "## Provenance",
+        "* openclaw-memory://example (sha256:abc)",
+        "",
+        "## Related Wiki Pages",
+        "* [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    await assert.rejects(
+      promoteApprovedProposal(root, {
+        proposal: {
+          ...proposal,
+          patch: {
+            path: "kb/known-fixes/openclaw-gateway-restart.md",
+            content: [
+              "# OpenClaw gateway restart after configuration changes",
+              "",
+              "## When to Use",
+              "Use this when OpenClaw health checks timeout.",
+              "",
+              "## What To Do",
+              "- Attempted to run `openclaw status` command.",
+              "- A gateway restart is required for changes to take effect.",
+              "",
+              "## Failed Attempts",
+              "- Assistant turn failed before producing content during an intermediate step.",
+              "",
+              "## Verify",
+              "- A health check was performed on the OpenClaw environment.",
+              "",
+              "## Provenance",
+              "* openclaw-memory://example (sha256:def)",
+              "",
+            ].join("\n"),
+          },
+        },
+        review,
+      }),
+      /lower-quality rewrite/
+    );
+  });
+
+  it("rejects replacing an existing wiki page with fewer sources or a different knowledge type", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-promote-provenance-downgrade-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(
+      join(root, "kb/known-fixes/ack-timing.md"),
+      [
+        "---",
+        "id: ack-timing",
+        "title: \"ACK timing\"",
+        "type: known_fix",
+        "knowledge_type: known_fix",
+        "sources:",
+        "  - uri: \"openclaw-memory://one\"",
+        "    hash: \"sha256:one\"",
+        "  - uri: \"openclaw-memory://two\"",
+        "    hash: \"sha256:two\"",
+        "  - uri: \"openclaw-memory://three\"",
+        "    hash: \"sha256:three\"",
+        "source_count: 3",
+        "---",
+        "# ACK timing",
+        "",
+        "## When to Use",
+        "Use this before long-running agent work.",
+        "",
+        "## Context",
+        "Users need prompt confirmation that work started.",
+        "",
+        "## Operating Rule",
+        "Send a brief acknowledgment before slow work.",
+        "",
+        "## Verify",
+        "Check the ACK appears before tool calls.",
+        "",
+        "## Reusable Lessons",
+        "- ACK first, then execute.",
+        "",
+        "## Provenance",
+        "- openclaw-memory://one (sha256:one)",
+        "- openclaw-memory://two (sha256:two)",
+        "- openclaw-memory://three (sha256:three)",
+        "",
+        "## Related Wiki Pages",
+        "- [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    await assert.rejects(
+      promoteApprovedProposal(root, {
+        proposal: {
+          ...proposal,
+          patch: {
+            path: "kb/known-fixes/ack-timing.md",
+            content: [
+              "---",
+              "id: ack-timing",
+              "title: \"ACK timing\"",
+              "type: pitfall",
+              "knowledge_type: pitfall",
+              "sources:",
+              "  - uri: \"source-inventory://openclaw/main.sqlite#one\"",
+              "    hash: \"sha256:new\"",
+              "source_count: 1",
+              "---",
+              "# ACK timing",
+              "",
+              "## When to Use",
+              "Use this before long-running agent work.",
+              "",
+              "## Context",
+              "Users need prompt confirmation that work started.",
+              "",
+              "## Operating Rule",
+              "Send a brief acknowledgment before slow work.",
+              "",
+              "## Verify",
+              "Check the ACK appears before tool calls.",
+              "",
+              "## Reusable Lessons",
+              "- ACK first, then execute.",
+              "",
+              "## Provenance",
+              "- source-inventory://openclaw/main.sqlite#one (sha256:new)",
+              "",
+              "## Related Wiki Pages",
+              "- [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]",
+              "",
+            ].join("\n"),
+          },
+        },
+        review,
+      }),
+      /stable page metadata downgrade|source_count|knowledge_type/
     );
   });
 

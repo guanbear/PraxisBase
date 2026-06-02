@@ -10,6 +10,6 @@ export async function repairContextCommand(
   }
 
   const logs = await readFile(options.logs, "utf8");
-  const context = buildOpenClawRepairContext({ logs });
+  const context = await buildOpenClawRepairContext({ logs, root: process.cwd() });
   return options.json ? JSON.stringify(context, null, 2) : context.problem_signature;
 }

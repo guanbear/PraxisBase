@@ -283,5 +283,181 @@ Confirm pod starts successfully after credential or image correction.
 ## Rollback
 
 Revert image or credential changes to previous values.
+`,
+  "kb/known-fixes/k8s-ingress-5xx-upstream-timeout.md": `---
+id: k8s-ingress-5xx-upstream-timeout
+protocol_version: "0.1"
+type: known_fix
+knowledge_type: known_fix
+scope: team
+risk: medium
+status: draft
+maturity: draft
+signatures:
+  - k8s:ingress-5xx-upstream-timeout
+skills:
+  - skills/k8s/incident-triage/SKILL.md
+sources:
+  - uri: seed://k8s/ingress-5xx-upstream-timeout
+    hash: sha256:seed
+confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
+updated_at: 2026-05-17T00:00:00Z
+---
+
+## Symptoms
+
+Ingress reports 502, 503, or 504 responses and upstream timeout symptoms.
+
+## Diagnosis
+
+Compare ingress events, backend service endpoints, and upstream response latency.
+
+## Fix
+
+Recommendation: route remediation through the service owner after confirming backend health.
+
+## Verification
+
+Confirm error rate drops and upstream latency returns to the expected range.
+
+## Rollback
+
+Revert ingress or service routing changes through the owning deployment workflow.
+`,
+  "kb/known-fixes/k8s-pvc-pending.md": `---
+id: k8s-pvc-pending
+protocol_version: "0.1"
+type: known_fix
+knowledge_type: known_fix
+scope: team
+risk: medium
+status: draft
+maturity: draft
+signatures:
+  - k8s:pvc-pending
+skills:
+  - skills/k8s/incident-triage/SKILL.md
+sources:
+  - uri: seed://k8s/pvc-pending
+    hash: sha256:seed
+confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
+updated_at: 2026-05-17T00:00:00Z
+---
+
+## Symptoms
+
+PersistentVolumeClaim remains Pending and workload pods cannot mount storage.
+
+## Diagnosis
+
+Check storage class, capacity, access mode, and provisioner events.
+
+## Fix
+
+Recommendation: ask the storage owner to correct class, quota, or provisioner configuration.
+
+## Verification
+
+Confirm the PVC binds and dependent pods can mount the volume.
+
+## Rollback
+
+Revert storage configuration changes through the owning infrastructure workflow.
+`,
+  "kb/known-fixes/k8s-node-notready.md": `---
+id: k8s-node-notready
+protocol_version: "0.1"
+type: known_fix
+knowledge_type: known_fix
+scope: team
+risk: high
+status: draft
+maturity: draft
+signatures:
+  - k8s:node-notready
+skills:
+  - skills/k8s/incident-triage/SKILL.md
+sources:
+  - uri: seed://k8s/node-notready
+    hash: sha256:seed
+confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
+updated_at: 2026-05-17T00:00:00Z
+---
+
+## Symptoms
+
+Node readiness is false or NotReady and affected workloads may be unavailable.
+
+## Diagnosis
+
+Check node conditions, kubelet health, pressure signals, and recent node events.
+
+## Fix
+
+Recommendation: escalate to the platform owner before any remediation that changes node state.
+
+## Verification
+
+Confirm node readiness and workload scheduling recover after owner-approved action.
+
+## Rollback
+
+Revert node-level remediation through the platform runbook.
+`,
+  "kb/known-fixes/k8s-dns-resolution-failure.md": `---
+id: k8s-dns-resolution-failure
+protocol_version: "0.1"
+type: known_fix
+knowledge_type: known_fix
+scope: team
+risk: medium
+status: draft
+maturity: draft
+signatures:
+  - k8s:dns-resolution-failure
+skills:
+  - skills/k8s/incident-triage/SKILL.md
+sources:
+  - uri: seed://k8s/dns-resolution-failure
+    hash: sha256:seed
+confidence: 0.6
+reference_count: 0
+last_referenced_at:
+supersedes: []
+superseded_by:
+updated_at: 2026-05-17T00:00:00Z
+---
+
+## Symptoms
+
+Pods cannot resolve service names, CoreDNS reports failures, or NXDOMAIN appears unexpectedly.
+
+## Diagnosis
+
+Check CoreDNS health, service records, network policy, and namespace search paths.
+
+## Fix
+
+Recommendation: escalate DNS or network policy remediation to the platform owner.
+
+## Verification
+
+Confirm affected pods resolve expected service names and CoreDNS error rate normalizes.
+
+## Rollback
+
+Revert DNS or network policy changes through the owning platform workflow.
 `
 };

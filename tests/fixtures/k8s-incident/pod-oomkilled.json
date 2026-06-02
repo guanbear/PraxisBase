@@ -1,0 +1,51 @@
+{
+  "protocol_version": "0.1",
+  "signature": "k8s:pod-oomkilled",
+  "domain": "k8s",
+  "status": "published",
+  "risk": "medium",
+  "recommendation_only": true,
+  "known_fixes": [
+    {
+      "id": "k8s-pod-oomkilled",
+      "summary": "Pod was killed because memory usage exceeded container limit.",
+      "diagnosis_steps": [
+        "Check last terminated reason and exit code.",
+        "Compare memory usage with requests and limits.",
+        "Inspect recent deploy or traffic changes."
+      ],
+      "verification_steps": [
+        "Confirm restart count stops increasing.",
+        "Confirm memory headroom after mitigation."
+      ],
+      "forbidden_operations": [
+        "Do not delete production pods automatically.",
+        "Do not change resource limits without owner approval."
+      ],
+      "source_refs": [
+        "kb/known-fixes/k8s-pod-oomkilled.md"
+      ]
+    }
+  ],
+  "skills": [
+    "skills/k8s/incident-triage/SKILL.md"
+  ],
+  "forbidden_operations": [
+    "Do not delete production pods automatically.",
+    "Do not change resource limits without owner approval."
+  ],
+  "verification_steps": [
+    "Confirm restart count stops increasing.",
+    "Confirm memory headroom after mitigation."
+  ],
+  "source_refs": [
+    "kb/known-fixes/k8s-pod-oomkilled.md"
+  ],
+  "rollback_steps": [
+    "Revert resource changes through the owning deployment workflow."
+  ],
+  "escalation_conditions": [
+    "Memory pressure affects multiple workloads.",
+    "Owner approval is unavailable for resource changes."
+  ]
+}

@@ -17,7 +17,27 @@ import {
   PitfallFrontmatterSchema,
   ProposalSchema,
   ReviewSchema,
+  AgentContextBundleSchema,
+  ContextJuiceBudgetResultSchema,
+  ContextJuiceReportSchema,
+  ExperienceEnvelopeSchema,
+  LifecycleDecisionSchema,
+  LifecycleObservationSchema,
+  LifecycleProposalSchema,
+  KnowledgeLifecycleReportSchema,
+  CatalogEntrySchema,
+  KnowledgeCatalogSchema,
+  PersonalLearningFacetSchema,
+  PersonalLearningReportSchema,
+  SkillValidationReportSchema,
+  SkillValidationDecisionSchema,
+  SkillValidationModeSchema,
+  SkillInjectionDecisionSchema,
+  TrajectoryMicrocompactResultSchema,
+  TrustBoundaryItemSchema,
+  TrustTierSchema,
 } from "@praxisbase/core/protocol/schemas.js";
+import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 
 describe("protocol schemas", () => {
   it("accepts a valid repair episode", () => {
@@ -611,5 +631,539 @@ describe("protocol schemas", () => {
       effect: "helped_fix",
       outcome: "arbitrary_outcome",
     }));
+  });
+
+  it("MaturitySchema accepts stale and archived values", () => {
+    assert.equal(MaturitySchema.parse("stale"), "stale");
+    assert.equal(MaturitySchema.parse("archived"), "archived");
+    assert.equal(MaturitySchema.parse("draft"), "draft");
+    assert.equal(MaturitySchema.parse("verified"), "verified");
+    assert.equal(MaturitySchema.parse("proven"), "proven");
+  });
+
+  it("ExperienceEnvelope parses without trajectory metadata (backward compat)", () => {
+    const parsed = ExperienceEnvelopeSchema.parse({
+      id: "env-1",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://session-1",
+      source_hash: "sha256:abc",
+      scope_hint: "personal",
+      redacted_summary: "Fixed auth issue.",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    });
+    assert.equal(parsed.trajectory_steps, undefined);
+    assert.equal(parsed.tool_outcomes, undefined);
+    assert.equal(parsed.read_skills, undefined);
+    assert.equal(parsed.skill_effectiveness_hints, undefined);
+  });
+
+  it("ExperienceEnvelope parses with trajectory metadata", () => {
+    const parsed = ExperienceEnvelopeSchema.parse({
+      id: "env-2",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-2",
+      agent: "opencode",
+      channel: "terminal",
+      source_ref: "log://session-2",
+      source_hash: "sha256:def",
+      scope_hint: "project",
+      redacted_summary: "Repaired build pipeline.",
+      trajectory_steps: [
+        { goal: "fix build", action: "ran make", tool: "bash", outcome: "success" },
+      ],
+      tool_outcomes: [
+        { tool: "bash", result_category: "success" },
+      ],
+      read_skills: ["skills/openclaw/build-repair/SKILL.md"],
+      modified_skills: [],
+      injected_context: ["ctx-123"],
+      verification_events: ["test_pass"],
+      skill_effectiveness_hints: ["helped"],
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    });
+    assert.equal(parsed.trajectory_steps!.length, 1);
+    assert.equal(parsed.tool_outcomes![0].tool, "bash");
+    assert.deepEqual(parsed.read_skills, ["skills/openclaw/build-repair/SKILL.md"]);
+    assert.deepEqual(parsed.skill_effectiveness_hints, ["helped"]);
+  });
+
+  it("ExperienceEnvelope rejects raw_transcript field", () => {
+    assert.throws(() => ExperienceEnvelopeSchema.parse({
+      id: "env-bad",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://s",
+      source_hash: "sha256:x",
+      scope_hint: "personal",
+      redacted_summary: "Has raw data.",
+      raw_transcript: "full transcript here",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    }), /raw_transcript/);
+  });
+
+  it("ExperienceEnvelope rejects raw_log field", () => {
+    assert.throws(() => ExperienceEnvelopeSchema.parse({
+      id: "env-bad2",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://s",
+      source_hash: "sha256:x",
+      scope_hint: "personal",
+      redacted_summary: "Has raw log.",
+      raw_log: "full log content",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    }), /raw_log/);
+  });
+
+  it("ExperienceEnvelope safeParse reports raw log fields without throwing", () => {
+    const parsed = ExperienceEnvelopeSchema.safeParse({
+      id: "env-bad-safe",
+      protocol_version: "0.1",
+      type: "experience_envelope",
+      source_id: "src-1",
+      agent: "codex",
+      channel: "local",
+      source_ref: "log://s",
+      source_hash: "sha256:x",
+      scope_hint: "personal",
+      redacted_summary: "Has raw log.",
+      raw_log: "full log content",
+      fetched_at: "2026-05-28T10:00:00Z",
+      privacy: { mode: "personal-local", verdict: "allow", reasons: [] },
+    });
+
+    assert.equal(parsed.success, false);
+    if (!parsed.success) {
+      assert.equal(parsed.error.issues[0].path.join("."), "raw_log");
+      assert.match(parsed.error.issues[0].message, /raw_log is not allowed/);
+    }
+  });
+
+  it("protocol paths include M23 lifecycle, validation, and catalog paths", () => {
+    assert.equal(protocolPaths.reportsLifecycle, ".praxisbase/reports/lifecycle");
+    assert.equal(protocolPaths.reportsSkillValidation, ".praxisbase/reports/skill-validation");
+    assert.equal(protocolPaths.catalog, ".praxisbase/catalog");
+  });
+
+  it("protocol paths include M25 lesson report surfaces", () => {
+    assert.equal(protocolPaths.reportsSourceInventory, ".praxisbase/reports/source-inventory");
+    assert.equal(protocolPaths.reportsLessonExtraction, ".praxisbase/reports/lesson-extraction");
+    assert.equal(protocolPaths.reportsLessonCache, ".praxisbase/reports/lesson-cache");
+    assert.equal(protocolPaths.reportsGoldenValidation, ".praxisbase/reports/golden-validation");
+    assert.equal(protocolPaths.reportsRuntimeLessons, ".praxisbase/reports/runtime-lessons");
+    assert.equal(protocolPaths.reportsLessonQuarantine, ".praxisbase/reports/lesson-quarantine");
+  });
+
+  it("LifecycleDecisionSchema accepts all decision values", () => {
+    for (const d of ["promote", "decay", "archive", "conflict", "no_op"] as const) {
+      assert.equal(LifecycleDecisionSchema.parse(d), d);
+    }
+  });
+
+  it("KnowledgeLifecycleReportSchema validates", () => {
+    const parsed = KnowledgeLifecycleReportSchema.parse({
+      id: "lr-1",
+      protocol_version: "0.1",
+      type: "knowledge_lifecycle_report",
+      observations: [{
+        page_id: "page-1",
+        page_path: "kb/known-fixes/test.md",
+        maturity: "draft",
+        source_refs: ["src-1"],
+        source_hashes: ["sha256:abc"],
+      }],
+      proposals: [{
+        page_id: "page-1",
+        page_path: "kb/known-fixes/test.md",
+        decision: "promote",
+        reasons: ["Two provenance refs"],
+        current_maturity: "draft",
+        proposed_maturity: "verified",
+      }],
+      changed_stable_knowledge: false,
+      created_at: "2026-05-28T10:00:00Z",
+    });
+    assert.equal(parsed.changed_stable_knowledge, false);
+    assert.equal(parsed.proposals[0].decision, "promote");
+  });
+
+  it("KnowledgeCatalogSchema validates", () => {
+    const parsed = KnowledgeCatalogSchema.parse({
+      id: "cat-1",
+      protocol_version: "0.1",
+      type: "knowledge_catalog",
+      entries: [{
+        page_id: "p1",
+        page_path: "kb/test.md",
+        title: "Test Page",
+        maturity: "verified",
+        source_hashes: ["sha256:abc"],
+      }],
+      changed_stable_knowledge: false,
+      created_at: "2026-05-28T10:00:00Z",
+    });
+    assert.equal(parsed.entries.length, 1);
+    assert.equal(parsed.changed_stable_knowledge, false);
+  });
+
+  it("SkillValidationReportSchema validates", () => {
+    const parsed = SkillValidationReportSchema.parse({
+      id: "sv-1",
+      protocol_version: "0.1",
+      type: "skill_validation_report",
+      candidate_id: "cand-1",
+      mode: "static",
+      checks: [
+        { check: "safe_path", passed: true },
+        { check: "required_sections", passed: true },
+      ],
+      decision: "pass",
+      reason: "All static checks passed.",
+      created_at: "2026-05-28T10:00:00Z",
+    });
+    assert.equal(parsed.decision, "pass");
+    assert.equal(parsed.mode, "static");
+  });
+
+  it("SkillValidationModeSchema and DecisionSchema accept valid values", () => {
+    assert.equal(SkillValidationModeSchema.parse("static"), "static");
+    assert.equal(SkillValidationModeSchema.parse("evidence_simulation"), "evidence_simulation");
+    assert.equal(SkillValidationModeSchema.parse("replay"), "replay");
+    assert.equal(SkillValidationDecisionSchema.parse("pass"), "pass");
+    assert.equal(SkillValidationDecisionSchema.parse("fail"), "fail");
+    assert.equal(SkillValidationDecisionSchema.parse("needs_human"), "needs_human");
+  });
+});
+
+describe("M24 agent context juice and personal learning schemas", () => {
+  it("TrustTierSchema accepts all 7 valid tier values", () => {
+    const tiers = [
+      "pb_stable",
+      "pb_personal_facet",
+      "pb_candidate",
+      "gbrain_sidecar",
+      "agentmemory_sidecar",
+      "remote_personal_agent",
+      "external_untrusted",
+    ] as const;
+
+    for (const tier of tiers) {
+      assert.equal(TrustTierSchema.parse(tier), tier);
+    }
+  });
+
+  it("TrustTierSchema rejects invalid tier values", () => {
+    assert.throws(() => TrustTierSchema.parse("pb_unknown"));
+    assert.throws(() => TrustTierSchema.parse(""));
+  });
+
+  it("TrustBoundaryItemSchema accepts a valid item with pb_stable tier", () => {
+    const parsed = TrustBoundaryItemSchema.parse({
+      source_kind: "kb",
+      authority: "praxisbase",
+      tier: "pb_stable",
+      injectable: true,
+      source_hint: "kb/known-fixes/auth.md",
+      metadata: { reviewed: true },
+    });
+
+    assert.equal(parsed.tier, "pb_stable");
+    assert.equal(parsed.injectable, true);
+  });
+
+  it("TrustBoundaryItemSchema defaults unknown to external_untrusted", () => {
+    const parsed = TrustBoundaryItemSchema.parse({
+      source_kind: "unknown",
+      authority: "unreviewed",
+      tier: "external_untrusted",
+      injectable: false,
+    });
+
+    assert.equal(parsed.tier, "external_untrusted");
+  });
+
+  it("ContextJuiceBudgetResultSchema accepts valid budget result", () => {
+    const parsed = ContextJuiceBudgetResultSchema.parse({
+      source_ref: "session://codex/1",
+      source_hash: "sha256:abc",
+      budget_id: "budget-1",
+      original_bytes: 1200,
+      kept_bytes: 800,
+      saved_bytes: 400,
+      truncated: true,
+      marker: "[truncated]",
+    });
+
+    assert.equal(parsed.saved_bytes, 400);
+    assert.deepEqual(parsed.warnings, []);
+  });
+
+  it("ContextJuiceBudgetResultSchema rejects missing source_ref", () => {
+    assert.throws(() => ContextJuiceBudgetResultSchema.parse({
+      source_hash: "sha256:abc",
+      budget_id: "budget-1",
+      original_bytes: 1200,
+      kept_bytes: 800,
+      saved_bytes: 400,
+      truncated: true,
+    }));
+  });
+
+  it("TrajectoryMicrocompactResultSchema accepts valid microcompact result", () => {
+    const parsed = TrajectoryMicrocompactResultSchema.parse({
+      source_ref: "session://codex/trajectory",
+      source_hash: "sha256:def",
+      budget_id: "budget-1",
+      original_entries: 20,
+      kept_entries: 8,
+      cleared_entries: 12,
+      protected_signal_count: 3,
+      recent_results_kept: 5,
+      idempotent: true,
+    });
+
+    assert.equal(parsed.cleared_entries, 12);
+    assert.deepEqual(parsed.warnings, []);
+  });
+
+  it("ContextJuiceReportSchema accepts valid report with budget results", () => {
+    const parsed = ContextJuiceReportSchema.parse({
+      id: "context-juice-1",
+      protocol_version: "0.1",
+      type: "context_juice_report",
+      budget_id: "budget-1",
+      items_seen: 10,
+      items_budgeted: 6,
+      items_microcompacted: 2,
+      original_bytes: 5000,
+      kept_bytes: 3000,
+      saved_bytes: 2000,
+      warnings: 0,
+      protected_signal_count: 4,
+      budget_results: [{
+        source_ref: "session://codex/1",
+        source_hash: "sha256:abc",
+        budget_id: "budget-1",
+        original_bytes: 1200,
+        kept_bytes: 800,
+        saved_bytes: 400,
+        truncated: true,
+      }],
+      created_at: "2026-05-28T10:00:00Z",
+    });
+
+    assert.equal(parsed.type, "context_juice_report");
+    assert.equal(parsed.budget_results.length, 1);
+    assert.deepEqual(parsed.microcompact_results, []);
+  });
+
+  it("ContextJuiceReportSchema rejects raw transcript fields", () => {
+    assert.throws(() => ContextJuiceReportSchema.strict().parse({
+      id: "context-juice-raw",
+      protocol_version: "0.1",
+      type: "context_juice_report",
+      budget_id: "budget-1",
+      items_seen: 1,
+      items_budgeted: 1,
+      items_microcompacted: 0,
+      original_bytes: 100,
+      kept_bytes: 100,
+      saved_bytes: 0,
+      warnings: 0,
+      protected_signal_count: 0,
+      raw_transcript: "secret raw content",
+      created_at: "2026-05-28T10:00:00Z",
+    }));
+  });
+
+  it("SkillInjectionDecisionSchema accepts matched decision with reason", () => {
+    const parsed = SkillInjectionDecisionSchema.parse({
+      skill_id: "skills/openclaw/auth-repair",
+      decision: "matched",
+      reason: "Problem signature matched auth expiration.",
+      injected_bytes: 2048,
+      truncated: false,
+      scope: "team",
+      authority: "pb_stable",
+      promotion_id: "promotion-1",
+      audit_id: "audit-1",
+    });
+
+    assert.equal(parsed.decision, "matched");
+    assert.equal(parsed.reason, "Problem signature matched auth expiration.");
+  });
+
+  it("SkillInjectionDecisionSchema accepts skipped decision", () => {
+    const parsed = SkillInjectionDecisionSchema.parse({
+      skill_id: "skills/k8s/oom",
+      decision: "skipped",
+      reason: "Query did not mention Kubernetes.",
+      injected_bytes: 0,
+      truncated: false,
+      scope: "team",
+      authority: "pb_stable",
+    });
+
+    assert.equal(parsed.decision, "skipped");
+    assert.equal(parsed.injected_bytes, 0);
+  });
+
+  it("PersonalLearningFacetSchema accepts all 6 facet class values", () => {
+    const facetClasses = ["style", "tooling", "veto", "goal", "identity", "channel"] as const;
+
+    for (const facetClass of facetClasses) {
+      const parsed = PersonalLearningFacetSchema.parse({
+        id: `facet-${facetClass}`,
+        facet_class: facetClass,
+        key: "prefers_concise_status",
+        value: "true",
+        state: "active",
+        stability: 0.9,
+        evidence_count: 3,
+        first_seen: "2026-05-01T10:00:00Z",
+        last_seen: "2026-05-28T10:00:00Z",
+      });
+
+      assert.equal(parsed.facet_class, facetClass);
+    }
+  });
+
+  it("PersonalLearningFacetSchema accepts all 6 state values", () => {
+    const states = ["active", "provisional", "candidate", "dropped", "pinned", "forgotten"] as const;
+
+    for (const state of states) {
+      const parsed = PersonalLearningFacetSchema.parse({
+        id: `facet-${state}`,
+        facet_class: "style",
+        key: "status_style",
+        value: "dense",
+        state,
+        stability: 0.5,
+        evidence_count: 1,
+        first_seen: "2026-05-01T10:00:00Z",
+        last_seen: "2026-05-28T10:00:00Z",
+      });
+
+      assert.equal(parsed.state, state);
+    }
+  });
+
+  it("PersonalLearningFacetSchema accepts user_override states", () => {
+    for (const userOverride of ["none", "pinned", "forgotten"] as const) {
+      const parsed = PersonalLearningFacetSchema.parse({
+        id: `facet-override-${userOverride}`,
+        facet_class: "tooling",
+        key: "preferred_shell",
+        value: "zsh",
+        state: "active",
+        stability: 1,
+        evidence_count: 5,
+        first_seen: "2026-05-01T10:00:00Z",
+        last_seen: "2026-05-28T10:00:00Z",
+        user_override: userOverride,
+      });
+
+      assert.equal(parsed.user_override, userOverride);
+    }
+  });
+
+  it("PersonalLearningReportSchema accepts valid report", () => {
+    const parsed = PersonalLearningReportSchema.parse({
+      id: "personal-learning-1",
+      protocol_version: "0.1",
+      type: "personal_learning_report",
+      active_count: 1,
+      provisional_count: 1,
+      candidate_count: 1,
+      pinned_count: 1,
+      forgotten_count: 0,
+      facets: [{
+        id: "facet-1",
+        facet_class: "style",
+        key: "verbosity",
+        value: "dense",
+        state: "active",
+        stability: 0.8,
+        evidence_count: 4,
+        first_seen: "2026-05-01T10:00:00Z",
+        last_seen: "2026-05-28T10:00:00Z",
+      }],
+      created_at: "2026-05-28T10:00:00Z",
+    });
+
+    assert.equal(parsed.type, "personal_learning_report");
+    assert.equal(parsed.facets.length, 1);
+  });
+
+  it("AgentContextBundleSchema accepts valid bundle", () => {
+    const parsed = AgentContextBundleSchema.parse({
+      id: "agent-context-1",
+      protocol_version: "0.1",
+      type: "agent_context_bundle",
+      mode: "personal",
+      query: "openclaw auth",
+      total_bytes: 4096,
+      budget_bytes: 8192,
+      sections: [{
+        kind: "stable_knowledge",
+        tier: "pb_stable",
+        items: 2,
+        bytes: 2048,
+      }],
+      skill_decisions: [{
+        skill_id: "skills/openclaw/auth-repair",
+        decision: "matched",
+        reason: "Relevant skill.",
+        injected_bytes: 1024,
+        truncated: false,
+        scope: "team",
+        authority: "pb_stable",
+      }],
+      created_at: "2026-05-28T10:00:00Z",
+    });
+
+    assert.equal(parsed.type, "agent_context_bundle");
+    assert.equal(parsed.sections[0].tier, "pb_stable");
+    assert.equal(parsed.omitted_item_count, 0);
+  });
+
+  it("AgentContextBundleSchema includes trust_summary with tier counts", () => {
+    const parsed = AgentContextBundleSchema.parse({
+      id: "agent-context-trust",
+      protocol_version: "0.1",
+      type: "agent_context_bundle",
+      mode: "team",
+      total_bytes: 2048,
+      budget_bytes: 4096,
+      sections: [{
+        kind: "personal_facets",
+        tier: "pb_personal_facet",
+        items: 3,
+        bytes: 512,
+      }],
+      trust_summary: {
+        pb_personal_facet: 3,
+        external_untrusted: 1,
+      },
+      created_at: "2026-05-28T10:00:00Z",
+    });
+
+    assert.equal(parsed.trust_summary.pb_personal_facet, 3);
+    assert.equal(parsed.trust_summary.external_untrusted, 1);
   });
 });

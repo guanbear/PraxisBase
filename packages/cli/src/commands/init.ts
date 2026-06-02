@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { seedFiles } from "@praxisbase/core";
 import { writeText } from "@praxisbase/core/store/file-store.js";
@@ -37,6 +37,38 @@ function seedMatchesProfile(relativePath: string, profile: InitProfile): boolean
   return isK8sSeed && !isOpenClawSeed;
 }
 
+async function ensureIgnoredPaths(root: string): Promise<void> {
+  const gitignorePath = join(root, ".gitignore");
+  let existing = "";
+  try {
+    existing = await readFile(gitignorePath, "utf8");
+  } catch {
+  }
+
+  const lines = new Set(existing.split(/\r?\n/).map((line) => line.trim()));
+  const generatedPrivatePaths = [
+    ".praxisbase/outbox/",
+    ".praxisbase/cache/",
+    ".praxisbase/staging/",
+    ".praxisbase/reports/",
+    ".praxisbase/runs/",
+    ".praxisbase/sources/",
+    ".praxisbase/raw-vault/",
+    ".praxisbase/exceptions/",
+    ".praxisbase/remotes/",
+    ".praxisbase/wiki/",
+    ".praxisbase/inbox/proposals/",
+    ".praxisbase/inbox/reviews/",
+  ];
+  const missing = generatedPrivatePaths.filter((line) => !lines.has(line));
+  if (missing.length === 0) {
+    return;
+  }
+
+  const prefix = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+  await writeFile(gitignorePath, `${existing}${prefix}${missing.join("\n")}\n`);
+}
+
 export async function initializeWorkspace(root: string, options: InitOptions = {}): Promise<void> {
   const profile = options.profile ?? "all";
   assertProfile(profile);
@@ -47,14 +79,32 @@ export async function initializeWorkspace(root: string, options: InitOptions = {
     protocolPaths.inboxReviews,
     protocolPaths.outboxEpisodes,
     protocolPaths.outboxProposals,
+    protocolPaths.outboxCaptures,
     protocolPaths.exceptionsHumanRequired,
     protocolPaths.exceptionsConflicts,
     protocolPaths.exceptionsFailedChecks,
     protocolPaths.runsReview,
     protocolPaths.runsPromote,
     protocolPaths.runsBuild,
+    protocolPaths.runsCapture,
+    protocolPaths.runsDistill,
+    protocolPaths.runsMemoryImport,
+    protocolPaths.runsMemoryFetch,
+    protocolPaths.runsHarvest,
     protocolPaths.indexes,
     protocolPaths.bundles,
+    protocolPaths.reportsDistill,
+    protocolPaths.reportsContext,
+    protocolPaths.reportsMemory,
+    protocolPaths.reportsMemoryFetch,
+    protocolPaths.reportsHarvest,
+    protocolPaths.remotes,
+    protocolPaths.adapters,
+    protocolPaths.memoryRefresh,
+    protocolPaths.stagingOpenClaw,
+    protocolPaths.stagingRemoteImports,
+    protocolPaths.cacheRemotes,
+    protocolPaths.rawVaultRefs,
     protocolPaths.procedures,
     protocolPaths.notes,
     protocolPaths.memory,
@@ -70,4 +120,6 @@ export async function initializeWorkspace(root: string, options: InitOptions = {
     const seedContent = relativePath === protocolPaths.config ? profileConfig(profile) : content;
     await writeText(root, relativePath, seedContent);
   }
+
+  await ensureIgnoredPaths(root);
 }

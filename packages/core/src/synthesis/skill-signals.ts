@@ -1,0 +1,271 @@
+import { computeHash } from "../protocol/id.js";
+import type { DistilledExperience } from "../ai/distill.js";
+import type { ClassifiedLesson } from "../experience/lesson-cache.js";
+import type { WikiPage } from "../wiki/resolver.js";
+import { stableOutputLeakReasons } from "../experience/stable-output-safety.js";
+
+export type SkillSignalScope = "personal" | "project" | "team" | "org" | "global";
+export type SkillCueFamily =
+  | "explicit_user_correction"
+  | "verified_fix"
+  | "repeated_success"
+  | "workflow_preference"
+  | "tool_pattern"
+  | "wiki_procedure";
+
+export interface SkillSignalCandidate {
+  id: string;
+  scope: SkillSignalScope;
+  trigger: string;
+  procedure: string[];
+  title: string;
+  source_ref: string;
+  source_hash: string;
+  evidence_id: string;
+  confidence: number;
+  cue_family: SkillCueFamily;
+  related_wiki_paths: string[];
+}
+
+export interface LessonSkillAuthorityDecision {
+  accepted: boolean;
+  reason: string;
+}
+
+function normalizeText(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function lower(value: string): string {
+  return normalizeText(value).toLowerCase();
+}
+
+function scopeFromHint(scope: DistilledExperience["scope_hint"]): SkillSignalScope {
+  return scope === "personal" || scope === "project" || scope === "team" || scope === "org" || scope === "global"
+    ? scope
+    : "project";
+}
+
+function scopeFromValue(scope: unknown): SkillSignalScope {
+  return scope === "personal" || scope === "project" || scope === "team" || scope === "org" || scope === "global"
+    ? scope
+    : "project";
+}
+
+function cueFamily(experience: DistilledExperience): SkillCueFamily {
+  const text = lower(`${experience.summary} ${experience.problem ?? ""} ${experience.reusable_lessons.join(" ")} ${experience.actions.join(" ")}`);
+  if (/user correction|用户纠正|explicit correction/.test(text)) return "explicit_user_correction";
+  if (experience.suggested_wiki_kind === "preference") return "workflow_preference";
+  if (/tool|cli|mcp|api|command/.test(text)) return "tool_pattern";
+  if (experience.verification.length > 0) return "verified_fix";
+  return "repeated_success";
+}
+
+function isBadOneOff(text: string): boolean {
+  const normalized = lower(text);
+  return /\b(pr|mr|issue|ticket|run|session|build|job)[-_ #]?\d{2,}\b/.test(normalized)
+    || /\b[0-9a-f]{7,40}\b/.test(normalized)
+    || /\b(error|exception|traceback):\s*["'`]?[^"'`]{20,}/.test(normalized);
+}
+
+function isTransientEnvironmentOnly(experience: DistilledExperience): boolean {
+  const text = lower(`${experience.summary} ${experience.problem ?? ""} ${experience.actions.join(" ")} ${experience.reusable_lessons.join(" ")}`);
+  const env = /\b(network|rate limit|timeout|disk full|permission denied|env var|api key|quota|install failed)\b/.test(text);
+  const reusableFix = /\b(retry|fallback|cache|guard|verify|pin|configure|document|check)\b/.test(text);
+  return env && !reusableFix;
+}
+
+function isNegativeToolClaim(experience: DistilledExperience): boolean {
+  const text = lower(`${experience.summary} ${experience.reusable_lessons.join(" ")} ${experience.actions.join(" ")}`);
+  return /\b(tool|cli|api|model|mcp)\b.*\b(broken|useless|bad|cannot work|不要用|坏了)\b/.test(text)
+    && !/\b(fix|fallback|workaround|verify|retry)\b/.test(text);
+}
+
+export function collectSkillSignalsFromDistilledExperiences(
+  experiences: DistilledExperience[],
+  options: { authorityMode: "personal-local" | "team-git" },
+): SkillSignalCandidate[] {
+  const signals: SkillSignalCandidate[] = [];
+
+  for (const experience of experiences) {
+    if (experience.outcome !== "success") continue;
+    if (!experience.skill_candidate.should_create) continue;
+    const trigger = normalizeText(experience.skill_candidate.trigger ?? "");
+    const procedure = (experience.skill_candidate.procedure ?? []).map(normalizeText).filter(Boolean);
+    const title = normalizeText(experience.skill_candidate.title ?? trigger);
+    if (!trigger || procedure.length === 0 || !title) continue;
+    if (isBadOneOff(`${title} ${trigger}`)) continue;
+    if (isTransientEnvironmentOnly(experience)) continue;
+    if (isNegativeToolClaim(experience)) continue;
+    const scope = scopeFromHint(experience.scope_hint);
+    if (options.authorityMode === "team-git" && (scope === "personal" || scope === "project")) continue;
+
+    signals.push({
+      id: `skill_signal_${computeHash(`${experience.source_ref}:${experience.source_hash}:${trigger}`).slice(7, 19)}`,
+      scope,
+      trigger,
+      procedure,
+      title,
+      source_ref: experience.source_ref,
+      source_hash: experience.source_hash,
+      evidence_id: experience.chunk_hashes[0] ?? experience.source_hash,
+      confidence: experience.confidence,
+      cue_family: cueFamily(experience),
+      related_wiki_paths: [],
+    });
+  }
+
+  return signals.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function section(body: string, names: string[]): string {
+  const lines = body.split(/\r?\n/);
+  let capture = false;
+  const out: string[] = [];
+  for (const line of lines) {
+    if (/^##\s+/.test(line)) {
+      if (capture) break;
+      capture = names.some((name) => new RegExp(`^##\\s+${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(line));
+      continue;
+    }
+    if (capture) out.push(line);
+  }
+  return normalizeText(out.join(" "));
+}
+
+function procedureSteps(body: string): string[] {
+  const raw = section(body, ["Procedure", "Steps", "What To Do", "Fix"]);
+  return raw
+    .split(/(?:^|\s)(?:\d+\.|[-*])\s+/)
+    .map(normalizeText)
+    .filter((item) => item.length >= 8)
+    .slice(0, 8);
+}
+
+function stableWikiKind(kind: string | undefined): boolean {
+  return kind === "procedure" || kind === "known_fix" || kind === "pitfall" || kind === "preference";
+}
+
+function forbiddenSourceReason(sourceRef: string): string | undefined {
+  const normalized = sourceRef.toLowerCase();
+  if (/dream(?:ing)?|dream-diary/.test(normalized)) return "forbidden_dreaming_source";
+  if (/session-corpus|raw-transcript|raw_log|raw-log/.test(normalized)) return "forbidden_raw_session_source";
+  if (/^gbrain:\/\//.test(normalized) || /^agentmemory:\/\//.test(normalized)) return "forbidden_sidecar_only_source";
+  if (/\.praxisbase\/(?:staging|inbox)\//.test(normalized)) return "forbidden_untriaged_staging_source";
+  return undefined;
+}
+
+function lessonTextForLeakScan(lesson: ClassifiedLesson): string {
+  return [
+    lesson.safe_claim,
+    lesson.problem,
+    lesson.trigger,
+    lesson.action,
+    lesson.verification ?? "",
+    lesson.negative_case ?? "",
+  ].join("\n");
+}
+
+export function explainLessonSkillAuthority(
+  lesson: ClassifiedLesson,
+  options: { authorityMode: "personal-local" | "team-git" },
+): LessonSkillAuthorityDecision {
+  const state = (lesson as { state?: string }).state ?? lesson.state;
+  if (lesson.privacy_tier === "reject" || lesson.privacy_tier === "human_required") {
+    return { accepted: false, reason: `lesson_privacy_${lesson.privacy_tier}` };
+  }
+  if (lesson.portability === "private_instance") {
+    return { accepted: false, reason: "lesson_private_instance_not_skill_authority" };
+  }
+  const forbidden = lesson.source_refs.map(forbiddenSourceReason).find(Boolean);
+  if (forbidden) return { accepted: false, reason: forbidden };
+  if (options.authorityMode === "team-git" && (lesson.privacy_tier === "personal_only" || lesson.scope === "personal")) {
+    return { accepted: false, reason: "lesson_team_incompatible_personal_scope" };
+  }
+
+  if (state === "approved" || state === "skill_ready") {
+    if (stableOutputLeakReasons(lessonTextForLeakScan(lesson)).length > 0) {
+      return { accepted: false, reason: "lesson_stable_output_leak_risk" };
+    }
+    return { accepted: true, reason: state === "approved" ? "lesson_approved" : "lesson_skill_ready" };
+  }
+
+  if (
+    state === "active_personal" &&
+    options.authorityMode === "personal-local" &&
+    lesson.scope === "personal" &&
+    (lesson.privacy_tier === "safe" || lesson.privacy_tier === "personal_only")
+  ) {
+    if (stableOutputLeakReasons(lessonTextForLeakScan(lesson)).length > 0) {
+      return { accepted: false, reason: "lesson_stable_output_leak_risk" };
+    }
+    return { accepted: true, reason: "lesson_active_personal_safe" };
+  }
+
+  return { accepted: false, reason: `lesson_state_${state}_not_skill_authority` };
+}
+
+export function collectSkillSignalsFromStableWikiPages(
+  pages: WikiPage[],
+  options: { authorityMode: "personal-local" | "team-git" },
+): SkillSignalCandidate[] {
+  const signals: SkillSignalCandidate[] = [];
+  for (const page of pages) {
+    if (!stableWikiKind(page.page_kind)) continue;
+    const scope = scopeFromValue(page.scope);
+    if (options.authorityMode === "team-git" && (scope === "personal" || scope === "project")) continue;
+    const body = page.body_markdown ?? "";
+    const trigger = section(body, ["When To Use", "Applicability", "Symptoms", "Context"]);
+    const procedure = procedureSteps(body);
+    if (!trigger || procedure.length === 0) continue;
+    if (isBadOneOff(`${page.title} ${trigger}`)) continue;
+    const refs = (page.provenance_refs ?? []).filter((ref) => ref.uri && ref.hash);
+    if (refs.length === 0) continue;
+    for (const ref of refs) {
+      signals.push({
+        id: `skill_signal_${computeHash(`${page.id}:${ref.uri}:${ref.hash}:${trigger}`).slice(7, 19)}`,
+        scope,
+        trigger,
+        procedure,
+        title: page.title,
+        source_ref: ref.uri,
+        source_hash: ref.hash!,
+        evidence_id: page.id,
+        confidence: 0.84,
+        cue_family: "wiki_procedure",
+        related_wiki_paths: [page.path ?? page.slug],
+      });
+    }
+  }
+  return signals.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+export function collectSkillSignalsFromLessons(
+  lessons: ClassifiedLesson[],
+  options: { authorityMode: "personal-local" | "team-git" },
+): SkillSignalCandidate[] {
+  const signals: SkillSignalCandidate[] = [];
+  for (const lesson of lessons) {
+    if (!explainLessonSkillAuthority(lesson, options).accepted) continue;
+    const procedure = [lesson.action, lesson.verification].filter((item): item is string => Boolean(item));
+    if (procedure.length === 0) continue;
+    const trigger = normalizeText(lesson.trigger);
+    const title = normalizeText(lesson.safe_claim);
+    if (!trigger || !title) continue;
+    if (isBadOneOff(`${title} ${trigger}`)) continue;
+    signals.push({
+      id: `skill_signal_${computeHash(`${lesson.lesson_id}:${lesson.source_hashes.join(",")}:${trigger}`).slice(7, 19)}`,
+      scope: lesson.scope,
+      trigger,
+      procedure,
+      title,
+      source_ref: lesson.source_refs[0],
+      source_hash: lesson.source_hashes[0],
+      evidence_id: lesson.lesson_id,
+      confidence: lesson.confidence,
+      cue_family: lesson.cue_family === "tool_sequence" ? "tool_pattern" : "verified_fix",
+      related_wiki_paths: [],
+    });
+  }
+  return signals.sort((a, b) => a.id.localeCompare(b.id));
+}

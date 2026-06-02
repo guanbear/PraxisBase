@@ -19,6 +19,13 @@ describe("static build", () => {
     await assert.doesNotReject(stat(join(root, "dist/repair-bundles/k8s-incident/manifest.json")));
     await assert.doesNotReject(stat(join(root, "dist/kb-index.json")));
     await assert.doesNotReject(stat(join(root, "dist/search-index.json")));
+    await assert.doesNotReject(stat(join(root, "dist/pages")));
+    await assert.doesNotReject(stat(join(root, "dist/graph.json")));
+    await assert.doesNotReject(stat(join(root, "dist/graph.jsonld")));
+    await assert.doesNotReject(stat(join(root, "dist/llms-full.txt")));
+    await assert.doesNotReject(stat(join(root, "dist/ai-readme.md")));
+    await assert.doesNotReject(stat(join(root, "dist/style.css")));
+    await assert.doesNotReject(stat(join(root, "dist/site.js")));
     await assert.doesNotReject(stat(join(root, "dist/llms.txt")));
     await assert.doesNotReject(stat(join(root, "dist/index.html")));
 

@@ -1,5 +1,6 @@
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import type { IncidentEpisode, Proposal } from "../protocol/schemas.js";
+import type { IncidentResult } from "../protocol/types.js";
 import { makeId, computeHash } from "../protocol/id.js";
 
 export interface DirectionResultInput {
@@ -7,9 +8,12 @@ export interface DirectionResultInput {
   environment_id: string;
   run_id: string;
   agent_id: string;
-  confirmed: boolean;
+  confirmed?: boolean;
+  result?: IncidentResult;
   evidence_summary: string;
   source_refs: string[];
+  used_skills?: string[];
+  used_objects?: string[];
   proposal_patch_path?: string;
   proposal_patch_content?: string;
 }
@@ -27,16 +31,16 @@ export function adaptDirectionResult(input: DirectionResultInput): AdapterOutput
     id,
     protocol_version: PROTOCOL_VERSION,
     type: "incident_episode",
-    scope: "project",
+    scope: "team",
     agent_id: input.agent_id,
     agent_type: "live_incident_analyzer",
     environment_id: input.environment_id,
     run_id: input.run_id,
     idempotency_key: `${input.run_id}-${input.problem_signature}`,
     problem_signature: input.problem_signature,
-    result: input.confirmed ? "confirmed" : "ruled_out",
-    used_skills: [],
-    used_objects: [],
+    result: input.result ?? (input.confirmed ? "confirmed" : "ruled_out"),
+    used_skills: input.used_skills ?? [],
+    used_objects: input.used_objects ?? [],
     source_refs: input.source_refs,
     knowledge_references: [],
     evidence_summary: input.evidence_summary,
@@ -50,7 +54,7 @@ export function adaptDirectionResult(input: DirectionResultInput): AdapterOutput
       id: proposalId,
       protocol_version: PROTOCOL_VERSION,
       type: "knowledge_proposal",
-      scope: "project",
+      scope: "team",
       action: "create",
       target_type: "known_fix",
       target_id: makeId("kf", input.problem_signature),
@@ -65,6 +69,8 @@ export function adaptDirectionResult(input: DirectionResultInput): AdapterOutput
         excerpt: input.evidence_summary,
         repair_result: "success",
         verification: `Confirmed via SRE-autopilot: ${input.evidence_summary}`,
+        source_refs: input.source_refs.map((uri) => ({ uri, hash: computeHash(uri) })),
+        redacted_summary: input.evidence_summary,
       },
       patch: {
         path: input.proposal_patch_path,

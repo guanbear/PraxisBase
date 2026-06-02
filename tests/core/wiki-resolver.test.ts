@@ -1,0 +1,123 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { buildWikiGraph, resolveWikiLinks } from "@praxisbase/core/wiki/resolver.js";
+
+describe("wiki resolver", () => {
+  const pages = [
+    {
+      id: "page-auth",
+      slug: "openclaw-auth-expired",
+      title: "OpenClaw Auth Expired",
+      page_kind: "known_fix",
+      scope: "team",
+      maturity: "verified",
+      lifecycle: "reviewed",
+      source_ids: ["source-auth"],
+      claims: [],
+      outbound_links: ["auth-repair-skill"],
+      body_markdown: "See [[auth-repair-skill|Auth Repair]]. `[[ignored]]`\n\n```txt\n[[ignored-fence]]\n```",
+    },
+    {
+      id: "page-skill",
+      slug: "auth-repair-skill",
+      title: "Auth Repair Skill",
+      page_kind: "skill",
+      scope: "team",
+      maturity: "verified",
+      lifecycle: "reviewed",
+      source_ids: ["source-skill"],
+      claims: [],
+      outbound_links: [],
+      body_markdown: "Refresh auth.",
+    },
+  ] as const;
+
+  it("resolves wikilinks while ignoring code spans and fences", () => {
+    const result = resolveWikiLinks(pages as any);
+    assert.deepEqual(result.links.map((link) => `${link.from}->${link.to}`), ["page-auth->page-skill"]);
+    assert.deepEqual(result.broken_links, []);
+  });
+
+  it("resolves title-slug aliases to the canonical page id", () => {
+    const result = resolveWikiLinks([
+      {
+        id: "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+        slug: "wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+        title: "Asynchronous Task UX and Dispatch Mapping Anomalies",
+        body_markdown: "",
+      },
+      {
+        id: "gateway-status-check",
+        slug: "gateway-status-check",
+        title: "Gateway status check",
+        body_markdown: "See [[asynchronous-task-ux-and-dispatch-mapping-anomalies|dispatch UX]].",
+      },
+    ]);
+
+    assert.deepEqual(result.links.map((link) => `${link.from}->${link.to}`), [
+      "gateway-status-check->wiki-asynchronous-task-ux-and-dispatch-mapping-anomalies",
+    ]);
+    assert.deepEqual(result.broken_links, []);
+  });
+
+  it("resolves path-leaf aliases when title slugs differ", () => {
+    const result = resolveWikiLinks([
+      {
+        id: "wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw",
+        slug: "wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw",
+        title: "Improving Perceived Responsiveness in OpenClaw/OctoClaw",
+        path: "kb/notes/wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw.md",
+        body_markdown: "",
+      },
+      {
+        id: "gateway-status-check",
+        slug: "gateway-status-check",
+        title: "Gateway status check",
+        body_markdown: "See [[improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw]].",
+      },
+    ]);
+
+    assert.deepEqual(result.links.map((link) => `${link.from}->${link.to}`), [
+      "gateway-status-check->wiki-improving-perceived-responsiveness-and-ack-handling-in-openclaw-octoclaw",
+    ]);
+    assert.deepEqual(result.broken_links, []);
+  });
+
+  it("builds backlinks and duplicate/orphan health findings", () => {
+    const graph = buildWikiGraph(pages as any);
+    assert.equal(graph.nodes.length, 2);
+    assert.deepEqual(graph.backlinks["page-skill"], ["page-auth"]);
+    assert.deepEqual(graph.duplicates, []);
+    assert.deepEqual(graph.orphans, []);
+  });
+
+  it("emits typed graph edges for related links and shared provenance", () => {
+    const graph = buildWikiGraph([
+      {
+        id: "wiki-a",
+        slug: "wiki-a",
+        title: "A",
+        page_kind: "note",
+        scope: "personal",
+        maturity: "draft",
+        lifecycle: "active",
+        source_ids: ["sha256:1"],
+        body_markdown: "[[wiki-b|B]]",
+      },
+      {
+        id: "wiki-b",
+        slug: "wiki-b",
+        title: "B",
+        page_kind: "note",
+        scope: "personal",
+        maturity: "draft",
+        lifecycle: "active",
+        source_ids: ["sha256:1"],
+        body_markdown: "",
+      },
+    ]);
+
+    assert.ok(graph.links.some((edge) => edge.from === "wiki-a" && edge.to === "wiki-b" && edge.type === "related"));
+    assert.ok(graph.links.some((edge) => edge.from === "wiki-a" && edge.to === "wiki-b" && edge.type === "source_overlap"));
+  });
+});
