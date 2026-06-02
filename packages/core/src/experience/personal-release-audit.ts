@@ -207,15 +207,22 @@ function buildGBrainRuntimeGate(input: PersonalReleaseAuditInput): PersonalRelea
     ...stringArray(input.gbrainPublish?.errors).map((error) => `gbrain_error:${error}`),
   ];
 
+  const externalPublishExported = numberValue(input.gbrainPublish?.exported);
+  const externalPublishOk = input.gbrainPublish?.available === true
+    && input.gbrainPublish.ok === true
+    && externalPublishExported > 0;
+
   if (gbrain && gbrain.enabled === true) {
     const publishStatus = typeof gbrain.publish_status === "string" ? gbrain.publish_status : "not_requested";
-    if (publishStatus !== "completed" && publishStatus !== "partial") {
+    const dailyExported = numberValue(gbrain.exported);
+    const dailyPublishOk = (publishStatus === "completed" || publishStatus === "partial") && dailyExported > 0;
+    if (!dailyPublishOk && !externalPublishOk) {
       blockers.push(publishStatus === "not_requested" ? "gbrain_publish_missing" : `gbrain_publish_${publishStatus}`);
     }
-    if (numberValue(gbrain.exported) === 0) blockers.push("gbrain_export_empty");
+    if (dailyExported === 0 && !externalPublishOk) blockers.push("gbrain_export_empty");
     if (gbrain.doctor_status === "failed") blockers.push("gbrain_doctor_failed");
   } else if (input.gbrainPublish?.available === true) {
-    const exported = numberValue(input.gbrainPublish.exported);
+    const exported = externalPublishExported;
     if (exported === 0) blockers.push("gbrain_export_empty");
     if (input.gbrainPublish.ok !== true) warnings.push("gbrain_publish_partial");
   } else {

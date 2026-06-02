@@ -193,6 +193,62 @@ test("release audit passes only when all personal GA gates pass", () => {
   assert.deepEqual(report.next_commands, []);
 });
 
+test("release audit accepts external GBrain export evidence when latest daily skipped publish because stable knowledge did not change", () => {
+  const dailyReport = baseInput().dailyReport as Record<string, unknown>;
+  const report = buildPersonalReleaseAuditReport(baseInput({
+    promotedSkillPaths: ["skills/openclaw/openclaw-dispatch-routing/SKILL.md"],
+    dailyReport: {
+      ...dailyReport,
+      skill_synthesis: {
+        ...(dailyReport.skill_synthesis as Record<string, unknown>),
+        approved: 1,
+        needs_human: 0,
+        promoted: 0,
+      },
+      skill_validation: {
+        total_reports: 1,
+        by_decision: { pass: 1 },
+        candidates_without_passing: 0,
+      },
+      brain_backends: {
+        gbrain: {
+          enabled: true,
+          doctor_status: "unknown",
+          publish_status: "skipped",
+          pages: 0,
+          exported: 0,
+          skipped: 0,
+          imported: 0,
+          warnings: ["gbrain_publish_skipped:no_stable_changes"],
+          errors: [],
+        },
+      },
+    },
+    gbrainPublish: {
+      available: true,
+      ok: true,
+      exported: 14,
+      skipped: 0,
+      errors: [],
+      warnings: [],
+      report_ref: ".praxisbase/reports/gbrain-export/gbrain-export_latest.json",
+    },
+    gbrainRetrieval: {
+      available: true,
+      source_id: "praxisbase",
+      query: "openclaw dispatch routing failure",
+      hits: 2,
+      report_ref: ".praxisbase/reports/context/context_latest.json",
+    },
+  }));
+
+  assert.equal(report.gbrain_runtime_ga, "pass");
+  assert.equal(report.personal_ga, "pass");
+  assert.equal(report.blocking_reasons.includes("gbrain_publish_skipped"), false);
+  assert.equal(report.blocking_reasons.includes("gbrain_export_empty"), false);
+  assert.ok(report.warnings.includes("gbrain_publish_skipped:no_stable_changes"));
+});
+
 test("release audit treats stable promoted PB skills as skill gate authority across daily runs", () => {
   const report = buildPersonalReleaseAuditReport(baseInput({
     promotedSkillPaths: ["skills/openclaw/openclaw-dispatch-routing/SKILL.md"],

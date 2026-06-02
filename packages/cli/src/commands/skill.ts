@@ -33,6 +33,19 @@ export interface SkillCommandOptions {
   requireValidation?: boolean;
 }
 
+async function existingPromotedPraxisBaseSkill(root: string, targetPath: string): Promise<boolean> {
+  try {
+    const raw = await readFile(join(root, targetPath), "utf8");
+    const frontmatter = raw.match(/^---\n([\s\S]*?)\n---/);
+    if (!frontmatter) return false;
+    const origin = frontmatter[1].match(/^origin:\s*"?([^"\n]+)"?\s*$/m)?.[1]?.trim();
+    const status = frontmatter[1].match(/^status:\s*"?([^"\n]+)"?\s*$/m)?.[1]?.trim();
+    return origin === "praxisbase_synthesized" && status === "promoted";
+  } catch {
+    return false;
+  }
+}
+
 async function listFilesRecursively(root: string, relativeDir: string): Promise<string[]> {
   const dir = join(root, relativeDir);
   let entries;
@@ -258,6 +271,16 @@ export async function skillCommand(root: string, subcommand: string, options: Sk
     const candidateValue = await readJson<unknown>(root, `${protocolPaths.inboxProposals}/${options.proposal}.json`);
     const candidate = SkillSynthesisCandidateSchema.parse(candidateValue);
     const proposal = skillCandidateToKnowledgeProposal(candidate);
+    if (await existingPromotedPraxisBaseSkill(root, proposal.patch.path)) {
+      const result = {
+        ok: true,
+        proposal_id: proposal.id,
+        target_path: proposal.patch.path,
+        already_promoted: true,
+      };
+      return options.json ? JSON.stringify(result, null, 2) : `Skill already promoted: ${proposal.patch.path}`;
+    }
+
     const audit = await findApprovedSkillPromotionAudit(root, proposal);
     if (!audit) {
       const result = {

@@ -246,6 +246,95 @@ describe("skill CLI command", () => {
     assert.match(await readFile(join(root, candidate.target_path), "utf8"), /OpenClaw memory operations/);
   });
 
+  it("does not overwrite an already promoted PraxisBase skill at the same target path", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-skill-promote-existing-"));
+    await mkdir(join(root, protocolPaths.inboxProposals), { recursive: true });
+    await mkdir(join(root, protocolPaths.inboxReviews), { recursive: true });
+    const targetPath = "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md";
+    await mkdir(join(root, "skills/openclaw/openclaw-dispatch-routing-failures"), { recursive: true });
+    const promotedBody = [
+      "---",
+      "name: OpenClaw dispatch routing failures",
+      "description: Diagnose dispatch failures before reporting success.",
+      "origin: praxisbase_synthesized",
+      "status: promoted",
+      "scope: personal",
+      "---",
+      "# OpenClaw dispatch routing failures",
+      "",
+      "## When To Use",
+      "Use when delegation evidence is missing.",
+      "",
+      "## Procedure",
+      "1. Verify runner evidence.",
+      "",
+      "## Verification",
+      "- Confirm spawned task id.",
+    ].join("\n");
+    await writeFile(join(root, targetPath), promotedBody, "utf8");
+
+    const candidate = {
+      id: "skill_candidate_existing",
+      protocol_version: PROTOCOL_VERSION,
+      type: "skill_synthesis_candidate",
+      action: "skill_update",
+      scope: "personal",
+      target_path: targetPath,
+      target_skill: "OpenClaw dispatch routing failures",
+      title: "OpenClaw dispatch routing failures",
+      summary: "Lower-quality update candidate.",
+      body_markdown: "# OpenClaw dispatch routing failures\n\n## When To Use\nUse when testing an update candidate for an existing promoted skill.\n\n## Procedure\n1. Confirm the existing target path.\n2. Validate the update candidate.\n\n## Verification\n- Confirm the target path still contains the original promoted skill.\n\n## Pitfalls\n- Do not overwrite promoted guidance with a lower-quality candidate.",
+      source_refs: ["raw-vault://session-1"],
+      source_hashes: ["sha256:existing1"],
+      evidence_ids: ["sha256:e1"],
+      source_count: 1,
+      confidence: 0.91,
+      ladder_choice: "skill_update_existing",
+      existing_skill_path: targetPath,
+      related_wiki_paths: [],
+      review_hint: { suggested_decision: "approve", risk_notes: [] },
+      created_at: "2026-05-28T10:00:00.000Z",
+    };
+    await writeFile(join(root, protocolPaths.inboxProposals, `${candidate.id}.json`), JSON.stringify(candidate, null, 2), "utf8");
+    await writeFile(join(root, protocolPaths.inboxReviews, "audit_existing.json"), JSON.stringify({
+      id: "audit_existing",
+      protocol_version: PROTOCOL_VERSION,
+      type: "skill_promotion_audit",
+      proposal_id: candidate.id,
+      candidate_id: candidate.id,
+      target_path: targetPath,
+      scope: "personal",
+      decision: "approved",
+      reviewer: { kind: "user", id: "local-user" },
+      semantic_review_id: "semantic_existing",
+      source_hashes: ["sha256:existing1"],
+      created_at: "2026-05-28T10:00:00.000Z",
+    }, null, 2), "utf8");
+    await writeFile(join(root, protocolPaths.inboxReviews, "semantic_existing.json"), JSON.stringify({
+      id: "semantic_existing",
+      type: "semantic_skill_review",
+      candidate_id: candidate.id,
+      target_path: targetPath,
+      decision: "approve_candidate",
+      quality_score: 0.91,
+      class_level: true,
+      actionable: true,
+      reusable: true,
+      safe_for_future_agents: true,
+      evidence_support: "strong",
+      should_update_existing: targetPath,
+      fatal_issues: [],
+      missing_requirements: [],
+      reason: "Approved update.",
+      reviewed_at: "2026-05-28T10:00:00.000Z",
+    }, null, 2), "utf8");
+    const promoted = JSON.parse(await skillCommand(root, "promote", { proposal: candidate.id, json: true }));
+
+    assert.equal(promoted.ok, true);
+    assert.equal(promoted.already_promoted, true);
+    assert.equal(await readFile(join(root, targetPath), "utf8"), promotedBody);
+  });
+
   it("rejects promotion when validation decision is failing", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-skill-promote-fail-"));
     await mkdir(join(root, protocolPaths.inboxProposals), { recursive: true });
