@@ -15,6 +15,7 @@ import {
   type MergeCandidate,
 } from "@praxisbase/core";
 import { writeAiProviderConfig } from "@praxisbase/core/ai/config.js";
+import { normalizeStableSlug } from "@praxisbase/core/protocol/slug.js";
 
 const evidence: WikiEvidenceItem[] = [
   {
@@ -499,8 +500,10 @@ describe("AI wiki curator", () => {
 
     assert.equal(result.ok, true);
     if (result.ok) {
-      assert.equal(result.proposal.title, "Unit tests verifying the structure and behavior of task display rendering functions");
-      assert.equal(result.proposal.target_path, "kb/notes/wiki-unit-tests-verifying-the-structure-and-behavior-of-task-display-rendering-functions.md");
+      const title = "Unit tests verifying the structure and behavior of task display rendering functions";
+      assert.equal(result.proposal.title, title);
+      assert.equal(result.proposal.target_path, `kb/notes/wiki-${normalizeStableSlug(title)}.md`);
+      assert.ok(result.proposal.target_path.replace(/^kb\/notes\/wiki-/, "").replace(/\.md$/, "").length <= 80);
       assert.doesNotMatch(result.proposal.body_markdown, /^# capture_/m);
     }
   });

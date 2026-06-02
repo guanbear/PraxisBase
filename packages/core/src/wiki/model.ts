@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
+import { normalizeStableSlug } from "../protocol/slug.js";
 
 export type WikiSourceKind =
   | "stable_kb"
@@ -61,12 +62,7 @@ export const SCOPE_ORDER: Record<string, number> = {
  * CJK-only titles fall back to "wiki".
  */
 export function makeWikiSlug(title: string): string {
-  const slug = title
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || "wiki";
+  return normalizeStableSlug(title);
 }
 
 /**

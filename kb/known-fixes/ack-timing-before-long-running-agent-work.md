@@ -2,26 +2,18 @@
 id: ack-timing-before-long-running-agent-work
 title: "ACK timing before long-running agent work"
 protocol_version: "0.1"
-type: known_fix
-knowledge_type: known_fix
+type: pitfall
+knowledge_type: pitfall
 scope: personal
 risk: medium
 status: draft
 maturity: draft
 sources:
-  - uri: "openclaw-memory://memory/dreaming/light/2026-05-19.md#0515adc0c6cb05866dde0430a486081bc14e2affdf56c98650333135cf6d1377"
-    hash: "sha256:48bc0992223467a35e94502aafde273dde342a81c0878d72f0a5a6f8528f678b"
-  - uri: "openclaw-memory://memory/dreaming/light/2026-05-19.md#2324fe2c0612eb837ae44e6a0be1095b6bca694a7b01f3cb1828b98111604900"
-    hash: "sha256:779e588c09ccabaa1eed668d3abd85ae90242645de0060fb3dec41d1b1ad65ec"
-  - uri: "openclaw-memory://memory/dreaming/rem/2026-05-04.md#8f2014dc2533bf40b5825749502009f77abec17b14928c57ec719d9f40405e9a"
-    hash: "sha256:88864a13bdf6ebb23862040a9dbf297a970ce0a6c50f058fcdccc77c3dac8fbc"
-  - uri: "openclaw-memory://memory/dreaming/rem/2026-05-14.md#3fc37d19de1530e5b72bce03038a3092997b5d7506d3d8b3d69ebec28cbcc709"
-    hash: "sha256:8fd25d0c05b389385e10601e94001b6fe4899ae35b4ecd5c028dc32f12163132"
-  - uri: "openclaw-memory://memory/dreaming/rem/2026-05-15.md#7dcfdd7f2902791ae12471be2913916f66dd3a0434ed28a35d91da529cc93ba3"
-    hash: "sha256:a1a9ca69c40e541cd06b609396a4419256a6e4a0f826e082c8913bb11b0d1e04"
-source_count: 5
-confidence: 0.9
-updated_at: "2026-05-25T06:29:07.726Z"
+  - uri: "source-inventory://openclaw/../../.openclaw/memory/main.sqlite#2953ee38f9c8a6422d41165b5fedbc1af5d54c9582d035f952badea4ec101ed8"
+    hash: "sha256:060dbc5e4afaa6b9ec682a179dc67ae90338fbc616243ecf02c61e3b43f56e27"
+source_count: 1
+confidence: 0.93
+updated_at: "2026-06-02T04:13:16.313Z"
 ---
 # ACK timing before long-running agent work
 
@@ -83,11 +75,9 @@ Do not use it when:
 - The request can be answered immediately without tools, waiting, or delegation.
 
 ## Provenance
-* Derived from aggregated memory fragments reflecting user feedback on OpenClaw/OctoClaw latency.
-* Validated against specific incidents where task dispatching failed to register, highlighting the need for immediate user feedback loops.
+- source-inventory://openclaw/../../.openclaw/memory/main.sqlite#2953ee38f9c8a6422d41165b5fedbc1af5d54c9582d035f952badea4ec101ed8 (sha256:060dbc5e4afaa6b9ec682a179dc67ae90338fbc616243ecf02c61e3b43f56e27)
 
 ## Related Wiki Pages
-* [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution-behaviors|Missing replay data compromises the ability to debug or verify past execution behaviors]]
 * [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
 * [[openclaw-gateway-restart-after-configuration-changes|OpenClaw gateway restart after configuration changes]]
 * [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]

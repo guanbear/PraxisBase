@@ -23,6 +23,10 @@
       "types": "./src/protocol/id.ts",
       "default": "./dist/protocol/id.js"
     },
+    "./protocol/slug.js": {
+      "types": "./src/protocol/slug.ts",
+      "default": "./dist/protocol/slug.js"
+    },
     "./ai/config.js": {
       "types": "./src/ai/config.ts",
       "default": "./dist/ai/config.js"

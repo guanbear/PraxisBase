@@ -1,7 +1,7 @@
 ---
 id: agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes
-title: "Agents can mislead users if failures are reported as successful outcomes."
-protocol_version: "0.1"
+title: Agents can mislead users if failures are reported as successful outcomes.
+protocol_version: '0.1'
 type: known_fix
 knowledge_type: known_fix
 scope: personal
@@ -9,11 +9,12 @@ risk: medium
 status: draft
 maturity: draft
 sources:
-  - uri: "source-inventory://openclaw/../../.openclaw/memory/main.sqlite#5e011796e9e4e2b34d4f2621e990675c478d8ba0964a678077a22b582a523d70"
-    hash: "sha256:ad9b1897cf677fe8407009f01998a4b3dd6452f9eedff1056e6fe1a5cdfec94d"
+  - uri: >-
+      source-inventory://openclaw/../../.openclaw/memory/main.sqlite#5e011796e9e4e2b34d4f2621e990675c478d8ba0964a678077a22b582a523d70
+    hash: 'sha256:ad9b1897cf677fe8407009f01998a4b3dd6452f9eedff1056e6fe1a5cdfec94d'
 source_count: 1
 confidence: 0.93
-updated_at: "2026-06-02T04:13:16.313Z"
+updated_at: '2026-06-02T04:13:16.313Z'
 ---
 # Agents can mislead users if failures are reported as successful outcomes.
 
@@ -43,7 +44,7 @@ Check that success is only reported after confirmed successful completion of the
 - source-inventory://openclaw/../../.openclaw/memory/main.sqlite#5e011796e9e4e2b34d4f2621e990675c478d8ba0964a678077a22b582a523d70 (sha256:ad9b1897cf677fe8407009f01998a4b3dd6452f9eedff1056e6fe1a5cdfec94d)
 
 ## Related Wiki Pages
-[[ack-timing-before-long-running-agent-work|ACK timing before long-running agent work]]
+ACK timing before long-running agent work
 [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
-[[openclaw-gateway-restart-after-configuration-changes|OpenClaw gateway restart after configuration changes]]
+OpenClaw gateway restart after configuration changes
 [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]

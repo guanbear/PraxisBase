@@ -1,7 +1,7 @@
 ---
 id: changes-can-introduce-regressions-when-not-tested-after-modification
-title: "Changes can introduce regressions when not tested after modification"
-protocol_version: "0.1"
+title: Changes can introduce regressions when not tested after modification
+protocol_version: '0.1'
 type: pitfall
 knowledge_type: pitfall
 scope: personal
@@ -9,11 +9,12 @@ risk: medium
 status: draft
 maturity: draft
 sources:
-  - uri: "source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md"
-    hash: "sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7"
+  - uri: >-
+      source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md
+    hash: 'sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7'
 source_count: 1
 confidence: 0.93
-updated_at: "2026-06-02T01:26:03.007Z"
+updated_at: '2026-06-02T01:26:03.007Z'
 ---
 # Changes can introduce regressions when not tested after modification
 
@@ -53,4 +54,4 @@ Use the relevant test or verification command associated with the modified compo
 
 ## Related Wiki Pages
 * [[actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes|Actions on the wrong target machine or host can cause unsafe operational changes]]
-* [[ack-timing-before-long-running-agent-work|ACK timing before long-running agent work]]
+* ACK timing before long-running agent work

@@ -42,6 +42,13 @@ const TEMPLATE_FALLBACK_SENTENCES = [
   "Review the provenance and apply the repeated successful action",
 ];
 
+const DIRTY_STABLE_PROVENANCE_PATTERNS = [
+  /\bmemory\/dreaming\//i,
+  /\.dreams\b/i,
+  /\bdream-diary\b/i,
+  /\bsession-corpus\b/i,
+];
+
 // Reference-only detection helpers.
 
 function isReferenceOnlyBody(body: string): boolean {
@@ -97,6 +104,14 @@ function containsTemplateFallback(body: string): boolean {
     if (body.includes(sentence)) return true;
   }
   return false;
+}
+
+export function isDirtyStableProvenanceRef(value: string): boolean {
+  return DIRTY_STABLE_PROVENANCE_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+export function containsDirtyStableProvenance(content: string): boolean {
+  return isDirtyStableProvenanceRef(content) || /^Candidate:\s*\S/im.test(content);
 }
 
 // Wiki structure detection.
@@ -440,6 +455,9 @@ function markdownTitle(content: string): string | undefined {
  * the review policy. Returns an error message or null if the content passes.
  */
 export function promotionTimeGuard(content: string): string | null {
+  if (containsDirtyStableProvenance(content)) {
+    return "Refusing to promote content containing dreaming, corpus, or candidate provenance into stable knowledge.";
+  }
   if (containsRawJson(content)) {
     return "Refusing to promote content containing raw JSON into stable knowledge.";
   }

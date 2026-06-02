@@ -1,7 +1,10 @@
 ---
-id: actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes
-title: "Actions on the wrong target machine or host can cause unsafe operational changes."
-protocol_version: "0.1"
+id: >-
+  actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes
+title: >-
+  Actions on the wrong target machine or host can cause unsafe operational
+  changes.
+protocol_version: '0.1'
 type: procedure
 knowledge_type: procedure
 scope: personal
@@ -9,11 +12,12 @@ risk: medium
 status: draft
 maturity: draft
 sources:
-  - uri: "source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md"
-    hash: "sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7"
+  - uri: >-
+      source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md
+    hash: 'sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7'
 source_count: 1
 confidence: 0.93
-updated_at: "2026-06-02T01:26:03.007Z"
+updated_at: '2026-06-02T01:26:03.007Z'
 ---
 # Actions on the wrong target machine or host can cause unsafe operational changes.
 
@@ -52,4 +56,4 @@ Verify the selected target matches the intended machine or host by checking the 
 
 ## Related Wiki Pages
 * [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]
-* [[openclaw-gateway-restart-after-configuration-changes|OpenClaw gateway restart after configuration changes]]
+* OpenClaw gateway restart after configuration changes

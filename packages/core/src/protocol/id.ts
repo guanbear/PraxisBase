@@ -1,15 +1,12 @@
 import { createHash } from "node:crypto";
+import { normalizeStableSlug } from "./slug.js";
 
 export function computeHash(input: string): string {
   return `sha256:${createHash("sha256").update(input).digest("hex")}`;
 }
 
 export function slugifyId(input: string): string {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return normalizeStableSlug(input);
 }
 
 export function makeId(prefix: string, value: string): string {

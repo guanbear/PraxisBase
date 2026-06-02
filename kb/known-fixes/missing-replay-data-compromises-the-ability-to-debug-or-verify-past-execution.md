@@ -1,7 +1,9 @@
 ---
-id: missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution-behaviors
-title: "Missing replay data compromises the ability to debug or verify past execution behaviors"
-protocol_version: "0.1"
+id: missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution
+title: >-
+  Missing replay data compromises the ability to debug or verify past execution
+  behaviors
+protocol_version: '0.1'
 type: known_fix
 knowledge_type: known_fix
 scope: personal
@@ -9,11 +11,11 @@ risk: medium
 status: draft
 maturity: draft
 sources:
-  - uri: "log://openclaw/2026-05-20-03-24-40-stability-summary.txt"
-    hash: "sha256:d2542d454fc3096e7e52d3d61461f6d1bcda2d32384c0e180648f01f9f2ce831"
+  - uri: 'log://openclaw/2026-05-20-03-24-40-stability-summary.txt'
+    hash: 'sha256:d2542d454fc3096e7e52d3d61461f6d1bcda2d32384c0e180648f01f9f2ce831'
 source_count: 1
 confidence: 0.83
-updated_at: "2026-05-24T03:37:43.764Z"
+updated_at: '2026-05-24T03:37:43.764Z'
 ---
 # Missing replay data compromises the ability to debug or verify past execution behaviors
 

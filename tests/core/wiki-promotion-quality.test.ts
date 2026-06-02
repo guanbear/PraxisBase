@@ -636,6 +636,43 @@ describe("promotionTimeGuard", () => {
     assert.ok(err);
     assert.match(err, /reusable wiki topic/i);
   });
+
+  it("rejects dirty dreaming or corpus provenance in stable content", () => {
+    const content = [
+      "---",
+      "sources:",
+      "  - uri: openclaw-memory://memory/dreaming/light/2026-05-19.md#abc",
+      "    hash: sha256:abc",
+      "---",
+      "# OpenClaw auth refresh repair",
+      "",
+      "## When to Use",
+      "Use this when OpenClaw authentication expires during memory sync.",
+      "",
+      "## Fix",
+      "Refresh the OpenClaw login and retry memory sync.",
+    ].join("\n");
+    const err = promotionTimeGuard(content);
+    assert.ok(err);
+    assert.match(err, /dreaming|corpus|candidate provenance/i);
+  });
+
+  it("rejects naked Candidate markers in stable content", () => {
+    const content = [
+      "# OpenClaw auth refresh repair",
+      "",
+      "## When to Use",
+      "Use this when OpenClaw authentication expires during memory sync.",
+      "",
+      "## Fix",
+      "Refresh the OpenClaw login and retry memory sync.",
+      "",
+      "Candidate: stale raw candidate marker",
+    ].join("\n");
+    const err = promotionTimeGuard(content);
+    assert.ok(err);
+    assert.match(err, /candidate provenance/i);
+  });
 });
 
 describe("assessWikiPromotionQuality - required links", () => {
