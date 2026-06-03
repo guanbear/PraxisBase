@@ -1,0 +1,14 @@
+{
+  "type": "chat",
+  "chat_type": "direct",
+  "chat_id": "oc_pb_chat_m30_dm_001",
+  "messages": [
+    {
+      "message_id": "om_pb_m30_dm_001",
+      "sender_id": "ou_pb_m30_user_private",
+      "message_type": "text",
+      "created_at": "2026-06-05T09:20:00.000Z",
+      "text": "1v1 private message about OpenClaw should never become team knowledge."
+    }
+  ]
+}

@@ -87,6 +87,9 @@ export const TeamReleaseAuditReportSchema = z.object({
   k8s_bundle_ga: TeamReleaseGateStatusSchema,
   incident_episode_intake_ga: TeamReleaseGateStatusSchema,
   k8s_boundary_ga: TeamReleaseGateStatusSchema,
+  feishu_source_a_ga: TeamReleaseGateStatusSchema,
+  feishu_source_b_ga: TeamReleaseGateStatusSchema,
+  feishu_privacy_ga: TeamReleaseGateStatusSchema,
   gates: z.object({
     team_repair_loop_ga: TeamReleaseAuditGateSchema,
     skill_self_evolution_ga: TeamReleaseAuditGateSchema,
@@ -95,6 +98,9 @@ export const TeamReleaseAuditReportSchema = z.object({
     k8s_bundle_ga: TeamReleaseAuditGateSchema,
     incident_episode_intake_ga: TeamReleaseAuditGateSchema,
     k8s_boundary_ga: TeamReleaseAuditGateSchema,
+    feishu_source_a_ga: TeamReleaseAuditGateSchema,
+    feishu_source_b_ga: TeamReleaseAuditGateSchema,
+    feishu_privacy_ga: TeamReleaseAuditGateSchema,
   }),
   blocking_reasons: z.array(z.string()),
   warnings: z.array(z.string()),
@@ -581,10 +587,12 @@ export const ExperienceSourceParserSchema = z.enum([
   "opencode-session",
   "agentmemory-memory",
   "gbrain-memory",
+  "feishu-doc",
+  "feishu-chat",
 ]);
 
-export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code", "opencode", "agentmemory", "generic"]);
-export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api", "agentmemory", "gbrain"]);
+export const ExperienceSourceAgentSchema = z.enum(["codex", "openclaw", "claude-code", "opencode", "agentmemory", "feishu", "generic"]);
+export const ExperienceSourceTypeSchema = z.enum(["local", "file", "git", "ssh", "http", "openclaw-api", "agentmemory", "gbrain", "feishu"]);
 export const ExperienceScopeHintSchema = z.enum(["personal", "project", "team", "org"]);
 export const ExperienceSourcePrivacyTrustSchema = z.enum(["trusted_personal_remote"]);
 export const ExperiencePrivacyVerdictSchema = z.enum(["allow", "reject", "human_required"]);
@@ -607,6 +615,10 @@ export const ExperienceSourceConfigSchema = z.object({
   url: z.string().optional(),
   remote: z.string().optional(),
   bearer_token_env: z.string().min(1).optional(),
+  feishu_app_id_env: z.string().min(1).optional(),
+  feishu_app_secret_env: z.string().min(1).optional(),
+  feishu_target: z.string().min(1).optional(),
+  feishu_cli_path: z.string().min(1).optional(),
   privacy_trust: ExperienceSourcePrivacyTrustSchema.optional(),
   created_at: z.string(),
   updated_at: z.string(),

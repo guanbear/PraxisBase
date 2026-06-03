@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "id": "oc-feishu-001",
+      "source_ref": "openclaw-feishu://doc/doccn_pb_m30_public_001",
+      "summary": "OpenClaw Feishu bot captured a deployment rollback lesson from a team document.",
+      "signature": "openclaw:feishu-rollback-lesson",
+      "outcome": "success",
+      "created_at": "2026-06-05T09:00:00.000Z"
+    }
+  ]
+}

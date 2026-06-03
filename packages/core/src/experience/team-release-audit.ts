@@ -32,6 +32,9 @@ export interface TeamReleaseAuditReport {
   k8s_bundle_ga: TeamReleaseGateStatus;
   incident_episode_intake_ga: TeamReleaseGateStatus;
   k8s_boundary_ga: TeamReleaseGateStatus;
+  feishu_source_a_ga: TeamReleaseGateStatus;
+  feishu_source_b_ga: TeamReleaseGateStatus;
+  feishu_privacy_ga: TeamReleaseGateStatus;
   gates: {
     team_repair_loop_ga: TeamReleaseAuditGate;
     skill_self_evolution_ga: TeamReleaseAuditGate;
@@ -40,6 +43,9 @@ export interface TeamReleaseAuditReport {
     k8s_bundle_ga: TeamReleaseAuditGate;
     incident_episode_intake_ga: TeamReleaseAuditGate;
     k8s_boundary_ga: TeamReleaseAuditGate;
+    feishu_source_a_ga: TeamReleaseAuditGate;
+    feishu_source_b_ga: TeamReleaseAuditGate;
+    feishu_privacy_ga: TeamReleaseAuditGate;
   };
   blocking_reasons: string[];
   warnings: string[];
@@ -56,6 +62,13 @@ interface LatestJsonReport {
 
 interface K8sDomainState {
   enabled: boolean;
+  evidence_reports: string[];
+}
+
+interface FeishuDomainState {
+  enabled: boolean;
+  pathAEnabled: boolean;
+  pathBEnabled: boolean;
   evidence_reports: string[];
 }
 
@@ -332,6 +345,150 @@ function k8sDomainNotEnabledGate(): TeamReleaseAuditGate {
     ["k8s_domain_not_enabled"],
     [],
     ["praxisbase init --profile k8s", "praxisbase build"],
+  );
+}
+
+async function detectFeishuDomainState(root: string): Promise<FeishuDomainState> {
+  const evidence = new Set<string>();
+  let pathAEnabled = false;
+  let pathBEnabled = false;
+
+  for (const path of await collectJsonFiles(root, protocolPaths.experienceSources)) {
+    try {
+      const source = JSON.parse(await readFile(join(root, path), "utf8")) as unknown;
+      if (!isRecord(source)) continue;
+      const channel = typeof source.channel === "string" ? source.channel : "";
+      const agent = typeof source.agent === "string" ? source.agent : "";
+      const sourceType = typeof source.source_type === "string" ? source.source_type : "";
+      if (agent === "openclaw" && channel === "feishu") {
+        pathAEnabled = true;
+        evidence.add(path);
+      }
+      if (sourceType === "feishu") {
+        pathBEnabled = true;
+        evidence.add(path);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return {
+    enabled: pathAEnabled || pathBEnabled,
+    pathAEnabled,
+    pathBEnabled,
+    evidence_reports: Array.from(evidence).sort(),
+  };
+}
+
+function feishuDomainNotEnabledGate(): TeamReleaseAuditGate {
+  return gate(
+    "not_run",
+    [],
+    ["feishu_domain_not_enabled"],
+    [],
+    [
+      "praxisbase source add openclaw-feishu-bot --agent openclaw --type openclaw-api --channel feishu --scope team --remote <bot>",
+      "praxisbase source add feishu-team-docs --agent feishu --type feishu --parser feishu-doc --feishu-target <doc> --scope team",
+    ],
+  );
+}
+
+function dailySourceReports(value: Record<string, unknown>): Array<Record<string, unknown>> {
+  return Array.isArray(value.sources)
+    ? value.sources.filter((item): item is Record<string, unknown> => isRecord(item))
+    : [];
+}
+
+async function latestDailySourceReports(root: string): Promise<{ path?: string; sources: Array<Record<string, unknown>> }> {
+  const latest = await latestJsonReport(root, protocolPaths.reportsDaily)
+    ?? await latestJsonReport(root, protocolPaths.runsDaily);
+  if (!latest) return { sources: [] };
+  return { path: latest.path, sources: dailySourceReports(latest.value) };
+}
+
+function sourceReportNumber(report: Record<string, unknown>, key: string): number {
+  return numberValue(report[key]);
+}
+
+function sourceReportWarnings(report: Record<string, unknown>): string[] {
+  return stringArray(report.warnings);
+}
+
+async function buildFeishuSourceAGate(root: string, feishuDomain: FeishuDomainState): Promise<TeamReleaseAuditGate> {
+  if (!feishuDomain.enabled) return feishuDomainNotEnabledGate();
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+  const evidence = [...feishuDomain.evidence_reports];
+  const daily = await latestDailySourceReports(root);
+  if (daily.path) evidence.push(daily.path);
+
+  if (!feishuDomain.pathAEnabled) blockers.push("feishu_source_a_not_configured");
+  const pathAReports = daily.sources.filter((report) =>
+    report.agent === "openclaw" && report.channel === "feishu"
+  );
+  const hasIngestedReviewFirst = pathAReports.some((report) =>
+    sourceReportNumber(report, "enveloped") > 0 && sourceReportNumber(report, "human_required") > 0
+  );
+  if (feishuDomain.pathAEnabled && !hasIngestedReviewFirst) blockers.push("feishu_source_a_daily_evidence_missing");
+  for (const report of pathAReports) warnings.push(...sourceReportWarnings(report));
+
+  return gate(
+    blockers.length === 0 ? "pass" : "fail",
+    blockers,
+    warnings,
+    evidence,
+    blockers.length === 0 ? [] : ["praxisbase daily run --mode team-git --json"],
+  );
+}
+
+async function buildFeishuSourceBGate(root: string, feishuDomain: FeishuDomainState): Promise<TeamReleaseAuditGate> {
+  if (!feishuDomain.enabled) return feishuDomainNotEnabledGate();
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+  const evidence = [...feishuDomain.evidence_reports];
+  const daily = await latestDailySourceReports(root);
+  if (daily.path) evidence.push(daily.path);
+
+  if (!feishuDomain.pathBEnabled) blockers.push("feishu_source_b_not_configured");
+  const pathBReports = daily.sources.filter((report) => report.source_type === "feishu");
+  const hasResolvedEnvelope = pathBReports.some((report) => sourceReportNumber(report, "enveloped") > 0);
+  if (feishuDomain.pathBEnabled && !hasResolvedEnvelope) blockers.push("feishu_source_b_daily_evidence_missing");
+  for (const report of pathBReports) warnings.push(...sourceReportWarnings(report));
+
+  return gate(
+    blockers.length === 0 ? "pass" : "fail",
+    blockers,
+    warnings,
+    evidence,
+    blockers.length === 0 ? [] : ["praxisbase source doctor <feishu-source> --json", "praxisbase daily run --mode team-git --json"],
+  );
+}
+
+async function buildFeishuPrivacyGate(root: string, feishuDomain: FeishuDomainState): Promise<TeamReleaseAuditGate> {
+  if (!feishuDomain.enabled) return feishuDomainNotEnabledGate();
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+  const evidence = [...feishuDomain.evidence_reports];
+  const daily = await latestDailySourceReports(root);
+  if (daily.path) evidence.push(daily.path);
+  const feishuReports = daily.sources.filter((report) =>
+    report.channel === "feishu" || report.source_type === "feishu"
+  );
+  for (const report of feishuReports) warnings.push(...sourceReportWarnings(report));
+
+  const allWarnings = new Set(feishuReports.flatMap(sourceReportWarnings));
+  if (feishuReports.length === 0) blockers.push("feishu_privacy_daily_evidence_missing");
+  if (!allWarnings.has("feishu_1v1_rejected_before_envelope")) blockers.push("feishu_1v1_reject_evidence_missing");
+  if (!allWarnings.has("feishu_private_identifier_blocked_before_envelope")) blockers.push("feishu_identifier_redaction_evidence_missing");
+  if (!allWarnings.has("feishu_private_material_blocked_before_envelope")) blockers.push("feishu_private_material_block_evidence_missing");
+
+  return gate(
+    blockers.length === 0 ? "pass" : "fail",
+    blockers,
+    warnings,
+    evidence,
+    blockers.length === 0 ? [] : ["praxisbase daily run --mode team-git --json"],
   );
 }
 
@@ -621,14 +778,23 @@ const optionalK8sGateKeys = [
   "k8s_boundary_ga",
 ] as const satisfies readonly (keyof TeamReleaseAuditReport["gates"])[];
 
+const optionalFeishuGateKeys = [
+  "feishu_source_a_ga",
+  "feishu_source_b_ga",
+  "feishu_privacy_ga",
+] as const satisfies readonly (keyof TeamReleaseAuditReport["gates"])[];
+
 function aggregateTeamGaStatus(gates: TeamReleaseAuditReport["gates"]): TeamReleaseGateStatus {
   const requiredStatuses = requiredTeamGateKeys.map((key) => gates[key].status);
   const optionalK8sStatuses = optionalK8sGateKeys.map((key) => gates[key].status);
+  const optionalFeishuStatuses = optionalFeishuGateKeys.map((key) => gates[key].status);
   if (requiredStatuses.some((status) => status === "fail" || status === "not_run")) return "fail";
   if (optionalK8sStatuses.some((status) => status === "fail")) return "fail";
+  if (optionalFeishuStatuses.some((status) => status === "fail")) return "fail";
   if (
     requiredStatuses.every((status) => status === "pass")
     && optionalK8sStatuses.every((status) => status === "pass" || status === "not_run")
+    && optionalFeishuStatuses.every((status) => status === "pass" || status === "not_run")
   ) return "pass";
   return "warning";
 }
@@ -645,6 +811,10 @@ export async function readTeamReleaseAuditReport(
   const k8sBundle = await buildK8sBundleGate(root, k8sDomain);
   const incidentEpisodeIntake = await buildIncidentEpisodeIntakeGate(root, k8sDomain);
   const k8sBoundary = await buildK8sBoundaryGate(root, k8sDomain);
+  const feishuDomain = await detectFeishuDomainState(root);
+  const feishuSourceA = await buildFeishuSourceAGate(root, feishuDomain);
+  const feishuSourceB = await buildFeishuSourceBGate(root, feishuDomain);
+  const feishuPrivacy = await buildFeishuPrivacyGate(root, feishuDomain);
   const gates = {
     team_repair_loop_ga: teamRepairLoop,
     skill_self_evolution_ga: skillSelfEvolution,
@@ -653,6 +823,9 @@ export async function readTeamReleaseAuditReport(
     k8s_bundle_ga: k8sBundle,
     incident_episode_intake_ga: incidentEpisodeIntake,
     k8s_boundary_ga: k8sBoundary,
+    feishu_source_a_ga: feishuSourceA,
+    feishu_source_b_ga: feishuSourceB,
+    feishu_privacy_ga: feishuPrivacy,
   };
   const teamGa = aggregateTeamGaStatus(gates);
   const blockingReasons = Array.from(new Set(Object.values(gates).flatMap((item) => item.blockers))).sort();
@@ -671,6 +844,9 @@ export async function readTeamReleaseAuditReport(
     k8s_bundle_ga: k8sBundle.status,
     incident_episode_intake_ga: incidentEpisodeIntake.status,
     k8s_boundary_ga: k8sBoundary.status,
+    feishu_source_a_ga: feishuSourceA.status,
+    feishu_source_b_ga: feishuSourceB.status,
+    feishu_privacy_ga: feishuPrivacy.status,
     gates,
     blocking_reasons: blockingReasons,
     warnings,

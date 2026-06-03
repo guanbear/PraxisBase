@@ -17,49 +17,49 @@
 
 ## 0.1 Contract Freeze
 
-- [ ] Freeze Feishu fixtures: OpenClaw feishu export (A); Feishu doc JSON + group chat JSON (B); all with PII/1v1/credential negatives.
-- [ ] Confirm credentials are env-name only (`assertNoConfigCredential`).
+- [x] Freeze Feishu fixtures: OpenClaw feishu export (A); Feishu doc JSON + group chat JSON (B); all with PII/1v1/credential negatives.
+- [x] Confirm credentials are env-name only (`assertNoConfigCredential`).
 
 ## 1. Path A — OpenClaw Feishu Plugin (minimal)
 
-- [ ] Force team review-first for `channel=feishu` OpenClaw sources; disable `trusted_personal_remote` shortcut for them.
-- [ ] Report feishu-channel source share in daily report + HTML.
-- [ ] Document `source add` standard form for a Feishu OpenClaw source.
-- [ ] Tests: feishu-channel openclaw ingestion; review-first enforced.
+- [x] Force team review-first for `channel=feishu` OpenClaw sources; disable `trusted_personal_remote` shortcut for them.
+- [x] Report feishu-channel source share in daily report + HTML.
+- [x] Document `source add` standard form for a Feishu OpenClaw source.
+- [x] Tests: feishu-channel openclaw ingestion; review-first enforced.
 
 ## 2. Path B — Schema + Config
 
-- [ ] Add enums: source_type `feishu`; parser `feishu-doc`/`feishu-chat`; agent `feishu`.
-- [ ] Add config fields `feishu_app_id_env`/`feishu_app_secret_env`/`feishu_target`/`feishu_cli_path`; reuse `assertNoConfigCredential`.
-- [ ] Extend `inferExperienceSourceParser` for feishu.
-- [ ] Tests: source add feishu validation; literal-credential rejection; env-name accepted.
+- [x] Add enums: source_type `feishu`; parser `feishu-doc`/`feishu-chat`; agent `feishu`.
+- [x] Add config fields `feishu_app_id_env`/`feishu_app_secret_env`/`feishu_target`/`feishu_cli_path`; reuse `assertNoConfigCredential`.
+- [x] Extend `inferExperienceSourceParser` for feishu.
+- [x] Tests: source add feishu validation; literal-credential rejection; env-name accepted.
 
 ## 3. Path B — Adapter (CLI preferred, API fallback)
 
-- [ ] New `experience/feishu-client.ts`: CLI transport (env-injected wrapper) + API transport (env-name app id/secret → tenant_access_token); reject non-HTTPS unless loopback.
-- [ ] New `experience/feishu-adapter.ts`: resolve feishu source into raw items.
-- [ ] `feishu-doc` parser: doc → canonical Markdown chunk; source_ref=doc token; keep title/edited time.
-- [ ] `feishu-chat` parser: topic-segment chunks; drop system/idle; source_ref=chat+message range.
-- [ ] Wire into `resolveExperienceSource`.
-- [ ] Tests: mock CLI/API pull; doc/chat parsers; source_ref shape; non-HTTPS rejection.
+- [x] New `experience/feishu-client.ts`: CLI transport (env-injected wrapper) + API transport (env-name app id/secret → tenant_access_token); reject non-HTTPS unless loopback.
+- [x] New `experience/feishu-adapter.ts`: resolve feishu source into raw items.
+- [x] `feishu-doc` parser: doc → canonical Markdown chunk; source_ref=doc token; keep title/edited time.
+- [x] `feishu-chat` parser: topic-segment chunks; drop system/idle; source_ref=chat+message range.
+- [x] Wire into `resolveExperienceSource`.
+- [x] Tests: mock CLI/API pull; doc/chat parsers; source_ref shape; non-HTTPS rejection.
 
 ## 4. Strong Privacy Gate (B core)
 
-- [ ] Feishu-specific hard blocks: user_id/open_id/union_id/chat_id raw values redacted; phone/email/ID/card/token/cookie blocked.
-- [ ] 1v1 DM default reject; group messages default review; public KB docs normal triage.
-- [ ] Uncertain → human-required; HTML shows only redacted summary + reason code.
-- [ ] Tests: 1v1 reject; PII/Feishu-id hard-block; group review; leak scan.
+- [x] Feishu-specific hard blocks: user_id/open_id/union_id/chat_id raw values redacted; phone/email/ID/card/token/cookie blocked.
+- [x] 1v1 DM default reject; group messages default review; public KB docs normal triage.
+- [x] Uncertain → human-required; HTML shows only redacted summary + reason code.
+- [x] Tests: 1v1 reject; PII/Feishu-id hard-block; group review; leak scan.
 
 ## 5. Doctor + Release Audit Gates
 
-- [ ] `source doctor <feishu>`: CLI/API reachable + HTTPS + env credential present (no value printed) + target readable.
-- [ ] Extend `team release-audit` with `feishu_source_a_ga`/`feishu_source_b_ga`/`feishu_privacy_ga`.
-- [ ] Tests: doctor branches; gate classification.
+- [x] `source doctor <feishu>`: CLI/API reachable + HTTPS + env credential present (no value printed) + target readable.
+- [x] Extend `team release-audit` with `feishu_source_a_ga`/`feishu_source_b_ga`/`feishu_privacy_ga`.
+- [x] Tests: doctor branches; gate classification.
 
 ## 6. Real Validation + Status
 
-- [ ] Run full A+B chain with mock fixtures: source add → doctor → daily → audit.
-- [ ] feishu gates + `team_ga` green.
-- [ ] Verify raw content not in Git (grep for raw Feishu ids/body).
-- [ ] Write `docs/status/m30-feishu-source-integration-<date>.md`.
-- [ ] `pnpm check` passes.
+- [x] Run full A+B chain with mock fixtures: source add → doctor → daily → audit.
+- [x] feishu gates + `team_ga` green.
+- [x] Verify raw content not in Git (grep for raw Feishu ids/body).
+- [x] Write `docs/status/m30-feishu-source-integration-<date>.md`.
+- [x] `pnpm check` passes.

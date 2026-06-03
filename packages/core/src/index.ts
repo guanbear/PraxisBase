@@ -42,6 +42,8 @@ export * from "./experience/context-juice.js";
 export * from "./experience/personal-learning.js";
 export * from "./experience/payload-presummary.js";
 export * from "./experience/source-adapters.js";
+export * from "./experience/feishu-client.js";
+export * from "./experience/feishu-adapter.js";
 export * from "./experience/agentmemory-client.js";
 export * from "./experience/agentmemory-adapter.js";
 export * from "./experience/agentmemory-export.js";

@@ -1,0 +1,22 @@
+{
+  "type": "chat",
+  "chat_type": "group",
+  "chat_id": "oc_pb_chat_m30_group_001",
+  "topic": "OpenClaw gateway restart",
+  "messages": [
+    {
+      "message_id": "om_pb_m30_group_001",
+      "sender_id": "ou_pb_m30_user_001",
+      "message_type": "text",
+      "created_at": "2026-06-05T09:15:00.000Z",
+      "text": "After config changes, restart the gateway only after confirming the target machine and then verify the agent identification response."
+    },
+    {
+      "message_id": "om_pb_m30_group_002",
+      "sender_id": "ou_pb_m30_user_002",
+      "message_type": "text",
+      "created_at": "2026-06-05T09:16:00.000Z",
+      "text": "Also add a cache-busting query string when checking the frontend."
+    }
+  ]
+}

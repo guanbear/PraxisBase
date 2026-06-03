@@ -173,6 +173,47 @@ describe("privacy triage", () => {
     assert.equal(report.items[0].decision, "team_review_only");
   });
 
+  it("keeps Feishu team exceptions review-only and redacts Feishu ids before AI triage", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-feishu-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, {
+      id: "feishu-team",
+      agent: "feishu",
+      channel: "feishu",
+      scope: "team",
+      sourceRef: "feishu-chat://oc_pb_chat_m30_group_001/om_pb_m30_group_001",
+      summary: "Feishu user ou_pb_m30_user_001 discussed retry steps and token=mock_sensitive_token_123456.",
+    });
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "team-git",
+      mode: "write",
+      autoRelease: true,
+      now: "2026-06-05T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson(input) {
+          assert.equal(input.schemaName, "PrivacyTriageDecision");
+          assert.doesNotMatch(input.user, /ou_pb_m30_user_001/);
+          assert.doesNotMatch(input.user, /mock_sensitive_token_123456/);
+          return {
+            ok: true,
+            json: {
+              classification: "needs_redaction",
+              confidence: 0.8,
+              rationale: "Feishu private identifiers were redacted.",
+              suggested_redactions: ["Keep Feishu identifiers redacted."],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.items[0].decision, "team_review_only");
+    assert.ok(report.items[0].hard_block_reasons.includes("feishu_private_identifier_detected"));
+    assert.ok(report.items[0].hard_block_reasons.includes("private_material_detected"));
+  });
+
   it("keeps ambiguous remote personal evidence human-required until explicitly reviewed", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-remote-"));
     await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });

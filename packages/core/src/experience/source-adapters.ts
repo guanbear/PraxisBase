@@ -19,6 +19,7 @@ import type { GitCommandRunner } from "./git-workflow.js";
 import { extractCodexExperienceText, isUsefulCodexExperience } from "./codex-signal.js";
 import { resolveAgentMemorySource } from "./agentmemory-adapter.js";
 import { GBrainClient, type GBrainQueryHit, type GBrainCommandRunner } from "./gbrain-client.js";
+import { resolveFeishuSource } from "./feishu-adapter.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -550,6 +551,24 @@ function makeEnvelope(
     channel: source.channel,
     text: itemText(item, rawText),
   });
+  const privacyReasons = [...privacy.reasons];
+  let privacyVerdict = privacy.verdict;
+  if (
+    options.authorityMode === "team-git" &&
+    source.channel === "feishu" &&
+    source.source_type !== "feishu"
+  ) {
+    privacyVerdict = privacyVerdict === "reject" ? "reject" : "human_required";
+    if (!privacyReasons.includes("feishu_channel_team_review_first")) privacyReasons.push("feishu_channel_team_review_first");
+  }
+  if (
+    options.authorityMode === "team-git" &&
+    source.source_type === "feishu" &&
+    source.parser === "feishu-chat"
+  ) {
+    privacyVerdict = privacyVerdict === "reject" ? "reject" : "human_required";
+    if (!privacyReasons.includes("feishu_group_chat_requires_review")) privacyReasons.push("feishu_group_chat_requires_review");
+  }
   const signature = item.signature ?? item.problem_signature;
 
   return ExperienceEnvelopeSchema.parse({
@@ -571,8 +590,8 @@ function makeEnvelope(
     fetched_at: fetchedAt,
     privacy: {
       mode: options.authorityMode,
-      verdict: privacy.verdict,
-      reasons: privacy.reasons,
+      verdict: privacyVerdict,
+      reasons: privacyReasons,
     },
     warnings: [],
   });
@@ -761,7 +780,7 @@ async function resolveSourceItems(
   root: string,
   source: ExperienceSourceConfig,
   options: ResolveExperienceSourceOptions,
-): Promise<{ items: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }>; warnings: string[] }> {
+): Promise<{ items: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }>; warnings: string[]; preRejected?: number }> {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   if (source.source_type === "local" || source.source_type === "file") {
     if (!source.path) return { items: [], warnings: [`${source.source_type} source requires path`] };
@@ -805,6 +824,10 @@ async function resolveSourceItems(
   if (source.source_type === "gbrain") {
     return fetchGBrainItems(source, options);
   }
+  if (source.source_type === "feishu") {
+    const resolved = await resolveFeishuSource(source, options);
+    return { items: resolved.items, warnings: resolved.warnings, preRejected: resolved.rejected };
+  }
   return { items: [], warnings: [`unsupported_source_type: ${source.source_type satisfies never}`] };
 }
 
@@ -823,10 +846,12 @@ export async function resolveExperienceSource(
     warnings.push("gbrain_source_imported_as_evidence: sidecar pages only become PB evidence after explicit source configuration.");
   }
   let resolvedItems: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }> = [];
+  let preRejected = 0;
 
   try {
     const resolved = await resolveSourceItems(root, source, options);
     resolvedItems = resolved.items;
+    preRejected = resolved.preRejected ?? 0;
     warnings.push(...resolved.warnings);
   } catch (error) {
     warnings.push(`source_failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -838,7 +863,7 @@ export async function resolveExperienceSource(
   const envelopes = rawItems.map((entry, index) =>
     makeEnvelope(source, entry.item, entry.rawText, index, options, entry.filePath)
   );
-  const rejected = envelopes.filter((envelope) => envelope.privacy.verdict === "reject").length;
+  const rejected = preRejected + envelopes.filter((envelope) => envelope.privacy.verdict === "reject").length;
   const humanRequired = envelopes.filter((envelope) => envelope.privacy.verdict === "human_required").length;
   const skippedByFilter = Math.max(0, resolvedItems.length - usableItems.length);
   const skippedByLimit = Math.max(0, usableItems.length - envelopes.length);

@@ -1,6 +1,10 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { deriveDailyNextActions, runDailyExperience, type DailyNextActions, type DailyProgressEvent } from "@praxisbase/core/experience/daily.js";
 import type { GitCommandRunner } from "@praxisbase/core/experience/git-workflow.js";
 import type { GBrainCommandRunner } from "@praxisbase/core/experience/gbrain-client.js";
+
+const execFileAsync = promisify(execFile);
 
 export interface DailyCommandOptions {
   mode?: "personal" | "team-git";
@@ -87,6 +91,13 @@ function formatNextActions(nextActions: DailyNextActions): string {
   return lines.join("\n");
 }
 
+const defaultRunCommand: GitCommandRunner = async (command, args) => {
+  const { stdout } = await execFileAsync(command, args, {
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  return stdout;
+};
+
 export async function dailyCommand(root: string, subcommand: string, options: DailyCommandOptions): Promise<string> {
   try {
     if (subcommand === "init") {
@@ -127,7 +138,7 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
         allowTeamGbrainExport: options.allowTeamGbrainExport,
         gbrainExecutable: options.gbrainExecutable,
         gbrainRunCommand: options.gbrainRunCommand,
-        runCommand: options.runCommand,
+        runCommand: options.runCommand ?? defaultRunCommand,
         onProgress: options.progress
           ? async (event) => {
             (options.progressSink ?? console.error)(formatProgressLine(event));

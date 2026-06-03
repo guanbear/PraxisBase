@@ -7,6 +7,7 @@ import { buildStaticArtifacts } from "@praxisbase/core/build/build.js";
 import { PROTOCOL_VERSION } from "@praxisbase/core/protocol/types.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { readTeamReleaseAuditReport } from "@praxisbase/core/experience/team-release-audit.js";
+import { addExperienceSource } from "@praxisbase/core/experience/source-config.js";
 import { initializeWorkspace } from "@praxisbase/cli/commands/init.js";
 
 async function writeJson(path: string, value: unknown): Promise<void> {
@@ -234,6 +235,68 @@ async function createTeamLoopFixture(
   });
 }
 
+async function writeFeishuDailyEvidence(root: string): Promise<void> {
+  await writeFeishuDailyEvidenceAt(root, protocolPaths.reportsDaily);
+}
+
+async function writeFeishuDailyEvidenceAt(root: string, relativeDir: string): Promise<void> {
+  await mkdir(join(root, relativeDir), { recursive: true });
+  await writeJson(join(root, relativeDir, "daily_m30_feishu.json"), {
+    id: "daily_m30_feishu",
+    type: "daily_experience_report",
+    authority_mode: "team-git",
+    sources: [
+      {
+        name: "openclaw-feishu-bot",
+        agent: "openclaw",
+        channel: "feishu",
+        source_type: "openclaw-api",
+        status: "partial",
+        scanned: 1,
+        fetched: 1,
+        enveloped: 1,
+        imported: 0,
+        rejected: 0,
+        human_required: 1,
+        warnings: ["feishu_channel_team_review_first"]
+      },
+      {
+        name: "feishu-team-docs",
+        agent: "feishu",
+        channel: "feishu",
+        source_type: "feishu",
+        status: "completed",
+        scanned: 1,
+        fetched: 1,
+        enveloped: 1,
+        imported: 1,
+        rejected: 0,
+        human_required: 0,
+        warnings: []
+      },
+      {
+        name: "feishu-team-chat",
+        agent: "feishu",
+        channel: "feishu",
+        source_type: "feishu",
+        status: "partial",
+        scanned: 3,
+        fetched: 1,
+        enveloped: 1,
+        imported: 0,
+        rejected: 2,
+        human_required: 1,
+        warnings: [
+          "feishu_1v1_rejected_before_envelope",
+          "feishu_private_identifier_blocked_before_envelope",
+          "feishu_private_material_blocked_before_envelope"
+        ]
+      }
+    ],
+    created_at: "2026-06-05T10:00:00.000Z"
+  });
+}
+
 describe("team release audit", () => {
   it("passes M28 and M29 gates when the team repair and k8s loop have real evidence", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-team-release-audit-"));
@@ -250,6 +313,9 @@ describe("team release audit", () => {
     assert.equal(report.k8s_bundle_ga, "pass");
     assert.equal(report.incident_episode_intake_ga, "pass");
     assert.equal(report.k8s_boundary_ga, "pass");
+    assert.equal(report.feishu_source_a_ga, "not_run");
+    assert.equal(report.feishu_source_b_ga, "not_run");
+    assert.equal(report.feishu_privacy_ga, "not_run");
     assert.equal(report.team_ga, "pass");
   });
 
@@ -268,7 +334,123 @@ describe("team release audit", () => {
     assert.equal(report.k8s_bundle_ga, "not_run");
     assert.equal(report.incident_episode_intake_ga, "not_run");
     assert.equal(report.k8s_boundary_ga, "not_run");
+    assert.equal(report.feishu_source_a_ga, "not_run");
+    assert.equal(report.feishu_source_b_ga, "not_run");
+    assert.equal(report.feishu_privacy_ga, "not_run");
+    assert.ok(report.warnings.includes("feishu_domain_not_enabled"));
     assert.equal(report.team_ga, "pass");
+  });
+
+  it("fails Feishu gates once Feishu sources are configured without real daily evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-team-release-feishu-configured-"));
+    await createTeamLoopFixture(root);
+    await addExperienceSource(root, {
+      name: "feishu-team-docs",
+      agent: "feishu",
+      sourceType: "feishu",
+      parser: "feishu-doc",
+      channel: "feishu",
+      scopeDefault: "team",
+      feishuTarget: "doccn_pb_m30_public_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+    });
+    await buildStaticArtifacts(root);
+
+    const report = await readTeamReleaseAuditReport(root, { now: "2026-06-05T11:00:00.000Z" });
+
+    assert.equal(report.ok, false);
+    assert.equal(report.feishu_source_b_ga, "fail");
+    assert.equal(report.team_ga, "fail");
+    assert.ok(report.blocking_reasons.includes("feishu_source_b_daily_evidence_missing"));
+  });
+
+  it("passes Feishu gates with A+B mock daily evidence and privacy hard-block evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-team-release-feishu-pass-"));
+    await createTeamLoopFixture(root);
+    await addExperienceSource(root, {
+      name: "openclaw-feishu-bot",
+      agent: "openclaw",
+      sourceType: "openclaw-api",
+      channel: "feishu",
+      scopeDefault: "team",
+      remote: "bot-prod",
+    });
+    await addExperienceSource(root, {
+      name: "feishu-team-docs",
+      agent: "feishu",
+      sourceType: "feishu",
+      parser: "feishu-doc",
+      channel: "feishu",
+      scopeDefault: "team",
+      feishuTarget: "doccn_pb_m30_public_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+    });
+    await addExperienceSource(root, {
+      name: "feishu-team-chat",
+      agent: "feishu",
+      sourceType: "feishu",
+      parser: "feishu-chat",
+      channel: "feishu",
+      scopeDefault: "team",
+      feishuTarget: "oc_pb_chat_m30_group_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+    });
+    await writeFeishuDailyEvidence(root);
+    await buildStaticArtifacts(root);
+
+    const report = await readTeamReleaseAuditReport(root, { now: "2026-06-05T11:00:00.000Z" });
+
+    assert.equal(report.ok, true);
+    assert.equal(report.feishu_source_a_ga, "pass");
+    assert.equal(report.feishu_source_b_ga, "pass");
+    assert.equal(report.feishu_privacy_ga, "pass");
+    assert.equal(report.team_ga, "pass");
+  });
+
+  it("keeps Feishu audit compatible with historical runs/daily source evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-team-release-feishu-runs-compat-"));
+    await createTeamLoopFixture(root);
+    await addExperienceSource(root, {
+      name: "openclaw-feishu-bot",
+      agent: "openclaw",
+      sourceType: "openclaw-api",
+      channel: "feishu",
+      scopeDefault: "team",
+      remote: "bot-prod",
+    });
+    await addExperienceSource(root, {
+      name: "feishu-team-docs",
+      agent: "feishu",
+      sourceType: "feishu",
+      parser: "feishu-doc",
+      channel: "feishu",
+      scopeDefault: "team",
+      feishuTarget: "doccn_pb_m30_public_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+    });
+    await addExperienceSource(root, {
+      name: "feishu-team-chat",
+      agent: "feishu",
+      sourceType: "feishu",
+      parser: "feishu-chat",
+      channel: "feishu",
+      scopeDefault: "team",
+      feishuTarget: "oc_pb_chat_m30_group_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+    });
+    await writeFeishuDailyEvidenceAt(root, protocolPaths.runsDaily);
+    await buildStaticArtifacts(root);
+
+    const report = await readTeamReleaseAuditReport(root, { now: "2026-06-05T11:00:00.000Z" });
+
+    assert.equal(report.feishu_source_a_ga, "pass");
+    assert.equal(report.feishu_source_b_ga, "pass");
+    assert.equal(report.feishu_privacy_ga, "pass");
   });
 
   it("requires real K8s incident evidence once the K8s seed pack is enabled", async () => {

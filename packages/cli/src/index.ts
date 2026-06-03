@@ -344,16 +344,20 @@ program
   .option("--url <url>")
   .option("--remote <remote>")
   .option("--bearer-token-env <name>", "environment variable name containing bearer token")
+  .option("--feishu-app-id-env <name>", "environment variable name containing Feishu app id")
+  .option("--feishu-app-secret-env <name>", "environment variable name containing Feishu app secret")
+  .option("--feishu-target <target>", "Feishu doc token, wiki space id, or chat id")
+  .option("--feishu-cli-path <path>", "Feishu CLI wrapper path")
   .option("--privacy-trust <trust>", "source privacy trust policy, e.g. trusted_personal_remote")
   .option("--json")
   .action(async (
     sub: string,
     name: string | undefined,
     options: {
-      agent?: "codex" | "openclaw" | "claude-code" | "agentmemory" | "generic";
-      type?: "local" | "file" | "git" | "ssh" | "http" | "openclaw-api" | "agentmemory" | "gbrain";
+      agent?: "codex" | "openclaw" | "claude-code" | "opencode" | "agentmemory" | "feishu" | "generic";
+      type?: "local" | "file" | "git" | "ssh" | "http" | "openclaw-api" | "agentmemory" | "gbrain" | "feishu";
       channel?: "local" | "terminal" | "feishu" | "ci" | "gitlab" | "log-system" | "unknown";
-      parser?: "codex-session" | "openclaw-export" | "openclaw-log" | "claude-code-repair-log" | "agentmemory-memory" | "gbrain-memory";
+      parser?: "codex-session" | "openclaw-export" | "openclaw-log" | "claude-code-repair-log" | "claude-code-session" | "opencode-session" | "agentmemory-memory" | "gbrain-memory" | "feishu-doc" | "feishu-chat";
       scope?: "personal" | "project" | "team" | "org";
       repo?: string;
       ref?: string;
@@ -362,6 +366,10 @@ program
       url?: string;
       remote?: string;
       bearerTokenEnv?: string;
+      feishuAppIdEnv?: string;
+      feishuAppSecretEnv?: string;
+      feishuTarget?: string;
+      feishuCliPath?: string;
       privacyTrust?: "trusted_personal_remote";
       json?: boolean;
     }

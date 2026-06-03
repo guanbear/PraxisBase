@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readdir, readFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
-import { PROTOCOL_VERSION } from "../protocol/types.js";
+import { PROTOCOL_VERSION, type AgentProfile } from "../protocol/types.js";
 import { computeHash, makeId } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { redactSensitiveValues } from "../protocol/redact.js";
@@ -220,6 +220,8 @@ function lessonOriginFromSource(source: { source_type: string; privacy_trust?: s
 function sourceKindFromParser(parser: ExperienceSourceParser): string {
   if (parser === "codex-session" || parser === "claude-code-session" || parser === "opencode-session") return "session";
   if (parser === "agentmemory-memory" || parser === "gbrain-memory") return "sidecar_import";
+  if (parser === "feishu-doc") return "feishu_doc";
+  if (parser === "feishu-chat") return "feishu_chat";
   if (parser === "openclaw-log" || parser === "openclaw-export") return "memory_file";
   if (parser === "claude-code-repair-log") return "report";
   return "generic_file";
@@ -820,9 +822,10 @@ function chunksFromEnvelopes(
 ): ExperienceChunk[] {
   return envelopes.flatMap((envelope) => {
     const reduced = reduceEnvelopeSummary(envelope, contextReducer);
+    const agent: AgentProfile = envelope.agent === "feishu" ? "generic" : envelope.agent;
     return chunkTextExperience({
       source_id: envelope.source_id,
-      agent: envelope.agent,
+      agent,
       channel: envelope.channel,
       source_ref: envelope.source_ref,
       source_hash: envelope.source_hash,

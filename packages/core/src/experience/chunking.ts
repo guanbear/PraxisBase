@@ -8,6 +8,7 @@ import type {
   ContextReducerRule,
   ContextReductionResult,
   ExperienceScopeHint,
+  ExperienceSourceAgent,
   ExperienceSourceChannel,
   ExperienceSourceConfig,
   NormalizedReducerInput,
@@ -19,6 +20,10 @@ const execFileAsync = promisify(execFile);
 const SUPPORTED_EXTENSIONS = new Set([".json", ".jsonl", ".md", ".txt", ".log", ".sqlite"]);
 const DEFAULT_MAX_BYTES = 512 * 1024;
 const DEFAULT_MAX_CHUNK_BYTES = 24 * 1024;
+
+function agentProfileForChunking(agent: ExperienceSourceAgent): AgentProfile {
+  return agent === "feishu" ? "generic" : agent;
+}
 
 export interface ExperienceChunk {
   source_id: string;
@@ -258,7 +263,7 @@ async function chunksFromOpenClawSqlite(
         sourceHash,
         contextReducer,
         sourceMetadata: {
-          agent: source.agent,
+          agent: agentProfileForChunking(source.agent),
           source_id: source.id,
           source_type: source.source_type,
           path: row.path as string,
@@ -267,7 +272,7 @@ async function chunksFromOpenClawSqlite(
       });
       return chunkTextExperience({
         source_id: source.id,
-        agent: source.agent,
+        agent: agentProfileForChunking(source.agent),
         channel: source.channel,
         source_ref: sourceRef,
         source_hash: sourceHash,
@@ -293,7 +298,7 @@ async function chunksFromFile(
   const s = await stat(filePath);
   if (s.size > maxBytes) return [];
   const rawText = await readFile(filePath, "utf8");
-  const text = meaningfulText(rawText, source.agent);
+  const text = meaningfulText(rawText, agentProfileForChunking(source.agent));
   const sourceRef = sourceRefForFile(source, filePath);
   const sourceHash = computeHash(rawText);
   const reduced = reduceTextForChunking({
@@ -302,7 +307,7 @@ async function chunksFromFile(
     sourceHash,
     contextReducer,
     sourceMetadata: {
-      agent: source.agent,
+      agent: agentProfileForChunking(source.agent),
       source_id: source.id,
       source_type: source.source_type,
       path: filePath,
@@ -311,7 +316,7 @@ async function chunksFromFile(
   });
   return chunkTextExperience({
     source_id: source.id,
-    agent: source.agent,
+    agent: agentProfileForChunking(source.agent),
     channel: source.channel,
     source_ref: sourceRef,
     source_hash: sourceHash,

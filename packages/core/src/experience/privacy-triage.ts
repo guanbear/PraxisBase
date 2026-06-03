@@ -81,8 +81,22 @@ function containsConcretePrivateValue(text: string): boolean {
     || /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/i.test(scanText);
 }
 
+function containsFeishuPrivateIdentifier(text: string): boolean {
+  return /\b(?:ou|on|un|oc)_[A-Za-z0-9_]{8,}\b/.test(text)
+    || /\b(?:user_id|open_id|union_id|chat_id)\s*[:=]\s*["']?[^"'\s,;}]{4,}/i.test(text);
+}
+
+function redactFeishuPrivateIdentifiers(text: string): string {
+  return text
+    .replace(/\b(?:ou|on|un|oc)_[A-Za-z0-9_]{8,}\b/g, "[REDACTED_FEISHU_ID]")
+    .replace(/\b(?:user_id|open_id|union_id|chat_id)\s*[:=]\s*["']?[^"'\s,;}]{4,}/gi, (match) => {
+      const key = match.split(/[:=]/)[0]?.trim() || "feishu_id";
+      return `${key}=[REDACTED_FEISHU_ID]`;
+    });
+}
+
 function redactForTriage(text: string): string {
-  return redactExcerpt(text, 2000)
+  return redactFeishuPrivateIdentifiers(redactExcerpt(text, 2000))
     .replace(/\b(token|cookie|secret|password|passwd|credential|authorization|api[_-]?key|access[_-]?token|secret[_-]?key)s?\b\s*[:=]\s*["'`]?[^\s"'`,;]+/gi, "$1=[REDACTED]")
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]");
 }
@@ -250,6 +264,12 @@ function remoteSourceNeedsReview(details: Record<string, unknown>): boolean {
     || sourceRef.startsWith("http://")
     || sourceRef.startsWith("https://")
     || sourceRef.includes("openclaw-api://");
+}
+
+function isFeishuException(details: Record<string, unknown>): boolean {
+  return stringValue(details.channel)?.toLowerCase() === "feishu"
+    || stringValue(details.agent)?.toLowerCase() === "feishu"
+    || (stringValue(details.source_ref)?.toLowerCase() ?? "").includes("feishu");
 }
 
 function sourceRefAliases(source: ExperienceSourceConfig): string[] {
@@ -477,8 +497,10 @@ async function triageException(input: {
     const { exceptionPath, exception } = input;
     const details = record(exception.details);
     const scope = stringValue(details.scope_hint) ?? stringValue(details.scope);
+    const triageText = exceptionTriageText(exception);
     const hardBlockReasons = [
-      ...(containsConcretePrivateValue(exceptionTriageText(exception)) ? ["private_material_detected"] : []),
+      ...(containsConcretePrivateValue(triageText) ? ["private_material_detected"] : []),
+      ...(isFeishuException(details) && containsFeishuPrivateIdentifier(triageText) ? ["feishu_private_identifier_detected"] : []),
       ...(remoteSourceNeedsReview(details) && !input.trustedRemoteSource ? ["remote_source_requires_review"] : []),
     ];
     const prompt = buildPrompt(exception);

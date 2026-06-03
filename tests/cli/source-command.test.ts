@@ -1,4 +1,4 @@
-import { mkdtemp } from "node:fs/promises";
+import { chmod, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -212,5 +212,111 @@ describe("source CLI command", () => {
     const added = JSON.parse(addOutput);
     assert.equal(added.ok, true);
     assert.equal(added.source.parser, "opencode-session");
+  });
+
+  it("adds a Feishu doc source with env-name credentials only", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-feishu-"));
+    const addOutput = await sourceCommand(root, "add", {
+      name: "feishu-team-docs",
+      agent: "feishu",
+      type: "feishu",
+      channel: "feishu",
+      parser: "feishu-doc",
+      scope: "team",
+      feishuTarget: "doccn_pb_m30_public_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+      feishuCliPath: "mock-feishu",
+      json: true,
+    });
+
+    const added = JSON.parse(addOutput);
+    assert.equal(added.ok, true);
+    assert.equal(added.source.agent, "feishu");
+    assert.equal(added.source.source_type, "feishu");
+    assert.equal(added.source.parser, "feishu-doc");
+    assert.equal(added.source.feishu_app_id_env, "FEISHU_APP_ID");
+    assert.equal(added.source.feishu_app_secret_env, "FEISHU_APP_SECRET");
+    assert.equal(added.source.feishu_target, "doccn_pb_m30_public_001");
+  });
+
+  it("source doctor verifies a Feishu target through a mock CLI wrapper", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-feishu-doctor-"));
+    const wrapper = join(root, "mock-feishu.sh");
+    await writeFile(wrapper, `#!/bin/sh\ncat "${process.cwd()}/tests/fixtures/feishu-source/feishu-doc.json"\n`, "utf8");
+    await chmod(wrapper, 0o755);
+
+    await sourceCommand(root, "add", {
+      name: "feishu-team-docs",
+      agent: "feishu",
+      type: "feishu",
+      channel: "feishu",
+      parser: "feishu-doc",
+      scope: "team",
+      feishuTarget: "doccn_pb_m30_public_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+      feishuCliPath: wrapper,
+      json: true,
+    });
+
+    const oldAppId = process.env.FEISHU_APP_ID;
+    const oldSecret = process.env.FEISHU_APP_SECRET;
+    process.env.FEISHU_APP_ID = "mock-app-id";
+    process.env.FEISHU_APP_SECRET = "mock-app-secret";
+    try {
+      const doctorOutput = await sourceCommand(root, "doctor", { name: "feishu-team-docs", json: true });
+      const doctor = JSON.parse(doctorOutput);
+      assert.equal(doctor.ok, true);
+      assert.equal(doctor.checks.find((check: { id: string }) => check.id === "feishu_app_id_env")?.ok, true);
+      assert.equal(doctor.checks.find((check: { id: string }) => check.id === "feishu_app_secret_env")?.ok, true);
+      assert.equal(doctor.checks.find((check: { id: string }) => check.id === "feishu_target_readable")?.ok, true);
+    } finally {
+      if (oldAppId === undefined) delete process.env.FEISHU_APP_ID;
+      else process.env.FEISHU_APP_ID = oldAppId;
+      if (oldSecret === undefined) delete process.env.FEISHU_APP_SECRET;
+      else process.env.FEISHU_APP_SECRET = oldSecret;
+    }
+  });
+
+  it("rejects Feishu literal credential values in source config", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-feishu-secret-"));
+    const output = await sourceCommand(root, "add", {
+      name: "bad-feishu",
+      agent: "feishu",
+      type: "feishu",
+      channel: "feishu",
+      parser: "feishu-doc",
+      scope: "team",
+      feishuTarget: "doccn_pb_m30_public_001",
+      feishuAppIdEnv: "cli_a_bad_literal_app_id",
+      feishuAppSecretEnv: "mock_secret_value_123456",
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.code, "SOURCE_CONFIG_CONTAINS_CREDENTIAL");
+  });
+
+  it("rejects trusted_personal_remote for Feishu sources", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-source-feishu-trusted-"));
+    const output = await sourceCommand(root, "add", {
+      name: "bad-feishu-trust",
+      agent: "feishu",
+      type: "feishu",
+      channel: "feishu",
+      parser: "feishu-doc",
+      scope: "team",
+      feishuTarget: "doccn_pb_m30_public_001",
+      feishuAppIdEnv: "FEISHU_APP_ID",
+      feishuAppSecretEnv: "FEISHU_APP_SECRET",
+      privacyTrust: "trusted_personal_remote",
+      json: true,
+    });
+
+    const parsed = JSON.parse(output);
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.code, "SOURCE_CONFIG_INVALID");
   });
 });
