@@ -1,0 +1,151 @@
+# OpenClaw Repair MVP Design
+
+## Overview
+
+This change builds the first executable PraxisBase slice: OpenClaw sandbox repair as an agent knowledge substrate. The system is file-first and CLI-first. Agents interact through generated bundles and inbox/outbox files; CI and reviewer agents process proposals into stable Git-backed knowledge.
+
+## Runtime Flow
+
+```text
+OpenClaw sandbox issue
+  -> repair agent starts
+  -> praxisbase repair-context openclaw --logs ...
+  -> agent repairs and verifies inside sandbox
+  -> praxisbase episode submit episode.json
+  -> praxisbase propose proposal.json
+  -> scheduled praxisbase review --auto
+  -> scheduled praxisbase promote --auto
+  -> praxisbase build regenerates bundles
+  -> next agent fetches improved context
+```
+
+## Storage Surfaces
+
+| Surface | Purpose |
+| --- | --- |
+| `.praxisbase/inbox/episodes` | Validated submitted repair episodes |
+| `.praxisbase/inbox/proposals` | Validated submitted knowledge proposals |
+| `.praxisbase/inbox/reviews` | AI reviewer decisions |
+| `.praxisbase/outbox` | Local retry queue when authority repo is unavailable |
+| `.praxisbase/exceptions` | Human-required, conflict, and failed-check exception queues |
+| `.praxisbase/runs` | Review, promote, and build run records for recovery and audit |
+| `kb/known-fixes` | Reviewed stable known fixes |
+| `kb/pitfalls` | Reviewed known pitfalls, anti-patterns, and forbidden repair paths |
+| `kb/procedures` | Reviewed stable procedures |
+| `skills/openclaw` | Agent-facing repair skills |
+| `dist/repair-bundles` | Generated context bundles for agents |
+
+## Core Components
+
+### Protocol Schemas
+
+Implement Zod schemas for:
+
+- `Episode`
+- `Proposal`
+- `Review`
+- `KnownFixFrontmatter`
+- `KnowledgeReference`
+- `PitfallFrontmatter`
+- `Evidence`
+
+Every schema must require `protocol_version: "0.1"`.
+
+Knowledge objects must include governance metadata:
+
+- `knowledge_type`
+- `maturity: draft | verified | proven`
+- `scope: personal | project | team | global`
+- `reference_count`
+- `last_referenced_at`
+- `supersedes`
+- `superseded_by`
+
+Episodes must include `knowledge_references` entries with object id, path, phase, effect, and outcome. Phase 1 records these fields but does not automatically promote or decay maturity.
+
+### Repair Context
+
+MVP signature detection is deterministic:
+
+- auth expired logs map to `openclaw:claude-auth-expired`
+- workspace lock logs map to `openclaw:workspace-lock-stuck`
+- missing Node runtime logs map to `openclaw:node-runtime-missing`
+- unknown logs map to `openclaw:unknown`
+
+For `openclaw:claude-auth-expired`, return a bundle with:
+
+- baseline diagnostics skill
+- auth repair skill
+- auth expired known fix
+- diagnostic commands
+- forbidden operations
+- verification steps
+- rollback steps
+- escalation conditions
+
+### Review
+
+Risk classification:
+
+- `archive` is high risk.
+- `policy` and `decision` changes are high risk.
+- `skill`, `known_fix`, and `procedure` changes are medium risk unless only linking.
+- `pitfall` create or patch changes are medium risk.
+- evidence/reference additions and run records are low risk.
+- note/link metadata changes are low risk.
+
+Auto-merge requires:
+
+- decision `approve`
+- risk `low` or `medium`
+- confidence `>= 0.75`
+- evidence source URI
+- evidence hash
+- verification text
+
+### Promotion
+
+Promotion writes only to stable knowledge paths:
+
+- `kb/**`
+- `skills/**`
+
+Promotion must reject any proposal patch path outside those prefixes.
+
+### Build
+
+Build generates:
+
+- `dist/repair-bundles/openclaw-sandbox.json`
+- `dist/repair-bundles/manifest.json`
+- `dist/kb-index.json`
+- `dist/search-index.json`
+- `dist/llms.txt`
+- `dist/index.html`
+
+The manifest includes protocol version, bundle path, checksum, generated time, commit SHA when available, and compatible CLI version.
+
+### Bundle Fetch
+
+`praxisbase bundle fetch openclaw --signature <signature>` reads generated bundles from `dist/repair-bundles` and writes a last-known-good cache for the requesting agent. If the latest bundle cannot be read but a cache entry exists, the command returns the cached bundle and emits a machine-readable cache warning.
+
+## Failure Handling
+
+- If bundle fetch fails, agents use last-known-good cache.
+- If episode/proposal submission fails, agents write to `.praxisbase/outbox`.
+- If promotion patch conflicts, proposal returns to review queue with status `conflict`.
+- If review confidence is below threshold, proposal enters human exception queue.
+- Human-required, conflict, and failed-check cases are written under `.praxisbase/exceptions`.
+- Each `review`, `promote`, and `build` invocation writes a run record under `.praxisbase/runs`.
+
+## Security Boundary
+
+Repair bundles must include:
+
+- allowed action class
+- forbidden operations
+- verification steps
+- rollback steps
+- escalation condition
+
+OpenClaw repair may operate inside the sandbox. Production-impacting actions are out of scope for automatic execution.

@@ -1,93 +1,258 @@
-# PraxisBase
+<p align="center">
+  <img src="assets/brand/praxisbase-logo.png" alt="PraxisBase — Agent-Native Knowledge Substrate" width="900">
+</p>
 
+# PraxisBase — Agent-Native Knowledge Substrate
 
+**Languages:** English | [简体中文](README.zh-CN.md)
 
-## Getting started
+> **AGENT-NATIVE KNOWLEDGE SUBSTRATE**
+>
+> **Disposable Agents. Durable Experience.**
+>
+> 中文：**知行未必一，经验自成基。**
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+PraxisBase is an agent-native knowledge substrate for people and teams running many temporary and persistent agents. It keeps the agents disposable while making their experience durable: knowledge, repair memory, reusable skills, decisions, and preferences.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+The project started from the LLM Wiki idea, but its current direction is broader: **agents are cattle, knowledge is the herd memory**. Codex, Claude Code, OpenCode, Hermes, OpenHuman, OpenClaw, temporary repair agents, and future MCP clients should all be replaceable peers that read and write the same durable experience layer through a common CLI and file protocol.
 
-## Add your files
+## Core Philosophy
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+Modern agent systems should not depend on one precious long-lived container or one hand-tended agent session. Inspired by Anthropic's Managed Agents architecture, PraxisBase separates:
 
+- **Brains**: temporary or persistent agent loops that reason and decide
+- **Hands**: sandboxes, tools, shells, OpenClaw environments, K8s systems
+- **Memory**: durable episodes, proposals, reviews, skills, known fixes, procedures, and bundles
+
+Anthropic decouples session, harness, and sandbox so failed harnesses or sandboxes can be replaced. PraxisBase applies the same philosophy to organizational learning: an agent can disappear after one repair run, but its useful experience can survive, be reviewed, be promoted, and become part of the next agent's context.
+
+One important long-term capability is **skill synthesis**: repeated successful episodes should be summarized into reusable `SKILL.md` files, reviewed by AI, promoted into the shared skill registry, and loaded by later agents. The same loop should work for personal memories, project-local lessons, team knowledge, and organization-level policies.
+
+## What It Does
+
+```text
+Codex / Claude Code / OpenCode / Hermes / OpenHuman / OpenClaw / K8s / Feishu
+          |
+          v
+  temporary and persistent agent peers
+          |
+          v
+    PraxisBase file protocol + CLI
+          |
+          v
+  Git-backed durable knowledge layer
+          |
+          v
+ static repair bundles + HTML inspection
+          |
+          v
+       next agent starts smarter
 ```
-cd existing_repo
-git remote add origin https://gitlab.chehejia.com/sre/praxisbase.git
-git branch -M master
-git push -uf origin master
+
+## Current Status
+
+PraxisBase is currently organized around milestone gates rather than a single long-lived daemon:
+
+| Milestone | Status | Gate |
+| --- | --- | --- |
+| M27 Personal GA | Complete | `praxisbase personal release-audit --json` |
+| M28 Team OpenClaw repair self-evolution | Complete | `praxisbase team release-audit --json` |
+| M29 Container/K8s incident experience | Implemented and fixture-validated | `praxisbase team release-audit --json` with optional K8s gates |
+| M30 Feishu source integration | Designed, not started | Do not implement until M29 is explicitly closed |
+
+K8s is an optional team domain. In a workspace that has not been initialized with K8s seed knowledge, the three K8s audit gates report `not_run` and do not fail `team_ga`. Once K8s is enabled, those gates must pass with real bundle, incident intake, and boundary evidence.
+
+## OpenClaw Repair MVP
+
+The first production path targets **OpenClaw sandbox auto-repair**:
+
+- `praxisbase init` creates the agent knowledge substrate skeleton
+- `praxisbase repair-context openclaw --logs ...` returns a compact repair bundle
+- agents submit repair `episode` records after each run
+- agents submit `proposal` records when they discover reusable knowledge
+- skill improvements can enter the same proposal/review/promotion lane
+- AI reviewer agents classify risk and approve routine changes
+- `praxisbase promote --auto` promotes approved proposals into stable knowledge
+- `praxisbase build` generates repair bundles, indexes, `llms.txt`, and HTML inspection output
+- GitLab Scheduled Pipelines run review, promotion, and build jobs
+
+PraxisBase intentionally does **not** implement a central master agent, external vector DB, blockchain, live Kubernetes writes, or sre-autopilot internals. K8s support is a read-only incident knowledge domain: PraxisBase builds recommendation bundles and accepts incident episodes/proposals from a peer system, but it does not operate a cluster.
+
+## Knowledge Model
+
+PraxisBase stores different knowledge lifecycles in different places:
+
+| Layer | Carrier | Examples |
+| --- | --- | --- |
+| Protocol state | `.praxisbase/` | inbox episodes, proposals, reviews, policies, schedules |
+| Stable knowledge | `kb/` | known fixes, procedures, decisions, notes, reviewed memory |
+| Agent skills | `skills/` | OpenClaw repair skills, K8s triage skills |
+| Distribution | `dist/` | repair bundles, indexes, HTML, `llms.txt` |
+| Raw evidence | external systems | full logs, tickets, Feishu exports, object storage |
+
+Large raw logs stay outside Git. Git stores references, summaries, hashes, and redacted evidence.
+
+Knowledge objects are classified across four dimensions:
+
+| Dimension | Values |
+| --- | --- |
+| Scope | `personal`, `project`, `team`, `org` |
+| Layer | `preference`, `convention`, `technical`, `domain`, `project` |
+| Type | `model`, `decision`, `guideline`, `pitfall`, `process`, `known_fix`, `procedure`, `skill`, `policy`, `note` |
+| Maturity | `draft`, `verified`, `proven`, `stale`, `archived` |
+
+Adapters should stay thin: hooks capture evidence, watchers support agents without hooks, and scheduled distill jobs turn captures into episodes, proposals, reports, and exceptions.
+
+## Native Memory Bridge
+
+PraxisBase should reuse agent-native memory instead of replacing it. Existing Codex sessions, Hermes skill summaries, OpenHuman persona/preferences, OpenClaw repair records, and generic agent notes can enter as source refs with hashes and redacted summaries.
+
+`memory import` backfills native memory into capture/proposal candidates. `memory refresh` sends reviewed PraxisBase knowledge back as runtime context, install snippets, or patch proposals. It is not silent bidirectional sync: native memory is a source and cache, while reviewed PraxisBase objects remain the shared authority.
+
+## Multi-Agent CLI Flow
+
+The first multi-agent experience layer is CLI-first and proposal-based:
+
+```bash
+praxisbase install codex --dry-run --json
+praxisbase context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+praxisbase capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
+praxisbase capture submit capture.json --json
+praxisbase memory import --agent hermes --source hermes-memory.json --json
+praxisbase memory refresh --agent hermes --target instruction-snippet --source-refs kb/known-fixes/openclaw-auth-expired.md --json
+praxisbase distill run --json
+praxisbase watch --agent claude-code --workspace . --once --json
 ```
 
-## Integrate with your tools
+These commands write only protocol state under `.praxisbase/` and proposal candidates under `.praxisbase/inbox/proposals/`. Stable `kb/` and `skills/` changes still go through review and promotion.
 
-- [ ] [Set up project integrations](https://gitlab.chehejia.com/sre/praxisbase/-/settings/integrations)
+### Example: Hermes Skill Evolution
 
-## Collaborate with your team
+Hermes already has agent-managed skills, persistent memory, and curator-style skill maintenance. PraxisBase can reuse those outputs as proposal sources and send reviewed shared skills back as context or patch proposals.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+Hermes is an accelerator, not a dependency: Codex, Claude Code, OpenCode, OpenHuman, OpenClaw, and generic agents must still work through the same CLI/file protocol.
 
-## Test and Deploy
+## Daily Experience Loop
 
-Use the built-in continuous integration in GitLab.
+PraxisBase supports an AI-first daily experience loop that collects agent experience from configured sources, chunks it, runs deterministic privacy gates, asks an AI model to distill reusable experience, and merges only redacted summaries into the wiki flow. The deterministic path remains available as explicit degraded mode for bootstrap and offline smoke, but it is not production-ready.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### AI-First Quickstart
 
-***
+```bash
+praxisbase bootstrap personal --agent codex --install-skill --json
+praxisbase ai init --provider openai-compatible --model <model> --json
+export PRAXISBASE_LLM_API_KEY=...
+export PRAXISBASE_LLM_BASE_URL=https://api.openai.com/v1   # optional for OpenAI-compatible providers
+praxisbase ai doctor --json
+praxisbase daily run --mode personal --build-site --json
+open dist/index.html
+```
 
-# Editing this README
+`bootstrap personal` discovers only specific safe personal paths such as `~/.codex/sessions`, `~/.codex/archived_sessions`, `~/.codex-cli-cliproxyapi/sessions`, `~/.openclaw/memory/main.sqlite`, and `~/.openclaw/reports`. It does not scan the whole home directory.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Release Audits
 
-## Suggestions for a good README
+Use release audits to verify what is actually usable in a workspace:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```bash
+praxisbase personal release-audit --json
+praxisbase team release-audit --json
+praxisbase kb audit --json
+```
 
-## Name
-Choose a self-explaining name for your project.
+To enable the optional K8s incident domain in a workspace:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+praxisbase init --profile k8s
+praxisbase build
+praxisbase bundle fetch k8s-incident --signature k8s:pod-oomkilled --json
+praxisbase team release-audit --json
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Runtime protocol state under `.praxisbase/` and generated site/bundle output under `dist/` are local artifacts. Stable knowledge belongs in `kb/` and `skills/`; raw logs, full sessions, and private memory stay outside Git as source references plus hashes.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### Personal Daily Flow
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+```bash
+praxisbase source add local-codex --agent codex --type local --path ~/.codex/archived_sessions --scope personal
+praxisbase source add local-openclaw --agent openclaw --type local --path ~/.openclaw/exports/latest.json --scope project
+praxisbase daily run --mode personal --build-site --json
+```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+For offline bootstrap smoke only:
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+```bash
+praxisbase daily run --mode personal --degraded --build-site --json
+```
+
+Degraded mode is visibly marked as `production_ready: false` in the daily report.
+
+### Team GitLab Daily Flow
+
+```bash
+praxisbase source add openclaw-bot --agent openclaw --channel feishu --type openclaw-api --remote bot-prod --scope team
+praxisbase source add claude-repair-log --agent claude-code --type http --url "$LOG_API" --scope team
+praxisbase daily run --mode team-git --branch harvest/daily --commit --push --build-site --json
+```
+
+Team mode enforces privacy before AI distill: personal scope, private chat content, and raw credentials are rejected before model calls or proposal generation. Uncertain cases route to `.praxisbase/exceptions/human-required`. Teams should run this in GitLab with protected branches and scheduled pipelines so reviewed knowledge, reports, and HTML are auditable.
+
+## Why This Exists
+
+Teams that operate many agent sandboxes have a different problem from ordinary documentation:
+
+- a repair agent may live for minutes
+- a sandbox may be deleted after use
+- a persistent bot may be upgraded or replaced
+- model and harness assumptions will change
+- the useful repair experience must survive all of that
+
+PraxisBase makes the durable part explicit. It is the shared memory, skill registry, review lane, skill synthesis lane, and repair bundle generator for disposable agents.
+
+## Current Documents
+
+- [Roadmap Index (2026-06)](docs/ROADMAP-2026-06.md)
+- [Convergence & Team Roadmap (anchor)](docs/superpowers/specs/2026-06-02-convergence-and-team-roadmap-design.md)
+- [M27 Personal GA Status](docs/status/m27-personal-ga-freeze-2026-06-02.md)
+- [M28 Team Repair Self-Evolution Status](docs/status/m28-team-repair-self-evolution-2026-06-02.md)
+- [M29 Container Incident Experience Status](docs/status/m29-container-incident-experience-2026-06-02.md)
+- [Deployment Guide](docs/deployment.md)
+- [AI-First Daily Usage](docs/ai-first-daily-usage.md)
+- [Agent Knowledge Substrate Design](docs/superpowers/specs/2026-05-17-agent-knowledge-substrate-design.md)
+- [Multi-Agent Experience Layer Design](docs/superpowers/specs/2026-05-19-multi-agent-experience-layer-design.md)
+- [Multi-Agent Experience Layer Implementation Plan](docs/superpowers/plans/2026-05-19-multi-agent-experience-layer-implementation-plan.md)
+- [Multi-Agent Experience Layer OpenSpec](docs/openspec/changes/multi-agent-experience-layer/proposal.md)
+- [Multi-Agent Experience Layer BDD](docs/bdd/multi-agent-experience-layer.feature)
+- [SRE-autopilot K8s Incident Integration Design](docs/superpowers/specs/2026-05-18-sre-autopilot-k8s-incident-integration-design.md)
+- [OpenClaw Repair MVP Implementation Plan](docs/superpowers/plans/2026-05-17-openclaw-repair-mvp-implementation-plan.md)
+- [OpenSpec Change](docs/openspec/changes/openclaw-repair-mvp/proposal.md)
+- [BDD Acceptance Feature](docs/bdd/openclaw-repair-mvp.feature)
+- [SRE-autopilot K8s Incident OpenSpec](docs/openspec/changes/sre-autopilot-k8s-incident-integration/proposal.md)
+- [SRE-autopilot K8s Incident BDD](docs/bdd/sre-autopilot-k8s-incident-integration.feature)
 
 ## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- **M27**: Personal knowledge base GA, AI distill, personal wiki/skill output, GBrain sidecar export, and clean provenance gates.
+- **M28**: Team OpenClaw repair self-evolution through repair context, episode/proposal intake, review/promote, governance, and team release audit.
+- **M29**: Optional K8s incident experience domain with read-only bundles, sre-autopilot episode intake, and K8s boundary gates.
+- **M30**: Feishu source integration is designed but not started; it should only begin after M29 is explicitly closed.
+- **Later**: Multi-repo federation, stronger provenance, external retrieval integrations, and cross-team synchronization.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## Name
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+**PraxisBase** is the English project name. **知行基座** is the Chinese name.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+PraxisBase means the durable base where agents turn knowledge into action and action back into reusable knowledge. The English name keeps the infrastructure feel of a shared substrate; the Chinese name preserves "知行", which fits the loop this project cares about most: learn, repair, verify, promote, and reuse.
+
+## References
+
+- [Anthropic: Scaling Managed Agents, Decoupling the brain from the hands](https://www.anthropic.com/engineering/managed-agents)
+- [Karpathy LLM Wiki gist v1](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
+- [LLM Wiki v2](https://gist.github.com/rohitg00/2067ab416f7bbe447c1977edaaa681e2)
+- [The Unreasonable Effectiveness of HTML](https://x.com/trq212/status/2052809885763747935)
+- [Hermes Agent](https://hermes-agent.nousresearch.com/)
+- [OpenClaw](https://github.com/openclaw/openclaw)
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+MIT

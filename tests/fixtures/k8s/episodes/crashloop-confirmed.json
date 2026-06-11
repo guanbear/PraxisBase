@@ -1,0 +1,20 @@
+{
+  "id": "episode_20260518_k8s_crashloop",
+  "protocol_version": "0.1",
+  "type": "incident_episode",
+  "scope": "team",
+  "agent_id": "sre-autopilot-cp",
+  "agent_type": "live_incident_analyzer",
+  "environment_id": "prod",
+  "run_id": "trace-crash-002",
+  "idempotency_key": "episode_20260518_k8s_crashloop",
+  "problem_signature": "k8s:pod-crashloop-imagepull",
+  "result": "confirmed",
+  "used_skills": ["skills/k8s/incident-triage/SKILL.md"],
+  "used_objects": [],
+  "source_refs": [
+    "k8s-event://cluster-a/prod/payment-svc/ImagePullBackOff"
+  ],
+  "evidence_summary": "Pod payment-svc failed to pull image; ImagePullBackOff status.",
+  "created_at": "2026-05-18T11:00:00Z"
+}

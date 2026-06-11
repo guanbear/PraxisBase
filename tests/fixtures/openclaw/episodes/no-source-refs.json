@@ -1,0 +1,18 @@
+{
+  "id": "episode_20260517_no_source",
+  "protocol_version": "0.1",
+  "type": "repair_episode",
+  "scope": "team",
+  "agent_id": "openclaw-temp-xyz",
+  "agent_type": "temporary_repair_agent",
+  "environment_id": "sandbox-123",
+  "run_id": "run-456",
+  "idempotency_key": "episode_20260517_no_source",
+  "problem_signature": "openclaw:claude-auth-expired",
+  "result": "success",
+  "used_skills": [],
+  "used_objects": [],
+  "source_refs": [],
+  "summary": "Missing provenance.",
+  "created_at": "2026-05-17T10:00:00Z"
+}

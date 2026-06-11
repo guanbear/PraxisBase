@@ -1,0 +1,31 @@
+# Wiki Synthesis Quality And Promotion Tasks
+
+- [x] Document the synthesis quality contract and drift root cause.
+- [x] Add OpenSpec proposal/design/tasks for quality and promotion.
+- [x] Add BDD scenarios for linked synthesis, hard blocks, and personal/team promotion.
+- [x] Strengthen curator prompt required sections and link instructions.
+- [x] Add deterministic body repair for related links and provenance.
+- [x] Require core sections in promotion quality gate.
+- [x] Add unit tests for link/provenance repair.
+- [x] Add unit tests for section hard blocks.
+- [x] Add regression tests for canonical relationship slugs, resolver aliases, and clickable HTML wikilinks.
+- [x] Use stable page ids for relationship planning and require resolver-valid related links.
+- [x] Filter startup/configuration/status-only noise before wiki curation.
+- [x] Cluster repeated agent experience by semantic problem family before AI synthesis.
+- [x] Allow personal low-risk update proposals to auto-promote when quality gates pass.
+- [x] Prevent auto-promotable pages from linking to human-gated planned pages.
+- [x] Fall back to deterministic evidence-shaped synthesis for safe AI output that fails non-security guards.
+- [x] Re-run real personal daily smoke and inspect graph/content quality.
+- [x] Run targeted wiki tests.
+- [x] Run `pnpm check`.
+- [x] Commit source, docs, and tests only.
+- [x] Prefer agent-usable wiki body sections over report-style summaries.
+- [x] Classify reusable status/health-check evidence as procedures.
+- [x] Deduplicate same-run proposals with the same target path before review writes.
+- [x] Explain daily `ai_distill.human_required` as privacy-gated input count, not wiki review count.
+- [x] Require review for single-source one-off run/report pages.
+- [x] Replace stale pending proposals for the same target path.
+- [x] Repair narrow AI markdown bullet artifacts before quality assessment.
+- [x] Reject promotion and lint stable pages when body provenance disagrees with structured source refs or hashes.
+- [x] Replace AI-written provenance sections with deterministic structured provenance before proposal promotion.
+- [x] Require actionable Agent Use guidance in synthesis, deterministic repair, promotion quality, and wiki lint.

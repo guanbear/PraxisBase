@@ -1,0 +1,119 @@
+# Multi-Agent Experience Layer Tasks
+
+## M0: Protocol Schemas And Paths
+
+- [x] Add capture record schema.
+- [x] Add adapter profile schema.
+- [x] Add native memory source, memory import report, and memory refresh plan schemas.
+- [x] Add context request/response schemas.
+- [x] Add structured error schema.
+- [x] Add paths for captures, memory reports, memory import runs, memory refresh outputs, reports, runs, adapters, and raw vault refs.
+- [x] Export new schemas and types through existing core exports.
+- [x] Add tests for valid and invalid capture records.
+- [x] Add tests for adapter profile validation.
+- [x] Add tests for native memory source and memory refresh validation.
+- [x] Add tests for structured errors.
+
+## M1: Capture And Raw Vault
+
+- [x] Implement `finishCapture` in `packages/core/src/experience/capture.ts`.
+- [x] Reject raw refs that point under `kb/`, `skills/`, or `dist/`.
+- [x] Allow `raw-vault://`, `log://`, `artifact://`, `file-ref://`, and `ci-artifact://` refs.
+- [x] Write capture records under `.praxisbase/outbox/captures/`.
+- [x] Add `praxisbase capture finish`.
+- [x] Add `praxisbase capture submit` for structured capture file submission.
+- [x] Add CLI tests for capture output and rejection behavior.
+
+## M2: Adapter Profiles And Install
+
+- [x] Add built-in profiles for `codex`, `claude-code`, `opencode`, `openclaw`, `hermes`, `openhuman`, and `generic`.
+- [x] Add install dry-run planner.
+- [x] Add non-dry-run install that writes `.praxisbase/adapters/<agent>.json`.
+- [x] Append instruction snippets only inside PraxisBase markers.
+- [x] Prevent whole-file overwrite of instruction files.
+- [x] Add `praxisbase install <agent> --dry-run --json`.
+- [x] Add tests for dry-run output and safe write behavior.
+
+## M3: Native Memory Bridge
+
+- [x] Implement `importNativeMemory` in `packages/core/src/experience/native-memory.ts`.
+- [x] Implement `planMemoryRefresh` in `packages/core/src/experience/native-memory.ts`.
+- [x] Preserve source refs, source hashes, summaries, scope hints, and agent ids.
+- [x] Deduplicate native memory sources by source hash.
+- [x] Default OpenHuman preferences and personal memories to `scope=personal`.
+- [x] Treat Hermes skill summaries and curator patches as proposal candidates only.
+- [x] Reject source refs under `kb/`, `skills/`, or `dist/`.
+- [x] Write memory import reports under `.praxisbase/reports/memory/`.
+- [x] Write memory import runs under `.praxisbase/runs/memory-import/`.
+- [x] Add `praxisbase memory import --agent <agent> --source <file> --json`.
+- [x] Add `praxisbase memory refresh --agent <agent> --target <context|instruction-snippet|patch-proposal> --source-refs <refs> --json`.
+- [x] Add tests proving memory import and refresh do not modify stable `kb/` or `skills/`.
+
+## M4: Context Get
+
+- [x] Implement stage-aware `context get` core logic.
+- [x] Support `diagnosis`, `repair`, `verification`, and `proposal` stages.
+- [x] Enforce default stage budgets.
+- [x] Preserve citations when dropping full object bodies.
+- [x] Return warnings when generated bundles or indexes are missing.
+- [x] Add `praxisbase context get`.
+- [x] Add tests for budget, citations, and no-hard-fail behavior.
+
+## M5: Distill And Watch
+
+- [x] Implement `distill run` that reads captures and writes reports/proposals/exceptions.
+- [x] Default generated candidates to `scope=personal`.
+- [x] Suggest `scope=project` only when workspace evidence is clear.
+- [x] Never suggest `team` or `org` without explicit marker or reviewer input.
+- [x] Ensure distill reports `changed_stable_knowledge: false`.
+- [x] Add `praxisbase distill run --json`.
+- [x] Add `praxisbase watch --agent <agent> --workspace <path> --once --json`.
+- [x] Add tests for proposal output, exception output, watch capture output, structured JSON errors, and stable knowledge non-mutation.
+
+## M6: Docs, Seed, And Smoke Flow
+
+- [x] Update `praxisbase init` seed paths.
+- [x] Update README links and command examples.
+- [x] Update deployment docs for personal local use and team scheduled use.
+- [x] Keep design, implementation plan, OpenSpec, and BDD in sync with final command names.
+- [x] Run full smoke flow from the implementation plan.
+
+## Required Verification
+
+```bash
+pnpm check
+git diff --check
+```
+
+Smoke flow:
+
+```bash
+tmpdir=$(mktemp -d)
+pnpm build
+cd "$tmpdir"
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js init --profile all
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js install codex --dry-run --json
+printf '{"agent":"hermes","kind":"skill_summary","source_ref":"raw-vault://hermes/skill-auth-repair","source_hash":"sha256:hermes1","redacted_summary":"Hermes synthesized an auth repair skill."}' > hermes-memory.json
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js memory import --agent hermes --source hermes-memory.json --json
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js capture finish --agent codex --result success --source-ref raw-vault://codex/session-1 --source-hash sha256:session1 --summary "Fixed a project issue and tests passed." --json
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js distill run --json
+node /Users/guanbear/repos/PraxisBase/packages/cli/dist/index.js context get --agent codex --stage diagnosis --query "openclaw auth expired" --json
+```
+
+Expected:
+
+- capture is written under `.praxisbase/outbox/captures/`,
+- memory import report is written under `.praxisbase/reports/memory/`,
+- distill writes report/proposal/exception outputs only,
+- context response contains stage, warnings, and citations,
+- memory import/memory refresh/capture/watch/distill do not write stable `kb/` or `skills/`.
+
+## Out Of Scope
+
+- GUI, browser extension, IDE plugin, MCP server.
+- Vector database or external semantic search.
+- Long-running database service or queue worker.
+- Deep per-agent plugin frameworks.
+- Unreviewed bidirectional live sync with agent-native memories.
+- Raw transcript/log/chat storage in Git.
+- Direct stable knowledge mutation from memory import, memory refresh, capture, watch, or distill.

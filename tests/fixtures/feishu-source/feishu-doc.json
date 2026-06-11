@@ -1,0 +1,8 @@
+{
+  "type": "doc",
+  "doc_token": "doccn_pb_m30_public_001",
+  "title": "OpenClaw deployment checklist",
+  "last_edited_at": "2026-06-05T09:10:00.000Z",
+  "visibility": "public_kb",
+  "content": "Before restarting OpenClaw gateway, confirm the target environment, deploy configuration changes, and run a smoke check after restart."
+}

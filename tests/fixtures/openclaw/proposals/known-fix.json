@@ -1,0 +1,26 @@
+{
+  "id": "proposal_20260517_known_fix",
+  "protocol_version": "0.1",
+  "type": "knowledge_proposal",
+  "scope": "team",
+  "action": "create",
+  "target_type": "known_fix",
+  "target_id": "openclaw-auth-expired",
+  "agent_id": "openclaw-temp-xyz",
+  "agent_type": "temporary_repair_agent",
+  "environment_id": "sandbox-123",
+  "run_id": "run-456",
+  "idempotency_key": "proposal_20260517_known_fix",
+  "evidence": {
+    "source_uri": "log://openclaw/sandbox-123/run-456",
+    "source_hash": "sha256:abc",
+    "excerpt": "Claude auth expired; refresh fixed it.",
+    "repair_result": "success",
+    "verification": "Minimal model call completed."
+  },
+  "patch": {
+    "path": "kb/known-fixes/openclaw-auth-expired.md",
+    "content": "# OpenClaw auth expired\n\n## Fix\n\nRefresh auth.\n"
+  },
+  "created_at": "2026-05-17T10:00:00Z"
+}

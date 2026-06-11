@@ -1,0 +1,387 @@
+{
+  "name": "@praxisbase/core",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./protocol/types.js": {
+      "types": "./src/protocol/types.ts",
+      "default": "./dist/protocol/types.js"
+    },
+    "./protocol/schemas.js": {
+      "types": "./src/protocol/schemas.ts",
+      "default": "./dist/protocol/schemas.js"
+    },
+    "./protocol/paths.js": {
+      "types": "./src/protocol/paths.ts",
+      "default": "./dist/protocol/paths.js"
+    },
+    "./protocol/id.js": {
+      "types": "./src/protocol/id.ts",
+      "default": "./dist/protocol/id.js"
+    },
+    "./protocol/slug.js": {
+      "types": "./src/protocol/slug.ts",
+      "default": "./dist/protocol/slug.js"
+    },
+    "./ai/config.js": {
+      "types": "./src/ai/config.ts",
+      "default": "./dist/ai/config.js"
+    },
+    "./ai/client.js": {
+      "types": "./src/ai/client.ts",
+      "default": "./dist/ai/client.js"
+    },
+    "./ai/distill.js": {
+      "types": "./src/ai/distill.ts",
+      "default": "./dist/ai/distill.js"
+    },
+    "./store/file-store.js": {
+      "types": "./src/store/file-store.ts",
+      "default": "./dist/store/file-store.js"
+    },
+    "./templates/seed.js": {
+      "types": "./src/templates/seed.ts",
+      "default": "./dist/templates/seed.js"
+    },
+    "./repair/signature.js": {
+      "types": "./src/repair/signature.ts",
+      "default": "./dist/repair/signature.js"
+    },
+    "./repair/context.js": {
+      "types": "./src/repair/context.ts",
+      "default": "./dist/repair/context.js"
+    },
+    "./review/risk.js": {
+      "types": "./src/review/risk.ts",
+      "default": "./dist/review/risk.js"
+    },
+    "./review/reviewer.js": {
+      "types": "./src/review/reviewer.ts",
+      "default": "./dist/review/reviewer.js"
+    },
+    "./review/policy.js": {
+      "types": "./src/review/policy.ts",
+      "default": "./dist/review/policy.js"
+    },
+    "./promote/promote.js": {
+      "types": "./src/promote/promote.ts",
+      "default": "./dist/promote/promote.js"
+    },
+    "./build/build.js": {
+      "types": "./src/build/build.ts",
+      "default": "./dist/build/build.js"
+    },
+    "./build/html.js": {
+      "types": "./src/build/html.ts",
+      "default": "./dist/build/html.js"
+    },
+    "./bundles/fetch.js": {
+      "types": "./src/bundles/fetch.ts",
+      "default": "./dist/bundles/fetch.js"
+    },
+    "./adapter/sre-autopilot.js": {
+      "types": "./src/adapter/sre-autopilot.ts",
+      "default": "./dist/adapter/sre-autopilot.js"
+    },
+    "./feishu/summary.js": {
+      "types": "./src/feishu/summary.ts",
+      "default": "./dist/feishu/summary.js"
+    },
+    "./synthesis/skill.js": {
+      "types": "./src/synthesis/skill.ts",
+      "default": "./dist/synthesis/skill.js"
+    },
+    "./synthesis/skill-model.js": {
+      "types": "./src/synthesis/skill-model.ts",
+      "default": "./dist/synthesis/skill-model.js"
+    },
+    "./synthesis/skill-signals.js": {
+      "types": "./src/synthesis/skill-signals.ts",
+      "default": "./dist/synthesis/skill-signals.js"
+    },
+    "./synthesis/skill-stability.js": {
+      "types": "./src/synthesis/skill-stability.ts",
+      "default": "./dist/synthesis/skill-stability.js"
+    },
+    "./synthesis/skill-inventory.js": {
+      "types": "./src/synthesis/skill-inventory.ts",
+      "default": "./dist/synthesis/skill-inventory.js"
+    },
+    "./synthesis/skill-proposer.js": {
+      "types": "./src/synthesis/skill-proposer.ts",
+      "default": "./dist/synthesis/skill-proposer.js"
+    },
+    "./synthesis/skill-review.js": {
+      "types": "./src/synthesis/skill-review.ts",
+      "default": "./dist/synthesis/skill-review.js"
+    },
+    "./synthesis/skill-review-policy.js": {
+      "types": "./src/synthesis/skill-review-policy.ts",
+      "default": "./dist/synthesis/skill-review-policy.js"
+    },
+    "./synthesis/skill-audit.js": {
+      "types": "./src/synthesis/skill-audit.ts",
+      "default": "./dist/synthesis/skill-audit.js"
+    },
+    "./synthesis/skill-validation.js": {
+      "types": "./src/synthesis/skill-validation.ts",
+      "default": "./dist/synthesis/skill-validation.js"
+    },
+    "./wiki/lifecycle.js": {
+      "types": "./src/wiki/lifecycle.ts",
+      "default": "./dist/wiki/lifecycle.js"
+    },
+    "./wiki/catalog.js": {
+      "types": "./src/wiki/catalog.ts",
+      "default": "./dist/wiki/catalog.js"
+    },
+    "./experience/agent-memory.js": {
+      "types": "./src/experience/agent-memory.ts",
+      "default": "./dist/experience/agent-memory.js"
+    },
+    "./experience/openclaw-remote.js": {
+      "types": "./src/experience/openclaw-remote.ts",
+      "default": "./dist/experience/openclaw-remote.js"
+    },
+    "./experience/remote-sources.js": {
+      "types": "./src/experience/remote-sources.ts",
+      "default": "./dist/experience/remote-sources.js"
+    },
+    "./experience/remote-adapters.js": {
+      "types": "./src/experience/remote-adapters.ts",
+      "default": "./dist/experience/remote-adapters.js"
+    },
+    "./experience/source-config.js": {
+      "types": "./src/experience/source-config.ts",
+      "default": "./dist/experience/source-config.js"
+    },
+    "./experience/source-item-ledger.js": {
+      "types": "./src/experience/source-item-ledger.ts",
+      "default": "./dist/experience/source-item-ledger.js"
+    },
+    "./experience/privacy-policy.js": {
+      "types": "./src/experience/privacy-policy.ts",
+      "default": "./dist/experience/privacy-policy.js"
+    },
+    "./experience/chunking.js": {
+      "types": "./src/experience/chunking.ts",
+      "default": "./dist/experience/chunking.js"
+    },
+    "./experience/context-reducer.js": {
+      "types": "./src/experience/context-reducer.ts",
+      "default": "./dist/experience/context-reducer.js"
+    },
+    "./experience/context-reducer-rules.js": {
+      "types": "./src/experience/context-reducer-rules.ts",
+      "default": "./dist/experience/context-reducer-rules.js"
+    },
+    "./experience/context-juice.js": {
+      "types": "./src/experience/context-juice.ts",
+      "default": "./dist/experience/context-juice.js"
+    },
+    "./experience/personal-learning.js": {
+      "types": "./src/experience/personal-learning.ts",
+      "default": "./dist/experience/personal-learning.js"
+    },
+    "./experience/personal-release-audit.js": {
+      "types": "./src/experience/personal-release-audit.ts",
+      "default": "./dist/experience/personal-release-audit.js"
+    },
+    "./experience/team-release-audit.js": {
+      "types": "./src/experience/team-release-audit.ts",
+      "default": "./dist/experience/team-release-audit.js"
+    },
+    "./experience/payload-presummary.js": {
+      "types": "./src/experience/payload-presummary.ts",
+      "default": "./dist/experience/payload-presummary.js"
+    },
+    "./experience/source-adapters.js": {
+      "types": "./src/experience/source-adapters.ts",
+      "default": "./dist/experience/source-adapters.js"
+    },
+    "./experience/agentmemory-client.js": {
+      "types": "./src/experience/agentmemory-client.ts",
+      "default": "./dist/experience/agentmemory-client.js"
+    },
+    "./experience/agentmemory-adapter.js": {
+      "types": "./src/experience/agentmemory-adapter.ts",
+      "default": "./dist/experience/agentmemory-adapter.js"
+    },
+    "./experience/agentmemory-export.js": {
+      "types": "./src/experience/agentmemory-export.ts",
+      "default": "./dist/experience/agentmemory-export.js"
+    },
+    "./experience/brain-backend.js": {
+      "types": "./src/experience/brain-backend.ts",
+      "default": "./dist/experience/brain-backend.js"
+    },
+    "./experience/gbrain-client.js": {
+      "types": "./src/experience/gbrain-client.ts",
+      "default": "./dist/experience/gbrain-client.js"
+    },
+    "./experience/gbrain-adapter.js": {
+      "types": "./src/experience/gbrain-adapter.ts",
+      "default": "./dist/experience/gbrain-adapter.js"
+    },
+    "./experience/gbrain-config.js": {
+      "types": "./src/experience/gbrain-config.ts",
+      "default": "./dist/experience/gbrain-config.js"
+    },
+    "./experience/gbrain-export.js": {
+      "types": "./src/experience/gbrain-export.ts",
+      "default": "./dist/experience/gbrain-export.js"
+    },
+    "./experience/gbrain-import.js": {
+      "types": "./src/experience/gbrain-import.ts",
+      "default": "./dist/experience/gbrain-import.js"
+    },
+    "./experience/gbrain-remote.js": {
+      "types": "./src/experience/gbrain-remote.ts",
+      "default": "./dist/experience/gbrain-remote.js"
+    },
+    "./experience/daily.js": {
+      "types": "./src/experience/daily.ts",
+      "default": "./dist/experience/daily.js"
+    },
+    "./experience/harvest.js": {
+      "types": "./src/experience/harvest.ts",
+      "default": "./dist/experience/harvest.js"
+    },
+    "./experience/git-workflow.js": {
+      "types": "./src/experience/git-workflow.ts",
+      "default": "./dist/experience/git-workflow.js"
+    },
+    "./lint/index.js": {
+      "types": "./src/lint/index.ts",
+      "default": "./dist/lint/index.js"
+    },
+    "./wiki/model.js": {
+      "types": "./src/wiki/model.ts",
+      "default": "./dist/wiki/model.js"
+    },
+    "./wiki/state.js": {
+      "types": "./src/wiki/state.ts",
+      "default": "./dist/wiki/state.js"
+    },
+    "./wiki/collect.js": {
+      "types": "./src/wiki/collect.ts",
+      "default": "./dist/wiki/collect.js"
+    },
+    "./wiki/analyze.js": {
+      "types": "./src/wiki/analyze.ts",
+      "default": "./dist/wiki/analyze.js"
+    },
+    "./wiki/compile.js": {
+      "types": "./src/wiki/compile.ts",
+      "default": "./dist/wiki/compile.js"
+    },
+    "./wiki/curation-model.js": {
+      "types": "./src/wiki/curation-model.ts",
+      "default": "./dist/wiki/curation-model.js"
+    },
+    "./wiki/curate.js": {
+      "types": "./src/wiki/curate.ts",
+      "default": "./dist/wiki/curate.js"
+    },
+    "./wiki/filter-rules.js": {
+      "types": "./src/wiki/filter-rules.ts",
+      "default": "./dist/wiki/filter-rules.js"
+    },
+    "./wiki/curator-prompt.js": {
+      "types": "./src/wiki/curator-prompt.ts",
+      "default": "./dist/wiki/curator-prompt.js"
+    },
+    "./wiki/lint.js": {
+      "types": "./src/wiki/lint.ts",
+      "default": "./dist/wiki/lint.js"
+    },
+    "./wiki/quality.js": {
+      "types": "./src/wiki/quality.ts",
+      "default": "./dist/wiki/quality.js"
+    },
+    "./wiki/resolver.js": {
+      "types": "./src/wiki/resolver.ts",
+      "default": "./dist/wiki/resolver.js"
+    },
+    "./wiki/graph-slices.js": {
+      "types": "./src/wiki/graph-slices.ts",
+      "default": "./dist/wiki/graph-slices.js"
+    },
+    "./wiki/site-model.js": {
+      "types": "./src/wiki/site-model.ts",
+      "default": "./dist/wiki/site-model.js"
+    },
+    "./wiki/site-html.js": {
+      "types": "./src/wiki/site-html.ts",
+      "default": "./dist/wiki/site-html.js"
+    },
+    "./wiki/site-assets.js": {
+      "types": "./src/wiki/site-assets.ts",
+      "default": "./dist/wiki/site-assets.js"
+    },
+    "./wiki/retrieval.js": {
+      "types": "./src/wiki/retrieval.ts",
+      "default": "./dist/wiki/retrieval.js"
+    },
+    "./wiki/proposal-candidates.js": {
+      "types": "./src/wiki/proposal-candidates.ts",
+      "default": "./dist/wiki/proposal-candidates.js"
+    },
+    "./wiki/render-site.js": {
+      "types": "./src/wiki/render-site.ts",
+      "default": "./dist/wiki/render-site.js"
+    },
+    "./wiki/semantic-review.js": {
+      "types": "./src/wiki/semantic-review.ts",
+      "default": "./dist/wiki/semantic-review.js"
+    },
+    "./wiki/semantic-review-policy.js": {
+      "types": "./src/wiki/semantic-review-policy.ts",
+      "default": "./dist/wiki/semantic-review-policy.js"
+    },
+    "./wiki/relationship-planner.js": {
+      "types": "./src/wiki/relationship-planner.ts",
+      "default": "./dist/wiki/relationship-planner.js"
+    },
+    "./kb/maintenance.js": {
+      "types": "./src/kb/maintenance.ts",
+      "default": "./dist/kb/maintenance.js"
+    },
+    "./agent-access/manifest.js": {
+      "types": "./src/agent-access/manifest.ts",
+      "default": "./dist/agent-access/manifest.js"
+    },
+    "./agent-access/skill.js": {
+      "types": "./src/agent-access/skill.ts",
+      "default": "./dist/agent-access/skill.js"
+    },
+    "./agent-access/mcp.js": {
+      "types": "./src/agent-access/mcp.ts",
+      "default": "./dist/agent-access/mcp.js"
+    },
+    "./agent-access/trust-boundary.js": {
+      "types": "./src/agent-access/trust-boundary.ts",
+      "default": "./dist/agent-access/trust-boundary.js"
+    },
+    "./agent-access/skill-injection.js": {
+      "types": "./src/agent-access/skill-injection.ts",
+      "default": "./dist/agent-access/skill-injection.js"
+    },
+    "./agent-access/context-bundle.js": {
+      "types": "./src/agent-access/context-bundle.ts",
+      "default": "./dist/agent-access/context-bundle.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "zod": "^3.24.1"
+  }
+}
