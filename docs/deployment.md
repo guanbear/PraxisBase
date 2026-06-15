@@ -84,6 +84,9 @@ The template clones the PraxisBase tool repo, builds the CLI, and executes it ag
 | `PRAXISBASE_WRITEBACK` | Set to `true` to commit generated knowledge/artifacts back to the knowledge repo. |
 | `PRAXISBASE_PUSH_TOKEN` | Masked token used only when writeback is enabled. |
 | `PRAXISBASE_DAILY_LIMIT` | Maximum source items per daily harvest. Defaults to `500` in the GitLab template. |
+| `PRAXISBASE_MAX_AI_CHUNKS` | Maximum uncached AI distill calls per daily harvest. Defaults to `40`. |
+| `PRAXISBASE_MAX_CURATION_PROPOSALS` | Maximum AI wiki curation proposals per daily harvest. Defaults to `8`. |
+| `PRAXISBASE_AI_CONCURRENCY` | Maximum concurrent AI calls for daily harvest. Defaults to `4`. |
 | `PRAXISBASE_PAGES` | Set to `true` to publish `dist/` through GitLab Pages. |
 
 When writeback is enabled, use a Project Access Token with the minimum write scope needed for that knowledge repo.
@@ -284,7 +287,7 @@ In GitLab, the PraxisBase command runs inside the knowledge repository checkout,
 1. Push or merge this PraxisBase toolchain change to a branch/tag that CI can clone, then set `PRAXISBASE_TOOL_REPO=https://gitlab.chehejia.com/sre/praxisbase.git` and `PRAXISBASE_TOOL_REF=<that branch or tag>`.
 2. Add `templates/gitlab/knowledge-repo.gitlab-ci.yml` as `.gitlab-ci.yml` in the knowledge repo. If the toolchain repo and knowledge repo are temporarily the same project, add the file to this project and keep generated data under `.praxisbase/`, `kb/`, `skills/`, and `dist/`.
 3. Create a project access token for CI writeback with `write_repository`; store it as a masked variable `PRAXISBASE_PUSH_TOKEN`.
-4. Set CI variables: `PRAXISBASE_WRITEBACK=true`, `PRAXISBASE_DAILY_LIMIT=500`, `PRAXISBASE_TOOL_REPO=https://gitlab.chehejia.com/sre/praxisbase.git`, and `PRAXISBASE_TOOL_REF=<branch/tag>`.
+4. Set CI variables: `PRAXISBASE_WRITEBACK=true`, `PRAXISBASE_DAILY_LIMIT=500`, `PRAXISBASE_MAX_AI_CHUNKS=40`, `PRAXISBASE_MAX_CURATION_PROPOSALS=8`, `PRAXISBASE_AI_CONCURRENCY=4`, `PRAXISBASE_TOOL_REPO=https://gitlab.chehejia.com/sre/praxisbase.git`, and `PRAXISBASE_TOOL_REF=<branch/tag>`.
 5. Allow the OpenClaw exporter token to push only `openclaw-ingest/answer-bot`. If the branch is protected, add the bot token/user to the allowed-to-push list for that branch pattern.
 6. Add scheduled pipelines on `main`: `PRAXISBASE_TASK=daily-harvest` first; then `review`, `promote`, and `build` after harvest once the human-required flow is confirmed.
 
