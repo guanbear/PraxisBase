@@ -1,0 +1,12 @@
+{
+  "protocol_version": "0.1",
+  "type": "ai_provider_config",
+  "provider": "openai-compatible",
+  "model": "codex-omni",
+  "base_url_env": "CODEX_OMNI_BASE_URL",
+  "api_key_env": "CODEX_OMNI_API_KEY",
+  "default_temperature": 0,
+  "max_input_bytes": 24576,
+  "max_output_bytes": 8192,
+  "ai_timeout_ms": 90000
+}
