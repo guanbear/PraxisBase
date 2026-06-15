@@ -158,7 +158,7 @@ export async function dailyCommand(root: string, subcommand: string, options: Da
     }
 
     if (subcommand === "schedule") {
-      const gitlab = "GitLab schedule: set PRAXISBASE_TASK=daily-harvest and run `praxisbase daily run --mode team-git --branch harvest/daily-$CI_PIPELINE_ID --commit --build-site`.";
+      const gitlab = "GitLab schedule: set PRAXISBASE_TASK=daily-harvest and PRAXISBASE_DAILY_LIMIT=500, then run `praxisbase daily run --mode team-git --limit $PRAXISBASE_DAILY_LIMIT --branch harvest/daily-$CI_PIPELINE_ID --commit --build-site`.";
       const personal = personalSchedule(options.runner);
       return options.json ? JSON.stringify({ ok: true, installed: false, personal, gitlab }, null, 2) : (options.mode === "team-git" ? gitlab : personal);
     }
