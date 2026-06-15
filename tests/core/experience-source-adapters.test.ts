@@ -258,6 +258,53 @@ describe("experience source adapters", () => {
     assert.match(slackEnvelope?.redacted_summary ?? "", /Slack delivery recovered/);
   });
 
+  it("checks out configured git refs before reading source files", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-git-ref-"));
+    const repo = join(root, "source-repo");
+    await mkdir(join(repo, ".praxisbase/sources/openclaw-answer-bot"), { recursive: true });
+    await execFileAsync("git", ["init", "-q"], { cwd: repo });
+    await execFileAsync("git", ["config", "user.name", "test"], { cwd: repo });
+    await execFileAsync("git", ["config", "user.email", "test@example.com"], { cwd: repo });
+    await execFileAsync("git", ["checkout", "-b", "openclaw-ingest/answer-bot"], { cwd: repo });
+    await writeFile(
+      join(repo, ".praxisbase/sources/openclaw-answer-bot/pm-memory.jsonl"),
+      JSON.stringify({
+        id: "chunk-1",
+        source_ref: "openclaw://answer-bot/pm.sqlite/chunks/chunk-1",
+        summary: "OpenClaw answer bot remembered branch-exported Feishu support guidance.",
+      }) + "\n",
+      "utf8",
+    );
+    await execFileAsync("git", ["add", "."], { cwd: repo });
+    await execFileAsync("git", ["commit", "-q", "-m", "seed export"], { cwd: repo });
+
+    const source = await addExperienceSource(root, {
+      name: "openclaw-answer-bot",
+      agent: "openclaw",
+      sourceType: "git",
+      channel: "feishu",
+      scopeDefault: "team",
+      repo,
+      ref: "openclaw-ingest/answer-bot",
+      path: ".praxisbase/sources/openclaw-answer-bot/pm-memory.jsonl",
+      now: "2026-06-15T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "team-git",
+      now: "2026-06-15T01:00:00.000Z",
+      runCommand: async (command, args) => {
+        const { stdout } = await execFileAsync(command, args, { maxBuffer: 16 * 1024 * 1024 });
+        return stdout;
+      },
+    });
+
+    assert.equal(result.status, "partial");
+    assert.equal(result.fetched, 1);
+    assert.equal(result.humanRequired, 1);
+    assert.match(result.envelopes[0].redacted_summary, /branch-exported Feishu support/);
+  });
+
   it("excludes OpenClaw dreaming SQLite chunks before privacy triage", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-openclaw-sqlite-dream-"));
     const dbPath = join(root, "main.sqlite");

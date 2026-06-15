@@ -244,6 +244,7 @@ describe("daily CLI command", () => {
 
     assert.equal(parsed.ok, true);
     assert.match(parsed.gitlab, /PRAXISBASE_TASK=daily-harvest/);
+    assert.match(parsed.gitlab, /PRAXISBASE_DAILY_LIMIT=500/);
   });
 
   it("initializes daily mode without installing a scheduler", async () => {

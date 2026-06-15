@@ -805,11 +805,18 @@ async function resolveSourceItems(
     const cacheAbsolute = safePath(root, cacheRelative);
     try {
       await stat(cacheAbsolute);
-      await options.runCommand("git", ["-C", cacheAbsolute, "pull", "--ff-only"]);
+      if (source.ref) {
+        await options.runCommand("git", ["-C", cacheAbsolute, "fetch", "--depth", "1", "origin", source.ref]);
+        await options.runCommand("git", ["-C", cacheAbsolute, "checkout", "--detach", "FETCH_HEAD"]);
+      } else {
+        await options.runCommand("git", ["-C", cacheAbsolute, "pull", "--ff-only"]);
+      }
     } catch {
-      await options.runCommand("git", ["clone", "--depth", "1", source.repo, cacheAbsolute]);
+      const cloneArgs = ["clone", "--depth", "1"];
+      if (source.ref) cloneArgs.push("--branch", source.ref);
+      cloneArgs.push(source.repo, cacheAbsolute);
+      await options.runCommand("git", cloneArgs);
     }
-    if (source.ref) await options.runCommand("git", ["-C", cacheAbsolute, "checkout", source.ref]);
     const warnings: string[] = [];
     const stagedPath = safePath(root, `${cacheRelative}/${source.path}`);
     const items = await itemsFromPath(stagedPath, maxBytes, warnings);
