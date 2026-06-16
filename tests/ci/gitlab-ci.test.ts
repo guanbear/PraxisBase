@@ -72,7 +72,7 @@ describe("split knowledge repo GitLab CI template", () => {
     assert.ok(ci.includes("PRAXISBASE_PUSH_TOKEN"));
     assert.ok(ci.includes('git config --global user.name "praxisbase-bot"'));
     assert.ok(ci.includes('git add -f "$path"'));
-    assert.ok(ci.includes("git rm -r --cached --ignore-unmatch .praxisbase/cache"));
+    assert.ok(ci.includes("git rm -r -f --cached --ignore-unmatch .praxisbase/cache"));
   });
 
   it("can publish dist through GitLab Pages", async () => {
