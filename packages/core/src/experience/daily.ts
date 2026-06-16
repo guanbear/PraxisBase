@@ -1063,6 +1063,12 @@ function autoReleasedEvidenceSummary(text: string): string {
     .replace(/\b(?:token|cookie|secret|password|credential)s?\b/gi, "sensitive value");
 }
 
+function triageReleaseSummary(triage: Record<string, unknown>): string | undefined {
+  const value = stringValue(triage.release_summary);
+  if (!value) return undefined;
+  return autoReleasedEvidenceSummary(value);
+}
+
 async function autoReleasedPrivacyEnvelope(root: string, envelope: ExperienceEnvelope): Promise<ExperienceEnvelope | undefined> {
   if (envelope.privacy.verdict !== "human_required") return undefined;
   let existing: unknown;
@@ -1075,13 +1081,15 @@ async function autoReleasedPrivacyEnvelope(root: string, envelope: ExperienceEnv
   if (!parsed.success) return undefined;
   const triage = recordValue(recordValue(parsed.data.details).triage);
   if (stringValue(triage.decision) !== "auto_released") return undefined;
-  if (stringValue(triage.classification) !== "safe_personal_experience") return undefined;
+  const classification = stringValue(triage.classification);
+  const releaseSummary = triageReleaseSummary(triage);
+  if (classification !== "safe_personal_experience" && !(classification === "needs_redaction" && releaseSummary)) return undefined;
   const confidence = typeof triage.confidence === "number" ? triage.confidence : Number.parseFloat(String(triage.confidence ?? ""));
   if (!Number.isFinite(confidence) || confidence < 0.75) return undefined;
 
   return ExperienceEnvelopeSchema.parse({
     ...envelope,
-    redacted_summary: autoReleasedEvidenceSummary(envelope.redacted_summary),
+    redacted_summary: releaseSummary ?? autoReleasedEvidenceSummary(envelope.redacted_summary),
     privacy: {
       ...envelope.privacy,
       verdict: "allow",

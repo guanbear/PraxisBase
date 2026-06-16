@@ -552,6 +552,7 @@ program
   .argument("<sub>", "subcommand (triage)")
   .option("--mode <mode>", "personal or team-git", "personal")
   .option("--auto-release", "auto-release high-confidence safe personal triage items")
+  .option("--team-auto-review", "auto-release high-confidence sanitized team triage items")
   .option("--limit <n>")
   .option("--ai-concurrency <n>", "maximum concurrent privacy triage AI calls")
   .option("--ai-timeout-ms <n>")
@@ -563,6 +564,7 @@ program
     options: {
       mode?: "personal" | "team-git";
       autoRelease?: boolean;
+      teamAutoReview?: boolean;
       limit?: string;
       aiConcurrency?: string;
       aiTimeoutMs?: string;

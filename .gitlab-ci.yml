@@ -8,6 +8,7 @@ variables:
   PRAXISBASE_MAX_CURATION_PROPOSALS: "8"
   PRAXISBASE_AI_CONCURRENCY: "4"
   PRAXISBASE_PRIVACY_LIMIT: "500"
+  PRAXISBASE_TEAM_AUTO_REVIEW: "false"
 
 stages:
   - harvest
@@ -95,6 +96,9 @@ praxisbase:privacy-triage:
       PRAXISBASE_TRIAGE_FLAGS=""
       if [ "${PRAXISBASE_PRIVACY_INCLUDE_TRIAGED:-false}" = "true" ]; then
         PRAXISBASE_TRIAGE_FLAGS="--include-triaged"
+      fi
+      if [ "${PRAXISBASE_TEAM_AUTO_REVIEW:-false}" = "true" ]; then
+        PRAXISBASE_TRIAGE_FLAGS="$PRAXISBASE_TRIAGE_FLAGS --team-auto-review"
       fi
       node /tmp/PraxisBase/packages/cli/dist/index.js privacy triage --mode team-git --limit "${PRAXISBASE_PRIVACY_LIMIT:-500}" --ai-concurrency "${PRAXISBASE_AI_CONCURRENCY:-4}" $PRAXISBASE_TRIAGE_FLAGS --json > /tmp/praxisbase-privacy-triage.json
       cat /tmp/praxisbase-privacy-triage.json

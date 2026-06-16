@@ -135,6 +135,8 @@ describe("GitLab daily harvest CI template", () => {
     assert.match(ci, /praxisbase:privacy-triage:[\s\S]*?CI_PIPELINE_SOURCE == "schedule"[\s\S]*?PRAXISBASE_TASK == "privacy-triage"/);
     assert.match(ci, /privacy triage --mode team-git/);
     assert.match(ci, /PRAXISBASE_PRIVACY_LIMIT/);
+    assert.match(ci, /PRAXISBASE_TEAM_AUTO_REVIEW/);
+    assert.match(ci, /--team-auto-review/);
   });
 
   it("extends both .praxisbase-knowledge and .praxisbase-writeback", async () => {

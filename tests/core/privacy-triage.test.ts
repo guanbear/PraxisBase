@@ -173,6 +173,105 @@ describe("privacy triage", () => {
     assert.equal(report.items[0].decision, "team_review_only");
   });
 
+  it("auto-reviews sanitized high-confidence team items only when explicitly enabled", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-team-auto-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, {
+      id: "team-auto",
+      scope: "team",
+      channel: "feishu",
+      agent: "openclaw",
+      sourceRef: "openclaw://answer-bot/pm.sqlite/chunks/example",
+      summary: "A Feishu thread showed the repair bot should ACK before a long-running task and then post verified status.",
+    });
+    const schemas: string[] = [];
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "team-git",
+      mode: "write",
+      teamAutoReview: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson(input) {
+          schemas.push(input.schemaName);
+          if (input.schemaName === "PrivacyTriageDecision") {
+            return {
+              ok: true,
+              json: {
+                classification: "needs_redaction",
+                confidence: 0.86,
+                rationale: "Team context needs sanitization before reuse.",
+                suggested_redactions: ["Remove chat and source identifiers."],
+              },
+            };
+          }
+          assert.equal(input.schemaName, "TeamPrivacyReleaseSummary");
+          return {
+            ok: true,
+            json: {
+              release_summary: "Repair agents should acknowledge long-running work before starting it, then provide a verified completion status when the task finishes.",
+              reusable_lesson: "Acknowledge first, verify before reporting success.",
+              residual_risk: "",
+            },
+          };
+        },
+      },
+    });
+
+    assert.deepEqual(schemas, ["PrivacyTriageDecision", "TeamPrivacyReleaseSummary"]);
+    assert.equal(report.summary.auto_released, 1);
+    assert.equal(report.summary.team_review_only, 0);
+    assert.equal(report.items[0].decision, "auto_released");
+    assert.equal(report.items[0].classification, "needs_redaction");
+    assert.match(report.items[0].release_summary ?? "", /acknowledge long-running work/i);
+    const exception = JSON.parse(await readFile(join(root, ".praxisbase/exceptions/human-required/team-auto.json"), "utf8"));
+    assert.equal(exception.details.triage.auto_review_policy, "team-ai-sanitized-v1");
+    assert.match(exception.details.triage.release_summary, /verified completion status/i);
+  });
+
+  it("keeps team auto-review blocked when the sanitized summary still contains private material", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-team-auto-block-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, { id: "team-auto-block", scope: "team", channel: "feishu", agent: "openclaw" });
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "team-git",
+      mode: "write",
+      teamAutoReview: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson(input) {
+          if (input.schemaName === "PrivacyTriageDecision") {
+            return {
+              ok: true,
+              json: {
+                classification: "safe_personal_experience",
+                confidence: 0.9,
+                rationale: "Looks reusable.",
+                suggested_redactions: [],
+              },
+            };
+          }
+          return {
+            ok: true,
+            json: {
+              release_summary: "Use token=abc123456789 when calling the private service.",
+              reusable_lesson: "Do the private thing.",
+              residual_risk: "",
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.summary.auto_released, 0);
+    assert.equal(report.summary.team_review_only, 1);
+    assert.equal(report.items[0].decision, "team_review_only");
+    assert.ok(report.warnings.some((warning) => warning.includes("privacy_triage_team_auto_review_unsafe_summary")));
+  });
+
   it("keeps Feishu team exceptions review-only and redacts Feishu ids before AI triage", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-feishu-"));
     await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });

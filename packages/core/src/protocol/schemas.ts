@@ -312,6 +312,7 @@ export const PrivacyTriageReportSchema = z.object({
     suggested_redactions: z.array(z.string().min(1)).default([]),
     hard_block_reasons: z.array(z.string().min(1)).default([]),
     decision: PrivacyTriageDecisionSchema,
+    release_summary: z.string().min(1).optional(),
   })),
   summary: z.object({
     scanned: z.number().int().nonnegative(),

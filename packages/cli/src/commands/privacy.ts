@@ -3,6 +3,7 @@ import { runPrivacyTriage, type AiJsonClient } from "@praxisbase/core";
 export interface PrivacyCommandOptions {
   mode?: "personal" | "team-git";
   autoRelease?: boolean;
+  teamAutoReview?: boolean;
   limit?: number;
   aiConcurrency?: number;
   aiTimeoutMs?: number;
@@ -58,6 +59,7 @@ export async function privacyCommand(root: string, subcommand: string, options: 
         authorityMode: authorityMode(options.mode),
         mode: "write",
         autoRelease: options.autoRelease,
+        teamAutoReview: options.teamAutoReview,
         limit: options.limit,
         aiConcurrency: options.aiConcurrency,
         aiTimeoutMs: options.aiTimeoutMs,

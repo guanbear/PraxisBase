@@ -9,11 +9,14 @@ import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "../ai/clien
 import { listExperienceSources } from "./source-config.js";
 import { readJson, safePath, writeJson } from "../store/file-store.js";
 import type { ExperienceSourceConfig } from "../protocol/schemas.js";
+import { containsPrivateMaterial } from "../wiki/lint.js";
+import { z } from "zod";
 
 export interface RunPrivacyTriageInput {
   authorityMode: "personal-local" | "team-git";
   mode?: "dry-run" | "write";
   autoRelease?: boolean;
+  teamAutoReview?: boolean;
   limit?: number;
   aiConcurrency?: number;
   includeTriaged?: boolean;
@@ -43,6 +46,14 @@ export interface PrivacyTriageProgressEvent {
 type ExceptionRecord = ReturnType<typeof ExceptionRecordSchema.parse>;
 type TriageAiDecision = ReturnType<typeof PrivacyTriageAiDecisionSchema.parse>;
 type TriageDecision = PrivacyTriageReport["items"][number]["decision"];
+
+const TeamReleaseSummarySchema = z.object({
+  release_summary: z.string().min(20).max(1200),
+  reusable_lesson: z.string().min(10).max(800).optional(),
+  residual_risk: z.string().max(500).optional(),
+});
+
+type TeamReleaseSummary = z.infer<typeof TeamReleaseSummarySchema>;
 
 function runSuffix(now: string): string {
   return now.replace(/[^a-z0-9]/gi, "-");
@@ -82,8 +93,11 @@ function containsConcretePrivateValue(text: string): boolean {
 }
 
 function containsFeishuPrivateIdentifier(text: string): boolean {
-  return /\b(?:ou|on|un|oc)_[A-Za-z0-9_]{8,}\b/.test(text)
-    || /\b(?:user_id|open_id|union_id|chat_id)\s*[:=]\s*["']?[^"'\s,;}]{4,}/i.test(text);
+  const scanText = text
+    .replace(/\[REDACTED(?:_[A-Z_]+)?\]/g, "[REDACTED]")
+    .replace(/\b(?:user_id|open_id|union_id|chat_id)\s*[:=]\s*["']?\[REDACTED\]["']?/gi, "[REDACTED_FEISHU_FIELD]");
+  return /\b(?:ou|on|un|oc)_[A-Za-z0-9_]{8,}\b/.test(scanText)
+    || /\b(?:user_id|open_id|union_id|chat_id)\s*[:=]\s*["']?[^"'\s,;}]{4,}/i.test(scanText);
 }
 
 function redactFeishuPrivateIdentifiers(text: string): string {
@@ -139,6 +153,41 @@ function buildPrompt(exception: ExceptionRecord): { system: string; user: string
         scope: stringValue(details.scope_hint) ?? stringValue(details.scope),
         source_ref: redactForTriage(stringValue(details.source_ref) ?? ""),
         source_hash: stringValue(details.source_hash),
+        redacted_summary: redactForTriage(stringValue(details.redacted_summary) ?? ""),
+      },
+    }, null, 2),
+  };
+}
+
+function buildTeamReleasePrompt(exception: ExceptionRecord, ai: TriageAiDecision): { system: string; user: string } {
+  const details = record(exception.details);
+  return {
+    system: [
+      "You are sanitizing a team-scope repair-bot memory for an internal reusable experience wiki.",
+      "Return only one top-level JSON object with exact keys: release_summary, reusable_lesson, residual_risk.",
+      "Do not include names, user IDs, chat IDs, URLs, hostnames, IPs, tokens, credentials, hashes, exact paths, exact timestamps, or raw log lines.",
+      "Keep only the reusable operational lesson and verification signal.",
+    ].join(" "),
+    user: JSON.stringify({
+      task: "Create a sanitized release summary suitable for automated team review.",
+      required_output: {
+        release_summary: "2-4 sentences, sanitized, reusable, no private values",
+        reusable_lesson: "one concise actionable lesson",
+        residual_risk: "short note, or empty string if none",
+      },
+      triage: {
+        classification: ai.classification,
+        confidence: ai.confidence,
+        rationale: ai.rationale,
+        suggested_redactions: ai.suggested_redactions,
+      },
+      exception: {
+        id: exception.id,
+        reason: redactForTriage(exception.reason),
+        source_id: exception.source_id,
+        agent: stringValue(details.agent),
+        channel: stringValue(details.channel),
+        scope: stringValue(details.scope_hint) ?? stringValue(details.scope),
         redacted_summary: redactForTriage(stringValue(details.redacted_summary) ?? ""),
       },
     }, null, 2),
@@ -235,14 +284,97 @@ function fallbackAiDecision(reason: string): TriageAiDecision {
   };
 }
 
-function releaseDecision(input: {
+function sanitizeTeamReleaseText(text: string): string {
+  return redactFeishuPrivateIdentifiers(redactForTriage(text))
+    .replace(/https?:\/\/[^\s,;)\]]+/gi, "[REDACTED_URL]")
+    .replace(/\b(?:openclaw|feishu|ssh|git|file):\/\/[^\s,;)\]]+/gi, "[REDACTED_SOURCE_REF]")
+    .replace(/\bsha256:[a-f0-9]{16,}\b/gi, "[REDACTED_HASH]")
+    .replace(/\b[0-9a-f]{32,}\b/gi, "[REDACTED_HASH]")
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[REDACTED_ID]")
+    .replace(/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\b/g, "[REDACTED_TIMESTAMP]")
+    .trim();
+}
+
+function isSafeTeamReleaseText(text: string): boolean {
+  const sanitized = sanitizeTeamReleaseText(text);
+  if (!sanitized || sanitized.length < 20) return false;
+  if (containsConcretePrivateValue(sanitized)) return false;
+  if (containsFeishuPrivateIdentifier(sanitized)) return false;
+  if (containsPrivateMaterial(sanitized)) return false;
+  if (/https?:\/\//i.test(sanitized)) return false;
+  if (/\b(?:openclaw|feishu|ssh|git|file):\/\//i.test(sanitized)) return false;
+  return true;
+}
+
+function teamAutoReviewThreshold(ai: TriageAiDecision): number | undefined {
+  if (ai.classification === "safe_personal_experience") return 0.82;
+  if (ai.classification === "needs_redaction") return 0.78;
+  return undefined;
+}
+
+function teamAutoReviewEligible(input: {
+  enabled: boolean;
   authorityMode: RunPrivacyTriageInput["authorityMode"];
-  autoRelease: boolean;
   scope?: string;
   hardBlockReasons: string[];
   ai: TriageAiDecision;
+}): boolean {
+  if (!input.enabled || input.authorityMode !== "team-git") return false;
+  if (input.scope === "personal") return false;
+  const threshold = teamAutoReviewThreshold(input.ai);
+  if (threshold === undefined || input.ai.confidence < threshold) return false;
+  const blockingReasons = input.hardBlockReasons.filter((reason) => reason !== "remote_source_requires_review" && reason !== "feishu_private_identifier_detected");
+  return blockingReasons.length === 0;
+}
+
+async function generateTeamReleaseSummary(input: {
+  exception: ExceptionRecord;
+  ai: TriageAiDecision;
+  aiClient: AiJsonClient;
+  warnings: string[];
+}): Promise<TeamReleaseSummary | undefined> {
+  const prompt = buildTeamReleasePrompt(input.exception, input.ai);
+  const result = await input.aiClient.generateJson({
+    ...prompt,
+    schemaName: "TeamPrivacyReleaseSummary",
+    maxOutputBytes: 2048,
+  });
+  if (!result.ok) {
+    input.warnings.push(`privacy_triage_team_auto_review_error:${input.exception.id}:${result.error}`);
+    return undefined;
+  }
+  const parsed = TeamReleaseSummarySchema.safeParse(result.json);
+  if (!parsed.success) {
+    input.warnings.push(`privacy_triage_team_auto_review_schema_error:${input.exception.id}:${shapeSummary(result.json)}:${parsed.error.message}`);
+    return undefined;
+  }
+  const releaseSummary = sanitizeTeamReleaseText(parsed.data.release_summary);
+  const reusableLesson = sanitizeTeamReleaseText(parsed.data.reusable_lesson ?? "");
+  const residualRisk = sanitizeTeamReleaseText(parsed.data.residual_risk ?? "");
+  const combined = [releaseSummary, reusableLesson, residualRisk].filter(Boolean).join("\n");
+  if (!isSafeTeamReleaseText(combined)) {
+    input.warnings.push(`privacy_triage_team_auto_review_unsafe_summary:${input.exception.id}`);
+    return undefined;
+  }
+  return {
+    release_summary: releaseSummary,
+    ...(reusableLesson ? { reusable_lesson: reusableLesson } : {}),
+    ...(residualRisk ? { residual_risk: residualRisk } : {}),
+  };
+}
+
+function releaseDecision(input: {
+  authorityMode: RunPrivacyTriageInput["authorityMode"];
+  autoRelease: boolean;
+  teamAutoReview: boolean;
+  scope?: string;
+  hardBlockReasons: string[];
+  ai: TriageAiDecision;
+  teamReleaseSummary?: TeamReleaseSummary;
 }): TriageDecision {
-  if (input.authorityMode === "team-git") return "team_review_only";
+  if (input.authorityMode === "team-git") {
+    return input.teamAutoReview && input.teamReleaseSummary ? "auto_released" : "team_review_only";
+  }
   const releasableScope = input.scope === "personal" || input.scope === "project" || !input.scope;
   if (
     input.autoRelease
@@ -424,6 +556,7 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
         mode,
         authorityMode: input.authorityMode,
         autoRelease: Boolean(input.autoRelease),
+        teamAutoReview: Boolean(input.teamAutoReview),
         aiClient,
         warnings,
         trustedRemoteSource: trustedPersonalRemoteSourceMatches(record(exception.details), sources),
@@ -490,6 +623,7 @@ async function triageException(input: {
   mode: "dry-run" | "write";
   authorityMode: RunPrivacyTriageInput["authorityMode"];
   autoRelease: boolean;
+  teamAutoReview: boolean;
   aiClient: AiJsonClient;
   warnings: string[];
   trustedRemoteSource: boolean;
@@ -522,12 +656,25 @@ async function triageException(input: {
         input.warnings.push(`privacy_triage_schema_error:${exception.id}:${shapeSummary(normalizeAiDecision(aiResult.json))}:${parsedAi.error.message}`);
       }
     }
-    const decision = releaseDecision({
+
+    const teamReleaseSummary = teamAutoReviewEligible({
+      enabled: input.teamAutoReview,
       authorityMode: input.authorityMode,
-      autoRelease: input.autoRelease,
       scope,
       hardBlockReasons,
       ai,
+    })
+      ? await generateTeamReleaseSummary({ exception, ai, aiClient: input.aiClient, warnings: input.warnings })
+      : undefined;
+
+    const decision = releaseDecision({
+      authorityMode: input.authorityMode,
+      autoRelease: input.autoRelease,
+      teamAutoReview: input.teamAutoReview,
+      scope,
+      hardBlockReasons,
+      ai,
+      teamReleaseSummary,
     });
 
     const item: PrivacyTriageReport["items"][number] = {
@@ -544,6 +691,7 @@ async function triageException(input: {
       suggested_redactions: ai.suggested_redactions,
       hard_block_reasons: hardBlockReasons,
       decision,
+      ...(teamReleaseSummary ? { release_summary: teamReleaseSummary.release_summary } : {}),
     };
 
     if (input.mode === "write") {
@@ -558,6 +706,12 @@ async function triageException(input: {
             suggested_redactions: item.suggested_redactions,
             hard_block_reasons: item.hard_block_reasons,
             decision: item.decision,
+            ...(teamReleaseSummary ? {
+              release_summary: teamReleaseSummary.release_summary,
+              reusable_lesson: teamReleaseSummary.reusable_lesson,
+              residual_risk: teamReleaseSummary.residual_risk,
+              auto_review_policy: "team-ai-sanitized-v1",
+            } : {}),
             triaged_at: input.now,
           },
         },
