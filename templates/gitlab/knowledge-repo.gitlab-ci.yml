@@ -64,6 +64,7 @@ praxisbase:daily-harvest:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "daily-harvest"
     - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "daily-harvest"
+    - if: $CI_PIPELINE_SOURCE == "api" && $PRAXISBASE_TASK == "daily-harvest"
   script:
     - |
       PRAXISBASE_AI_FLAGS=""
@@ -81,6 +82,7 @@ praxisbase:review:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "review"
     - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "review"
+    - if: $CI_PIPELINE_SOURCE == "api" && $PRAXISBASE_TASK == "review"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js review --auto
 
@@ -93,6 +95,7 @@ praxisbase:promote:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "promote"
     - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "promote"
+    - if: $CI_PIPELINE_SOURCE == "api" && $PRAXISBASE_TASK == "promote"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js promote --auto
     - node /tmp/PraxisBase/packages/cli/dist/index.js check
@@ -105,6 +108,7 @@ praxisbase:build:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "build"
     - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "build"
+    - if: $CI_PIPELINE_SOURCE == "api" && $PRAXISBASE_TASK == "build"
     - if: $CI_COMMIT_BRANCH == "main"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js build

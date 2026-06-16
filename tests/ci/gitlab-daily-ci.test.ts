@@ -40,6 +40,16 @@ describe("GitLab daily harvest CI template", () => {
     );
   });
 
+  it("allows API-triggered daily-harvest smoke runs", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+
+    assert.match(
+      ci,
+      /praxisbase:daily-harvest:[\s\S]*?CI_PIPELINE_SOURCE == "api"[\s\S]*?PRAXISBASE_TASK == "daily-harvest"/,
+      'praxisbase:daily-harvest missing API rule with PRAXISBASE_TASK == "daily-harvest"',
+    );
+  });
+
   it("calls daily run --mode team-git", async () => {
     const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
 
