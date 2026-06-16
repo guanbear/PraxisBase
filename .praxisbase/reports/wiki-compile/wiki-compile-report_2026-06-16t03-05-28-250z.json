@@ -1,0 +1,234 @@
+{
+  "id": "wiki-compile-report_2026-06-16t03-05-28-250z",
+  "protocol_version": "0.1",
+  "type": "wiki_compile_report",
+  "mode": "review",
+  "sources_read": 11,
+  "changed_sources": 4,
+  "candidate_ids": [],
+  "source_analysis": [
+    {
+      "source_id": "skill:skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md",
+      "source_hash": "sha256:f542be934e8bf474df3cbcf1f6fad52e421f7d8625c27f2dff8e790be0e50336",
+      "source_kind": "skill",
+      "suggested_page_kind": "skill_seed",
+      "signatures": [
+        "skill:skill-skills-openclaw-openclaw-dispatch-routing-failures-skill-md",
+        "text:openclaw-dispatch-routing-failures-openclaw"
+      ],
+      "aliases": [
+        "openclaw-dispatch-routing-failures",
+        "skills-openclaw-openclaw-dispatch-routing-failures-skill"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "skills/openclaw-dispatch-routing-failures-openclaw/SKILL.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "source_hash": "sha256:642e7b61c3de34e024ad144aa03719fb48ecb3d26fde4e6bac7b70588d36ed5f",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md",
+        "text:ack-timing-long-running-agent"
+      ],
+      "aliases": [
+        "ack-timing-before-long-running-agent-work",
+        "kb-known-fixes-ack-timing-before-long-running-agent-work"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md",
+      "source_hash": "sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as",
+        "text:agents-can-mislead-users-failures"
+      ],
+      "aliases": [
+        "agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes",
+        "kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md",
+      "source_hash": "sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug",
+        "text:missing-replay-data-compromises-ability"
+      ],
+      "aliases": [
+        "kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify",
+        "missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope",
+        "repeated_failure"
+      ],
+      "candidate_path": "kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md",
+      "source_hash": "sha256:b6657ec798ebefe7645b79f6e63a468fadbc2a903d066d2adaceae312a18cb96",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md",
+        "text:openclaw-dispatch-routing-failures-openclaw"
+      ],
+      "aliases": [
+        "kb-known-fixes-openclaw-dispatch-routing-failures",
+        "openclaw-dispatch-routing-failures"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/known-fixes/openclaw-dispatch-routing-failures.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md",
+      "source_hash": "sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability",
+        "text:openclaw-slack-replay-post-deploy"
+      ],
+      "aliases": [
+        "kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures",
+        "openclaw-slack-replay-and-post-deploy-stability-failures"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md",
+      "source_hash": "sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw",
+        "text:post-deploy-stability-smoke-test"
+      ],
+      "aliases": [
+        "kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an",
+        "post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"
+    },
+    {
+      "source_id": "stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md",
+      "source_hash": "sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "stable_kb:stable-kb-kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after",
+        "text:changes-can-introduce-regressions-not"
+      ],
+      "aliases": [
+        "changes-can-introduce-regressions-when-not-tested-after-modification",
+        "kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after-modification"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"
+    },
+    {
+      "source_id": "stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md",
+      "source_hash": "sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause",
+        "text:actions-wrong-target-machine-host"
+      ],
+      "aliases": [
+        "actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes",
+        "kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"
+    },
+    {
+      "source_id": "stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md",
+      "source_hash": "sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-procedures-case-sensitive-database-comparisons-can-miss-logically",
+        "text:case-sensitive-database-comparisons-can"
+      ],
+      "aliases": [
+        "case-sensitive-database-comparisons-can-miss-logically-equivalent-values",
+        "kb-procedures-case-sensitive-database-comparisons-can-miss-logically"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"
+    },
+    {
+      "source_id": "stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md",
+      "source_hash": "sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve",
+        "text:stale-caches-can-hide-current"
+      ],
+      "aliases": [
+        "kb-procedures-stale-caches-can-hide-current-behavior-or-serve-outdated-assets",
+        "stale-caches-can-hide-current-behavior-or-serve-outdated-assets"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"
+    }
+  ],
+  "exceptions": 3,
+  "skipped_sources": 1,
+  "changed_stable_knowledge": false,
+  "created_at": "2026-06-16T03:05:28.250Z"
+}
