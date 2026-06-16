@@ -36,8 +36,12 @@
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "Team support routing guidance was consolidated into generic escalation categories. Installation and document-integration issues, terminal session recovery issues, capacity/quota requests, bot visibility problems, and protocol-specific questions should each follow predefined ownership or self-service guidance rather than ad hoc troubleshooting. Verification signal: the sanitized guidance removes personal routing, internal links, and project-specific identifiers while preserving the operational decision pattern.",
+      "reusable_lesson": "Maintain a role-based support routing matrix with clear exceptions and approved self-service responses for common issue categories.",
+      "residual_risk": "Specific ownership mappings must be managed in a private internal runbook.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

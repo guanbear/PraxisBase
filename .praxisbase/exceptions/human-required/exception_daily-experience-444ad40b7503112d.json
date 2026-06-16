@@ -35,8 +35,12 @@
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "Several operational fixes were consolidated for the bot platform: updating the messaging integration from the product console and restarting the instance can resolve plugin-related failures. For new or newly authorized users seeing an access-not-configured pairing prompt, first have the user restart the instance from the console; if the issue persists, an instance administrator should complete the pairing approval flow. If an instance is stopped or the bot stops replying despite normal billing and no intentional shutdown, check for exhausted temporary storage or disk space, clean up safely, and restart. A separate cron configuration pattern involving the main session target and system-event payloads is known to fail and should be avoided or tracked for a product fix.",
+      "reusable_lesson": "For bot access or responsiveness failures, verify plugin version, user pairing state, instance restart, and storage exhaustion before escalating.",
+      "residual_risk": "Cron failure pattern remains unresolved pending product fix or configuration workaround.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

@@ -35,8 +35,12 @@
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "A team-scope support interaction clarified that access to private network services is not available by default unless the automation runtime has appropriate network reachability. The team reviewed available automation capabilities and confirmed that text-to-speech output is supported, while voice input depends on channel configuration. A voice-processing skill was installed successfully from an internal marketplace, with follow-up configuration still needed for the external multimodal provider and channel tooling.",
+      "reusable_lesson": "When adding voice-input support, verify both channel-side audio ingestion and provider credentials/configuration before declaring the feature ready.",
+      "residual_risk": "Feature installation was verified, but end-to-end voice recognition remains dependent on pending provider and channel configuration.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

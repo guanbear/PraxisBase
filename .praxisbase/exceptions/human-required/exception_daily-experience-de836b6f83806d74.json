@@ -29,8 +29,11 @@
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "A team-scope interaction was reviewed and found to contain only a generic greeting with no operational, personal, or sensitive details. The experience is safe to retain as a minimal record of benign conversational handling after team review.",
+      "reusable_lesson": "For team-scope memories, retain only the generic interaction pattern and remove dates or channel-specific metadata before reuse.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

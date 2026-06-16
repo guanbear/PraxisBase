@@ -37,8 +37,12 @@
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "A scheduled-job failure was traced to a framework issue where jobs targeting the primary session with a system-event payload could not resolve the intended session and returned client errors. The reliable workaround was to recreate the jobs using isolated-session delivery with an agent-turn style payload and explicit delivery configuration. Verification signal: the failing jobs were removed and recreated in the working mode.",
+      "reusable_lesson": "When scheduled jobs fail due to primary-session resolution, switch to isolated delivery with an explicit agent-turn payload and recreate the jobs rather than retrying the same configuration.",
+      "residual_risk": "Underlying framework bug may still affect primary-session scheduled jobs until fixed.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

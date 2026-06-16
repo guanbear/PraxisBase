@@ -29,8 +29,12 @@
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults.",
+      "reusable_lesson": "Always verify the active model with the status command after switching models, especially when using named agents or sub-agents.",
+      "residual_risk": "Persistence behavior may change after future product updates.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

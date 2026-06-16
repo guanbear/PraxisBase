@@ -35,8 +35,11 @@
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "For user reports that an interactive environment or bot is down or unresponsive, direct them to use the product console's automatic repair option before escalating. Do not apply this guidance to billing, quota, or payment-related sleep issues. If the user has already tried both script-based repair and AI-based repair without success, route to the appropriate support escalation contact rather than repeating the repair instructions.",
+      "reusable_lesson": "Separate outage-style repair guidance from billing/quota issues, and escalate only after both automated repair modes have been attempted.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

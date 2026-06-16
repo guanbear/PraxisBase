@@ -29,8 +29,11 @@
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "A user sent brief greetings and follow-up prompts, then requested human support. The automated assistant acknowledged the delay, clarified it was an AI assistant, and asked the user to provide issue details so the request could be handled appropriately.",
+      "reusable_lesson": "When a user asks for human support, acknowledge the request and collect the minimum issue context needed for escalation or follow-up.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

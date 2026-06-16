@@ -32,8 +32,12 @@
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:44:38.330Z"
+      "decision": "auto_released",
+      "release_summary": "A bot became unresponsive to reset-style commands, likely due to a hung or crashed gateway process caused by invalid backend configuration. The immediate remediation was to restart the gateway and review sanitized logs/configuration if the issue recurs. A related configuration note confirmed that MCP support depends on the selected CLI backend and must be explicitly enabled through the documented feature flag.",
+      "reusable_lesson": "When a bot stops responding, first restart the gateway, then validate backend configuration and feature flags before escalating.",
+      "residual_risk": "Recurrence is possible if invalid backend configuration remains undetected.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-16T04:22:32.969Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"
