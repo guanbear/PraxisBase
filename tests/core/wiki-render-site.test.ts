@@ -414,6 +414,109 @@ Body.
     await assert.rejects(stat(join(root, "dist/experience.html")));
   });
 
+  it("renders clickable coverage filters and privacy approval actions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-coverage-actions-"));
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/config.yaml"), [
+      'protocol_version: "0.1"',
+      "language: zh-CN",
+      "ui_language: zh-CN",
+      "content_language: zh-CN",
+      "",
+    ].join("\n"));
+    await writeFile(join(root, ".praxisbase/reports/daily/daily_coverage.json"), JSON.stringify({
+      id: "daily_coverage",
+      protocol_version: "0.1",
+      type: "daily_experience_report",
+      authority_mode: "team-git",
+      mode: "write",
+      sources: [],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      experience_coverage: {
+        total_items: 2,
+        with_privacy_result: 2,
+        with_lessons: 1,
+        with_wiki_evidence: 1,
+        with_proposals: 1,
+        stable_kb: 0,
+        total_lessons: 3,
+        total_wiki_evidence: 4,
+        pending_curation: 0,
+        privacy_blocked: 1,
+        low_signal_rejected: 0,
+        items: [
+          {
+            source_id: "experience_openclaw-answer-bot-sha256-safe",
+            source_ref: "openclaw://answer-bot/pm.sqlite/chunks/safe",
+            source_hash: "sha256:safe",
+            knowledge_base: "openclaw",
+            privacy_decision: "auto_released",
+            lesson_count: 3,
+            lesson_states: { wiki_ready: 3 },
+            lesson_claims: ["先确认网关健康，再处理 bot 静默。"],
+            wiki_evidence_count: 4,
+            proposal_count: 1,
+            proposal_titles: ["OpenClaw bot 静默排查"],
+            stable_kb_paths: [],
+            status: "proposal",
+            reason_code: "proposal_created",
+            reason: "已生成待审核提案。",
+          },
+          {
+            source_id: "experience_container-repair-sha256-private",
+            source_ref: "container://repair/chunks/private",
+            source_hash: "sha256:private",
+            knowledge_base: "container-repair",
+            privacy_decision: "team_review_only",
+            lesson_count: 0,
+            lesson_states: {},
+            lesson_claims: [],
+            wiki_evidence_count: 0,
+            proposal_count: 0,
+            proposal_titles: [],
+            stable_kb_paths: [],
+            status: "privacy_blocked",
+            reason_code: "team_review_only",
+            reason: "团队模式 review-first，需人工确认后才释放。",
+          },
+        ],
+      },
+      outputs: [],
+      warnings: [],
+      created_at: "2026-06-16T10:00:00.000Z",
+    }, null, 2), "utf8");
+    await writeFile(join(root, ".praxisbase/exceptions/human-required/privacy-item.json"), JSON.stringify({
+      id: "privacy-item",
+      protocol_version: "0.1",
+      type: "exception_record",
+      category: "human_required",
+      source_id: "experience_container-repair-sha256-private",
+      reason: "Experience privacy verdict human_required: feishu_channel_team_review_first",
+      details: {
+        agent: "openclaw",
+        scope_hint: "team",
+        source_ref: "container://repair/chunks/private",
+        source_hash: "sha256:private",
+        redacted_summary: "容器修复经验需要人工确认后释放。",
+      },
+      created_at: "2026-06-16T10:00:00.000Z",
+    }, null, 2), "utf8");
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("Wiki 证据 4 / 1 个来源"));
+    assert.ok(review.includes("data-coverage-filter=\"proposal\""));
+    assert.ok(review.includes("data-coverage-kb=\"openclaw\""));
+    assert.ok(review.includes("data-coverage-kb-filter=\"container-repair\""));
+    assert.ok(review.includes("data-privacy-actions"));
+    assert.ok(review.includes("data-privacy-decision=\"auto_released\""));
+  });
+
   it("renders Personal GA experience status without raw private refs", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-personal-ga-"));
     await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });

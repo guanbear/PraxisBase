@@ -700,6 +700,7 @@ interface HumanRequiredRecord {
   scope?: string;
   source_ref?: string;
   source_hash?: string;
+  privacy_reviewable: boolean;
   created_at: string;
   triage?: {
     classification?: string;
@@ -707,7 +708,18 @@ interface HumanRequiredRecord {
     confidence?: string;
     rationale?: string;
     suggested_redactions: string[];
+    release_summary?: string;
   };
+}
+
+function knowledgeBaseFromCoverageItem(item: { source_id?: string; source_ref?: string; stable_kb_paths?: string[]; knowledge_base?: string }): string {
+  if (item.knowledge_base) return item.knowledge_base;
+  const combined = [item.source_id, item.source_ref, ...(item.stable_kb_paths ?? [])].filter(Boolean).join("\n").toLowerCase();
+  if (/openclaw|answer-bot/.test(combined)) return "openclaw";
+  if (/container|docker|k8s|kubernetes/.test(combined)) return "container-repair";
+  if (/feishu|lark/.test(combined)) return "feishu";
+  if (/codex/.test(combined)) return "codex";
+  return "default";
 }
 
 interface ReviewQueue {
@@ -738,6 +750,7 @@ function coverageStatusLabel(status: string, language: ProjectLanguage): string 
   if (!zh(language)) return status;
   const labels: Record<string, string> = {
     raw_only: "仅原始数据",
+    needs_curation: "待二次提炼",
     privacy_blocked: "隐私待确认",
     low_signal_rejected: "低信号已拒绝",
     lesson_only: "已成 Lesson",
@@ -859,6 +872,7 @@ function renderHumanRequired(
   const followupCommand = isTeamGit
     ? "praxisbase wiki build-site --json"
     : "praxisbase personal run --open --json";
+  const privacyReviewCommand = "praxisbase review serve --port 4174";
   return `<section id="human-required" class="review-section" data-status="needs_human">
   <div class="section-heading">
     <div>
@@ -869,6 +883,7 @@ function renderHumanRequired(
   </div>
   <div class="command-strip">
     <code>${escapeHtml(triageCommand)}</code>
+    <code>${escapeHtml(privacyReviewCommand)}</code>
     <code>${escapeHtml(followupCommand)}</code>
   </div>
   ${privacyTriageReport ? `<dl class="queue-summary">
@@ -884,6 +899,12 @@ function renderHumanRequired(
   ${visibleRecords.length > 0 ? `<ol class="experience-list">
     ${visibleRecords.map((item) => {
       const detailsReleased = humanRequiredDetailsReleased(item);
+      const privacyActions = item.privacy_reviewable ? `<div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="${escapeHtml(item.id)}">
+        <button type="button" data-privacy-decision="auto_released">${useZh ? "释放为脱敏经验" : "Release sanitized"}</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">${useZh ? "低信号拒绝" : "Reject low signal"}</button>
+        <button type="button" data-privacy-decision="team_review_only">${useZh ? "保持人工" : "Keep manual"}</button>
+        <span class="approval-status" data-privacy-status>${useZh ? "需要先启动本地审批服务。" : "Start the local review server first."}</span>
+      </div>` : "";
       return `<li id="${escapeHtml(item.id)}" class="review-card">
       <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">${useZh ? "隐私待确认" : "Privacy required"}</span></p>
       <dl>
@@ -902,6 +923,7 @@ function renderHumanRequired(
         ${detailsReleased && item.triage.suggested_redactions.length > 0 ? `<dt>${useZh ? "建议脱敏" : "Suggested Redactions"}</dt><dd>${escapeHtml(item.triage.suggested_redactions.join(", "))}</dd>` : ""}
         ` : ""}
       </dl>
+      ${privacyActions}
     </li>`;
     }).join("\n")}
   </ol>` : `<p>${useZh ? "没有隐私待确认记录。" : "No privacy-required records."}</p>`}
@@ -946,32 +968,94 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
   const coverage = dailyReport?.experience_coverage;
   if (!coverage) return "";
   const useZh = zh(language);
-  const rows = coverage.items.slice(0, 80).map((item) => `<tr>
+  const statusCounts = coverage.items.reduce<Record<string, number>>((counts, item) => {
+    counts[item.status] = (counts[item.status] ?? 0) + 1;
+    return counts;
+  }, {});
+  const knowledgeBaseCounts = coverage.items.reduce<Record<string, number>>((counts, item) => {
+    const kb = knowledgeBaseFromCoverageItem(item);
+    counts[kb] = (counts[kb] ?? 0) + 1;
+    return counts;
+  }, {});
+  const released = coverage.items.filter((item) => item.privacy_decision === "auto_released").length;
+  const screenedOut = coverage.privacy_blocked + coverage.low_signal_rejected;
+  const processSteps = [
+    {
+      label: useZh ? "采集" : "Collected",
+      value: coverage.total_items,
+      note: useZh ? "OpenClaw 原始单元" : "OpenClaw source items",
+    },
+    {
+      label: useZh ? "隐私筛选" : "Privacy",
+      value: released,
+      note: useZh ? `${screenedOut} 条被阻断/拒绝` : `${screenedOut} blocked/rejected`,
+    },
+    {
+      label: useZh ? "经验抽取" : "Lessons",
+      value: coverage.total_lessons || coverage.with_lessons,
+      note: useZh ? `${coverage.with_lessons} 个来源产出 lesson` : `${coverage.with_lessons} sources produced lessons`,
+    },
+    {
+      label: useZh ? "知识编译" : "Curation",
+      value: coverage.total_wiki_evidence || coverage.with_wiki_evidence,
+      note: useZh ? `${coverage.with_wiki_evidence} 个来源，${coverage.pending_curation} 个待提炼` : `${coverage.with_wiki_evidence} sources, ${coverage.pending_curation} queued`,
+    },
+    {
+      label: useZh ? "沉淀" : "Stable",
+      value: coverage.stable_kb,
+      note: useZh ? `已有提案：${coverage.with_proposals} 个来源` : `${coverage.with_proposals} sources have proposals`,
+    },
+  ];
+  const statusOrder = ["stable_kb", "proposal", "wiki_evidence", "lesson_only", "needs_curation", "privacy_blocked", "low_signal_rejected", "raw_only"];
+  const statusCards = statusOrder
+    .filter((status) => (statusCounts[status] ?? 0) > 0)
+    .map((status) => `<a href="#coverage-details" class="coverage-status-card coverage-status-${escapeHtml(status)}" data-coverage-filter="${escapeHtml(status)}">
+      <span>${escapeHtml(coverageStatusLabel(status, language))}</span>
+      <strong>${escapeHtml(String(statusCounts[status] ?? 0))}</strong>
+    </a>`).join("\n");
+  const kbCards = Object.entries(knowledgeBaseCounts)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([kb, count]) => `<button type="button" class="kb-chip" data-coverage-kb-filter="${escapeHtml(kb)}"><span>${escapeHtml(kb)}</span><strong>${escapeHtml(String(count))}</strong></button>`)
+    .join("\n");
+  const rows = coverage.items.slice(0, 80).map((item) => `<tr data-coverage-row data-coverage-status="${escapeHtml(item.status)}" data-coverage-kb="${escapeHtml(knowledgeBaseFromCoverageItem(item))}">
     <td><code>${escapeHtml(item.source_id)}</code></td>
+    <td>${escapeHtml(knowledgeBaseFromCoverageItem(item))}</td>
     <td>${escapeHtml(privacyDecisionLabel(item.privacy_decision, language))}</td>
     <td>${escapeHtml(String(item.lesson_count))}</td>
     <td>${escapeHtml(String(item.wiki_evidence_count))}</td>
     <td>${escapeHtml(String(item.proposal_count))}</td>
     <td>${escapeHtml(coverageStatusLabel(item.status, language))}</td>
     <td>${escapeHtml(coverageReasonLabel(item, language))}</td>
-    <td>${item.proposal_titles.length > 0 ? escapeHtml(item.proposal_titles.join("; ")) : "-"}</td>
+    <td>${item.proposal_titles.length > 0 ? escapeHtml(item.proposal_titles.join("; ")) : item.lesson_claims.length > 0 ? `<ul class="compact-list">${item.lesson_claims.slice(0, 3).map((claim) => `<li>${escapeHtml(claim)}</li>`).join("")}</ul>` : "-"}</td>
   </tr>`).join("\n");
   return `<section class="review-section" id="experience-coverage">
-    <h2>经验覆盖</h2>
-    <div class="metrics">
-      <article><span>原始项</span><strong>${escapeHtml(String(coverage.total_items))}</strong></article>
-      <article><span>隐私结果</span><strong>${escapeHtml(String(coverage.with_privacy_result))}</strong></article>
-      <article><span>${useZh ? "已成 lesson" : "Lessons"}</span><strong>${escapeHtml(String(coverage.with_lessons))}</strong></article>
-      <article><span>${useZh ? "Wiki 证据" : "Wiki evidence"}</span><strong>${escapeHtml(String(coverage.with_wiki_evidence))}</strong></article>
-      <article><span>${useZh ? "提案" : "Proposal"}</span><strong>${escapeHtml(String(coverage.with_proposals))}</strong></article>
-      <article><span>${useZh ? "稳定知识" : "Stable KB"}</span><strong>${escapeHtml(String(coverage.stable_kb))}</strong></article>
+    <h2>${useZh ? "经验覆盖与筛选过程" : "Experience Coverage and Screening"}</h2>
+    <p class="section-lede">${useZh ? "从 OpenClaw 原始记忆到稳定知识的去向，不强行做成单向漏斗：一个来源可以产出多个 lesson，也可以等待二次提炼、人工隐私确认或合并到已有知识。" : "How OpenClaw memory items move toward stable knowledge. One source can produce multiple lessons, merge into existing pages, or wait for privacy/curation review."}</p>
+    <div class="coverage-flow">
+      ${processSteps.map((step, index) => `<article>
+        <span class="flow-index">${escapeHtml(String(index + 1))}</span>
+        <div><span>${escapeHtml(step.label)}</span><strong>${escapeHtml(String(step.value))}</strong><small>${escapeHtml(step.note)}</small></div>
+      </article>`).join("\n")}
     </div>
-    <details class="advanced-panel">
+    <div class="metrics">
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="all"><span>原始项</span><strong>${escapeHtml(String(coverage.total_items))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="privacy_blocked"><span>隐私待确认</span><strong>${escapeHtml(String(coverage.privacy_blocked))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="lesson_all"><span>${useZh ? "Lesson 总数" : "Total lessons"}</span><strong>${escapeHtml(String(coverage.total_lessons || coverage.with_lessons))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="wiki_evidence_all"><span>${useZh ? `Wiki 证据 ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} 个来源` : `Wiki evidence ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} sources`}</span><strong>${escapeHtml(String(coverage.total_wiki_evidence || coverage.with_wiki_evidence))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="proposal"><span>${useZh ? "提案" : "Proposal"}</span><strong>${escapeHtml(String(coverage.with_proposals))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="stable_kb"><span>${useZh ? "稳定知识" : "Stable KB"}</span><strong>${escapeHtml(String(coverage.stable_kb))}</strong></a>
+    </div>
+    <div class="kb-filter-bar">
+      <button type="button" class="kb-chip is-active" data-coverage-kb-filter="all"><span>${useZh ? "全部知识库" : "All KBs"}</span><strong>${escapeHtml(String(coverage.total_items))}</strong></button>
+      ${kbCards}
+    </div>
+    <div class="coverage-status-grid">${statusCards}</div>
+    <details class="advanced-panel" id="coverage-details">
       <summary>${useZh ? "展开来源明细" : "Show source details"}</summary>
     <div class="table-scroll">
       <table class="coverage-table">
-        <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "lessons" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "原因" : "reason"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan=\"8\">${useZh ? "没有覆盖记录。" : "No coverage records."}</td></tr>`}</tbody>
+        <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "知识库" : "KB"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "lessons" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "原因" : "reason"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan=\"9\">${useZh ? "没有覆盖记录。" : "No coverage records."}</td></tr>`}</tbody>
       </table>
     </div>
     </details>
@@ -1422,10 +1506,18 @@ interface DailyReportSummary {
 	    with_wiki_evidence: number;
 	    with_proposals: number;
 	    stable_kb: number;
+	    total_lessons: number;
+	    total_wiki_evidence: number;
+	    pending_curation: number;
+	    privacy_blocked: number;
+	    low_signal_rejected: number;
 	    items: Array<{
 	      source_id: string;
+	      source_ref?: string;
+	      knowledge_base?: string;
 	      privacy_decision?: string;
 	      lesson_count: number;
+	      lesson_claims: string[];
 	      wiki_evidence_count: number;
 	      proposal_count: number;
 	      proposal_titles: string[];
@@ -1799,18 +1891,29 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	        with_wiki_evidence: typeof coverage.with_wiki_evidence === "number" ? coverage.with_wiki_evidence : 0,
 	        with_proposals: typeof coverage.with_proposals === "number" ? coverage.with_proposals : 0,
 	        stable_kb: typeof coverage.stable_kb === "number" ? coverage.stable_kb : 0,
-	        items: rawItems.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item))).map((item) => ({
-	          source_id: typeof item.source_id === "string" ? item.source_id : "unknown",
-	          privacy_decision: typeof item.privacy_decision === "string" ? item.privacy_decision : undefined,
-	          lesson_count: typeof item.lesson_count === "number" ? item.lesson_count : 0,
-	          wiki_evidence_count: typeof item.wiki_evidence_count === "number" ? item.wiki_evidence_count : 0,
-	          proposal_count: typeof item.proposal_count === "number" ? item.proposal_count : 0,
-	          proposal_titles: Array.isArray(item.proposal_titles) ? item.proposal_titles.filter((title): title is string => typeof title === "string") : [],
-	          stable_kb_paths: Array.isArray(item.stable_kb_paths) ? item.stable_kb_paths.filter((path): path is string => typeof path === "string") : [],
-	          status: typeof item.status === "string" ? item.status : "raw_only",
-              reason_code: typeof item.reason_code === "string" ? item.reason_code : undefined,
-              reason: typeof item.reason === "string" ? item.reason : undefined,
-	        })),
+	        total_lessons: typeof coverage.total_lessons === "number" ? coverage.total_lessons : 0,
+	        total_wiki_evidence: typeof coverage.total_wiki_evidence === "number" ? coverage.total_wiki_evidence : 0,
+	        pending_curation: typeof coverage.pending_curation === "number" ? coverage.pending_curation : 0,
+	        privacy_blocked: typeof coverage.privacy_blocked === "number" ? coverage.privacy_blocked : 0,
+	        low_signal_rejected: typeof coverage.low_signal_rejected === "number" ? coverage.low_signal_rejected : 0,
+	        items: rawItems.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item))).map((item) => {
+            const normalized = {
+	            source_id: typeof item.source_id === "string" ? item.source_id : "unknown",
+	            source_ref: typeof item.source_ref === "string" ? item.source_ref : undefined,
+	            knowledge_base: typeof item.knowledge_base === "string" ? item.knowledge_base : undefined,
+	            privacy_decision: typeof item.privacy_decision === "string" ? item.privacy_decision : undefined,
+	            lesson_count: typeof item.lesson_count === "number" ? item.lesson_count : 0,
+	            lesson_claims: Array.isArray(item.lesson_claims) ? item.lesson_claims.filter((claim): claim is string => typeof claim === "string") : [],
+	            wiki_evidence_count: typeof item.wiki_evidence_count === "number" ? item.wiki_evidence_count : 0,
+	            proposal_count: typeof item.proposal_count === "number" ? item.proposal_count : 0,
+	            proposal_titles: Array.isArray(item.proposal_titles) ? item.proposal_titles.filter((title): title is string => typeof title === "string") : [],
+	            stable_kb_paths: Array.isArray(item.stable_kb_paths) ? item.stable_kb_paths.filter((path): path is string => typeof path === "string") : [],
+	            status: typeof item.status === "string" ? item.status : "raw_only",
+                reason_code: typeof item.reason_code === "string" ? item.reason_code : undefined,
+                reason: typeof item.reason === "string" ? item.reason : undefined,
+            };
+            return { ...normalized, knowledge_base: knowledgeBaseFromCoverageItem(normalized) };
+	        }),
 	      };
 	    })() : undefined,
 	    lessons: latestLessons ? (() => {
@@ -2216,6 +2319,10 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
       const details = detailsRecord(value.details);
       const privacy = detailsRecord(details.privacy);
       const triage = detailsRecord(details.triage);
+      const reason = stringValue(value.reason) ?? "Human review required";
+      const privacyReviewable = /^Experience privacy verdict human_required\b/i.test(reason)
+        || stringValue(privacy.verdict) === "human_required"
+        || stringValue(details.privacy_verdict) === "human_required";
       const suggestedRedactions = Array.isArray(triage.suggested_redactions)
         ? triage.suggested_redactions.map(stringValue).filter((item): item is string => Boolean(item))
         : [];
@@ -2223,12 +2330,13 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
         id: stringValue(value.id) ?? file.replace(/\.json$/i, ""),
         path,
         source_id: stringValue(value.source_id) ?? stringValue(details.source_id) ?? "unknown",
-        reason: stringValue(value.reason) ?? "Human review required",
+        reason,
         redacted_summary: stringValue(details.redacted_summary),
         agent: stringValue(details.agent),
         scope: stringValue(details.scope_hint) ?? stringValue(details.scope) ?? stringValue(privacy.mode),
         source_ref: stringValue(details.source_ref),
         source_hash: stringValue(details.source_hash),
+        privacy_reviewable: privacyReviewable,
         created_at: stringValue(value.created_at) ?? "",
         triage: Object.keys(triage).length > 0 ? {
           classification: stringValue(triage.classification),
@@ -2236,6 +2344,7 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
           confidence: typeof triage.confidence === "number" ? String(triage.confidence) : stringValue(triage.confidence),
           rationale: stringValue(triage.rationale),
           suggested_redactions: suggestedRedactions,
+          release_summary: stringValue(triage.release_summary),
         } : undefined,
       });
     } catch {

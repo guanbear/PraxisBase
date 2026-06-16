@@ -108,8 +108,13 @@ export function classifyLessonState(
     lesson.applies_to_agents.length >= 1;
   if (skillReady) return "skill_ready";
 
+  const hasReusableRepairSignal = Boolean(lesson.verification || lesson.negative_case)
+    || lesson.cue_family === "verified_fix"
+    || lesson.cue_family === "repeated_failure"
+    || lesson.cue_family === "tool_sequence";
+  const wikiReadyThreshold = mode === "team-git" && hasReusableRepairSignal ? 0.82 : 0.9;
   const wikiReady =
-    lesson.confidence >= 0.9 &&
+    lesson.confidence >= wikiReadyThreshold &&
     lesson.portability !== "private_instance" &&
     sourceCount >= 1;
   if (wikiReady) return "wiki_ready";

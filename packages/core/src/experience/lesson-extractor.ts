@@ -79,7 +79,7 @@ const CUE_VALUES = new Set([
   "llm_inferred",
 ]);
 
-const EXTRACTOR_PROMPT_VERSION = "m25-lesson-extractor-v2";
+const EXTRACTOR_PROMPT_VERSION = "m25-lesson-extractor-v3-high-recall";
 
 export async function extractLessonsWithAi(
   spans: EvidenceSpan[],
@@ -259,9 +259,11 @@ function buildSystemPrompt(language: ProjectLanguage, profileInstruction?: strin
   return [
     "You are an agent experience distiller.",
     "Extract reusable lessons, not summaries.",
+    "Use high recall for operational repair experience: one evidence span may yield multiple lessons when it contains distinct symptom, cause, action, verification, escalation, or anti-pattern signals.",
+    "Exclude only non-experience chatter, truly duplicate lessons, privacy-risk material, and generic claims with no operational action.",
     "Return JSON as {\"lessons\":[...]} only.",
     "Each lesson must include evidence_span_ids referencing the provided spans.",
-    "Prefer fewer high-value lessons over padding weak or generic evidence.",
+    "Prefer complete coverage of concrete repair, operations, support-routing, and agent-behavior lessons over a single umbrella summary.",
     profileInstruction ? `Knowledge-base profile: ${profileInstruction}` : undefined,
     languageInstruction(language),
   ].filter(Boolean).join("\n");

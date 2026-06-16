@@ -569,6 +569,10 @@ program
   .option("--ai-concurrency <n>", "maximum concurrent privacy triage AI calls")
   .option("--ai-timeout-ms <n>")
   .option("--include-triaged", "reprocess already triaged privacy exceptions")
+  .option("--id <id>", "privacy exception id for privacy review")
+  .option("--decision <decision>", "privacy review decision")
+  .option("--release-summary <summary>", "sanitized summary to release for manual privacy approval")
+  .option("--note <note>", "manual privacy review note")
   .option("--progress", "print privacy triage progress to stderr")
   .option("--json")
   .action(async (
@@ -581,6 +585,10 @@ program
       aiConcurrency?: string;
       aiTimeoutMs?: string;
       includeTriaged?: boolean;
+      id?: string;
+      decision?: "auto_released" | "keep_human_required" | "team_review_only" | "rejected_low_signal";
+      releaseSummary?: string;
+      note?: string;
       progress?: boolean;
       json?: boolean;
     }

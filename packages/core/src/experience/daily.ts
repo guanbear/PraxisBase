@@ -179,6 +179,15 @@ function sourceIdFromSourceRef(sourceRef: string | undefined): string | undefine
   return match?.[1];
 }
 
+function knowledgeBaseFromSource(input: { source_id?: string; source_ref?: string; stable_kb_paths?: string[] }): string {
+  const combined = [input.source_id, input.source_ref, ...(input.stable_kb_paths ?? [])].filter(Boolean).join("\n").toLowerCase();
+  if (/openclaw|answer-bot/.test(combined)) return "openclaw";
+  if (/container|docker|k8s|kubernetes/.test(combined)) return "container-repair";
+  if (/feishu|lark/.test(combined)) return "feishu";
+  if (/codex/.test(combined)) return "codex";
+  return "default";
+}
+
 function coverageStatus(item: DailyExperienceCoverage["items"][number]): DailyExperienceCoverage["items"][number]["status"] {
   if (item.stable_kb_paths.length > 0) return "stable_kb";
   if (item.privacy_decision === "rejected_low_signal") return "low_signal_rejected";
@@ -186,6 +195,7 @@ function coverageStatus(item: DailyExperienceCoverage["items"][number]): DailyEx
   if (item.wiki_evidence_count > 0) return "wiki_evidence";
   if (item.lesson_count > 0) return "lesson_only";
   if (item.privacy_decision && item.privacy_decision !== "auto_released") return "privacy_blocked";
+  if (item.privacy_decision === "auto_released") return "needs_curation";
   return "raw_only";
 }
 
@@ -194,6 +204,7 @@ function coverageReason(item: DailyExperienceCoverage["items"][number], lessonRe
   if (item.status === "proposal") return { reason_code: "proposal_created", reason: "已生成待审核提案。" };
   if (item.status === "wiki_evidence") return { reason_code: "wiki_evidence", reason: "已作为 wiki 编译证据。" };
   if (item.status === "lesson_only") return { reason_code: "lesson_not_materialized", reason: "已形成 lesson，但本轮尚未生成独立提案。" };
+  if (item.status === "needs_curation") return { reason_code: "needs_curation_retry", reason: "已安全释放，待二次经验提炼或明确拒绝原因。" };
   if (item.status === "low_signal_rejected") return { reason_code: "low_signal", reason: "被判定为问候、闲聊或缺少修复信号。" };
   if (item.status === "privacy_blocked") {
     if (item.privacy_decision === "team_review_only") return { reason_code: "team_review_only", reason: "团队模式 review-first，需人工确认后才释放。" };
@@ -262,6 +273,7 @@ async function buildExperienceCoverage(root: string, lessonReport: DailyLessonRe
       source_id: sourceId,
       lesson_count: 0,
       lesson_states: {},
+      lesson_claims: [],
       wiki_evidence_count: 0,
       proposal_count: 0,
       proposal_titles: [],
@@ -300,12 +312,14 @@ async function buildExperienceCoverage(root: string, lessonReport: DailyLessonRe
   const hasPrivacySeed = items.size > 0;
 
   for (const lesson of lessonReport?.lessons ?? []) {
-    for (const ref of lesson.source_refs) {
-      const sourceHash = lesson.source_hashes[0];
+    for (let index = 0; index < lesson.source_refs.length; index++) {
+      const ref = lesson.source_refs[index];
+      const sourceHash = lesson.source_hashes[index] ?? lesson.source_hashes[0];
       const item = ensureByRefHash(ref, sourceHash, { source_ref: ref, source_hash: sourceHash }, { create: !hasPrivacySeed });
       if (!item) continue;
       item.lesson_count += 1;
       item.lesson_states[lesson.state] = (item.lesson_states[lesson.state] ?? 0) + 1;
+      if (!item.lesson_claims.includes(lesson.safe_claim)) item.lesson_claims.push(lesson.safe_claim);
       if (lesson.state === "wiki_ready" || lesson.state === "skill_ready") item.wiki_evidence_count += 1;
     }
   }
@@ -357,6 +371,8 @@ async function buildExperienceCoverage(root: string, lessonReport: DailyLessonRe
   const coverageItems = Array.from(items.values()).map((item) => {
     const withStatus = {
       ...item,
+      knowledge_base: item.knowledge_base ?? knowledgeBaseFromSource(item),
+      lesson_claims: item.lesson_claims.slice(0, 8),
       proposal_titles: item.proposal_titles.slice(0, 8),
       stable_kb_paths: item.stable_kb_paths.slice(0, 8),
       status: coverageStatus(item),
@@ -374,6 +390,11 @@ async function buildExperienceCoverage(root: string, lessonReport: DailyLessonRe
     with_wiki_evidence: coverageItems.filter((item) => item.wiki_evidence_count > 0).length,
     with_proposals: coverageItems.filter((item) => item.proposal_count > 0).length,
     stable_kb: coverageItems.filter((item) => item.stable_kb_paths.length > 0).length,
+    total_lessons: coverageItems.reduce((sum, item) => sum + item.lesson_count, 0),
+    total_wiki_evidence: coverageItems.reduce((sum, item) => sum + item.wiki_evidence_count, 0),
+    pending_curation: coverageItems.filter((item) => item.status === "needs_curation" || item.status === "lesson_only" || item.status === "wiki_evidence").length,
+    privacy_blocked: coverageItems.filter((item) => item.status === "privacy_blocked").length,
+    low_signal_rejected: coverageItems.filter((item) => item.status === "low_signal_rejected").length,
     items: coverageItems,
   };
 }

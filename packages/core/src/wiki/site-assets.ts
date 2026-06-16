@@ -81,6 +81,32 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .queue-summary { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: .45rem .8rem; border: 1px solid var(--line); border-radius: 8px; background: white; padding: .9rem; }
 .queue-summary dt { color: var(--muted); }
 .queue-summary dd { margin: 0; overflow-wrap: anywhere; }
+.section-lede { color: var(--muted); max-width: 860px; }
+.coverage-flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .7rem; margin: 1rem 0; }
+.coverage-flow article { display: flex; gap: .65rem; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; background: white; padding: .8rem; min-height: 112px; }
+.coverage-flow article:not(:last-child) { position: relative; }
+.coverage-flow article:not(:last-child)::after { content: ""; position: absolute; right: -.55rem; top: 50%; width: .4rem; height: .4rem; border-top: 2px solid var(--line); border-right: 2px solid var(--line); transform: translateY(-50%) rotate(45deg); background: var(--bg); }
+.flow-index { display: inline-flex; align-items: center; justify-content: center; width: 1.55rem; height: 1.55rem; border-radius: 999px; background: #e8f2ed; color: var(--accent); font-weight: 800; flex: 0 0 auto; }
+.coverage-flow span:not(.flow-index) { display: block; color: var(--muted); font-weight: 700; }
+.coverage-flow strong { display: block; font-size: 2rem; line-height: 1; margin: .25rem 0; color: var(--ink); }
+.coverage-flow small { display: block; color: var(--muted); line-height: 1.35; }
+.coverage-status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; margin: 1rem 0; }
+.coverage-status-card { display: block; color: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; background: white; padding: .7rem .8rem; }
+.coverage-status-card:hover { text-decoration: none; border-color: var(--accent); box-shadow: 0 8px 20px rgba(23, 33, 27, .08); }
+.coverage-status-card.is-active, .metric-link.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20, 108, 92, .12); }
+.coverage-status-card span { display: block; color: var(--muted); font-weight: 700; }
+.coverage-status-card strong { display: block; margin-top: .2rem; font-size: 1.45rem; }
+.coverage-status-stable_kb { border-left-color: #10795f; }
+.coverage-status-proposal, .coverage-status-wiki_evidence, .coverage-status-lesson_only { border-left-color: #5a6da8; }
+.coverage-status-needs_curation { border-left-color: #9b6a00; }
+.coverage-status-privacy_blocked { border-left-color: #9a2f2f; }
+.coverage-status-low_signal_rejected, .coverage-status-raw_only { border-left-color: #7c8580; }
+.kb-filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; margin: .75rem 0 1rem; }
+.kb-chip { display: inline-flex; align-items: center; gap: .45rem; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--ink); padding: .42rem .65rem; font: inherit; cursor: pointer; }
+.kb-chip strong { color: var(--accent); }
+.kb-chip.is-active { border-color: var(--accent); background: #e8f2ed; }
+.compact-list { margin: 0; padding-left: 1.05rem; }
+.compact-list li + li { margin-top: .25rem; }
 .table-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .coverage-table { width: 100%; border-collapse: collapse; min-width: 860px; }
 .coverage-table th, .coverage-table td { padding: .55rem .65rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
@@ -96,6 +122,8 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .approval-actions { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; margin: .7rem 0; }
 .approval-actions button { border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); padding: .42rem .65rem; cursor: pointer; font: inherit; }
 .approval-actions button:first-child { background: var(--accent); border-color: var(--accent); color: white; }
+.privacy-actions button:nth-child(2) { border-color: #7c8580; color: #44504a; }
+.privacy-actions button:nth-child(3) { border-color: #9a5a00; color: #7a4700; }
 .approval-actions button:disabled { opacity: .55; cursor: wait; }
 .approval-status { color: var(--muted); font-size: .85rem; }
 .approval-status[data-state="ok"] { color: var(--accent); }
@@ -115,7 +143,8 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .meta-rail dl { display: grid; grid-template-columns: 90px 1fr; gap: .35rem .6rem; margin: 0; }
 .meta-rail dt { color: var(--muted); }
 @media (max-width: 900px) {
-  .topbar, .metrics, .dashboard-grid, .graph-grid, .page-shell { grid-template-columns: 1fr; }
+  .topbar, .metrics, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid { grid-template-columns: 1fr; }
+  .coverage-flow article::after { display: none; }
   .topnav { justify-content: flex-start; }
   .side-nav, .meta-rail { position: static; max-height: none; }
 }`;
@@ -265,6 +294,42 @@ export const SITE_JS = `(() => {
       });
     });
   });
+  let activeCoverageStatus = "all";
+  let activeCoverageKb = "all";
+  const applyCoverageFilters = () => {
+    document.querySelectorAll("[data-coverage-row]").forEach((row) => {
+      const status = row.getAttribute("data-coverage-status") || "raw_only";
+      const kb = row.getAttribute("data-coverage-kb") || "default";
+      const statusMatches = activeCoverageStatus === "all"
+        || (activeCoverageStatus === "lesson_all" && Number(row.children[3]?.textContent || 0) > 0)
+        || (activeCoverageStatus === "wiki_evidence_all" && Number(row.children[4]?.textContent || 0) > 0)
+        || status === activeCoverageStatus;
+      const kbMatches = activeCoverageKb === "all" || kb === activeCoverageKb;
+      row.hidden = !(statusMatches && kbMatches);
+    });
+    document.querySelectorAll("[data-coverage-filter]").forEach((node) => {
+      node.classList.toggle("is-active", node.getAttribute("data-coverage-filter") === activeCoverageStatus);
+    });
+    document.querySelectorAll("[data-coverage-kb-filter]").forEach((node) => {
+      node.classList.toggle("is-active", node.getAttribute("data-coverage-kb-filter") === activeCoverageKb);
+    });
+  };
+  document.querySelectorAll("[data-coverage-filter]").forEach((node) => {
+    node.addEventListener("click", () => {
+      activeCoverageStatus = node.getAttribute("data-coverage-filter") || "all";
+      const details = document.getElementById("coverage-details");
+      if (details && details.tagName.toLowerCase() === "details") details.setAttribute("open", "");
+      applyCoverageFilters();
+    });
+  });
+  document.querySelectorAll("[data-coverage-kb-filter]").forEach((node) => {
+    node.addEventListener("click", () => {
+      activeCoverageKb = node.getAttribute("data-coverage-kb-filter") || "all";
+      const details = document.getElementById("coverage-details");
+      if (details && details.tagName.toLowerCase() === "details") details.setAttribute("open", "");
+      applyCoverageFilters();
+    });
+  });
   document.querySelectorAll("[data-review-actions]").forEach((container) => {
     const proposalId = container.getAttribute("data-proposal-id");
     const status = container.querySelector("[data-review-status]");
@@ -284,6 +349,32 @@ export const SITE_JS = `(() => {
           const payload = await response.json().catch(() => ({}));
           if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
           if (status) { status.textContent = decision === "approve" ? "已批准，运行 promote 后会进入稳定知识库" : "已记录审核决定"; status.setAttribute("data-state", "ok"); }
+        } catch (error) {
+          buttons.forEach((item) => { item.disabled = false; });
+          if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+        }
+      });
+    });
+  });
+  document.querySelectorAll("[data-privacy-actions]").forEach((container) => {
+    const exceptionId = container.getAttribute("data-privacy-id");
+    const status = container.querySelector("[data-privacy-status]");
+    container.querySelectorAll("[data-privacy-decision]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const decision = button.getAttribute("data-privacy-decision");
+        if (!exceptionId || !decision) return;
+        const buttons = Array.from(container.querySelectorAll("button"));
+        buttons.forEach((item) => { item.disabled = true; });
+        if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
+        try {
+          const response = await fetch("http://127.0.0.1:4174/privacy-review", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ exception_id: exceptionId, decision }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+          if (status) { status.textContent = decision === "auto_released" ? "已释放，重跑 daily 后会进入提炼链路" : "已记录隐私决定"; status.setAttribute("data-state", "ok"); }
         } catch (error) {
           buttons.forEach((item) => { item.disabled = false; });
           if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }

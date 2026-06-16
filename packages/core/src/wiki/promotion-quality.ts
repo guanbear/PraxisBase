@@ -338,18 +338,20 @@ export function assessWikiPromotionQuality(
   }
 
   // 11. Semantic wiki quality: stable pages must be reusable guidance, not
-  // process status or source-id-driven summaries.
+  // process status or source-id-driven summaries. These are review gates rather
+  // than hard drops so high-recall curation can expose candidates for humans/AI
+  // to fix instead of losing operational lessons silently.
   if (!isReusableTopicTitle(proposal.title, proposal.target_path)) {
-    hardBlocks.push("non_reusable_topic");
+    humanRequired.push("non_reusable_topic");
   }
   if (!hasConcreteApplicability(body, proposal.title)) {
-    hardBlocks.push("generic_applicability");
+    humanRequired.push("generic_applicability");
   }
   if (!hasSpecificAction(body, proposal.title)) {
-    hardBlocks.push("non_specific_action");
+    humanRequired.push("non_specific_action");
   }
   if (!hasAgentUseGuidance(body)) {
-    hardBlocks.push("missing_agent_use");
+    humanRequired.push("missing_agent_use");
   }
 
   // Human-required gates can be promoted only after human review.

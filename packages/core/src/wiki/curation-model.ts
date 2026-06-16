@@ -437,6 +437,10 @@ export const WikiHumanRequiredReasonSchema = z.enum([
   "ambiguous_merge_target",
   "multiple_canonical_targets",
   "one_off_run_report",
+  "non_reusable_topic",
+  "generic_applicability",
+  "non_specific_action",
+  "missing_agent_use",
 ]);
 
 /** Promotion quality assessment result for a page plan. */

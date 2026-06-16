@@ -143,6 +143,42 @@
       });
     });
   });
+  let activeCoverageStatus = "all";
+  let activeCoverageKb = "all";
+  const applyCoverageFilters = () => {
+    document.querySelectorAll("[data-coverage-row]").forEach((row) => {
+      const status = row.getAttribute("data-coverage-status") || "raw_only";
+      const kb = row.getAttribute("data-coverage-kb") || "default";
+      const statusMatches = activeCoverageStatus === "all"
+        || (activeCoverageStatus === "lesson_all" && Number(row.children[3]?.textContent || 0) > 0)
+        || (activeCoverageStatus === "wiki_evidence_all" && Number(row.children[4]?.textContent || 0) > 0)
+        || status === activeCoverageStatus;
+      const kbMatches = activeCoverageKb === "all" || kb === activeCoverageKb;
+      row.hidden = !(statusMatches && kbMatches);
+    });
+    document.querySelectorAll("[data-coverage-filter]").forEach((node) => {
+      node.classList.toggle("is-active", node.getAttribute("data-coverage-filter") === activeCoverageStatus);
+    });
+    document.querySelectorAll("[data-coverage-kb-filter]").forEach((node) => {
+      node.classList.toggle("is-active", node.getAttribute("data-coverage-kb-filter") === activeCoverageKb);
+    });
+  };
+  document.querySelectorAll("[data-coverage-filter]").forEach((node) => {
+    node.addEventListener("click", () => {
+      activeCoverageStatus = node.getAttribute("data-coverage-filter") || "all";
+      const details = document.getElementById("coverage-details");
+      if (details && details.tagName.toLowerCase() === "details") details.setAttribute("open", "");
+      applyCoverageFilters();
+    });
+  });
+  document.querySelectorAll("[data-coverage-kb-filter]").forEach((node) => {
+    node.addEventListener("click", () => {
+      activeCoverageKb = node.getAttribute("data-coverage-kb-filter") || "all";
+      const details = document.getElementById("coverage-details");
+      if (details && details.tagName.toLowerCase() === "details") details.setAttribute("open", "");
+      applyCoverageFilters();
+    });
+  });
   document.querySelectorAll("[data-review-actions]").forEach((container) => {
     const proposalId = container.getAttribute("data-proposal-id");
     const status = container.querySelector("[data-review-status]");
@@ -162,6 +198,32 @@
           const payload = await response.json().catch(() => ({}));
           if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
           if (status) { status.textContent = decision === "approve" ? "已批准，运行 promote 后会进入稳定知识库" : "已记录审核决定"; status.setAttribute("data-state", "ok"); }
+        } catch (error) {
+          buttons.forEach((item) => { item.disabled = false; });
+          if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+        }
+      });
+    });
+  });
+  document.querySelectorAll("[data-privacy-actions]").forEach((container) => {
+    const exceptionId = container.getAttribute("data-privacy-id");
+    const status = container.querySelector("[data-privacy-status]");
+    container.querySelectorAll("[data-privacy-decision]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const decision = button.getAttribute("data-privacy-decision");
+        if (!exceptionId || !decision) return;
+        const buttons = Array.from(container.querySelectorAll("button"));
+        buttons.forEach((item) => { item.disabled = true; });
+        if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
+        try {
+          const response = await fetch("http://127.0.0.1:4174/privacy-review", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ exception_id: exceptionId, decision }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+          if (status) { status.textContent = decision === "auto_released" ? "已释放，重跑 daily 后会进入提炼链路" : "已记录隐私决定"; status.setAttribute("data-state", "ok"); }
         } catch (error) {
           buttons.forEach((item) => { item.disabled = false; });
           if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }

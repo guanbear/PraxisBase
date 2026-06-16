@@ -59,6 +59,8 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
     "You are the PraxisBase wiki curator.",
     "Return only JSON.",
     "Synthesize a compiled wiki article from safe evidence; do not summarize raw material.",
+    "Use high recall for operational experience: if safe evidence contains a concrete reusable action, anti-pattern, verification method, escalation rule, or support-routing rule, produce a reviewable page or update rather than silently dropping it.",
+    "Only reject non-experience chatter, true duplicates with no new guidance, privacy-risk material, and source metadata with no reusable operational lesson.",
     "Do not copy raw transcripts, credentials, tokens, cookies, auth headers, or private keys.",
     "Prefer operational agent guidance sections: # Title, ## When to Use, ## Symptoms or ## Context, ## What To Do / ## Procedure / ## Fix / ## Decision / ## Operating Rule, ## Verify, ## Reusable Lessons, ## Agent Use, and ## Provenance.",
     "The ## Agent Use section must tell agents when to retrieve the page, how to apply it, how to verify it, and when not to use it.",

@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   PrivacyTriageReportSchema,
+  writeManualPrivacyReview,
   protocolPaths,
   runPrivacyTriage,
   writeAiProviderConfig,
@@ -766,5 +767,34 @@ describe("privacy triage", () => {
     assert.equal(report.summary.scanned, 3);
     assert.equal(report.summary.auto_released, 3);
     assert.equal(maxActive, 2);
+  });
+
+  it("writes manual privacy approval with a sanitized release summary", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-manual-review-"));
+    await writeException(root, {
+      id: "team-manual",
+      scope: "team",
+      channel: "feishu",
+      agent: "openclaw",
+      sourceRef: "openclaw://answer-bot/pm.sqlite/chunks/manual",
+      sourceHash: "sha256:manual",
+      summary: "检查 OpenClaw bot 静默时，先确认网关健康、触发资格和最近分发活动。",
+    });
+
+    const result = await writeManualPrivacyReview(root, {
+      exceptionId: "team-manual",
+      decision: "auto_released",
+      releaseSummary: "检查 OpenClaw bot 静默时，先确认网关健康、触发资格和最近分发活动。",
+      reviewerId: "test-reviewer",
+      now: "2026-06-16T10:00:00.000Z",
+    });
+
+    assert.equal(result.decision, "auto_released");
+    assert.equal(result.exception_path, ".praxisbase/exceptions/human-required/team-manual.json");
+    const exception = JSON.parse(await readFile(join(root, ".praxisbase/exceptions/human-required/team-manual.json"), "utf8"));
+    assert.equal(exception.details.triage.decision, "auto_released");
+    assert.equal(exception.details.triage.classification, "needs_redaction");
+    assert.equal(exception.details.triage.reviewer_id, "test-reviewer");
+    assert.match(exception.details.triage.release_summary, /OpenClaw bot 静默/);
   });
 });

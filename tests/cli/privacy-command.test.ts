@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -109,5 +109,41 @@ describe("privacy CLI command", () => {
     assert.equal(parsed.ok, true);
     assert.ok(progress.some((line) => line.includes("[praxisbase privacy] status=running")));
     assert.ok(progress.some((line) => line.includes("[praxisbase privacy] status=completed")));
+  });
+
+  it("records manual privacy review decisions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-cli-privacy-review-"));
+    const dir = join(root, ".praxisbase/exceptions/human-required");
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, "exception.json"), JSON.stringify({
+      id: "exception",
+      protocol_version: "0.1",
+      type: "exception_record",
+      category: "human_required",
+      source_id: "source_exception",
+      reason: "Experience privacy verdict human_required: feishu_channel_team_review_first",
+      details: {
+        agent: "openclaw",
+        channel: "feishu",
+        scope_hint: "team",
+        source_ref: "openclaw://answer-bot/chunks/manual",
+        source_hash: "sha256:manual",
+        redacted_summary: "修复机器人静默时先检查触发资格和网关健康。",
+      },
+      created_at: "2026-06-16T00:00:00.000Z",
+    }, null, 2), "utf8");
+
+    const output = await privacyCommand(root, "review", {
+      id: "exception",
+      decision: "auto_released",
+      json: true,
+      now: "2026-06-16T10:00:00.000Z",
+    });
+    const parsed = JSON.parse(output);
+
+    assert.equal(parsed.ok, true);
+    const exception = JSON.parse(await readFile(join(dir, "exception.json"), "utf8"));
+    assert.equal(exception.details.triage.decision, "auto_released");
+    assert.equal(exception.details.triage.reviewer_id, "praxisbase-cli");
   });
 });

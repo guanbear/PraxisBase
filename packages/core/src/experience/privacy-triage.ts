@@ -48,6 +48,20 @@ type ExceptionRecord = ReturnType<typeof ExceptionRecordSchema.parse>;
 type TriageAiDecision = ReturnType<typeof PrivacyTriageAiDecisionSchema.parse>;
 type TriageDecision = PrivacyTriageReport["items"][number]["decision"];
 
+export interface ManualPrivacyReviewInput {
+  exceptionId: string;
+  decision: TriageDecision;
+  releaseSummary?: string;
+  reviewerId?: string;
+  note?: string;
+  now?: string;
+}
+
+export interface ManualPrivacyReviewResult {
+  exception_path: string;
+  decision: TriageDecision;
+}
+
 const TeamReleaseSummarySchema = z.object({
   release_summary: z.string().min(20).max(1200),
   reusable_lesson: z.string().min(10).max(800).optional(),
@@ -499,6 +513,49 @@ function isPrivacyTriageCandidate(rawException: Record<string, unknown>): boolea
   return /^Experience privacy verdict human_required\b/i.test(reason)
     || stringValue(privacy.verdict) === "human_required"
     || stringValue(details.privacy_verdict) === "human_required";
+}
+
+export async function writeManualPrivacyReview(root: string, input: ManualPrivacyReviewInput): Promise<ManualPrivacyReviewResult> {
+  const now = input.now ?? new Date().toISOString();
+  const paths = await listExceptionPaths(root);
+  for (const exceptionPath of paths) {
+    const raw = record(await readJson(root, exceptionPath));
+    const exception = ExceptionRecordSchema.parse(raw);
+    if (exception.id !== input.exceptionId && exception.source_id !== input.exceptionId) continue;
+    if (!isPrivacyTriageCandidate(raw)) {
+      throw new Error(`PRIVACY_REVIEW_NOT_PRIVACY_EXCEPTION: ${input.exceptionId} is not a privacy review item.`);
+    }
+    const details = record(exception.details);
+    const fallbackSummary = stringValue(details.redacted_summary) ?? stringValue(details.summary) ?? exception.reason;
+    const releaseSummary = sanitizeTeamReleaseText(input.releaseSummary ?? fallbackSummary ?? "");
+    if (input.decision === "auto_released" && !isSafeTeamReleaseText(releaseSummary)) {
+      throw new Error(`PRIVACY_REVIEW_UNSAFE_RELEASE: manual release requires a sanitized release summary.`);
+    }
+    const previousTriage = record(details.triage);
+    await writeJson(root, exceptionPath, {
+      ...exception,
+      details: {
+        ...details,
+        triage: {
+          ...previousTriage,
+          classification: input.decision === "auto_released" ? "needs_redaction" : stringValue(previousTriage.classification) ?? "unclear",
+          confidence: input.decision === "auto_released" ? 0.9 : typeof previousTriage.confidence === "number" ? previousTriage.confidence : 0.75,
+          rationale: input.note ?? `manual_privacy_${input.decision}`,
+          suggested_redactions: Array.isArray(previousTriage.suggested_redactions) ? previousTriage.suggested_redactions : [],
+          hard_block_reasons: Array.isArray(previousTriage.hard_block_reasons) ? previousTriage.hard_block_reasons : [],
+          decision: input.decision,
+          ...(input.decision === "auto_released" ? {
+            release_summary: releaseSummary,
+            auto_review_policy: "human-privacy-release-v1",
+          } : {}),
+          reviewer_id: input.reviewerId ?? "praxisbase-local-review-ui",
+          triaged_at: now,
+        },
+      },
+    });
+    return { exception_path: exceptionPath, decision: input.decision };
+  }
+  throw new Error(`PRIVACY_REVIEW_NOT_FOUND: ${input.exceptionId}`);
 }
 
 export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInput): Promise<PrivacyTriageReport> {

@@ -6,6 +6,7 @@ import {
   ProposalSchema, PROTOCOL_VERSION, wikiCandidateToKnowledgeProposal,
   CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal, ReviewSchema, buildWikiSite,
   writeReviewPolicy, readReviewPolicy, decideAutoReview, recordWikiSourceSummaryContributions,
+  writeManualPrivacyReview,
 } from "@praxisbase/core";
 import type { Proposal, ReviewPolicy, CuratedWikiProposal, AutoReviewDecision, ExceptionRecord, RunRecord, ReviewDecision } from "@praxisbase/core";
 import { reviewProposal } from "@praxisbase/core/review/reviewer.js";
@@ -160,6 +161,22 @@ export async function reviewServe(root: string, options: { port: number; host?: 
           outputs.push(...site.outputs);
         }
         return send(200, { ok: true, ...review, outputs });
+      }
+      if (req.method === "POST" && req.url === "/privacy-review") {
+        const body = await readJsonBody(req);
+        const exceptionId = typeof body.exception_id === "string" ? body.exception_id : undefined;
+        const decision = body.decision === "auto_released" || body.decision === "rejected_low_signal" || body.decision === "team_review_only" || body.decision === "keep_human_required"
+          ? body.decision
+          : undefined;
+        if (!exceptionId || !decision) return send(400, { ok: false, error: "exception_id and decision are required" });
+        const result = await writeManualPrivacyReview(root, {
+          exceptionId,
+          decision,
+          releaseSummary: typeof body.release_summary === "string" ? body.release_summary : undefined,
+          note: typeof body.note === "string" ? body.note : undefined,
+          reviewerId: "praxisbase-local-review-ui",
+        });
+        return send(200, { ok: true, ...result });
       }
       return send(404, { ok: false, error: "not_found" });
     } catch (error) {

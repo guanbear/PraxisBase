@@ -1,4 +1,4 @@
-import { runPrivacyTriage, type AiJsonClient } from "@praxisbase/core";
+import { runPrivacyTriage, writeManualPrivacyReview, type AiJsonClient } from "@praxisbase/core";
 
 export interface PrivacyCommandOptions {
   mode?: "personal" | "team-git";
@@ -12,6 +12,10 @@ export interface PrivacyCommandOptions {
   progressSink?: (line: string) => void;
   json?: boolean;
   now?: string;
+  id?: string;
+  decision?: "auto_released" | "keep_human_required" | "team_review_only" | "rejected_low_signal";
+  releaseSummary?: string;
+  note?: string;
   env?: Record<string, string | undefined>;
   aiClient?: AiJsonClient;
 }
@@ -74,6 +78,21 @@ export async function privacyCommand(root: string, subcommand: string, options: 
         aiClient: options.aiClient,
       });
       return options.json ? JSON.stringify({ ok: true, report }, null, 2) : `Privacy triage complete: ${report.id}`;
+    }
+
+    if (subcommand === "review") {
+      if (!options.id || !options.decision) {
+        throw new Error(`PRIVACY_COMMAND_INVALID: privacy review requires --id and --decision.`);
+      }
+      const result = await writeManualPrivacyReview(root, {
+        exceptionId: options.id,
+        decision: options.decision,
+        releaseSummary: options.releaseSummary,
+        note: options.note,
+        reviewerId: "praxisbase-cli",
+        now: options.now,
+      });
+      return options.json ? JSON.stringify({ ok: true, result }, null, 2) : `Privacy review recorded: ${result.decision} ${result.exception_path}`;
     }
 
     throw new Error(`PRIVACY_COMMAND_INVALID: Unknown subcommand "privacy ${subcommand}".`);

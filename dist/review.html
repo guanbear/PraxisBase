@@ -43,12 +43,12 @@
     </div>
   </section>
   <section class="metrics">
-    <a class="metric-link" href="#pending-candidates"><span>待审核</span><strong>0</strong></a>
+    <a class="metric-link" href="#pending-candidates"><span>待审核</span><strong>5</strong></a>
     <a class="metric-link" href="#approved-candidates"><span>已审核</span><strong>0</strong></a>
     <a class="metric-link" href="#human-required"><span>本次隐私</span><strong>14</strong></a>
     <a class="metric-link" href="#human-required"><span>隐私积压</span><strong>38</strong></a>
 
-    <a class="metric-link" href="#rejected"><span>已拒绝</span><strong>4</strong></a>
+    <a class="metric-link" href="#rejected"><span>已拒绝</span><strong>2</strong></a>
     <a class="metric-link" href="#promoted-candidates"><span>已沉淀</span><strong>1</strong></a>
   </section>
   <details class="advanced-panel review-advanced">
@@ -58,66 +58,120 @@
   <h2>Wiki 编译器</h2>
   <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>观察项</span><strong>9</strong></article>
-    <article><span>主题</span><strong>8</strong></article>
-    <article><span>计划 新建</span><strong>5</strong></article>
+    <article><span>观察项</span><strong>15</strong></article>
+    <article><span>主题</span><strong>13</strong></article>
+    <article><span>计划 新建</span><strong>9</strong></article>
 <article><span>计划 更新</span><strong>1</strong></article>
-<article><span>计划 合并</span><strong>2</strong></article>
+<article><span>计划 合并</span><strong>3</strong></article>
 <article><span>计划 替代</span><strong>0</strong></article>
 <article><span>计划 归档</span><strong>0</strong></article>
-    <article><span>重复 source-hash 分组</span><strong>2</strong></article>
-    <article><span>硬阻断</span><strong>4</strong></article>
-    <article><span>需质量审核</span><strong>1</strong></article>
-    <article><span>已写入提案</span><strong>1</strong></article>
+    <article><span>重复 source-hash 分组</span><strong>3</strong></article>
+    <article><span>硬阻断</span><strong>2</strong></article>
+    <article><span>需质量审核</span><strong>6</strong></article>
+    <article><span>已写入提案</span><strong>6</strong></article>
     <article><span>提案上限</span><strong>80</strong></article>
     <article><span>上限原因</span><strong>max_curation_proposals</strong></article>
 
     <article><span>必需链接</span><strong>0</strong></article>
 <article><span>建议链接</span><strong>4</strong></article>
-<article><span>合并计划</span><strong>2</strong></article>
+<article><span>合并计划</span><strong>3</strong></article>
 <article><span>歧义合并</span><strong>1</strong></article>
-<article><span>孤立主题</span><strong>6</strong></article>
-<article><span>孤儿风险</span><strong>6</strong></article>
+<article><span>孤立主题</span><strong>11</strong></article>
+<article><span>孤儿风险</span><strong>11</strong></article>
   </div>
 </section>
   </details>
   <section class="review-section" id="experience-coverage">
-    <h2>经验覆盖</h2>
-    <div class="metrics">
-      <article><span>原始项</span><strong>34</strong></article>
-      <article><span>隐私结果</span><strong>34</strong></article>
-      <article><span>已成 lesson</span><strong>9</strong></article>
-      <article><span>Wiki 证据</span><strong>8</strong></article>
-      <article><span>提案</span><strong>1</strong></article>
-      <article><span>稳定知识</span><strong>1</strong></article>
+    <h2>经验覆盖与筛选过程</h2>
+    <p class="section-lede">从 OpenClaw 原始记忆到稳定知识的去向，不强行做成单向漏斗：一个来源可以产出多个 lesson，也可以等待二次提炼、人工隐私确认或合并到已有知识。</p>
+    <div class="coverage-flow">
+      <article>
+        <span class="flow-index">1</span>
+        <div><span>采集</span><strong>34</strong><small>OpenClaw 原始单元</small></div>
+      </article>
+<article>
+        <span class="flow-index">2</span>
+        <div><span>隐私筛选</span><strong>20</strong><small>14 条被阻断/拒绝</small></div>
+      </article>
+<article>
+        <span class="flow-index">3</span>
+        <div><span>经验抽取</span><strong>19</strong><small>14 个来源产出 lesson</small></div>
+      </article>
+<article>
+        <span class="flow-index">4</span>
+        <div><span>知识编译</span><strong>34</strong><small>16 个来源，14 个待提炼</small></div>
+      </article>
+<article>
+        <span class="flow-index">5</span>
+        <div><span>沉淀</span><strong>1</strong><small>已有提案：6 个来源</small></div>
+      </article>
     </div>
-    <details class="advanced-panel">
+    <div class="metrics">
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="all"><span>原始项</span><strong>34</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="privacy_blocked"><span>隐私待确认</span><strong>11</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="lesson_all"><span>Lesson 总数</span><strong>19</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="wiki_evidence_all"><span>Wiki 证据 34 / 16 个来源</span><strong>34</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="proposal"><span>提案</span><strong>6</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="stable_kb"><span>稳定知识</span><strong>1</strong></a>
+    </div>
+    <div class="kb-filter-bar">
+      <button type="button" class="kb-chip is-active" data-coverage-kb-filter="all"><span>全部知识库</span><strong>34</strong></button>
+      <button type="button" class="kb-chip" data-coverage-kb-filter="openclaw"><span>openclaw</span><strong>34</strong></button>
+    </div>
+    <div class="coverage-status-grid"><a href="#coverage-details" class="coverage-status-card coverage-status-stable_kb" data-coverage-filter="stable_kb">
+      <span>已进稳定知识库</span>
+      <strong>1</strong>
+    </a>
+<a href="#coverage-details" class="coverage-status-card coverage-status-proposal" data-coverage-filter="proposal">
+      <span>已有提案</span>
+      <strong>5</strong>
+    </a>
+<a href="#coverage-details" class="coverage-status-card coverage-status-wiki_evidence" data-coverage-filter="wiki_evidence">
+      <span>已有 Wiki 证据</span>
+      <strong>10</strong>
+    </a>
+<a href="#coverage-details" class="coverage-status-card coverage-status-needs_curation" data-coverage-filter="needs_curation">
+      <span>待二次提炼</span>
+      <strong>4</strong>
+    </a>
+<a href="#coverage-details" class="coverage-status-card coverage-status-privacy_blocked" data-coverage-filter="privacy_blocked">
+      <span>隐私待确认</span>
+      <strong>11</strong>
+    </a>
+<a href="#coverage-details" class="coverage-status-card coverage-status-low_signal_rejected" data-coverage-filter="low_signal_rejected">
+      <span>低信号已拒绝</span>
+      <strong>3</strong>
+    </a></div>
+    <details class="advanced-panel" id="coverage-details">
       <summary>展开来源明细</summary>
     <div class="table-scroll">
       <table class="coverage-table">
-        <thead><tr><th>来源</th><th>隐私</th><th>lessons</th><th>证据</th><th>提案</th><th>状态</th><th>原因</th><th>标题</th></tr></thead>
-        <tbody><tr>
+        <thead><tr><th>来源</th><th>知识库</th><th>隐私</th><th>lessons</th><th>证据</th><th>提案</th><th>状态</th><th>原因</th><th>标题</th></tr></thead>
+        <tbody><tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-14edce26a</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>3</td>
-    <td>0</td>
-    <td>0</td>
-    <td>已成 Lesson</td>
-    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
-    <td>-</td>
+    <td>5</td>
+    <td>1</td>
+    <td>已有提案</td>
+    <td>已生成待审核提案。</td>
+    <td>自动修复失败、机器人无响应与聊天连接器故障的处理规则</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-19c2eeefa</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
+    <td>1</td>
     <td>2</td>
-    <td>0</td>
-    <td>0</td>
-    <td>已成 Lesson</td>
-    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
-    <td>-</td>
+    <td>1</td>
+    <td>已有提案</td>
+    <td>已生成待审核提案。</td>
+    <td>机器人不回复或交互环境 down/unresponsive 的自动修复路径</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="low_signal_rejected" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-1e5ae91e7</code></td>
+    <td>openclaw</td>
     <td>低信号拒绝</td>
     <td>0</td>
     <td>0</td>
@@ -126,28 +180,31 @@
     <td>被判定为问候、闲聊或缺少修复信号。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-273a47187</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
-    <td>4</td>
-    <td>5</td>
+    <td>1</td>
+    <td>2</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
     <td>已作为 wiki 编译证据。</td>
-    <td>-</td>
+    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-31384b954</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-3be56fa6f</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -156,18 +213,75 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-4b2bab827</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>0</td>
+    <td>1</td>
+    <td>1</td>
+    <td>已有提案</td>
+    <td>已生成待审核提案。</td>
+    <td>使用受支持的包管理流程安装可复用技能</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-54fe93b6d</code></td>
+    <td>openclaw</td>
+    <td>团队人工确认</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
+    <td>-</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-5535ee36f</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>1</td>
+    <td>2</td>
+    <td>0</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td><ul class="compact-list"><li>当新用户或刚授权用户遇到 access-not-configured、pairing prompt 或权限配置异常时，应按授权/配对问题处理，而不是当作模型或业务逻辑失败。</li></ul></td>
+  </tr>
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-64f06eeeb</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>-</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-6a00c70c9</code></td>
+    <td>openclaw</td>
+    <td>团队人工确认</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
+    <td>-</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-745fa543d</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>1</td>
     <td>1</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
     <td>已作为 wiki 编译证据。</td>
-    <td>-</td>
+    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
   </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-54fe93b6d</code></td>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-803b9fd01</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -176,68 +290,20 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-5535ee36f</code></td>
+<tr data-coverage-row data-coverage-status="stable_kb" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-8107f53d4</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>2</td>
-    <td>0</td>
-    <td>0</td>
-    <td>已成 Lesson</td>
-    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
-    <td>-</td>
-  </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-64f06eeeb</code></td>
-    <td>自动释放</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
-    <td>-</td>
-  </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-6a00c70c9</code></td>
-    <td>团队人工确认</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>隐私待确认</td>
-    <td>团队模式 review-first，需人工确认后才释放。</td>
-    <td>-</td>
-  </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-745fa543d</code></td>
-    <td>自动释放</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
-    <td>-</td>
-  </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-803b9fd01</code></td>
-    <td>团队人工确认</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>隐私待确认</td>
-    <td>团队模式 review-first，需人工确认后才释放。</td>
-    <td>-</td>
-  </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-8107f53d4</code></td>
-    <td>自动释放</td>
     <td>4</td>
-    <td>5</td>
     <td>1</td>
     <td>已进稳定知识库</td>
     <td>已进入稳定知识库。</td>
-    <td>长耗时 Agent 工作前先发送 ACK</td>
+    <td>长耗时代理工作前先发送 ACK</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-85c6325c6</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -246,38 +312,42 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-8deb4f5e6</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-92320b389</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
+    <td>1</td>
     <td>2</td>
-    <td>0</td>
-    <td>0</td>
-    <td>已成 Lesson</td>
-    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
-    <td>-</td>
+    <td>1</td>
+    <td>已有提案</td>
+    <td>已生成待审核提案。</td>
+    <td>scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-98477e0c8</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>2</td>
+    <td>4</td>
     <td>1</td>
-    <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td>-</td>
+    <td>已有提案</td>
+    <td>已生成待审核提案。</td>
+    <td>隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-9fd2e910e</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -286,8 +356,9 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-b2390ce0f</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -296,8 +367,9 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-b3b1891ee</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -306,8 +378,9 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-b6f7162b2</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -316,8 +389,9 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="low_signal_rejected" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-bdd86a156</code></td>
+    <td>openclaw</td>
     <td>低信号拒绝</td>
     <td>0</td>
     <td>0</td>
@@ -326,8 +400,9 @@
     <td>被判定为问候、闲聊或缺少修复信号。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-c721715b0</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>0</td>
     <td>1</td>
@@ -336,8 +411,9 @@
     <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="low_signal_rejected" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-cfcba5397</code></td>
+    <td>openclaw</td>
     <td>低信号拒绝</td>
     <td>0</td>
     <td>0</td>
@@ -346,58 +422,64 @@
     <td>被判定为问候、闲聊或缺少修复信号。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-dbfb119fc</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
+    <td>1</td>
+    <td>1</td>
     <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
-    <td>-</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-dd5113c71</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>1</td>
     <td>3</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
     <td>已作为 wiki 编译证据。</td>
-    <td>-</td>
+    <td><ul class="compact-list"><li>当集成检索和浏览器检索都因 authorization 失败时，应明确是 approved integration/service account 缺少 read permissions。</li></ul></td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-e1db2413e</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>1</td>
+    <td>2</td>
+    <td>0</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td><ul class="compact-list"><li>跨无关用途复用同一聊天机器人身份或配置，可能导致漏回复、重复回复或过度参与；应隔离 bot identity/configuration。</li></ul></td>
+  </tr>
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-e3e17b88c</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>-</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-e437220d9</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>1</td>
     <td>1</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
     <td>已作为 wiki 编译证据。</td>
-    <td>-</td>
+    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
   </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-e3e17b88c</code></td>
-    <td>自动释放</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
-    <td>-</td>
-  </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-e437220d9</code></td>
-    <td>自动释放</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
-    <td>-</td>
-  </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-e9bac6dd0</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -406,28 +488,31 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-f1d3f2e21</code></td>
-    <td>自动释放</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
-    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
-    <td>-</td>
-  </tr>
-<tr>
-    <td><code>experience_openclaw-answer-bot-sha256-f7aee701a</code></td>
+    <td>openclaw</td>
     <td>自动释放</td>
     <td>1</td>
     <td>1</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
     <td>已作为 wiki 编译证据。</td>
-    <td>-</td>
+    <td><ul class="compact-list"><li>群聊中 bot 静默不一定表示集成没收到消息；应同时检查触发资格、会话状态、网关健康和最近分发活动。</li></ul></td>
   </tr>
-<tr>
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-f7aee701a</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>2</td>
+    <td>2</td>
+    <td>0</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td><ul class="compact-list"><li>当新用户或刚授权用户遇到 access-not-configured、pairing prompt 或权限配置异常时，应按授权/配对问题处理，而不是当作模型或业务逻辑失败。</li><li>当消息平台集成异常且实例不是因计费停机时，可用插件启用、集成更新和实例重启作为首轮修复步骤。</li></ul></td>
+  </tr>
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-fe8edde7b</code></td>
+    <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
@@ -454,14 +539,651 @@
   <div class="section-heading">
     <div>
       <h2><span id="review-required"></span>待审核</h2>
-      <p>没有待审核候选项。</p>
+      <p>5 条</p>
     </div>
-    <strong>0</strong>
+    <strong>5</strong>
   </div>
   <div class="command-strip"><code>praxisbase review --auto</code>
 <code>praxisbase promote --auto</code>
 <code>praxisbase wiki build-site --json</code></div>
+  <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16" class="review-card">
+    <p><strong>机器人不回复或交互环境 down/unresponsive 的自动修复路径</strong> <span class="status-pill">待审核</span></p>
+    <p>当用户反馈 OpenClaw bot、交互环境或实例停止回复，且没有明确 billing、quota、payment 原因时，按“控制台自动修复→原会话验证→失败后升级平台支持”处理；避免在已执行 script-based repair 和 AI-based repair 后反复要求用户重复修复。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16">
+      <button type="button" data-review-decision="approve">批准</button>
+      <button type="button" data-review-decision="reject">拒绝</button>
+      <button type="button" data-review-decision="needs_human">人工跟进</button>
+      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
+    </div>
+    <dl>
+      <dt>目标</dt><dd><code>kb/known-fixes/down-unresponsive.md</code></dd>
+      <dt>类型</dt><dd>known_fix</dd>
+      <dt>范围</dt><dd>team</dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
+      <dt>来源数</dt><dd>1</dd>
+      <dt>置信度</dt><dd>0.93</dd>
+      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
+      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+      <dt>风险提示</dt><dd>证据来源只有一条，流程可信但覆盖面有限；遇到明确计费、额度或付款问题时不要套用。; 未提供具体控制台按钮名称或状态字段，执行时需按当前 OpenClaw 控制台界面适配。; 不要收集或记录用户凭据、token、cookie、auth header、私钥等敏感信息；升级时仅附实例标识、症状、已执行修复和验证结果。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
 
+
+      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+
+
+      </dl>
+    </details>
+    <details>
+      <summary>预览生成的 Markdown</summary>
+      <pre><code># 机器人不回复或交互环境 down/unresponsive 的自动修复路径
+
+## When to Use
+
+在以下情况使用本页：
+
+- 用户反馈 bot 不回复、机器人没反应、停止回复。
+- 用户反馈交互环境 down、unresponsive、实例看似停止工作。
+- 没有明确证据表明问题由 billing、quota、payment、额度耗尽或付费状态导致。
+
+## Symptoms
+
+常见表现：
+
+- 用户发送消息后没有可见回复。
+- 交互环境显示 down、unresponsive 或类似不可用状态。
+- 实例看起来停止工作，但用户无法判断是前端卡住、后端仍在运行，还是实例故障。
+- 用户只描述“机器人没反应”，未提供计费或额度相关报错。
+
+## Procedure
+
+1. **先排除计费/额度路径**
+   - 如果用户明确提到 billing、quota、payment、额度耗尽、付款失败、订阅限制等，不使用本页流程。
+   - 这类问题应转入计费/额度处理路径。
+
+2. **引导用户执行控制台自动修复**
+   - 让用户进入产品控制台。
+   - 找到受影响的 bot、交互环境或实例。
+   - 对该实例执行自动修复。
+
+3. **如果只是“机器人没反应”，先判断是否仍在运行**
+   - 不要立即认定实例已坏。
+   - 先确认后端 tool calls 是否仍在运行、排队或延迟。
+   - 如果后端仍有调度活动，提示用户等待当前调用完成或观察是否有后续响应。
+   - 如确认不是实例故障且可切换模型，再考虑备用模型。
+
+4. **避免重复无效修复**
+   - 如果用户已经执行过 script-based repair 和 AI-based repair，且仍未恢复，不要继续让用户重复同一类修复。
+   - 此时应停止重复排查，转交平台支持处理。
+
+## Verify
+
+修复后让用户做一次可复现验证：
+
+1. 回到原会话或原交互环境。
+2. 重新触发一次明确请求，例如发送一条简单、可回答的指令。
+3. 检查以下任一恢复信号：
+   - 出现新的 bot 回复。
+   - 后端出现新的 tool call、调度活动或执行记录。
+   - 实例状态从 down/unresponsive 恢复为可用。
+
+如果验证仍失败，并且自动修复已执行过，进入升级路径。
+
+## Escalation
+
+升级到平台支持的条件：
+
+- 控制台自动修复后仍无响应。
+- 用户已尝试 script-based repair 和 AI-based repair，问题仍存在。
+- 后端没有新的响应、调度活动或实例恢复迹象。
+- 无明确 billing、quota、payment 原因可解释当前停机。
+
+升级时应附上：
+
+- 受影响实例或 bot 的标识信息。
+- 用户观察到的症状：不回复、down、unresponsive、停止工作等。
+- 已执行的修复方式：自动修复、script-based repair、AI-based repair。
+- 验证结果：原会话重试后是否有回复、是否有后端活动、实例状态是否恢复。
+
+## Reusable Lessons
+
+- 对非计费/额度导致的 bot 不回复或环境 down，优先使用“控制台自动修复→验证→失败后升级”的路径。
+- “机器人没反应”不一定等于实例故障；先确认后端 tool calls 是否仍在运行或延迟。
+- 已执行 script-based repair 和 AI-based repair 后仍失败时，不要反复给出相同修复建议，应转交平台支持。
+- billing、quota、payment 导致的休眠或停机不适用本页，应走计费/额度处理路径。
+
+## Agent Use
+Use this page when:
+- 机器人不回复、交互环境 down/unresponsive、实例看似停止工作.
+
+Apply it by:
+- 让用户进入产品控制台，对受影响实例执行自动修复；若已执行 script-based repair 和 AI-based repair 仍失败，停止重复修复指引并转交平台支持；若只是“机器人没反应”，先确认后端 tool calls 是否仍在运行或延迟，再考虑备用模型。
+
+Verify by:
+- 修复后让用户在原会话重新触发一次明确请求；检查是否出现新的后端响应、调度活动或实例恢复状态。
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319 (sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256" class="review-card">
+    <p><strong>使用受支持的包管理流程安装可复用技能</strong> <span class="status-pill">待审核</span></p>
+    <p>当可复用 review skill 通过 plugin 风格命令安装失败时，不要继续沿用不受支持的插件安装路径；应切换到受支持的 package-manager 工作流。验证以安装命令成功退出、技能在 agent runtime 中可用为准。交互式授权超时导致的文档生成失败不应误判为技能安装失败；恢复检查任务若已发送过通知，静默且幂等是可接受结果。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256">
+      <button type="button" data-review-decision="approve">批准</button>
+      <button type="button" data-review-decision="reject">拒绝</button>
+      <button type="button" data-review-decision="needs_human">人工跟进</button>
+      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
+    </div>
+    <dl>
+      <dt>目标</dt><dd><code>kb/known-fixes/install-review-skill-via-package-manager.md</code></dd>
+      <dt>类型</dt><dd>known_fix</dd>
+      <dt>范围</dt><dd>team</dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76</code></dd>
+      <dt>来源数</dt><dd>1</dd>
+      <dt>置信度</dt><dd>0.68</dd>
+      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
+      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+      <dt>风险提示</dt><dd>证据未提供具体 package-manager 命令、路径或产品版本，因此正文避免编造命令。; 交互式授权细节已泛化处理，未包含任何令牌、凭据、cookie、auth header 或私钥。; 该页面适用于技能安装流程选择与验证，不应扩展为通用授权修复指南。; quality_human_required:generic_applicability; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
+
+
+      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+
+
+      </dl>
+    </details>
+    <details>
+      <summary>预览生成的 Markdown</summary>
+      <pre><code># 使用受支持的包管理流程安装可复用技能
+
+## When to Use
+
+当 OpenClaw 维修或问答机器人需要安装、恢复或排查可复用技能，且出现以下情况时使用本页：
+
+- 使用 plugin 风格命令安装技能失败。
+- 需要确认 review skill 或类似可复用技能是否已正确进入 agent runtime。
+- 安装流程中同时出现其他任务失败，需要区分是安装失败、授权超时，还是恢复检查的正常静默行为。
+
+## Context
+
+已观察到一次可复用 review skill 安装场景：不受支持的 plugin 风格命令失败后，改用受支持的 package-manager 工作流成功完成安装。可用验证信号包括：安装流程成功退出，以及该技能随后可被 agent runtime 使用。
+
+同一批操作中还观察到两类容易误判的情况：
+
+- 文档生成请求因交互式授权超时未完成；这不是技能安装成功与否的直接证据。
+- recurring recovery-check task 在先前已经发送过通知时保持静默；该静默行为可视为幂等恢复检查的正常结果，而不是必然故障。
+
+## Fix
+
+1. 如果 plugin 风格安装命令失败，不要重复尝试同一路径。
+2. 切换到受支持的 package-manager 工作流安装可复用技能。
+3. 安装结束后，检查安装进程或安装命令是否成功退出。
+4. 在 agent runtime 中确认目标 skill 已可用。
+5. 如果同时存在文档生成失败，先确认是否由交互式授权超时触发；不要把该失败直接归因于 skill 安装失败。
+6. 如果 recovery-check task 没有输出或没有再次通知，检查是否已有先前通知记录；若已有通知，静默可能是幂等行为。
+
+## Verify
+
+验证时优先使用以下信号：
+
+- package-manager 安装流程返回成功退出状态。
+- 目标 reusable skill 出现在 agent runtime 可调用或可加载的技能集合中。
+- 后续调用该 skill 时，agent runtime 能识别并使用该 skill。
+
+辅助判断：
+
+- 若 recurring recovery-check task 已经发送过通知，再次执行时无新通知、无额外输出，可作为幂等静默行为处理。
+- 若文档生成请求失败且原因是交互式授权超时，应单独处理授权问题，不作为 package-manager 安装失败证据。
+
+## Escalation Boundary
+
+升级给平台或工具链维护者的条件：
+
+- package-manager 工作流也失败，且没有明确的用户操作错误。
+- 安装流程显示成功，但 agent runtime 中仍无法发现或调用该 skill。
+- recovery-check task 静默，但无法确认此前是否已经发送过通知。
+- 交互式授权反复超时，阻塞必要的生成、安装或验证流程。
+
+不要升级的情况：
+
+- 仅 plugin 风格命令失败，但 package-manager 工作流可成功完成安装。
+- recovery-check task 在已有通知后静默，且没有其他故障信号。
+
+## Reusable Lessons
+
+- 对 reusable skill 安装，优先使用受支持的 package-manager 工作流。
+- plugin 风格命令失败后，重复执行同一失败路径通常不是有效修复。
+- 安装验证不能只看“没有报错”；应确认成功退出状态和 agent runtime 可用性。
+- 交互式授权超时会导致相关任务未完成，但应与 skill 安装状态分开判断。
+- 幂等 recovery-check task 可能在已通知后静默；静默本身不一定是异常。
+
+## Agent Use
+Use this page when:
+- A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization=[REDACTED] out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.
+
+Apply it by:
+- Match the current symptom to this page, then apply the documented procedure or fix.
+
+Verify by:
+- A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76 (sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256" class="review-card">
+    <p><strong>scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery</strong> <span class="status-pill">待审核</span></p>
+    <p>当 scheduled-job 返回 client errors、定时通知未发送，并伴随目标 primary session 解析失败时，优先删除失败任务，并用 isolated-session delivery、agent-turn style payload、explicit delivery configuration 重新创建任务。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256">
+      <button type="button" data-review-decision="approve">批准</button>
+      <button type="button" data-review-decision="reject">拒绝</button>
+      <button type="button" data-review-decision="needs_human">人工跟进</button>
+      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
+    </div>
+    <dl>
+      <dt>目标</dt><dd><code>kb/known-fixes/scheduled-job-failure-client-errors-primary-session.md</code></dd>
+      <dt>类型</dt><dd>known_fix</dd>
+      <dt>范围</dt><dd>team</dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab</code></dd>
+      <dt>来源数</dt><dd>1</dd>
+      <dt>置信度</dt><dd>0.93</dd>
+      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
+      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+      <dt>风险提示</dt><dd>证据来自单条成功经验，适用于 primary session 解析失败相关的 scheduled-job client errors；不应泛化到所有定时任务失败。; 未提供具体控制台路径或命令，执行时需使用当前环境支持的 scheduled job 管理工具完成删除与重建。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
+
+
+      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+
+
+      </dl>
+    </details>
+    <details>
+      <summary>预览生成的 Markdown</summary>
+      <pre><code># scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery
+
+## When to Use
+
+在以下条件同时出现时使用本页：
+
+- scheduled-job 执行失败；
+- 定时通知未按预期发送；
+- 任务返回 `client errors`；
+- 错误或诊断信息指向目标 `primary session` 解析失败。
+
+## Symptoms
+
+常见表现：
+
+- recurring / scheduled notification 到点后未投递；
+- scheduled job 状态显示失败；
+- 失败原因包含 `client errors`；
+- 任务无法解析或定位目标 `primary session`。
+
+## Fix
+
+可靠绕过方式是不要继续修补原失败任务，而是重建为隔离会话投递模式：
+
+1. 删除失败的 scheduled jobs。
+2. 按 `isolated-session delivery` 方式重新创建定时任务。
+3. 将 payload 调整为 `agent-turn style payload`。
+4. 补齐 `explicit delivery configuration`，避免依赖隐式 primary session 解析。
+5. 保存并启用新任务。
+
+## Verify
+
+确认以下结果：
+
+- 原失败 scheduled jobs 已删除；
+- 新 scheduled job 已按 `isolated-session delivery` 模式创建；
+- payload 使用 `agent-turn style`；
+- delivery configuration 为显式配置；
+- 新任务到触发时间后能按预期投递通知；
+- 不再出现目标 `primary session` 解析失败导致的 `client errors`。
+
+## Reusable Lessons
+
+- 当 scheduled-job 的失败点是目标 `primary session` 解析，而不是通知内容本身时，重建任务通常比修复原任务更可靠。
+- `isolated-session delivery` 可绕过对原 primary session 的脆弱依赖。
+- `agent-turn style payload` 与 `explicit delivery configuration` 应一起使用，避免投递上下文不完整。
+- 不要把此修复用于所有定时通知失败；只有在 `client errors` 与 primary session 解析失败相关时才复用。
+
+## Agent Use
+Use this page when:
+- scheduled-job failure、定时通知未发送、任务返回 client errors、目标 primary session 解析失败.
+
+Apply it by:
+- 删除失败的 scheduled jobs；按 isolated-session delivery 方式重新创建任务；payload 使用 agent-turn style；补齐 explicit delivery configuration。
+
+Verify by:
+- 失败任务已删除并以工作模式重建；新任务能按预期投递通知。
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab (sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66" class="review-card">
+    <p><strong>自动修复失败、机器人无响应与聊天连接器故障的处理规则</strong> <span class="status-pill">待审核</span></p>
+    <p>当脚本修复和 AI 修复均已失败时，不要重复执行同类修复，应升级给对应平台支持角色。对机器人疑似无响应，先确认后端工具调用是否仍在运行或延迟，再必要时切换模型。对聊天连接器故障，检查聊天插件启用状态、重启服务，并验证连接器身份解析、WebSocket 就绪、服务健康和集成配置。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66">
+      <button type="button" data-review-decision="approve">批准</button>
+      <button type="button" data-review-decision="reject">拒绝</button>
+      <button type="button" data-review-decision="needs_human">人工跟进</button>
+      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
+    </div>
+    <dl>
+      <dt>目标</dt><dd><code>kb/known-fixes/wiki.md</code></dd>
+      <dt>类型</dt><dd>known_fix</dd>
+      <dt>范围</dt><dd>team</dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
+      <dt>来源数</dt><dd>1</dd>
+      <dt>置信度</dt><dd>0.68</dd>
+      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
+      <dt>审核原因</dt><dd>new_canonical_topic; duplicate_source_hash</dd><dt>建议</dt><dd>edit</dd>
+      <dt>风险提示</dt><dd>证据来自单一来源，未提供具体命令、日志样例或平台角色名称；执行时需结合本地运行手册确认健康检查入口和升级对象。; 不要将“切换模型”作为替代后端状态检查的第一步；否则可能造成重复请求或掩盖长耗时工具调用。; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
+
+
+      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+
+
+      </dl>
+    </details>
+    <details>
+      <summary>预览生成的 Markdown</summary>
+      <pre><code># 自动修复失败、机器人无响应与聊天连接器故障的处理规则
+
+## When to Use
+
+在以下任一场景使用本页：
+
+- OpenClaw 自动化脚本修复已执行但未解决问题。
+- AI repair / AI 自动修复也已尝试且失败。
+- 用户反馈机器人“没有回复”“卡住”“一直等待”，但不确定后端是否仍在处理。
+- 聊天连接器失败、机器人无法接入聊天渠道、连接器身份或 WebSocket 状态异常。
+
+## Symptoms
+
+常见表现：
+
+- 自动脚本修复完成后，故障仍存在。
+- AI 修复给出方案或执行后，问题仍未恢复。
+- 前端看起来机器人无响应，但可能是后端 tool call 仍在运行、排队或延迟返回。
+- 聊天插件或聊天连接器相关功能不可用。
+- 连接器身份解析失败、WebSocket 未就绪、服务健康检查异常或集成配置不一致。
+
+## Operating Rule
+
+### 1. 脚本修复和 AI 修复都失败后：停止重复修复，升级处理
+
+如果已经确认：
+
+1. 自动化脚本修复已运行；并且
+2. AI repair / AI 自动修复也已尝试；并且
+3. 两者均未恢复服务或未定位可执行修复；
+
+则不要继续重复执行同类修复步骤。应将工单升级给对应的平台支持角色或平台维护人员。
+
+升级时至少附带：
+
+- 已执行的脚本修复名称或步骤。
+- AI 修复尝试的结论。
+- 当前仍存在的症状。
+- 可用的健康检查、连接器状态、后端调用状态或错误信息。
+
+### 2. 机器人疑似无响应：先查后端工具调用，再考虑切换模型
+
+不要仅凭前端“没有立即回复”判断机器人已失败。按顺序处理：
+
+1. 检查后端是否仍有 tool call、任务、队列或外部调用在运行。
+2. 判断是否为后端调用耗时、排队或延迟返回。
+3. 如果后端仍在执行，等待合理时间并继续观察，不要重复提交相同请求。
+4. 如果确认后端没有活动调用、请求已失败或模型长时间无有效输出，可尝试使用备用模型重新发起。
+5. 若备用模型也失败，并且没有新的可执行修复路径，按升级规则处理。
+
+### 3. 聊天连接器故障：检查插件启用、重启服务并验证连接链路
+
+对 chat connector / 聊天连接器异常，优先确认配置和运行状态：
+
+1. 确认 chat plugin / 聊天插件已启用。
+2. 若插件刚启用或配置刚变更，重启相关服务。
+3. 验证连接器身份解析是否正常。
+4. 验证 WebSocket readiness / WebSocket 就绪状态。
+5. 验证服务健康状态。
+6. 验证集成配置是否正确，例如连接器与目标聊天渠道、机器人身份、回调或集成项是否匹配。
+
+## Verify
+
+### 自动修复失败场景
+
+确认以下事实后才升级：
+
+- 脚本修复确实已执行，不是未运行或中途失败未确认。
+- AI repair 确实已尝试，且没有产生有效恢复。
+- 当前症状仍可复现。
+- 没有新的、明确的、低风险修复动作可执行。
+
+### 机器人无响应场景
+
+验证重点：
+
+- 后端是否仍有运行中的 tool call 或延迟中的请求。
+- 前端无响应是否只是等待后端返回。
+- 切换备用模型后是否恢复响应。
+- 若切换模型恢复，记录原模型、备用模型和触发条件。
+
+### 聊天连接器场景
+
+验证重点：
+
+- 聊天插件处于 enabled 状态。
+- 服务重启后配置已生效。
+- 连接器身份能够解析到预期机器人或集成身份。
+- WebSocket readiness 正常。
+- 服务健康检查正常。
+- 集成配置与目标聊天渠道一致。
+
+## Reusable Lessons
+
+- 脚本修复与 AI 修复都失败后，继续重复同类修复通常会浪费时间并增加风险，应升级到平台支持角色。
+- “机器人没回复”不等于机器人故障；先确认后端工具调用是否仍在运行或延迟。
+- 在模型疑似卡住时，备用模型是可复用的排查手段，但不应掩盖后端工具调用未完成的问题。
+- 聊天连接器故障常见根因包括插件未启用、服务未重启导致配置未生效、身份解析异常、WebSocket 未就绪、服务健康异常或集成配置错误。
+
+## Agent Use
+Use this page when:
+- Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.
+
+Apply it by:
+- Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.
+- Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed
+
+Verify by:
+- Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.
+- Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319 (sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913" class="review-card">
+    <p><strong>隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与</strong> <span class="status-pill">待审核</span></p>
+    <p>跨无关工具或 agent 复用同一聊天机器人身份或配置，可能导致 bot 漏回复、重复回复、普通消息也被错误参与处理，或多个 agent 行为相互干扰。应为无关用途使用独立 bot identity/configuration，明确触发条件，并检查 bot visibility。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913">
+      <button type="button" data-review-decision="approve">批准</button>
+      <button type="button" data-review-decision="reject">拒绝</button>
+      <button type="button" data-review-decision="needs_human">人工跟进</button>
+      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
+    </div>
+    <dl>
+      <dt>目标</dt><dd><code>kb/pitfalls/bot-agent.md</code></dd>
+      <dt>类型</dt><dd>pitfall</dd>
+      <dt>范围</dt><dd>team</dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77</code></dd>
+      <dt>来源数</dt><dd>1</dd>
+      <dt>置信度</dt><dd>0.93</dd>
+      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
+      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+      <dt>风险提示</dt><dd>证据来源为单条经验记录，适合作为操作性排障规则，但仍需结合实际 bot 平台配置验证。; 未包含具体平台的配置界面路径或命令；仅保留通用操作边界，避免编造实现细节。; 不适用于同一工具多会话的正常共享场景，也不替代认证、网络或服务宕机排查。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
+
+
+      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+
+
+      </dl>
+    </details>
+    <details>
+      <summary>预览生成的 Markdown</summary>
+      <pre><code># 隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与
+
+## When to Use
+
+当 OpenClaw 的聊天机器人、Q&amp;A bot、维修辅助 agent 或其他自动回复 agent 出现以下现象时使用本页：
+
+- bot 漏回复：该响应时没有响应。
+- bot 重复回复：同一问题被多个 agent 或同一 bot 多次处理。
+- bot 过度参与：普通聊天、非服务请求、非直接调用消息也触发回复。
+- 多个无关 agent 行为相互干扰，难以判断哪个配置在生效。
+- 用户找不到 bot、无法添加 bot，怀疑是 bot visibility 配置问题。
+
+## Context
+
+该问题通常不是单次模型生成质量问题，而是 bot identity/configuration 被跨无关用途复用导致的运行边界混乱。
+
+常见高风险模式：
+
+- 多个无关工具共用同一个 bot identity。
+- 多个 agent 共用同一套触发配置、权限或可见性设置。
+- bot 没有明确触发条件，导致普通消息也被当作任务请求。
+- 为了快速上线，把已有 bot 配置复制给新用途，但没有隔离身份、触发规则和可见性。
+
+## 症状
+
+可观察到的症状包括：
+
+1. **漏回复**：用户直接调用 bot 或提交清晰服务故障报告，但 bot 没有稳定响应。
+2. **重复回复**：同一消息被两个以上 agent 同时响应，或同一 bot 以不同配置路径重复处理。
+3. **不该回复也回复**：普通群聊、旁路讨论、非维修请求触发 bot 回答。
+4. **行为相互污染**：一个用途的提示词、路由规则、权限或上下文影响另一个无关用途。
+5. **可见性异常**：用户找不到 bot、无法添加 bot，或只有部分用户能看到。
+
+## Operating Rule
+
+不要让无关工具或无关 agent 复用同一个 bot identity/configuration。
+
+推荐规则：
+
+- 一个明确用途对应一个独立 bot identity/configuration。
+- 无关用途必须隔离身份、触发条件、权限、可见性和路由规则。
+- bot 默认保持静默，只在满足明确触发条件时回复。
+- 触发条件应优先限定为：
+  - 用户直接调用 bot；或
+  - 用户提交清晰的服务故障报告、维修请求、Q&amp;A 请求。
+- 普通聊天、无明确请求的上下文、非服务故障报告不应触发 bot 回复。
+- 如果用户找不到或无法添加 bot，应检查 bot visibility，而不是只排查模型或网络问题。
+
+## Fix
+
+按以下步骤处理：
+
+1. **确认是否存在跨用途复用**
+   - 检查当前异常 bot 是否被多个无关工具、频道、agent 或自动化流程共用。
+   - 检查是否共用同一 bot identity、同一套触发规则、同一权限或同一 visibility 配置。
+
+2. **拆分无关用途**
+   - 为无关工具或 agent 创建独立的 `bot identity/configuration`。
+   - 不要把维修问答、普通客服、告警处理、测试 agent 等无关职责混在同一个 bot 身份下。
+
+3. **收紧触发条件**
+   - 明确配置 bot 何时可以回复。
+   - 默认静默。
+   - 仅在直接调用、明确 mention、命令式请求，或清晰服务故障报告场景下回复。
+   - 对普通消息、闲聊、旁路讨论设置为不响应。
+
+4. **检查可见性**
+   - 如果用户反馈找不到 bot 或无法添加 bot，进入 `bot administration console`。
+   - 检查并调整 `bot visibility`。
+   - 确认目标用户、团队、频道或工作区对该 bot 可见。
+
+5. **避免误用同一工具多会话场景**
+   - 如果只是同一工具的多个正常会话共享同一 bot，并且没有跨无关工具或 agent 的身份/配置复用，不要套用本规则强制拆分。
+   - 本页适用于“跨无关用途复用”造成的边界混乱。
+
+## Verify
+
+修复后按以下结果验证：
+
+- 隔离后的 bot 不再对同一消息重复回复。
+- 直接调用 bot 时能稳定回复。
+- 清晰服务故障报告能触发正确 agent 响应。
+- 普通聊天、无明确请求的消息保持静默。
+- 不同 agent 的回复行为不再互相影响。
+- 用户此前找不到或无法添加 bot 的场景，在调整 `bot visibility` 后恢复正常。
+
+如果仍然异常，继续检查：
+
+- 是否还有隐藏的共享配置或旧 webhook/route 未清理。
+- 是否有多个 agent 订阅同一触发事件。
+- 是否触发规则过宽，例如所有频道消息都进入自动回复链路。
+
+## Reusable Lessons
+
+- 跨无关用途复用同一聊天机器人身份或配置，会增加漏回复、重复回复和过度参与的风险。
+- bot 应默认静默，仅在直接调用或清晰服务故障报告等明确场景下响应。
+- 多个 agent 行为相互干扰时，优先检查身份、配置、触发规则和可见性是否被复用。
+- 用户找不到或无法添加 bot 时，应检查 `bot visibility`，必要时到 `bot administration console` 调整。
+- 不要把本经验用于同一工具的多会话正常共享；问题必须体现跨无关工具或 agent 的身份/配置复用风险。
+
+## Agent Use
+Use this page when:
+- bot 漏回复、重复回复、不该回复的普通消息也参与、多个 agent 行为相互干扰.
+
+Apply it by:
+- 为无关工具或 agent 使用独立 bot identity/configuration；明确配置触发条件，默认保持静默，仅在直接调用或清晰服务故障报告时回复；检查 bot visibility，若用户找不到或无法添加 bot，到 bot administration console 调整可见性。
+
+Verify by:
+- 隔离后 bot 不再重复或漏回复；非触发普通消息保持静默；直接调用时能稳定回复。
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77 (sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20)
+</code></pre>
+    </details>
+  </li></ol>
 </section>
   <section id="approved-candidates" class="review-section" data-status="approved">
   <div class="section-heading">
@@ -485,10 +1207,11 @@
   </div>
   <div class="command-strip">
     <code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code>
+    <code>praxisbase review serve --port 4174</code>
     <code>praxisbase wiki build-site --json</code>
   </div>
   <dl class="queue-summary">
-    <dt>最近 triage</dt><dd>2026-06-16T07:41:43.256Z</dd>
+    <dt>最近 triage</dt><dd>2026-06-16T09:43:07.121Z</dd>
     <dt>已扫描</dt><dd>34</dd>
     <dt>自动释放</dt><dd>20</dd>
     <dt>保持人工确认</dt><dd>0</dd>
@@ -507,7 +1230,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-0d62ba5167311843.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / rejected_low_signal</dd>
@@ -516,6 +1239,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-0d62ba5167311843">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-12c9caf5999d25cf" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -526,7 +1255,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-12c9caf5999d25cf.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -535,6 +1264,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-12c9caf5999d25cf">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-1f7524e8ea7c5493" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -545,7 +1280,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-1f7524e8ea7c5493.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / rejected_low_signal</dd>
@@ -554,6 +1289,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-1f7524e8ea7c5493">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-251024cf3fc2ffaf" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -564,7 +1305,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-251024cf3fc2ffaf.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -573,6 +1314,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-251024cf3fc2ffaf">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-26e20af34a56d959" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -583,7 +1330,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-26e20af34a56d959.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -592,6 +1339,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-26e20af34a56d959">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-355aea4949afabe8" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -602,7 +1355,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-355aea4949afabe8.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -611,6 +1364,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-355aea4949afabe8">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-5ca220d0a850d0ac" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -621,7 +1380,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5ca220d0a850d0ac.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -630,6 +1389,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-5ca220d0a850d0ac">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-79822ff24256f1ed" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -640,7 +1405,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-79822ff24256f1ed.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -649,6 +1414,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-79822ff24256f1ed">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-89b1816966184deb" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -659,7 +1430,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-89b1816966184deb.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -668,6 +1439,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-89b1816966184deb">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-b70a35157d393839" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -678,7 +1455,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b70a35157d393839.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -687,6 +1464,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-b70a35157d393839">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-c578b794158d6fe2" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -697,7 +1480,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c578b794158d6fe2.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -706,6 +1489,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-c578b794158d6fe2">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-c68d16c6183965d2" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -716,7 +1505,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c68d16c6183965d2.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -725,6 +1514,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-c68d16c6183965d2">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-d303f90af8f4af34" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -735,7 +1530,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -744,6 +1539,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-d303f90af8f4af34">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-de836b6f83806d74" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -754,7 +1555,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-de836b6f83806d74.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / rejected_low_signal</dd>
@@ -763,6 +1564,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-de836b6f83806d74">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md" class="review-card">
       <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">隐私待确认</span></p>
@@ -773,10 +1580,11 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
       </dl>
+
     </li>
 <li id="wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md" class="review-card">
       <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">隐私待确认</span></p>
@@ -787,10 +1595,11 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
       </dl>
+
     </li>
 <li id="wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve" class="review-card">
       <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">隐私待确认</span></p>
@@ -801,10 +1610,11 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
       </dl>
+
     </li>
 <li id="exception_daily-experience-0c7144ea57b21569" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -824,6 +1634,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-0c7144ea57b21569">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-2bc11e5412f5ca23" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -843,6 +1659,12 @@
         <dt>建议脱敏</dt><dd>Redact the Feishu document URL or replace it with a generic placeholder., Redact the account/user identifier mentioned in the permission error., Avoid exposing internal source references or hashes if they can identify private project artifacts.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-2bc11e5412f5ca23">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-4116addd68e32657" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -862,6 +1684,12 @@
         <dt>建议脱敏</dt><dd>Replace individual names with role-based labels or team aliases, Remove or keep redacted all Feishu user identifiers and mention targets, Generalize internal routing instructions to avoid naming specific people, Consider redacting source references, hashes, and internal channel metadata if released outside the team context</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-4116addd68e32657">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-444ad40b7503112d" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -881,6 +1709,12 @@
         <dt>建议脱敏</dt><dd>Redact or generalize personal names of staff/users, Redact internal domain or replace with generic product console reference, Keep pairing codes as placeholders only and ensure no real codes appear, Generalize exact dates if not necessary, Remove or generalize internal implementation details that could aid abuse</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-444ad40b7503112d">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-5cb54c626295b4d9" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -900,6 +1734,12 @@
         <dt>建议脱敏</dt><dd>Redact or generalize employee names to role-based labels such as support owner or escalation contact., Keep Feishu IDs redacted., Consider redacting or generalizing the internal dashboard URL/domain if not intended for public release., Generalize internal escalation instructions and exact fixed wording if it reveals private support process details.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-5cb54c626295b4d9">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-5fe8e5312427b66d" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -919,6 +1759,12 @@
         <dt>建议脱敏</dt><dd>Keep Feishu chat/channel identifiers redacted, Redact any underlying source references, database paths, or hashes if exposed outside the review system, Redact detailed internal security-notification content if it contains sensitive operational information</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-5fe8e5312427b66d">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-70eadc18937b5291" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -938,6 +1784,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-70eadc18937b5291">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-744f37e98e5b409e" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, team_rejects_private_chat, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -957,6 +1809,12 @@
         <dt>建议脱敏</dt><dd>Remove or generalize internal source references and storage paths., Remove hashes, UUIDs, and job identifiers., Redact detailed log excerpts and error codes that may encode private identifiers., Generalize specific framework/session implementation details if externally released., Remove team/channel-specific metadata before release.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-744f37e98e5b409e">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-81e477a050db55f0" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -976,6 +1834,12 @@
         <dt>建议脱敏</dt><dd>Redact or generalize all employee names to role/team placeholders., Remove or generalize mention-routing instructions tied to specific people., Redact internal URLs/domains and replace with a generic documentation reference., Generalize project/tool-specific internal support policies where not intended for public release., Remove source identifiers, hashes, and internal storage references if included in any released version.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-81e477a050db55f0">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-86b8adf55a71c900" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -995,6 +1859,12 @@
 
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-86b8adf55a71c900">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-9a6f3a1b71d5ea65" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1014,6 +1884,12 @@
         <dt>建议脱敏</dt><dd>Redact the named individual to a role or generic label., Keep Feishu IDs fully redacted., Generalize specific dates to approximate timeframes or remove them., Remove or generalize internal source references, hashes, and channel/group identifiers., Summarize bot behavior rules without exposing team-specific participation instructions.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-9a6f3a1b71d5ea65">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-9fff94571a51c4aa" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1033,6 +1909,12 @@
         <dt>建议脱敏</dt><dd>Redact or generalize the internal GitLab repository URL., Redact or generalize the local workspace installation path., Remove or generalize provider configuration details such as proxy/base URL and API key requirements., Generalize team chat/channel context to avoid identifying the workspace or participants.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-9fff94571a51c4aa">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-a8d30ee6c5b41907" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1052,6 +1934,12 @@
         <dt>建议脱敏</dt><dd>Remove or generalize team chat/channel references and group activity headings., Keep Feishu/user identifiers redacted., Generalize internal project names, source locations, and architecture details if not intended for release., Omit configuration-related references such as provider setup, proxy base URL, API key, and gateway restart details unless fully generic.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-a8d30ee6c5b41907">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-ad405f88f6d334a4" class="review-card">
       <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1071,6 +1959,12 @@
         <dt>建议脱敏</dt><dd>Redact or generalize internal Git hosting domain, repository, branch, and package path, Redact or generalize local workspace and agent installation paths, Redact specific internal product/document request context, Redact operational cron task name, schedule, notification timestamps, and status flags, Remove source identifiers, hashes, and internal source references if present in released text</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-ad405f88f6d334a4">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-b7c16f24ab0be689" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1090,6 +1984,12 @@
         <dt>建议脱敏</dt><dd>Remove or generalize Feishu team/group-specific handling instructions., Remove internal source references, hashes, exception IDs, and agent storage paths., Generalize future product roadmap or planned improvement details., Keep only generic guidance about session-scoped model changes and checking status.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-b7c16f24ab0be689">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-c7f8e014dbf89c90" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1109,6 +2009,12 @@
         <dt>建议脱敏</dt><dd>Keep the Feishu/group identifier redacted., Consider redacting or generalizing internal service URLs if publishing outside the project context.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-c7f8e014dbf89c90">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-caad32421e9bf573" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1128,6 +2034,12 @@
         <dt>建议脱敏</dt><dd>Redact or generalize internal model prefixes such as specific named prefixes., Redact or generalize platform-specific administrative commands and placeholders for pairing approval., Redact or generalize references to internal security/confidentiality bots or official company channels., Redact source identifiers, hashes, channel names, and team-scope metadata if included in any released text., Generalize product-specific troubleshooting details to non-identifying operational guidance.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-caad32421e9bf573">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-cb9a6cc24cd1f6dc" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1147,6 +2059,12 @@
         <dt>建议脱敏</dt><dd>Remove or generalize internal source references and hashes if included in any released text., Avoid including raw logs, config values, model URLs, or channel/user identifiers.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-cb9a6cc24cd1f6dc">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-cf5dab7be3851c0b" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1166,6 +2084,12 @@
         <dt>建议脱敏</dt><dd>Remove or generalize internal source references, hashes, and exception IDs before broader release., Generalize specific internal project or agent names if publishing outside the team context., Keep protected configuration file names generic if they could reveal internal structure.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-cf5dab7be3851c0b">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-d53d6d7901e4eb74" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1185,6 +2109,12 @@
         <dt>建议脱敏</dt><dd>Redact employee names and replace with generic roles such as product owner, support engineer, or reviewer., Remove or generalize internal routing instructions that identify specific people to mention or transfer to., Redact internal source references, hashes, channel identifiers, and exception/source IDs if exposed outside the review system., Generalize internal pricing or billing policy details unless confirmed public., Remove team-channel provenance details and keep only the reusable, non-identifying support guidance.</dd>
 
       </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-d53d6d7901e4eb74">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="wiki-human_required_broken-wikilink-kb-known-fixes-ack-timing-before-long-running-agent-work-md" class="review-card">
       <p><strong>Broken wikilink target: openclaw-gateway-restart-after-configuration-changes</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1199,6 +2129,7 @@
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
       </dl>
+
     </li>
   </ol>
 </section>
@@ -1208,15 +2139,15 @@
       <h2>已拒绝</h2>
       <p>低信号、重复、隐私或质量不达标的材料，不会进入 wiki。</p>
     </div>
-    <strong>4</strong>
+    <strong>2</strong>
   </div>
   <dl class="queue-summary">
     <dt>Daily 拒绝</dt><dd>0</dd>
     <dt>低信号</dt><dd>0</dd>
-    <dt>质量拒绝</dt><dd>4</dd>
-    <dt>重复分组</dt><dd>2</dd>
+    <dt>质量拒绝</dt><dd>2</dd>
+    <dt>重复分组</dt><dd>3</dd>
     <dt>Curation 拒绝</dt><dd>0</dd>
-    <dt>硬阻断</dt><dd>4</dd>
+    <dt>硬阻断</dt><dd>2</dd>
     <dt>建议命令</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
   </dl>
 </section>
@@ -1231,8 +2162,8 @@
   <div class="command-strip"><code>praxisbase gbrain export --mode personal --write --json</code>
 <code>praxisbase agentmemory export --mode personal --write --json</code></div>
   <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256" class="review-card">
-    <p><strong>长耗时 Agent 工作前先发送 ACK</strong> <span class="status-pill">已沉淀</span></p>
-    <p>当 Agent 即将执行工具调用、网络请求、任务派发或其他长耗时操作时，必须先向用户发送简短确认，再开始慢操作。这样可避免用户误判为无响应，并降低静默等待、重复触发或超时风险。</p>
+    <p><strong>长耗时代理工作前先发送 ACK</strong> <span class="status-pill">已沉淀</span></p>
+    <p>当 OpenClaw 代理即将执行工具调用、网络请求、任务派发或其他长耗时工作时，先发送简短确认 ACK，再开始慢操作，避免用户误以为系统无响应。</p>
 
     <dl>
       <dt>目标</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
@@ -1241,9 +2172,9 @@
       <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
       <dt>来源数</dt><dd>1</dd>
       <dt>置信度</dt><dd>0.93</dd>
-      <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
+      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
       <dt>审核原因</dt><dd>canonical_relationship</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>ACK 只能表示请求已收到或处理已开始，不能描述为操作已成功完成。; 若运行环境或协议不支持中间消息，需要遵循上层通信约束，不能强行发送 ACK。; 本页不解决工具、网络或 dispatch 本身的失败；后续失败仍需独立诊断并如实报告。; quality_human_required:team_or_global_scope</dd>
+      <dt>风险提示</dt><dd>该页面是操作时序规则，不证明任何具体工具、网络或 dispatch 故障根因。; ACK 只能表示请求已收到或正在处理，不能表示任务已成功完成。; 未包含凭证、令牌、cookie、认证头或私钥。; quality_human_required:team_or_global_scope</dd>
 
 
       <dt>建议命令</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
@@ -1259,7 +2190,7 @@
     </details>
     <details>
       <summary>预览生成的 Markdown</summary>
-      <pre><code># 长耗时 Agent 工作前先发送 ACK
+      <pre><code># 长耗时代理工作前先发送 ACK
 
 ## When to Use
 Use this when Slow tool, network, dispatch, or long-running work can leave users without timely feedback.

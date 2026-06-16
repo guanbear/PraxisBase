@@ -92,11 +92,56 @@
     {
       "id": "wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
       "slug": "pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
-      "title": "长耗时 Agent 工作前先发送 ACK",
+      "title": "长耗时代理工作前先发送 ACK",
       "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
       "kind": "pending:pitfall",
       "href": "review.html#pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
-      "text": "长耗时 Agent 工作前先发送 ACK\n当 Agent 即将执行工具调用、网络请求、任务派发或其他长耗时操作时，必须先向用户发送简短确认，再开始慢操作。这样可避免用户误判为无响应，并降低静默等待、重复触发或超时风险。\nkb/known-fixes/ack-timing-before-long-running-agent-work.md\nopenclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319"
+      "text": "长耗时代理工作前先发送 ACK\n当 OpenClaw 代理即将执行工具调用、网络请求、任务派发或其他长耗时工作时，先发送简短确认 ACK，再开始慢操作，避免用户误以为系统无响应。\nkb/known-fixes/ack-timing-before-long-running-agent-work.md\nopenclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319"
+    },
+    {
+      "id": "wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16",
+      "slug": "pending-wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16",
+      "title": "机器人不回复或交互环境 down/unresponsive 的自动修复路径",
+      "path": "kb/known-fixes/down-unresponsive.md",
+      "kind": "pending:known_fix",
+      "href": "review.html#pending-wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16",
+      "text": "机器人不回复或交互环境 down/unresponsive 的自动修复路径\n当用户反馈 OpenClaw bot、交互环境或实例停止回复，且没有明确 billing、quota、payment 原因时，按“控制台自动修复→原会话验证→失败后升级平台支持”处理；避免在已执行 script-based repair 和 AI-based repair 后反复要求用户重复修复。\nkb/known-fixes/down-unresponsive.md\nopenclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319"
+    },
+    {
+      "id": "wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256",
+      "slug": "pending-wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256",
+      "title": "使用受支持的包管理流程安装可复用技能",
+      "path": "kb/known-fixes/install-review-skill-via-package-manager.md",
+      "kind": "pending:known_fix",
+      "href": "review.html#pending-wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256",
+      "text": "使用受支持的包管理流程安装可复用技能\n当可复用 review skill 通过 plugin 风格命令安装失败时，不要继续沿用不受支持的插件安装路径；应切换到受支持的 package-manager 工作流。验证以安装命令成功退出、技能在 agent runtime 中可用为准。交互式授权超时导致的文档生成失败不应误判为技能安装失败；恢复检查任务若已发送过通知，静默且幂等是可接受结果。\nkb/known-fixes/install-review-skill-via-package-manager.md\nopenclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76"
+    },
+    {
+      "id": "wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256",
+      "slug": "pending-wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256",
+      "title": "scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery",
+      "path": "kb/known-fixes/scheduled-job-failure-client-errors-primary-session.md",
+      "kind": "pending:known_fix",
+      "href": "review.html#pending-wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256",
+      "text": "scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery\n当 scheduled-job 返回 client errors、定时通知未发送，并伴随目标 primary session 解析失败时，优先删除失败任务，并用 isolated-session delivery、agent-turn style payload、explicit delivery configuration 重新创建任务。\nkb/known-fixes/scheduled-job-failure-client-errors-primary-session.md\nopenclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab"
+    },
+    {
+      "id": "wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66",
+      "slug": "pending-wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66",
+      "title": "自动修复失败、机器人无响应与聊天连接器故障的处理规则",
+      "path": "kb/known-fixes/wiki.md",
+      "kind": "pending:known_fix",
+      "href": "review.html#pending-wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66",
+      "text": "自动修复失败、机器人无响应与聊天连接器故障的处理规则\n当脚本修复和 AI 修复均已失败时，不要重复执行同类修复，应升级给对应平台支持角色。对机器人疑似无响应，先确认后端工具调用是否仍在运行或延迟，再必要时切换模型。对聊天连接器故障，检查聊天插件启用状态、重启服务，并验证连接器身份解析、WebSocket 就绪、服务健康和集成配置。\nkb/known-fixes/wiki.md\nopenclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319"
+    },
+    {
+      "id": "wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913",
+      "slug": "pending-wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913",
+      "title": "隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与",
+      "path": "kb/pitfalls/bot-agent.md",
+      "kind": "pending:pitfall",
+      "href": "review.html#pending-wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913",
+      "text": "隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与\n跨无关工具或 agent 复用同一聊天机器人身份或配置，可能导致 bot 漏回复、重复回复、普通消息也被错误参与处理，或多个 agent 行为相互干扰。应为无关用途使用独立 bot identity/configuration，明确触发条件，并检查 bot visibility。\nkb/pitfalls/bot-agent.md\nopenclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77"
     }
   ]
 }
