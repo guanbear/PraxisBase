@@ -132,6 +132,34 @@ describe("OpenAI-compatible AI client", () => {
     assert.deepEqual(result, { ok: true, json: { ok: true } });
   });
 
+  it("accepts OpenAI-style SSE responses from compatible gateways", async () => {
+    const client = createOpenAiCompatibleJsonClient({
+      config: config("gpt-5.5"),
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      fetchImpl: async () => {
+        const body = [
+          'data: {"choices":[{"delta":{"content":"{\\\"ok\\\":"}}]}',
+          'data: {"choices":[{"delta":{"content":"true}"}}]}',
+          "data: [DONE]",
+          "",
+        ].join("\n");
+        return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+      },
+    });
+
+    const result = await client.generateJson({
+      system: "Return JSON only.",
+      user: "Return ok.",
+      schemaName: "Probe",
+      maxOutputBytes: 256,
+    });
+
+    assert.deepEqual(result, { ok: true, json: { ok: true } });
+  });
+
   it("aborts slow provider response bodies with the same timeout", async () => {
     const client = createOpenAiCompatibleJsonClient({
       config: { ...config("GLM-5.1"), ai_timeout_ms: 5 },
@@ -142,7 +170,7 @@ describe("OpenAI-compatible AI client", () => {
       fetchImpl: async () => ({
         ok: true,
         status: 200,
-        json: async () => await new Promise<unknown>(() => undefined),
+        text: async () => await new Promise<string>(() => undefined),
       } as Response),
     });
 

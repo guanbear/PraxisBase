@@ -21,11 +21,51 @@ function providerEndpoint(config: AiProviderConfig, env: Record<string, string |
 }
 
 function extractContent(json: unknown): string | undefined {
+  if (typeof (json as { output_text?: unknown }).output_text === "string") {
+    return (json as { output_text: string }).output_text;
+  }
   const choices = (json as { choices?: unknown }).choices;
   if (!Array.isArray(choices) || choices.length === 0) return undefined;
   const message = (choices[0] as { message?: { content?: unknown } }).message;
   if (typeof message?.content === "string") return message.content;
   return undefined;
+}
+
+function parseProviderJsonText(text: string): unknown | undefined {
+  const trimmed = text.trim();
+  if (!trimmed) return undefined;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return parseOpenAiSseText(trimmed);
+  }
+}
+
+function parseOpenAiSseText(text: string): unknown | undefined {
+  const chunks: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data:")) continue;
+    const payload = trimmed.slice("data:".length).trim();
+    if (!payload || payload === "[DONE]") continue;
+    let json: unknown;
+    try {
+      json = JSON.parse(payload);
+    } catch {
+      continue;
+    }
+    const choice = (json as { choices?: Array<{ delta?: { content?: unknown }, message?: { content?: unknown } }> }).choices?.[0];
+    const deltaContent = choice?.delta?.content;
+    const messageContent = choice?.message?.content;
+    if (typeof deltaContent === "string") chunks.push(deltaContent);
+    else if (typeof messageContent === "string") chunks.push(messageContent);
+    else {
+      const outputText = (json as { output_text?: unknown }).output_text;
+      if (typeof outputText === "string") chunks.push(outputText);
+    }
+  }
+  if (chunks.length === 0) return undefined;
+  return { choices: [{ message: { content: chunks.join("") } }] };
 }
 
 function shouldDisableThinking(config: AiProviderConfig): boolean {
@@ -122,11 +162,10 @@ export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonCl
                 throw new Error(`HTTP_STATUS:${response.status}`);
               }
 
-              try {
-                return await response.json();
-              } catch {
-                throw new Error("NON_JSON_RESPONSE");
-              }
+              const text = await response.text();
+              const parsed = parseProviderJsonText(text);
+              if (parsed === undefined) throw new Error("NON_JSON_RESPONSE");
+              return parsed;
             }
             throw new Error("HTTP_STATUS:429");
           })(),
