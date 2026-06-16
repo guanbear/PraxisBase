@@ -1,0 +1,22 @@
+{
+  "id": "capture_openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+  "protocol_version": "0.1",
+  "type": "capture_record",
+  "agent": "openclaw",
+  "workspace": "/builds/sre/praxisbase",
+  "scope_hint": "team",
+  "result": "unknown",
+  "triggers": [
+    "agent-memory-ingest"
+  ],
+  "signals": [],
+  "artifacts": [
+    {
+      "kind": "openclaw_episode",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319",
+      "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "redacted_summary": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration."
+    }
+  ],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

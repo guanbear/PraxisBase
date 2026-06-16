@@ -1,0 +1,25 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-4b2bab827",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76",
+  "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+  "scope_hint": "team",
+  "redacted_summary": "A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization=[REDACTED] out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.",
+  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "private_material_detected",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

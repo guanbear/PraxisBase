@@ -1,0 +1,22 @@
+{
+  "id": "capture_openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+  "protocol_version": "0.1",
+  "type": "capture_record",
+  "agent": "openclaw",
+  "workspace": "/builds/sre/praxisbase",
+  "scope_hint": "team",
+  "result": "unknown",
+  "triggers": [
+    "agent-memory-ingest"
+  ],
+  "signals": [],
+  "artifacts": [
+    {
+      "kind": "openclaw_episode",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2dbf07e37f67ccfc42d3b5801baae2f431e08ab6cfc440ecc9c21500354564ad",
+      "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+      "redacted_summary": "A proposed voice transcription capability for chat audio was reviewed, using a multimodal model to process compressed audio messages. The implementation is not yet complete because the required model provider, media-audio tooling, and service restart steps still need to be configured. A separate architecture review compared two coding-agent designs at a high level and produced a reusable minimal-agent example, but the response was truncated before completion."
+    }
+  ],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

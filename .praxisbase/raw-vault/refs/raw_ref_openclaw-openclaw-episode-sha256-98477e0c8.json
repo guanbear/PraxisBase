@@ -1,0 +1,12 @@
+{
+  "id": "raw_ref_openclaw-openclaw-episode-sha256-98477e0c8",
+  "protocol_version": "0.1",
+  "type": "raw_vault_ref",
+  "agent": "openclaw",
+  "kind": "openclaw_episode",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77",
+  "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+  "redacted_summary": "Support guidance was sanitized to remove personal routing details, internal identifiers, and team-channel provenance. Verified reusable guidance includes: direct users to adjust bot visibility in the bot administration console when a bot cannot be found or added; avoid reusing the same chat bot across unrelated tools or agents because it can cause missing or duplicate replies; use the product console’s scheduled-task management area to review or cancel recurring tasks. For ordinary messages outside defined trigger scenarios, the bot should remain silent.",
+  "scope_hint": "team",
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

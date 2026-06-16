@@ -1,0 +1,22 @@
+{
+  "id": "capture_openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+  "protocol_version": "0.1",
+  "type": "capture_record",
+  "agent": "openclaw",
+  "workspace": "/builds/sre/praxisbase",
+  "scope_hint": "team",
+  "result": "unknown",
+  "triggers": [
+    "agent-memory-ingest"
+  ],
+  "signals": [],
+  "artifacts": [
+    {
+      "kind": "openclaw_episode",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417",
+      "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+      "redacted_summary": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults."
+    }
+  ],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

@@ -1,0 +1,60 @@
+{
+  "id": "wiki-curation-report_2026-06-16t04-32-22-081z",
+  "protocol_version": "0.1",
+  "type": "wiki_curation_report",
+  "created_at": "2026-06-16T04:32:22.081Z",
+  "mode": "review",
+  "ai": {
+    "configured": true,
+    "mode": "production",
+    "model": "gpt-5.5"
+  },
+  "input_counts": {
+    "evidence_items": 1,
+    "filtered_noise": 45,
+    "human_required": 0,
+    "rejected": 0,
+    "clusters": 1
+  },
+  "output_counts": {
+    "curated_proposals": 1,
+    "written_proposals": 1,
+    "conflicts": 0
+  },
+  "compiler_counts": {
+    "observations": 1,
+    "topics": 1,
+    "page_plans_by_action": {
+      "create": 0,
+      "update": 1,
+      "merge": 0,
+      "supersede": 0,
+      "archive": 0
+    },
+    "duplicate_source_hash_groups": 0,
+    "hard_blocks": 0,
+    "human_required_quality": 1,
+    "relationship_counts": {
+      "required_links": 0,
+      "suggested_links": 4,
+      "merge_plans": 0,
+      "ambiguous_merge_targets": 0,
+      "isolated_topics": 0,
+      "orphan_risk_after_plan": 0
+    }
+  },
+  "proposals": [
+    {
+      "id": "wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
+      "target_path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "title": "ACK timing before long-running agent work",
+      "source_count": 1,
+      "confidence": 0.93
+    }
+  ],
+  "proposal_limit": 8,
+  "limit_reason": "max_curation_proposals",
+  "warnings": [
+    "limit:8"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-64f06eeeb",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/96275568696686fbae153debca63c95d2252a4a627c904a1157fff1e1ce884c2",
+  "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+  "scope_hint": "team",
+  "redacted_summary": "A scheduled notification job sent a team chat reminder about private model security practices and an upcoming model routing change. The channel identifier and source details were redacted, and the event is suitable for reuse as a generic operational notification pattern.",
+  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

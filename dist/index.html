@@ -43,10 +43,10 @@
   <p class="eyebrow">2026-06-16 &middot; team-git</p>
   <div class="metrics">
     <article><span>Sources</span><strong>1</strong></article>
-<article><span>Imported</span><strong>0</strong></article>
+<article><span>Imported</span><strong>23</strong></article>
 <article><span>Rejected</span><strong>0</strong></article>
-<a class="metric-link" href="review.html#human-required"><span>Human required</span><strong>34</strong></a>
-<a class="metric-link" href="review.html#pending-candidates"><span>Proposals</span><strong>0</strong></a>
+<a class="metric-link" href="review.html#human-required"><span>Human required</span><strong>11</strong></a>
+<a class="metric-link" href="review.html#pending-candidates"><span>Proposals</span><strong>1</strong></a>
 <article><span>Site pages</span><strong>0</strong></article>
     <article><span>Context Economy</span><strong>On</strong></article>
     <article><span>Reduced items</span><strong>0</strong></article>
@@ -64,9 +64,26 @@
 	      
 	      
 	    
+	    <article><span>M25 Lessons</span><strong>2 extracted</strong></article>
+	    <article><span>Lesson active personal</span><strong>0</strong></article>
+	    <article><span>Lesson wiki ready</span><strong>0</strong></article>
+	    <article><span>Lesson skill ready</span><strong>1</strong></article>
+	    <article><span>Lesson human required</span><strong>0</strong></article>
+	    <article><span>Lesson rejected</span><strong>0</strong></article>
+	    <article><span>Lesson wiki evidence</span><strong>1</strong></article>
+	    
 	    
 	  </div>
-  
+  <div class="review-section" id="lesson-candidates">
+    <h2>Lesson Candidates</h2>
+    <ol class="link-list">
+      <li>
+        <strong>Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first, then proceed with the slow operation.</strong>
+        <span>skill_ready / safe / agent-runtime, dispatch, network, tooling</span>
+        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
+      </li>
+    </ol>
+  </div>
   
   
   
@@ -77,21 +94,26 @@
   <h2>Wiki Compiler</h2>
   <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>Observations</span><strong>0</strong></article>
-    <article><span>Topics</span><strong>0</strong></article>
+    <article><span>Observations</span><strong>1</strong></article>
+    <article><span>Topics</span><strong>1</strong></article>
     <article><span>Plan Create</span><strong>0</strong></article>
-<article><span>Plan Update</span><strong>0</strong></article>
+<article><span>Plan Update</span><strong>1</strong></article>
 <article><span>Plan Merge</span><strong>0</strong></article>
 <article><span>Plan Supersede</span><strong>0</strong></article>
 <article><span>Plan Archive</span><strong>0</strong></article>
     <article><span>Dup source-hash groups</span><strong>0</strong></article>
     <article><span>Hard blocks</span><strong>0</strong></article>
-    <article><span>Quality review needed</span><strong>0</strong></article>
-    <article><span>Written proposals</span><strong>0</strong></article>
+    <article><span>Quality review needed</span><strong>1</strong></article>
+    <article><span>Written proposals</span><strong>1</strong></article>
     <article><span>Proposal limit</span><strong>8</strong></article>
     <article><span>Limit reason</span><strong>max_curation_proposals</strong></article>
     
-    
+    <article><span>Required links</span><strong>0</strong></article>
+<article><span>Suggested links</span><strong>4</strong></article>
+<article><span>Merge plans</span><strong>0</strong></article>
+<article><span>Ambiguous merges</span><strong>0</strong></article>
+<article><span>Isolated topics</span><strong>0</strong></article>
+<article><span>Orphan risk after plan</span><strong>0</strong></article>
   </div>
 </section>
   <section class="pending-candidates">
@@ -100,125 +122,25 @@
       <h2><a href="review.html#pending-candidates">Pending Experience Candidates</a></h2>
       <p>AI-generated wiki drafts waiting for review. Stable <code>kb/</code> files are unchanged until promotion.</p>
     </div>
-    <strong>7</strong>
+    <strong>1</strong>
   </div>
   <ol class="experience-list">
-    <li id="pending-wiki-proposal_kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful">
-      <p><strong>Agents Can Mislead Users If Failures Are Reported As Successful Outcomes</strong></p>
-      <p>* When an operation, delegation, or guard fails or returns uncertain status, fail closed and state the failure honestly instead of claiming success. * Do not pretend success when the underlying work failed or was not verified. * **Use this page when:** You are implementing age...</p>
+    <li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256">
+      <p><strong>ACK timing before long-running agent work</strong></p>
+      <p>Send a short user-facing acknowledgement before starting slow work, tool use, network calls, or delegation dispatch so the user knows the request was received before the long-running operation begins.</p>
       <dl>
-        <dt>Target</dt><dd><code>kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md</code></dd>
-        <dt>Kind</dt><dd>known_fix</dd>
-        <dt>Scope</dt><dd>personal</dd>
-        <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md</code></dd>
-        
-        <dt>Confidence</dt><dd>0.65</dd>
-        
-        
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-proposal_kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify">
-      <p><strong>Missing Replay Data Compromises The Ability To Debug Or Verify Past Execution</strong></p>
-      <p>In complex system testing, particularly post-deployment, replay data is essential for ensuring that the system behaves as expected under load or specific conditions. When this data is missing, the integrity of the stability check is compromised, leaving certain execution paths...</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md</code></dd>
-        <dt>Kind</dt><dd>known_fix</dd>
-        <dt>Scope</dt><dd>personal</dd>
-        <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md</code></dd>
-        
-        <dt>Confidence</dt><dd>0.65</dd>
-        
-        
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-proposal_kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures-md">
-      <p><strong>Openclaw Slack Replay And Post Deploy Stability Failures</strong></p>
-      <p>Post-deploy stability runs often encounter two distinct failure modes that can mask the true health of the system: * **Live Slack Failures:** Runtime bugs causing mismatches in replay footprints (missing native announce footers, delivery transport mismatches, child session spa...</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md</code></dd>
-        <dt>Kind</dt><dd>procedure</dd>
-        <dt>Scope</dt><dd>personal</dd>
-        <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md</code></dd>
-        
-        <dt>Confidence</dt><dd>0.65</dd>
-        
-        
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-proposal_kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an">
-      <p><strong>Post Deploy Stability Smoke Test Run Openclaw Resulted In An Overall Failure</strong></p>
-      <p>The &#39;openclaw&#39; stability smoke test run failed, triggered by critical runtime issues in the live Slack integration tests. While the &#39;synthetic_fixtures&#39; lane passed successfully, the &#39;slack_delivery&#39; lane encountered errors. Additionally, multiple nightly replay lanes could no...</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md</code></dd>
-        <dt>Kind</dt><dd>known_fix</dd>
-        <dt>Scope</dt><dd>personal</dd>
-        <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md</code></dd>
-        
-        <dt>Confidence</dt><dd>0.65</dd>
-        
-        
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-proposal_kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after">
-      <p><strong>Changes Can Introduce Regressions When Not Tested After Modification</strong></p>
-      <p>Changes are a constant in system development and maintenance. However, even minor adjustments can have unintended side effects on existing functionality. Assuming a change is successful based solely on successful implementation, without validating system behavior, often leads ...</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md</code></dd>
+        <dt>Target</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
         <dt>Kind</dt><dd>pitfall</dd>
-        <dt>Scope</dt><dd>personal</dd>
-        <dt>Source</dt><dd><code>stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md</code></dd>
+        <dt>Scope</dt><dd>team</dd>
+        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json</code></dd>
+        <dt>Sources</dt><dd>1</dd>
+        <dt>Confidence</dt><dd>0.93</dd>
+        <dt>Why review</dt><dd>canonical_relationship</dd><dt>Suggested</dt><dd>edit</dd>
+        <dt>Risk notes</dt><dd>The core rule is strongly supported by the supplied evidence, but exact timing thresholds such as a specific number of seconds are operational guidance rather than directly evidenced.; Acknowledgements must not be worded as completion or success messages; final outcome reporting still needs to happen after the slow work completes.; quality_human_required:team_or_global_scope</dd>
         
-        <dt>Confidence</dt><dd>0.65</dd>
-        
-        
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-proposal_kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe">
-      <p><strong>Actions On The Wrong Target Machine Or Host Can Cause Unsafe Operational Changes</strong></p>
-      <p>Operational actions often involve destructive or disruptive changes such as restarts or configuration mutations. Performing these actions on the wrong target machine can lead to service outages, data loss, or unsafe operational states. Verification of the target identity is a ...</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md</code></dd>
-        <dt>Kind</dt><dd>procedure</dd>
-        <dt>Scope</dt><dd>personal</dd>
-        <dt>Source</dt><dd><code>stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md</code></dd>
-        
-        <dt>Confidence</dt><dd>0.65</dd>
-        
-        
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-proposal_kb-procedures-case-sensitive-database-comparisons-can-miss-logically">
-      <p><strong>Case Sensitive Database Comparisons Can Miss Logically Equivalent Values</strong></p>
-      <p>By default, many database systems perform case-sensitive string comparisons. This behavior can lead to logical errors where `Value` and `value` are treated as distinct entities. If the application logic treats them as the same, this discrepancy can cause data duplication, fail...</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md</code></dd>
-        <dt>Kind</dt><dd>procedure</dd>
-        <dt>Scope</dt><dd>personal</dd>
-        <dt>Source</dt><dd><code>stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md</code></dd>
-        
-        <dt>Confidence</dt><dd>0.65</dd>
-        
-        
-        
-        
+        <dt>Suggested links</dt><dd><code>agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes</code> Agents can mislead users if failures are reported as successful outcomes. <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-slack-replay-and-post-deploy-stability-failures</code> OpenClaw Slack replay and post-deploy stability failures <small>entity_overlap</small></dd>
+<dt>Merge candidates</dt><dd>ACK timing before long-running agent work <code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code> <small>same_title_or_slug, entity_overlap</small></dd>
+<dt>Relationship reasons</dt><dd>entity_overlap, same_title_or_slug</dd>
         
       </dl>
     </li>

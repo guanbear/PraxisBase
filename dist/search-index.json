@@ -90,67 +90,13 @@
       "text": "Stale caches can hide current behavior or serve outdated assets\n# Stale caches can hide current behavior or serve outdated assets\n\n## When to Use\nUse this procedure when:\n* Updates to web assets or API responses are not reflected immediately for end-users.\n* Testi\n# Stale caches can hide current behavior or serve outdated assets\n\n## When to Use\nUse this procedure when:\n* Updates to web assets or API responses are not reflected immediately for end-users.\n* Testing recent code changes results in unexpected behavior that matches previous versions.\n* Debugging issues where the client or proxy appears to be ignoring server-side updates.\n\n## Symptoms or Context\n* Users report seeing old data or interfaces despite a confirmed deployment.\n* Browser DevTools shows 304 Not Modified responses or 200 OK responses with old content timestamps.\n* System behavior does not match the expected logic of the currently deployed code version.\n\n## What To Do\nImplement explicit cache busting to force the retrieval of fresh content. Common methods include:\n\n1. **Timestamped Cache Keys:** Append a timestamp or version number to asset filenames or query parameters (e.g., `style.v123.css` or `script.js?t=1698765432`).\n2. **Versioned File Paths:** Update the directory or filename of static assets during the build process (e.g., `/static/v1.2.3/image.png`).\n3. **Cache-Control Headers:** Configure server headers to reduce the Time-To-Live (TTL) for specific resources that change frequently.\n\nApply these methods specifically when cache-sensitive content changes or when stale results are suspected.\n\n## Verify\n* Confirm that the fresh content is fetched rather than a stale cached copy.\n* Check network requests in browser DevTools to ensure new cache keys or headers trigger a full response (200 OK) rather than a cached validation (304 Not Modified).\n* Verify that the user interface reflects the latest changes immediately after the update.\n\n## Reusable Lessons\n* When cache-sensitive content changes or stale results are suspected, use explicit cache busting such as timestamped cache keys where appropriate.\n* Relying solely on browser or intermediary cache expiration logic can lead to user-facing inconsistencies during updates.\n\n## Agent Use\n* **Use this page when:** Investigating issues involving outdated content delivery, inconsistent user experiences post-deployment, or \"ghost\" bugs related to old code.\n* **Apply it by:** Injecting version identifiers into asset URLs, modifying query parameters for dynamic requests, or adjusting server-side cache control headers.\n* **Verify by:** Asserting that the response payload corresponds to the latest source data and that new cache keys are generated for content updates.\n* **Do not use it when:** The issue is related to server-side errors (5xx) or network connectivity failures that prevent content retrieval entirely.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)\n\n## Related Wiki Pages\n* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]\n* [[case-sensitive-database-comparisons-can-miss-logically-equivalent-values|Case-sensitive database comparisons can miss logically equivalent values]]"
     },
     {
-      "id": "wiki-proposal_kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful",
-      "slug": "pending-wiki-proposal_kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful",
-      "title": "Agents Can Mislead Users If Failures Are Reported As Successful Outcomes",
-      "path": "kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md",
-      "kind": "pending:known_fix",
-      "href": "review.html#pending-wiki-proposal_kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful",
-      "text": "Agents Can Mislead Users If Failures Are Reported As Successful Outcomes\n* When an operation, delegation, or guard fails or returns uncertain status, fail closed and state the failure honestly instead of claiming success. * Do not pretend success when the underlying work failed or was not verified. * **Use this page when:** You are implementing age...\nkb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md\nstable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"
-    },
-    {
-      "id": "wiki-proposal_kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify",
-      "slug": "pending-wiki-proposal_kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify",
-      "title": "Missing Replay Data Compromises The Ability To Debug Or Verify Past Execution",
-      "path": "kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md",
-      "kind": "pending:known_fix",
-      "href": "review.html#pending-wiki-proposal_kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify",
-      "text": "Missing Replay Data Compromises The Ability To Debug Or Verify Past Execution\nIn complex system testing, particularly post-deployment, replay data is essential for ensuring that the system behaves as expected under load or specific conditions. When this data is missing, the integrity of the stability check is compromised, leaving certain execution paths...\nkb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md\nstable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"
-    },
-    {
-      "id": "wiki-proposal_kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures-md",
-      "slug": "pending-wiki-proposal_kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures-md",
-      "title": "Openclaw Slack Replay And Post Deploy Stability Failures",
-      "path": "kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md",
-      "kind": "pending:procedure",
-      "href": "review.html#pending-wiki-proposal_kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures-md",
-      "text": "Openclaw Slack Replay And Post Deploy Stability Failures\nPost-deploy stability runs often encounter two distinct failure modes that can mask the true health of the system: * **Live Slack Failures:** Runtime bugs causing mismatches in replay footprints (missing native announce footers, delivery transport mismatches, child session spa...\nkb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md\nstable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"
-    },
-    {
-      "id": "wiki-proposal_kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an",
-      "slug": "pending-wiki-proposal_kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an",
-      "title": "Post Deploy Stability Smoke Test Run Openclaw Resulted In An Overall Failure",
-      "path": "kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md",
-      "kind": "pending:known_fix",
-      "href": "review.html#pending-wiki-proposal_kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an",
-      "text": "Post Deploy Stability Smoke Test Run Openclaw Resulted In An Overall Failure\nThe 'openclaw' stability smoke test run failed, triggered by critical runtime issues in the live Slack integration tests. While the 'synthetic_fixtures' lane passed successfully, the 'slack_delivery' lane encountered errors. Additionally, multiple nightly replay lanes could no...\nkb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md\nstable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"
-    },
-    {
-      "id": "wiki-proposal_kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after",
-      "slug": "pending-wiki-proposal_kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after",
-      "title": "Changes Can Introduce Regressions When Not Tested After Modification",
-      "path": "kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md",
+      "id": "wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
+      "slug": "pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
+      "title": "ACK timing before long-running agent work",
+      "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
       "kind": "pending:pitfall",
-      "href": "review.html#pending-wiki-proposal_kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after",
-      "text": "Changes Can Introduce Regressions When Not Tested After Modification\nChanges are a constant in system development and maintenance. However, even minor adjustments can have unintended side effects on existing functionality. Assuming a change is successful based solely on successful implementation, without validating system behavior, often leads ...\nkb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md\nstable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"
-    },
-    {
-      "id": "wiki-proposal_kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe",
-      "slug": "pending-wiki-proposal_kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe",
-      "title": "Actions On The Wrong Target Machine Or Host Can Cause Unsafe Operational Changes",
-      "path": "kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md",
-      "kind": "pending:procedure",
-      "href": "review.html#pending-wiki-proposal_kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe",
-      "text": "Actions On The Wrong Target Machine Or Host Can Cause Unsafe Operational Changes\nOperational actions often involve destructive or disruptive changes such as restarts or configuration mutations. Performing these actions on the wrong target machine can lead to service outages, data loss, or unsafe operational states. Verification of the target identity is a ...\nkb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md\nstable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"
-    },
-    {
-      "id": "wiki-proposal_kb-procedures-case-sensitive-database-comparisons-can-miss-logically",
-      "slug": "pending-wiki-proposal_kb-procedures-case-sensitive-database-comparisons-can-miss-logically",
-      "title": "Case Sensitive Database Comparisons Can Miss Logically Equivalent Values",
-      "path": "kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md",
-      "kind": "pending:procedure",
-      "href": "review.html#pending-wiki-proposal_kb-procedures-case-sensitive-database-comparisons-can-miss-logically",
-      "text": "Case Sensitive Database Comparisons Can Miss Logically Equivalent Values\nBy default, many database systems perform case-sensitive string comparisons. This behavior can lead to logical errors where `Value` and `value` are treated as distinct entities. If the application logic treats them as the same, this discrepancy can cause data duplication, fail...\nkb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md\nstable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"
+      "href": "review.html#pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
+      "text": "ACK timing before long-running agent work\nSend a short user-facing acknowledgement before starting slow work, tool use, network calls, or delegation dispatch so the user knows the request was received before the long-running operation begins.\nkb/known-fixes/ack-timing-before-long-running-agent-work.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
     }
   ]
 }

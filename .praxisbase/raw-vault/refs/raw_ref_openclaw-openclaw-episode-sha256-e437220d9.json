@@ -1,0 +1,12 @@
+{
+  "id": "raw_ref_openclaw-openclaw-episode-sha256-e437220d9",
+  "protocol_version": "0.1",
+  "type": "raw_vault_ref",
+  "agent": "openclaw",
+  "kind": "openclaw_episode",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/cb0565346fdc853fc4f1db8e3568bf7c8ae2247cb009ed8b59691027b6d71f1a",
+  "source_hash": "sha256:e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+  "redacted_summary": "Clarified that response-style changes may occur when a sub-agent is handling work, because sub-agents can have independent default model settings. The reliable way to verify the active model for the current session is to use the status command rather than asking the agent in natural language. A team-channel automation rule was added to stay silent by default and only respond to clear service-failure reports with a standard repair suggestion.",
+  "scope_hint": "team",
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

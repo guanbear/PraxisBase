@@ -1,0 +1,157 @@
+{
+  "id": "wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+  "action": "update",
+  "page_kind": "pitfall",
+  "scope": "team",
+  "title": "ACK timing before long-running agent work",
+  "summary": "Send a short user-facing acknowledgement before starting slow work, tool use, network calls, or delegation dispatch so the user knows the request was received before the long-running operation begins.",
+  "body_markdown": "# ACK timing before long-running agent work\n\n## When to Use\nUse this guidance when an agent is about to start work that may take more than a few seconds or depends on external execution, including:\n\n- Tool or plugin calls.\n- Network requests or API calls.\n- Delegation to another agent, runner, or dispatch system.\n- Long-running analysis, diagnostics, or debugging.\n- Any workflow where the user may otherwise see no immediate response while the system begins work.\n\n## Symptoms or Context\nThis pitfall appears when an agent receives a request and immediately begins slow or externally dispatched work without first responding to the user.\n\nCommon symptoms include:\n\n- The user experiences the agent as silent, stalled, or unresponsive.\n- A task is actually underway, but the user has no confirmation that the request was received.\n- Tooling, network, or dispatch latency creates a visible gap before the first user-facing message.\n- Users may retry, escalate, or assume the agent failed because no acknowledgement was emitted.\n\n## Operating Rule\nBefore starting slow work, send a short acknowledgement first. Then proceed with the long-running operation.\n\nThe acknowledgement should be brief and should not claim the work is complete. It should only confirm receipt or indicate that processing is starting.\n\nExamples:\n\n- \"Received — I’ll check that now.\"\n- \"On it.\"\n- \"I’m going to look into this.\"\n- \"Got it — starting the tool-based check now.\"\n\nAvoid silence while beginning slow work, network calls, tool calls, or delegation dispatch.\n\n## Procedure\n1. Receive the user request.\n2. Determine whether the next step is slow, external, delegated, or tool-based.\n3. If yes, emit a short acknowledgement before starting that work.\n4. Start the tool, network, dispatch, or long-running operation.\n5. Return the final result when complete, including any useful status or failure information.\n\n## Verify\nVerify the behavior by checking that:\n\n- The acknowledgement is emitted before the long-running step begins.\n- Interaction logs show the ACK before tool calls, network calls, or delegation dispatch.\n- The ACK does not falsely imply success or completion.\n- The final response reports the actual outcome after the slow operation completes.\n\n## Reusable Lessons\n- Slow tool, network, dispatch, or long-running work can leave users without timely feedback.\n- Send a short acknowledgement first, then proceed with the slow operation.\n- Do not stay silent while beginning slow or externally dispatched work.\n- An acknowledgement is not a success report; it only confirms that work is starting.\n\n## Agent Use\nUse this page when:\n\n- You are about to use tools, network calls, dispatch, subagents, or any slow workflow.\n- The user could otherwise wait without knowing whether the request was received.\n- You are designing or reviewing an agent interaction pattern involving delayed execution.\n\nApply it by:\n\n- Sending a short acknowledgement before starting the slow step.\n- Keeping the ACK neutral: confirm receipt or start of work, not success.\n- Continuing with the requested operation after the ACK.\n- Reporting the actual result, error, or limitation after the operation completes.\n\nVerify by:\n\n- Confirming the ACK appears before the first slow/tool/network/dispatch action.\n- Checking that the ACK is visible to the user, not only recorded internally.\n- Ensuring the final answer is separate from the ACK and reflects the real outcome.\n\nDo not use it when:\n\n- The request can be answered immediately without tools, waiting, or delegation.\n- A platform or protocol forbids intermediate user-facing messages.\n- The ACK would be misleading because the agent has not actually accepted or cannot perform the task; in that case, respond directly with the limitation.\n\n## Related Wiki Pages\n- [[agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes|Agents can mislead users if failures are reported as successful outcomes.]]\n- [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]\n- [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json (sha256:908b4db1c375519e085fae77971b8fcbe7ff260f4351d0f08a0cede9d302dea2)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
+  ],
+  "source_hashes": [
+    "sha256:908b4db1c375519e085fae77971b8fcbe7ff260f4351d0f08a0cede9d302dea2"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_det-ack-before-slow-work-a97f0550fb1-sha256-6ea11af4425471e622e9d7d6a4541ec758e7"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+      "source_hash": "sha256:908b4db1c375519e085fae77971b8fcbe7ff260f4351d0f08a0cede9d302dea2",
+      "excerpt": "Slow tool, network, dispatch, or long-running work can leave users without timely feedback. Send a short acknowledgement first, then proceed with the slow operation."
+    }
+  ],
+  "review_hint": {
+    "why_review": "canonical_relationship",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "The core rule is strongly supported by the supplied evidence, but exact timing thresholds such as a specific number of seconds are operational guidance rather than directly evidenced.",
+      "Acknowledgements must not be worded as completion or success messages; final outcome reporting still needs to happen after the slow work completes.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "related_pages": [
+    {
+      "slug": "ack-timing-before-long-running-agent-work",
+      "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "title": "ACK timing before long-running agent work"
+    },
+    {
+      "slug": "agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes",
+      "path": "kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md",
+      "title": "Agents can mislead users if failures are reported as successful outcomes."
+    },
+    {
+      "slug": "openclaw-dispatch-routing-failures",
+      "path": "kb/known-fixes/openclaw-dispatch-routing-failures.md",
+      "title": "OpenClaw dispatch routing failures"
+    },
+    {
+      "slug": "openclaw-dispatch-routing-failures",
+      "path": "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md",
+      "title": "OpenClaw dispatch routing failures"
+    },
+    {
+      "slug": "openclaw-slack-replay-and-post-deploy-stability-failures",
+      "path": "kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md",
+      "title": "OpenClaw Slack replay and post-deploy stability failures"
+    }
+  ],
+  "suggested_links": [
+    {
+      "slug": "agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes",
+      "label": "Agents can mislead users if failures are reported as successful outcomes.",
+      "path": "kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md",
+      "reason": "entity_overlap"
+    },
+    {
+      "slug": "openclaw-dispatch-routing-failures",
+      "label": "OpenClaw dispatch routing failures",
+      "path": "kb/known-fixes/openclaw-dispatch-routing-failures.md",
+      "reason": "entity_overlap"
+    },
+    {
+      "slug": "openclaw-dispatch-routing-failures",
+      "label": "OpenClaw dispatch routing failures",
+      "path": "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md",
+      "reason": "entity_overlap"
+    },
+    {
+      "slug": "openclaw-slack-replay-and-post-deploy-stability-failures",
+      "label": "OpenClaw Slack replay and post-deploy stability failures",
+      "path": "kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md",
+      "reason": "entity_overlap"
+    }
+  ],
+  "merge_candidates": [
+    {
+      "title": "ACK timing before long-running agent work",
+      "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "reason": "same_title_or_slug, entity_overlap"
+    }
+  ],
+  "relationship_reasons": [
+    "entity_overlap",
+    "same_title_or_slug"
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T04:32:22.081Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

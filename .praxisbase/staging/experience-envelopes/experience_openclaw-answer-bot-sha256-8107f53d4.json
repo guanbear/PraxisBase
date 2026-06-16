@@ -1,0 +1,24 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-8107f53d4",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319",
+  "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+  "scope_hint": "team",
+  "redacted_summary": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.",
+  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

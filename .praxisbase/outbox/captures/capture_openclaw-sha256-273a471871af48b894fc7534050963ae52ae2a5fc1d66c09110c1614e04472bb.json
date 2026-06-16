@@ -1,0 +1,22 @@
+{
+  "id": "capture_openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+  "protocol_version": "0.1",
+  "type": "capture_record",
+  "agent": "openclaw",
+  "workspace": "/builds/sre/praxisbase",
+  "scope_hint": "team",
+  "result": "unknown",
+  "triggers": [
+    "agent-memory-ingest"
+  ],
+  "signals": [],
+  "artifacts": [
+    {
+      "kind": "openclaw_episode",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/484cde15e8baa9ab50030ad9353c818170a940a08bfeb16a30292e512ef2dad3",
+      "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+      "redacted_summary": "Documented standardized support guidance for answering questions about model pricing, capabilities, and model-switching behavior. The update clarifies when model selection persists versus when an agent-specific default may override a user-selected model, and it provides a consistent response for known context errors after switching models."
+    }
+  ],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

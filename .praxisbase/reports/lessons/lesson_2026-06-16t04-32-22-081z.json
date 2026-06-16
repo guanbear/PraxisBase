@@ -1,0 +1,402 @@
+{
+  "id": "lesson_2026-06-16t04-32-22-081z",
+  "protocol_version": "0.1",
+  "type": "lesson_pipeline_report",
+  "authority_mode": "team-git",
+  "source_items": 23,
+  "selected_spans": 69,
+  "deterministic_lessons": 2,
+  "ai_lessons": 0,
+  "lessons": [
+    {
+      "lesson_id": "det_ack_before_slow_work_a97f0550fb1",
+      "claim": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and ...",
+      "safe_claim": "Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first, then proceed with the slow operation.",
+      "problem": "Slow tool, network, dispatch, or long-running work can leave users without timely feedback.",
+      "trigger": "Before starting slow work or work involving tools, network calls, or delegation dispatch.",
+      "action": "Send a short acknowledgement first, then proceed with the slow operation.",
+      "verification": "Confirm the acknowledgement is emitted before the long-running step begins.",
+      "negative_case": "Do not stay silent while beginning slow or externally dispatched work.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [
+        "agent-runtime",
+        "dispatch",
+        "network",
+        "tooling"
+      ],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "reflection",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json"
+      ],
+      "source_hashes": [
+        "sha256:908b4db1c375519e085fae77971b8fcbe7ff260f4351d0f08a0cede9d302dea2",
+        "sha256:a8571f595402217b94470c19e5b25b198cc231ea25f18c2aa781add12b420868"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json",
+          "source_hash": "sha256:a8571f595402217b94470c19e5b25b198cc231ea25f18c2aa781add12b420868",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1081,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and ...",
+          "excerpt_hash": "sha256:c1199d5a808b6b66fbc64f4836da243af523f287dd653bceadf865e5d1c0503a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T04:32:22.081Z",
+      "state": "skill_ready"
+    }
+  ],
+  "cache_upserted": 2,
+  "counts_by_state": {
+    "skill_ready": 1
+  },
+  "privacy": {
+    "abstracted": 0,
+    "human_required": 0,
+    "rejected": 0
+  },
+  "ai_cache": {
+    "enabled": false,
+    "hits": 0,
+    "misses": 0,
+    "writes": 0,
+    "corrupt": 0
+  },
+  "wiki_evidence": 1,
+  "authority_contract": {
+    "wiki_semantic_input": "lesson_clusters",
+    "context_rank": [
+      "stable_pb_page",
+      "promoted_skill",
+      "active_personal_lesson",
+      "gbrain_sidecar",
+      "agentmemory_sidecar",
+      "legacy_distilled",
+      "raw_audit"
+    ],
+    "promotion_evidence": {
+      "lesson_state_authority": true,
+      "legacy_distilled": false,
+      "gbrain_sidecar": false,
+      "agentmemory_sidecar": false
+    }
+  },
+  "source_reports": [
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 1,
+      "ai_lessons": 0,
+      "lessons": 1,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e1db2413e.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f1d3f2e21.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-bdd86a156.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-92320b389.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-64f06eeeb.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 1,
+      "ai_lessons": 0,
+      "lessons": 1,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 0,
+      "lessons": 0,
+      "wiki_evidence": 0,
+      "warnings": []
+    }
+  ],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

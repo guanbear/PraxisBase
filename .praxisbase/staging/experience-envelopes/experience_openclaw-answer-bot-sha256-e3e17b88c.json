@@ -1,0 +1,24 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-e3e17b88c",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/50d29fba45c04a740ad1845f4780bfec697499a8eca9598bd18a5c5e098c965c",
+  "source_hash": "sha256:e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+  "scope_hint": "team",
+  "redacted_summary": "A team-scope support interaction clarified that access to private network services is not available by default unless the automation runtime has appropriate network reachability. The team reviewed available automation capabilities and confirmed that text-to-speech output is supported, while voice input depends on channel configuration. A voice-processing skill was installed successfully from an internal marketplace, with follow-up configuration still needed for the external multimodal provider and channel tooling.",
+  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

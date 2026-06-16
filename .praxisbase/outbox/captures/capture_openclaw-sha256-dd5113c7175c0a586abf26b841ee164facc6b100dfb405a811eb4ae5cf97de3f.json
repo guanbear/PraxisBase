@@ -1,0 +1,22 @@
+{
+  "id": "capture_openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+  "protocol_version": "0.1",
+  "type": "capture_record",
+  "agent": "openclaw",
+  "workspace": "/builds/sre/praxisbase",
+  "scope_hint": "team",
+  "result": "unknown",
+  "triggers": [
+    "agent-memory-ingest"
+  ],
+  "signals": [],
+  "artifacts": [
+    {
+      "kind": "openclaw_episode",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5",
+      "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "redacted_summary": "A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization=[REDACTED] The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed."
+    }
+  ],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

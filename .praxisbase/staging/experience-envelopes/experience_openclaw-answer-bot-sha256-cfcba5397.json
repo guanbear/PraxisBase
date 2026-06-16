@@ -1,0 +1,24 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-cfcba5397",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2a4220e4ecc01009e3a73ac8aa34773399b262779c1c919e234e023e41bae846",
+  "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+  "scope_hint": "team",
+  "redacted_summary": "A team-scope interaction was reviewed and found to contain only a generic greeting with no operational, personal, or sensitive details. The experience is safe to retain as a minimal record of benign conversational handling after team review.",
+  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

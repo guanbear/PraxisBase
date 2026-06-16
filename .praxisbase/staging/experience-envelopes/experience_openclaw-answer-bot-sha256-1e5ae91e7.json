@@ -1,0 +1,24 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-1e5ae91e7",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/1520da92e14f0a437090e90129b764bc690ea051da2dcc0f7567eaf9600d96b3",
+  "source_hash": "sha256:1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+  "scope_hint": "team",
+  "redacted_summary": "A user sent brief greetings and follow-up prompts, then requested human support. The automated assistant acknowledged the delay, clarified it was an AI assistant, and asked the user to provide issue details so the request could be handled appropriately.",
+  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

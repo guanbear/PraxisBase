@@ -1,0 +1,27 @@
+{
+  "id": "wiki-quality-report_2026-06-16t04-32-48-301z",
+  "protocol_version": "0.1",
+  "type": "wiki_quality_report",
+  "findings": [
+    {
+      "rule": "broken_link",
+      "severity": "error",
+      "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "message": "Broken wikilink target: openclaw-gateway-restart-after-configuration-changes",
+      "page_id": "ack-timing-before-long-running-agent-work",
+      "details": {
+        "target": "openclaw-gateway-restart-after-configuration-changes"
+      }
+    }
+  ],
+  "summary": {
+    "total": 1,
+    "errors": 1,
+    "warnings": 0,
+    "by_rule": {
+      "broken_link": 1
+    }
+  },
+  "changed_stable_knowledge": false,
+  "created_at": "2026-06-16T04:32:48.301Z"
+}

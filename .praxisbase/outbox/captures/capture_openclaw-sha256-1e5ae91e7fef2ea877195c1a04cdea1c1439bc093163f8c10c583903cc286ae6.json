@@ -1,0 +1,22 @@
+{
+  "id": "capture_openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+  "protocol_version": "0.1",
+  "type": "capture_record",
+  "agent": "openclaw",
+  "workspace": "/builds/sre/praxisbase",
+  "scope_hint": "team",
+  "result": "unknown",
+  "triggers": [
+    "agent-memory-ingest"
+  ],
+  "signals": [],
+  "artifacts": [
+    {
+      "kind": "openclaw_episode",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/1520da92e14f0a437090e90129b764bc690ea051da2dcc0f7567eaf9600d96b3",
+      "source_hash": "sha256:1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+      "redacted_summary": "A user sent brief greetings and follow-up prompts, then requested human support. The automated assistant acknowledged the delay, clarified it was an AI assistant, and asked the user to provide issue details so the request could be handled appropriately."
+    }
+  ],
+  "created_at": "2026-06-16T04:32:22.081Z"
+}

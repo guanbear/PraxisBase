@@ -1,0 +1,24 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-14edce26a",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/578c93fed49000856bedd6f4509320f98bfd5689fa2a77d8b6e288ff14dc4d94",
+  "source_hash": "sha256:14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
+  "scope_hint": "team",
+  "redacted_summary": "Initial diagnosis indicated the integration was not universally failing to receive messages; at least one observed case was consistent with a group-chat trigger condition not being met. If users report that the bot is not replying, triage should separately verify whether the issue is trigger eligibility, a stuck conversation, or lack of model output. Operational checks should combine process status, gateway health, and recent dispatch activity rather than relying on a single command-line probe.",
+  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

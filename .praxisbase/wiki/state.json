@@ -56,6 +56,190 @@
         "wiki-proposal_kb-procedures-case-sensitive-database-comparisons-can-miss-logically"
       ],
       "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e": {
+      "source_hash": "sha256:14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-capture-openclaw-sha256-14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0": {
+      "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-pitfalls-capture-openclaw-sha256-19c2eeefae289d8d97246f723cdf04f637a16e633b4f"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6": {
+      "source_hash": "sha256:1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-notes-wiki-capture-openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc0931"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb": {
+      "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-notes-wiki-capture-openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8": {
+      "source_hash": "sha256:31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-notes-wiki-capture-openclaw-sha256-31384b9548ae70385260538a5c6e1b90ce563958eb"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a": {
+      "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-decisions-capture-openclaw-sha256-4b2bab82717d1c6a48b99900b0de37f55106bbf4184"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20": {
+      "source_hash": "sha256:5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-pitfalls-capture-openclaw-sha256-5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4": {
+      "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-notes-wiki-capture-openclaw-sha256-64f06eeeb4e405a883f8b176865d9f7fc563cc04b8"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6": {
+      "source_hash": "sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-capture-openclaw-sha256-745fa543d17ac84dbced48406cc3355edbc444c3f1"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e": {
+      "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-capture-openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64": {
+      "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-decisions-capture-openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f": {
+      "source_hash": "sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-known-fixes-capture-openclaw-sha256-92320b3890301078db779c62b37c753a6f89dadd2"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20": {
+      "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-decisions-capture-openclaw-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af49"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd": {
+      "source_hash": "sha256:bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-notes-wiki-capture-openclaw-sha256-bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd": {
+      "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-decisions-capture-openclaw-sha256-c721715b094a3d1a2c35c64a3757c487a5474673ed9"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231": {
+      "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-notes-wiki-capture-openclaw-sha256-cfcba53974d12423579c4defd306375a946e010657"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f": {
+      "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-capture-openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda891"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f": {
+      "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-decisions-capture-openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1": {
+      "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-pitfalls-capture-openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168": {
+      "source_hash": "sha256:e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-notes-wiki-capture-openclaw-sha256-e3e17b88c6177cefa49dac9a44674bdafdec9fb372"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f": {
+      "source_hash": "sha256:e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-decisions-capture-openclaw-sha256-e437220d9dfb85bc70bf0da487784404d0706e205b8"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa": {
+      "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-capture-openclaw-sha256-f1d3f2e2158abc2ea02ee35ba07d30eb9eaea13345"
+      ],
+      "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8": {
+      "source_hash": "sha256:f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
+      "last_compiled_at": "2026-06-16T04:32:22.081Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-capture-openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc464"
+      ],
+      "page_ids": []
     }
   }
 }
