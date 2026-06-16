@@ -55,6 +55,7 @@ praxisbase:daily-harvest:
   resource_group: praxisbase-write
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "daily-harvest"
+    - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "daily-harvest"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js daily run --mode team-git --limit "${PRAXISBASE_DAILY_LIMIT:-500}" --max-ai-chunks "${PRAXISBASE_MAX_AI_CHUNKS:-40}" --max-curation-proposals "${PRAXISBASE_MAX_CURATION_PROPOSALS:-8}" --ai-concurrency "${PRAXISBASE_AI_CONCURRENCY:-4}" --branch "harvest/daily-${CI_PIPELINE_ID}" --commit --build-site --json
 
@@ -66,6 +67,7 @@ praxisbase:review:
   resource_group: praxisbase-write
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "review"
+    - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "review"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js review --auto
 
@@ -77,6 +79,7 @@ praxisbase:promote:
   resource_group: praxisbase-write
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "promote"
+    - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "promote"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js promote --auto
     - node /tmp/PraxisBase/packages/cli/dist/index.js check
@@ -88,6 +91,7 @@ praxisbase:build:
   stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "build"
+    - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "build"
     - if: $CI_COMMIT_BRANCH == "main"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js build

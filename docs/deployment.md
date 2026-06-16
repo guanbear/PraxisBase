@@ -195,7 +195,7 @@ praxisbase source add claude-repair-log --agent claude-code --type http --url "$
 praxisbase daily run --mode team-git --branch "harvest/daily-$(date +%Y-%m-%d)" --commit --push --build-site --json
 ```
 
-Add a GitLab scheduled pipeline with `PRAXISBASE_TASK=daily-harvest` to run the team daily loop automatically.
+Add a GitLab scheduled pipeline with `PRAXISBASE_TASK=daily-harvest` to run the team daily loop automatically. The same jobs also allow manual `Run new pipeline` runs from the web UI when `PRAXISBASE_TASK` is set, which is useful for smoke testing schedules before waiting for the nightly window.
 
 Required CI variables for team mode:
 
