@@ -182,7 +182,7 @@ if [ "$rows_added" = "0" ]; then
   exit 0
 fi
 
-git add "$PB_GIT_PATH"
+git add -f "$PB_GIT_PATH"
 if git diff --cached --quiet; then
   echo "praxisbase_export status=skip rows=0 commit=none"
   exit 0
