@@ -1,0 +1,46 @@
+{
+  "id": "run_daily-experience-2026-06-16t04-04-23-647z",
+  "protocol_version": "0.1",
+  "type": "daily_experience_progress",
+  "status": "partial",
+  "elapsed_ms": 1076,
+  "stage_elapsed_ms": 0,
+  "sources": [
+    {
+      "name": "openclaw-answer-bot",
+      "agent": "openclaw",
+      "channel": "feishu",
+      "source_type": "git",
+      "status": "partial",
+      "scanned": 34,
+      "fetched": 34,
+      "enveloped": 34,
+      "imported": 0,
+      "rejected": 0,
+      "human_required": 34,
+      "warnings": []
+    }
+  ],
+  "ai_distill": {
+    "configured": true,
+    "mode": "production",
+    "production_ready": true,
+    "provider": "openai-compatible",
+    "model": "gpt-5.5",
+    "chunks": 0,
+    "distilled": 0,
+    "failed": 0,
+    "human_required": 0,
+    "privacy_required": 0,
+    "review_required": 0,
+    "rejected_low_signal": 0,
+    "rejected_quality": 0,
+    "cache_hits": 0,
+    "budget_max_uncached": 40,
+    "budget_used_uncached": 0,
+    "skipped_by_budget": 0,
+    "warnings": []
+  },
+  "warnings": [],
+  "updated_at": "2026-06-16T04:04:24.731Z"
+}
