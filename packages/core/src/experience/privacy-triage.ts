@@ -306,6 +306,15 @@ function isSafeTeamReleaseText(text: string): boolean {
   return true;
 }
 
+function isLowSignalTeamReleaseText(text: string): boolean {
+  return /\b(?:generic|benign) greetings?\b/i.test(text)
+    || /\bgreeting-only\b/i.test(text)
+    || /\bonly a generic greeting\b/i.test(text)
+    || /\bpreferred display names?\b/i.test(text)
+    || /\bnicknames?\b/i.test(text)
+    || /\bno operational, personal, or sensitive details\b/i.test(text);
+}
+
 function teamAutoReviewThreshold(ai: TriageAiDecision): number | undefined {
   if (ai.classification === "safe_personal_experience") return 0.82;
   if (ai.classification === "needs_redaction") return 0.78;
@@ -354,6 +363,10 @@ async function generateTeamReleaseSummary(input: {
   const combined = [releaseSummary, reusableLesson, residualRisk].filter(Boolean).join("\n");
   if (!isSafeTeamReleaseText(combined)) {
     input.warnings.push(`privacy_triage_team_auto_review_unsafe_summary:${input.exception.id}`);
+    return undefined;
+  }
+  if (isLowSignalTeamReleaseText(combined)) {
+    input.warnings.push(`privacy_triage_team_auto_review_low_signal:${input.exception.id}`);
     return undefined;
   }
   return {

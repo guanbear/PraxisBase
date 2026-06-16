@@ -1089,6 +1089,7 @@ function extractH1(body: string): string | undefined {
 function looksMachineGeneratedTitle(title: string | undefined): boolean {
   if (!title) return true;
   return /\bsha256\b/i.test(title)
+    || /^untitled(?:[-_\s]+topic)?$/i.test(title)
     || /^wiki[-_]capture[-_]/i.test(title)
     || /^capture[-_]/i.test(title)
     || /^[a-f0-9]{16,}$/i.test(title);
