@@ -535,16 +535,26 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
   };
 
   if (privacyRequired > 0) {
-    const privacyCommand = report.authority_mode === "team-git"
-      ? "praxisbase privacy triage --mode team-git --json"
-      : "praxisbase privacy triage --mode personal --auto-release --json";
+    if (report.authority_mode === "team-git") {
+      return {
+        status: "needs_review",
+        counts,
+        agentmemory_export_recommended: false,
+        gbrain_export_recommended: false,
+        messages: [`${privacyRequired} team item(s) need privacy review before they can become wiki evidence. AI triage can refresh metadata, but team-git release remains review-first.`],
+        commands: [
+          "praxisbase privacy triage --mode team-git --include-triaged --json",
+          "praxisbase wiki build-site --json",
+        ],
+      };
+    }
     return {
       status: "needs_privacy_triage",
       counts,
       agentmemory_export_recommended: false,
       gbrain_export_recommended: false,
       messages: [`${privacyRequired} item(s) need privacy triage before they can become wiki evidence.`],
-      commands: [privacyCommand],
+      commands: ["praxisbase privacy triage --mode personal --auto-release --json"],
     };
   }
 

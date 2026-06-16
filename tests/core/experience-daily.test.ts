@@ -163,7 +163,7 @@ describe("runDailyExperience", () => {
     assert.ok(nextActions.messages.some((message) => message.includes("privacy")));
   });
 
-  it("derives team-git privacy triage next actions without personal auto-release", () => {
+  it("derives team-git privacy review next actions without personal auto-release", () => {
     const nextActions = deriveDailyNextActions({
       id: "daily-experience_20260521_team",
       protocol_version: PROTOCOL_VERSION,
@@ -215,8 +215,12 @@ describe("runDailyExperience", () => {
       created_at: "2026-05-21T01:00:00.000Z",
     });
 
-    assert.equal(nextActions.status, "needs_privacy_triage");
-    assert.deepEqual(nextActions.commands, ["praxisbase privacy triage --mode team-git --json"]);
+    assert.equal(nextActions.status, "needs_review");
+    assert.deepEqual(nextActions.commands, [
+      "praxisbase privacy triage --mode team-git --include-triaged --json",
+      "praxisbase wiki build-site --json",
+    ]);
+    assert.ok(nextActions.messages.some((message) => message.includes("review-first")));
   });
 
   it("surfaces skill synthesis needs_human before wiki review in next actions", () => {

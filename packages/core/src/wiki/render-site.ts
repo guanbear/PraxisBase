@@ -768,6 +768,13 @@ function renderHumanRequired(
 ): string {
   const latestPrivacyRequired = dailyReport?.privacy_required ?? records.length;
   const visibleRecords = records.slice(0, 50);
+  const isTeamGit = dailyReport?.authority_mode === "team-git";
+  const triageCommand = isTeamGit
+    ? "praxisbase privacy triage --mode team-git --include-triaged --progress --json"
+    : "praxisbase privacy triage --mode personal --auto-release --progress --json";
+  const followupCommand = isTeamGit
+    ? "praxisbase wiki build-site --json"
+    : "praxisbase personal run --open --json";
   return `<section id="human-required" class="review-section" data-status="needs_human">
   <div class="section-heading">
     <div>
@@ -777,14 +784,15 @@ function renderHumanRequired(
     <strong>${escapeHtml(String(latestPrivacyRequired))}</strong>
   </div>
   <div class="command-strip">
-    <code>praxisbase privacy triage --mode personal --auto-release --progress --json</code>
-    <code>praxisbase personal run --open --json</code>
+    <code>${escapeHtml(triageCommand)}</code>
+    <code>${escapeHtml(followupCommand)}</code>
   </div>
   ${privacyTriageReport ? `<dl class="queue-summary">
     <dt>Latest triage</dt><dd>${escapeHtml(privacyTriageReport.created_at)}</dd>
     <dt>Scanned</dt><dd>${escapeHtml(String(privacyTriageReport.scanned))}</dd>
     <dt>Auto released</dt><dd>${escapeHtml(String(privacyTriageReport.auto_released))}</dd>
     <dt>Kept human-required</dt><dd>${escapeHtml(String(privacyTriageReport.keep_human_required))}</dd>
+    <dt>Team review-only</dt><dd>${escapeHtml(String(privacyTriageReport.team_review_only))}</dd>
     <dt>Skipped already triaged</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_already_triaged))}</dd>
     <dt>Skipped non-privacy</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_non_privacy))}</dd>
   </dl>` : ""}
@@ -802,7 +810,7 @@ function renderHumanRequired(
         ${detailsReleased && item.redacted_summary ? `<dt>Summary</dt><dd>${escapeHtml(item.redacted_summary)}</dd>` : ""}
         <dt>File</dt><dd><code>${escapeHtml(item.path)}</code></dd>
         <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
-        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        <dt>Recommended</dt><dd><code>${escapeHtml(triageCommand)}</code></dd>
         ${item.triage ? `
         <dt>Triage</dt><dd>${escapeHtml(item.triage.classification ?? "unknown")} / ${escapeHtml(item.triage.decision ?? "unknown")}</dd>
         <dt>Confidence</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
