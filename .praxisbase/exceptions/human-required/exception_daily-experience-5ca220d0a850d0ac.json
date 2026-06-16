@@ -23,16 +23,22 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "real_private_material",
+      "confidence": 0.86,
+      "rationale": "The summary contains team chat context, internal project/work-item automation details, a project space reference, a user identifier/name, and authorization workflow details. Even with some redactions, it is not high-confidence safe personal experience.",
+      "suggested_redactions": [
+        "Remove or generalize internal project URLs and project keys",
+        "Remove user names, user IDs, and chat/channel identifiers",
+        "Remove token/authentication attempt details and any token-adjacent text",
+        "Generalize internal bug/task workflow details to a non-identifying description",
+        "Avoid exposing team chat source, scope, and collaboration platform metadata"
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

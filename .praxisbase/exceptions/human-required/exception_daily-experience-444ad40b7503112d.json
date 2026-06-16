@@ -22,15 +22,21 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "Contains team-scope operational support experience with identifiable user/staff names, internal service domain, and potentially sensitive troubleshooting details. It is not obviously raw private material, but should not be auto-released without further redaction.",
+      "suggested_redactions": [
+        "Redact or generalize personal names of staff/users",
+        "Redact internal domain or replace with generic product console reference",
+        "Keep pairing codes as placeholders only and ensure no real codes appear",
+        "Generalize exact dates if not necessary",
+        "Remove or generalize internal implementation details that could aid abuse"
+      ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

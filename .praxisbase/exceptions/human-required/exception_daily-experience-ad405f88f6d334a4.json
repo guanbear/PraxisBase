@@ -23,16 +23,22 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.82,
+      "rationale": "The summary still contains internal repository/location details, workspace paths, product/document context, and operational cron/status information from a team channel. These are project/team-specific and not safe for auto-release without further minimization.",
+      "suggested_redactions": [
+        "Redact or generalize internal Git hosting domain, repository, branch, and package path",
+        "Redact or generalize local workspace and agent installation paths",
+        "Redact specific internal product/document request context",
+        "Redact operational cron task name, schedule, notification timestamps, and status flags",
+        "Remove source identifiers, hashes, and internal source references if present in released text"
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

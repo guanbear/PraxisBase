@@ -22,16 +22,19 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "safe_personal_experience",
+      "confidence": 0.86,
+      "rationale": "Redacted content describes agent behavior, model/status usage, and a project/team automation rule without exposing unredacted personal identifiers, secrets, credentials, or private message content.",
+      "suggested_redactions": [
+        "Keep the Feishu/group identifier redacted.",
+        "Consider redacting or generalizing internal service URLs if publishing outside the project context."
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

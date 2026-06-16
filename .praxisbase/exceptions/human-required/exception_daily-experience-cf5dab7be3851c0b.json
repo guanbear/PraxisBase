@@ -22,15 +22,19 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "safe_personal_experience",
+      "confidence": 0.86,
+      "rationale": "The redacted summary contains general troubleshooting conclusions and operational cautions for a bot integration, with no visible secrets, personal data, credentials, raw logs, or sensitive customer content. It appears to be project/agent experience rather than real private material.",
+      "suggested_redactions": [
+        "Remove or generalize internal source references, hashes, and exception IDs before broader release.",
+        "Generalize specific internal project or agent names if publishing outside the team context.",
+        "Keep protected configuration file names generic if they could reveal internal structure."
+      ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

@@ -23,16 +23,20 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "The summary describes agent workflow but still includes a specific private Feishu document URL and an account identifier; no document contents are exposed, so it appears redaction rather than exclusion is sufficient.",
+      "suggested_redactions": [
+        "Redact the Feishu document URL or replace it with a generic placeholder.",
+        "Redact the account/user identifier mentioned in the permission error.",
+        "Avoid exposing internal source references or hashes if they can identify private project artifacts."
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

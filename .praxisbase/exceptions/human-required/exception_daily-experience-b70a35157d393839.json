@@ -22,16 +22,22 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "real_private_material",
+      "confidence": 0.86,
+      "rationale": "The summary contains internal team operational guidance, company data-security handling instructions, model availability/status details, and identifiable employee names tied to support responsibilities, even though IDs are redacted.",
+      "suggested_redactions": [
+        "Redact employee names and any remaining contact-routing details",
+        "Generalize internal model names and version-specific availability/status",
+        "Remove or generalize company confidentiality/security process references",
+        "Remove dates tied to internal instructions or incidents",
+        "Avoid exposing team-channel-specific operational guidance"
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

@@ -22,16 +22,21 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "The summary contains team-channel operational guidance plus identifiable employee names and an internal dashboard URL/escalation path. IDs are redacted, but remaining names and internal routing details are not safe for auto-release.",
+      "suggested_redactions": [
+        "Redact or generalize employee names to role-based labels such as support owner or escalation contact.",
+        "Keep Feishu IDs redacted.",
+        "Consider redacting or generalizing the internal dashboard URL/domain if not intended for public release.",
+        "Generalize internal escalation instructions and exact fixed wording if it reveals private support process details."
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

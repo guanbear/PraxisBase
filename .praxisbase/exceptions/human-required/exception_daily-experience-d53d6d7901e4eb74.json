@@ -22,16 +22,22 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "Contains team-channel operational guidance, employee names, support-routing instructions, and internal product/pricing details. No obvious secrets are present, but it is not safe for auto-release without further anonymization and review.",
+      "suggested_redactions": [
+        "Redact employee names and replace with generic roles such as product owner, support engineer, or reviewer.",
+        "Remove or generalize internal routing instructions that identify specific people to mention or transfer to.",
+        "Redact internal source references, hashes, channel identifiers, and exception/source IDs if exposed outside the review system.",
+        "Generalize internal pricing or billing policy details unless confirmed public.",
+        "Remove team-channel provenance details and keep only the reusable, non-identifying support guidance."
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

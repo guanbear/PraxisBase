@@ -23,16 +23,22 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "real_private_material",
+      "confidence": 0.95,
+      "rationale": "The summary contains a real account identifier and describes a login flow for a third-party site in a team channel, with credential-related details only partially redacted.",
+      "suggested_redactions": [
+        "Redact the phone/account identifier",
+        "Redact or generalize the target login domain if not necessary",
+        "Remove credential modality details and any password/verification references",
+        "Remove internal/test environment hostnames and access requirements",
+        "Keep only a high-level note that a browser login task was completed"
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

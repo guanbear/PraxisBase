@@ -23,16 +23,23 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "real_private_material",
+      "confidence": 0.86,
+      "rationale": "The summary contains a private collaboration-document link, identifiable user/account references, internal process/context details, and project/tooling information from a team channel. It is not safe for auto-release without further sanitization.",
+      "suggested_redactions": [
+        "Redact the private Feishu/wiki URL",
+        "Redact identifiable user names or account handles",
+        "Redact internal process names or runtime identifiers",
+        "Redact workspace paths and host/package references that may identify infrastructure",
+        "Generalize internal skill/tool names if they are not public",
+        "Remove or generalize team-channel context and authorization workflow details"
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

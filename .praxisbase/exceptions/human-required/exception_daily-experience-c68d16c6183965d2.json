@@ -23,16 +23,22 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "real_private_material",
+      "confidence": 0.88,
+      "rationale": "Team Feishu context includes sensitive operational details about tokens, permissions, workspace paths, private group/task context, and exam/screenshot content, even though specific values are redacted.",
+      "suggested_redactions": [
+        "Remove or generalize all token/authentication references and permission status details.",
+        "Redact Feishu group/channel identifiers and any user-identifying context.",
+        "Generalize internal workspace paths and source references.",
+        "Remove exam/screenshot content details and private task descriptions.",
+        "Keep only high-level, non-identifying skill installation or troubleshooting summaries if needed."
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

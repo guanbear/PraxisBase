@@ -22,16 +22,21 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.82,
+      "rationale": "The summary is mostly operational agent experience with user IDs redacted, but it still includes team-scope chat context, an internal repository URL, local workspace paths, and configuration details for a provider setup that could reveal private project infrastructure.",
+      "suggested_redactions": [
+        "Redact or generalize the internal GitLab repository URL.",
+        "Redact or generalize the local workspace installation path.",
+        "Remove or generalize provider configuration details such as proxy/base URL and API key requirements.",
+        "Generalize team chat/channel context to avoid identifying the workspace or participants."
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

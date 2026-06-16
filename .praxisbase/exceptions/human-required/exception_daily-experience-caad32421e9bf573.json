@@ -22,15 +22,21 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.78,
+      "rationale": "The summary appears to contain team-internal operational guidance, platform-specific commands, internal model prefixes, and security/compliance escalation instructions. It does not expose obvious raw secrets, but it should not be auto-treated as safe personal experience without further redaction.",
+      "suggested_redactions": [
+        "Redact or generalize internal model prefixes such as specific named prefixes.",
+        "Redact or generalize platform-specific administrative commands and placeholders for pairing approval.",
+        "Redact or generalize references to internal security/confidentiality bots or official company channels.",
+        "Redact source identifiers, hashes, channel names, and team-scope metadata if included in any released text.",
+        "Generalize product-specific troubleshooting details to non-identifying operational guidance."
+      ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"

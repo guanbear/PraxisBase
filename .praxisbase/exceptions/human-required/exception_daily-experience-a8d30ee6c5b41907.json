@@ -22,16 +22,21 @@
       ]
     },
     "triage": {
-      "classification": "unclear",
-      "confidence": 0,
-      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
-      "suggested_redactions": [],
+      "classification": "needs_redaction",
+      "confidence": 0.78,
+      "rationale": "The summary is from a team Feishu group chat and includes project/task context, user activity, and internal implementation/configuration details, though direct identifiers and secrets appear redacted.",
+      "suggested_redactions": [
+        "Remove or generalize team chat/channel references and group activity headings.",
+        "Keep Feishu/user identifiers redacted.",
+        "Generalize internal project names, source locations, and architecture details if not intended for release.",
+        "Omit configuration-related references such as provider setup, proxy base URL, API key, and gateway restart details unless fully generic."
+      ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T03:33:30.465Z"
+      "triaged_at": "2026-06-16T03:44:38.330Z"
     }
   },
   "created_at": "2026-06-16T03:05:28.250Z"
