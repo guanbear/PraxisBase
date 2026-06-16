@@ -91,7 +91,7 @@ The template clones the PraxisBase tool repo, builds the CLI, and executes it ag
 | `PRAXISBASE_PAGES` | Set to `true` to publish `dist/` through GitLab Pages. |
 
 When writeback is enabled, use a Project Access Token with the minimum write scope needed for that knowledge repo.
-The GitLab template also installs a temporary Git URL rewrite with `PRAXISBASE_PUSH_TOKEN`, so private same-host Git sources such as `openclaw-ingest/answer-bot` can be cloned by the daily harvest job without embedding credentials in source config.
+The GitLab template also installs a temporary Git URL rewrite with `PRAXISBASE_PUSH_TOKEN`, so private same-host Git sources such as `openclaw-ingest/answer-bot` can be cloned by the daily harvest job without embedding credentials in source config. Writeback commits are rebased onto the latest target branch before push to tolerate unrelated commits landing while a pipeline is running.
 
 ## Static HTML And Bundles
 
