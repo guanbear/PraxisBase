@@ -67,6 +67,14 @@ describe("GitLab daily harvest CI template", () => {
     assert.match(ci, /result\.ok === false/);
   });
 
+  it("lets CI writeback own commits for daily-harvest", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+    const dailyScript = ci.match(/praxisbase:daily-harvest:[\s\S]*?(?=\npraxisbase:review:)/)?.[0] ?? "";
+
+    assert.doesNotMatch(dailyScript, /--commit/);
+    assert.doesNotMatch(dailyScript, /--branch/);
+  });
+
   it("runs daily-harvest before review stage", async () => {
     const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
 
