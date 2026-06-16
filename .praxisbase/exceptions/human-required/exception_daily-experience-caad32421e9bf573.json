@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-caad32421e9bf573",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-5535ee36f",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/7d903ce59380e64c1fa8e0c3f29210272282aa4bc42e6b55307c09af1f2e51dc",
+    "source_hash": "sha256:5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
+    "redacted_summary": "- Trigger scenario 3: if a user posts a screenshot or asks \"这个是怎么回事\" and the content/context indicates Feishu `access not configured` / pairing code. - When scenario 3 is triggered, answer using this guidance: - 先说明这是访问授权/配对未完成，不是普通业务报错。 - 如果对方是刚申请/刚接入的新用户：优先建议去控制台点一次重启，通常即可恢复。 - 说明这是已知问题，后续新版本会修复。 - 如果重启后仍不行，再让实例管理员执行 `openclaw pairing approve feishu <code>`。 - Trigger scenario 4: if users ask whether `lixiang-*` / `kivy-*` models can process confidential, L2, or sensitive company data, do NOT assert L2 is allowed by default. Emphasize that they should prioritize contacting the company confidentiality/security bot（公司保密机器人）or official data-security channel for the authoritative answer. Mention that model prefix alone is insufficient proof of authorization; use official policy, data classif",
+    "privacy_signature": "sha256:caad32421e9bf5739faa78c641f84c9d9365b2254ac001f82c602235aa04394a",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

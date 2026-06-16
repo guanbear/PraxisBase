@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-c578b794158d6fe2",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-9fd2e910e",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/4a33f4cf966c017e78d0f5569184d5c180f44f5ac08e93dfa61ea6b40332e34e",
+    "source_hash": "sha256:9fd2e910e455e963c35f9f3e100fd9e0003c33d50aceb40b2315aedd2b5665ab",
+    "redacted_summary": "- 用户发来两张截图，内容为故障处理与变更管理考试 - 考试题目（共10题，单选1道+多选9道，总分100分）： - **单选题1**：故障【根因追查】以及【待办跟进】的注意事项，不包括 → 答案：**B** - **多选题1**：关于红线制度，说法正确的是 → 答案：**ABCD**（全选） - **多选题2**：故障处理中，正确的做法 → 答案：**ABD**（C选项-线上重现故障是错误做法） - **多选题3**：做好故障通告应包含哪些信息 → 答案：**ABCDE**（全选） - **多选题4**：关于变更说法正确的是 → 答案：**CD** - **多选题5**：关于故障待办项，说法正确的是 → 答案：**ABC**（D-随意拖延是错误的） - **多选题6**：故障应对处理及复盘原则 → 答案：**ABCD**（全选） - **多选题7**：哪个时间段不适合进行变更操作 → 答案：**ABCD**（全选） - **多选题8**：高质量复盘报告需要记录哪些内容 → 答案：**ABCDEF**（全选） - **多选题9**：变更通知中需要包含哪些内容 → 答案：**ABCD**（全选） - 飞书文档需要登录才能访问，未能读取 - 最终基于云平台/SRE行业通用规范给出了答案（有不确定性，提示用户对照文档验证） ## 需求文档审查请求（群 oc_c3a41eeb30a7f36f8d0517a883bb8adc）",
+    "privacy_signature": "sha256:c578b794158d6fe2c2e53521a9653a60557ca2dd5417b2b0acb8515b8861d270",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

@@ -1,0 +1,52 @@
+Missing replay data compromises the ability to debug or verify past execution behaviors
+
+# Missing replay data compromises the ability to debug or verify past execution behaviors
+
+## When to Use
+Use this guidance when executing stability tests (e.g., Stability Smoke v2) or nightly replay lanes result in failures specifically related to missing replay data. This is particularly relevant for post-deployment verification where historical execution behavior must be validated.
+
+## Symptoms
+*   Execution of stability test suites (e.g., `Stability Smoke v2`) fails during post-deployment checks.
+*   Error logs indicate a `replay_missing` error within nightly replay processes.
+*   The inability to verify the status of specific lanes (e.g., unknown status for nightly lanes) while others may pass or fail explicitly (e.g., `slack_delivery` failure).
+*   General compromise in the ability to debug or verify past execution behaviors due to data gaps.
+
+## Context
+In complex system testing, particularly post-deployment, replay data is essential for ensuring that the system behaves as expected under load or specific conditions. When this data is missing, the integrity of the stability check is compromised, leaving certain execution paths unverified.
+
+## Fix
+To resolve issues stemming from missing replay data and ensure successful stability verification:
+
+1.  **Investigate Data Pipelines**: Check the ingestion and storage mechanisms responsible for capturing replay data during the execution window.
+2.  **Validate Collection Jobs**: Ensure that background jobs or agents responsible for collecting logs and state data for replay did not fail silently.
+3.  **Retry Data Collection**: If possible, trigger a retry for the missing data collection or re-run the specific test case to generate the required replay artifacts.
+4.  **System Health Check**: Verify that storage systems (databases, object storage) are healthy and accessible to the test infrastructure.
+5.  **Address Root Cause**: Identify why the data was missing (e.g., resource exhaustion, network partitioning) and apply patches to prevent recurrence in future test runs.
+
+## Verify
+Confirm the resolution by:
+*   Re-running the Stability Smoke v2 or relevant test suite and observing the absence of `replay_missing` errors.
+*   Checking that nightly replay lanes report a definitive status (pass/fail) rather than remaining unknown.
+*   Successfully retrieving and inspecting the replay data for the specific execution window to validate past behaviors.
+
+## Reusable Lessons
+*   **Data Integrity is Critical**: Stability tests are only as good as the data they produce; gaps in data directly translate to gaps in system confidence.
+*   **Monitoring is Key**: Implement alerts for data collection failures within test infrastructure to catch missing replay issues immediately rather than at the end of a test cycle.
+
+## Agent Use
+Use this page when:
+- A stability, replay, or regression lane reports `replay_missing`, `unknown`, or cannot verify a past execution window.
+
+Apply it by:
+- Check whether replay artifacts were produced, retained, and reachable before debugging product behavior.
+- Separate missing-data failures from live runtime failures in the report.
+
+Verify by:
+- Confirm replay lanes return a definitive pass or fail result.
+- Retrieve and inspect the expected replay data for the affected execution window.
+
+Do not use it when:
+- Replay artifacts exist and the failure is a live Slack delivery, routing, or model behavior regression.
+
+## Provenance
+*   Evidence derived from `log://openclaw/2026-05-20-03-24-40-stability-summary.txt` regarding Stability Smoke v2 post-deploy failures.

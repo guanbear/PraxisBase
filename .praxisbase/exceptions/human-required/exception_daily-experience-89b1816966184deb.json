@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-89b1816966184deb",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-54fe93b6d",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/affc243831d9884b3b1eb30194dd8941838d7bcbedeacd2d1121e0583a01e17a",
+    "source_hash": "sha256:54fe93b6dddf3463f41c43bce59270b43fd4ffb9d7414dadbf79db4088407f61",
+    "redacted_summary": "# 2026-03-02 Daily Notes ## 企业智能稳定性考试协助任务 - 用户发来截图（企业智能稳定性考试，总分100分，通过分数100分，共10题） - 考试内容包含：单选题2道（共20分）、多选题8道（共80分） - 截图可见题目： - 单选题1：触犯\"故障发现\"维度的故障红线 → 已选D（新增功能上线未加任何对应的监控告警，导致故障长时间未发现） - 单选题2：故障【根因追查】以及【待办跟进】的注意事项，不包括 - 选项A: 目的是确保相同故障不会重复发生 - 选项B: 故障已止损，暂时不看急查根因 - 选项C: 长线问题需要跟进到底 - 选项D: 临时止损不是最终目的 - 多选题1：变更通知中需要包含哪些内容（10分，漏选不得分） - 选项: A.影响范围 B.变更操作人员 C.变更开始时间 D.变更内容 - 需要读取飞书文档： - https://li.feishu.cn/wiki/VJ1Uw86MdinSvPklyIacCDolnKe - https://li.feishu.cn/wiki/JbdfwFdgliUeDAksQv2ceFcXnne - 已尝试用缺省应用 Tenant Token 读取 wiki → 权限不足（需要 wiki:wiki:readonly） - 已发送用户授权登录卡片（进程 kind-shore 等待中），等待用户点击授权 - 进程 kind-shore 仍在运行，等待 gaomingda 完成飞书登录授权",
+    "privacy_signature": "sha256:89b1816966184debe5b90702567a5a070620fea3326523d34342c418c84ed0b8",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

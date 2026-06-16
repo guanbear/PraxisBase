@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-81e477a050db55f0",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-c721715b0",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/38a33db7f206104cd1c4c23e53c37fac6416afeca945f552ea941b8881896d4f",
+    "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
+    "redacted_summary": "- Skills 安装等问题统一 mention/转给 周明珠（ou_a84b40e89669d1597e6e674d74ae95f3）处理；例外：openviking 相关问题都联系/mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4）处理（高明达 2026-06-10 指示）。 - TUI 连接/会话/退出后无法恢复等问题，优先分发/mention 周磊（ou_3d70f70c760d8bc7f73348bb92a3030d）处理（高明达 2026-06-04 指示）。 - Claude Code 相关问题一律不需要回答（高明达 2026-06-05 指示）。 - 飞书文档类问题统一回答：`https://openclaw.chj.cloud/skills 可以在这里看下有哪些飞书相关的skill，只留一个，推荐用 openclaw-lark。如果安装了还不行需要周明珠介入排查。` - 增加 bot / 主机申请 / 运行中实例限制 / 管理员配额类问题：不要自行展开解释，直接转给/mention 田雨（ou_295d2dd9402ec0ccbcbe4495bb8a18f2）解决。 - 机器人搜不到/无法加入群聊：不要转田雨；直接提示用户让飞书后台机器人的版本管理员修改机器人可见范围即可（高明达 2026-06-10 指示）。 - A2A 相关问题：转给/mention 刘刚（ou_78d417ab04a629e296c7c8bdc3ea917c）解答（高明达 2026-06-09 指示）。",
+    "privacy_signature": "sha256:81e477a050db55f020d8baed24351514923fa628a29845b4eea773f726bd217c",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

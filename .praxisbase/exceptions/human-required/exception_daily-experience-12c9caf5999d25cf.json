@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-12c9caf5999d25cf",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-85c6325c6",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/df7653b970e08d09eae123803c83a3ce7e16cdc3228c97eb02113a4f7d65be45",
+    "source_hash": "sha256:85c6325c60942c2d6c8e54503253ba6c2ef13e2b469126910947842a24f501a9",
+    "redacted_summary": "# 2026-05-11 Daily Notes ## 飞书机器人诊断（ou_17a0ae2d4c87a64e75294ea441084740） - 用户提供临时 SSH：`[REDACTED_IP]:443`，用户名 `root`，有效期 3 小时。 - 从当前环境尝试 SSH 连接时，在握手阶段被对端主动断开：`kex_exchange_identification: Connection closed by remote host`，尚未进入密码认证；更像来源限制/临时通道策略/网络入口问题，而非密码错误。 - 本地 OpenClaw 诊断结果：Feishu 通道已启用，`openclaw status` 显示 Channel=Feishu ON/OK。 - `openclaw logs` 证据表明 Feishu 入站正常：当前私聊消息于 `2026-05-11 11:08:40 +08:00` 被 `feishu[default]` 接收，并 `dispatching to agent (session=agent:pm:main)`。 - 配置检查：`channels.feishu.requireMention = true`，因此群聊里**未 @ 机器人**的消息会被明确忽略；日志中多次出现 `message in group ... did not mention bot`。 - 初步结论：当前不是“Feishu 完全收不到消息”，而是至少存在群聊未满足 @ 触发条件的问题；若用户感知为“机器人不回复”，还需继续区分是否有会话卡住/模型无产出。 - ironclaw templates 记录到的环境背景： - 受保护配置（如 `openclaw.json`、channel config）修改前要先说明、确认、备份； - 不要擅自 `openclaw update`",
+    "privacy_signature": "sha256:12c9caf5999d25cf302ef03efdabafe0d8d994b25aafeec9e1db9e0db7593728",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

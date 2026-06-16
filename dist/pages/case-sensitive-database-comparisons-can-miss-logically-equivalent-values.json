@@ -1,0 +1,21 @@
+{
+  "id": "case-sensitive-database-comparisons-can-miss-logically-equivalent-values",
+  "slug": "case-sensitive-database-comparisons-can-miss-logically-equivalent-values",
+  "title": "Case-sensitive database comparisons can miss logically equivalent values.",
+  "path": "kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md",
+  "kind": "procedure",
+  "scope": "personal",
+  "maturity": "draft",
+  "source_ids": [
+    "sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678",
+    "stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"
+  ],
+  "provenance_refs": [
+    {
+      "uri": "source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md",
+      "hash": "sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7"
+    }
+  ],
+  "signatures": [],
+  "body": "# Case-sensitive database comparisons can miss logically equivalent values.\n\n## When to Use\nUse this guidance when designing database schemas, writing SQL queries for lookups, or enforcing uniqueness constraints where case differences should be ignored (e.g., usernames, email addresses, or tags).\n\n## Context\nBy default, many database systems perform case-sensitive string comparisons. This behavior can lead to logical errors where `Value` and `value` are treated as distinct entities. If the application logic treats them as the same, this discrepancy can cause data duplication, failed lookups, or integrity violations.\n\n## Procedure\nTo ensure comparisons and uniqueness checks ignore case:\n\n1. Identify the columns requiring case-insensitive logic (e.g., `username`, `email`).\n2. Apply a case-insensitive collation to the column definition or index.\n   - In SQLite, use the `NOCASE` collation.\n   - In MySQL, use an appropriate case-insensitive collation such as a `_ci` collation for the target character set.\n   - In PostgreSQL, use a suitable case-insensitive strategy such as `citext`, a nondeterministic ICU collation, or a functional index on `lower(column)`, depending on schema and version constraints.\n3. When performing ad-hoc queries, explicitly cast or use collation functions if the column defaults to case-sensitive.\n\n## Verify\nTest lookups and constraints using mixed-case values:\n- Attempt to insert `User` and `user`; ensure the second insert fails if uniqueness is required.\n- Query for `USER` and ensure the record for `user` is returned.\n\n## Reusable Lessons\n- When database lookups or uniqueness checks should ignore case, use case-insensitive collation such as NOCASE for the relevant comparison or index.\n- Explicitly define collation at the schema level to avoid reliance on application-level normalization.\n\n## Agent Use\nUse this page when:\n- Case-sensitive database comparisons can miss logically equivalent values.\n\nApply it by:\n- Use case-insensitive collation such as NOCASE for the relevant comparison or index.\n\nVerify by:\n- Test lookups with mixed-case values.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)\n\n## Related Wiki Pages\n* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]\n* [[stale-caches-can-hide-current-behavior-or-serve-outdated-assets|Stale caches can hide current behavior or serve outdated assets]]"
+}

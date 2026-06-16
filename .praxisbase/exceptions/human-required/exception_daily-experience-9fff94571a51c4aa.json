@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-9fff94571a51c4aa",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-e3e17b88c",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/50d29fba45c04a740ad1845f4780bfec697499a8eca9598bd18a5c5e098c965c",
+    "source_hash": "sha256:e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+    "redacted_summary": "# 2026-03-03 Daily Notes ## Group Chat Activity (oc_8a7339d738dfbe70306fcd643041c1f3) ### 内网访问咨询 - 用户 ou_63ddd14ba366119196504e7bd8681a30 询问是否可以访问内网服务 - 回答：默认不能访问纯内网（10.x/192.168.x），除非有公网地址或 OpenClaw 部署在内网机器上 ### Skill 列表查询 - 用户 ou_78d417ab04a629e296c7c8bdc3ea917c 询问当前有哪些 skill - 已列出所有已安装 skills（系统工具、飞书集成、内容创作、数据报告、信息获取、开发工具） ### 语音识别功能咨询 - 用户 ou_c33181bcdf3f146a19cfac54e7b2460e 询问是否支持语音识别 + 语音回复 - 回答：TTS 输出支持；语音输入取决于飞书渠道配置 ### feishu-voice Skill 安装 - 用户 ou_c33181bcdf3f146a19cfac54e7b2460e 要求安装 feishu-voice skill - 来源：https://gitlab.chehejia.com/ai-market/lixiang-skills-marketplace/-/tree/master/packages/feishu-voice - 安装成功，路径：/workspace/agents/pm/.agents/skills/feishu-voice/ - 原理：通过 Gemini 多模态实现飞书语音 STT（.ogg/opus 格式） - **待完成**：需要配置 `google` provider（Gemini proxy baseUrl + apiKey）和 `tools.",
+    "privacy_signature": "sha256:9fff94571a51c4aa83ab6117c9ec295a9c1f2951f517050465346e44f733a297",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

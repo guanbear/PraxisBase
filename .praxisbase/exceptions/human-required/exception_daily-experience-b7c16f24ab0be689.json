@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-b7c16f24ab0be689",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-745fa543d",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/b9e879dee5e970e643cce67f6a587350eacae6a38c4a851400cb67d52f447384",
+    "source_hash": "sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
+    "redacted_summary": "- `/model` 只对当前会话临时生效。 - 即使提示“已更新默认模型”，也可能并未真正持久生效；应以 `/status` 为准。 - 开新对话、agent 重启、或派子 agent 干活后，会回到该 agent 自己配置的默认模型。 - 当前没有持久化办法，只能每次新对话重新 `/model`，直到后续产品改进上线。 - 通用补充： - 风格突然变化，常见原因是子 agent 在工作；子 agent 独立，可能使用自己的默认模型。 - 确认当前真实模型应使用 `/status`，不要靠自然语言直接问 agent “你是什么模型”。 - `/status` 只能看当前会话，不能看到刚才某个子 agent 用了什么模型。 - 改进方向：未来计划将 `/model` 改为直接、持久修改“当前这个 agent”的默认模型；但子 agent 使用独立默认模型的问题不在这次改进范围内。 - Temporarily do not answer questions/errors about inability to read Feishu documents in this group unless directly instructed otherwise. - Trigger scenario 3: if a user posts a screenshot or asks \"这个是怎么回事\" and the content/context indicates Feishu `access not configured` / pairing code. - When scenario 3 is triggered, answer using this guidance: - 先说明这是访问授权/配对未完成，不是普通业务报错。",
+    "privacy_signature": "sha256:b7c16f24ab0be689e8aee66b4ab5af78083209d11449d93afeb25dbad9d5227e",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-4116addd68e32657",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-8107f53d4",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319",
+    "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+    "redacted_summary": "- If the user already explicitly says both script repair and AI repair were tried and still failed, directly mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4） and 管志成（ou_17a0ae2d4c87a64e75294ea441084740） for follow-up instead of repeating the auto-repair guidance. 注意：不要误 @ 张瑞奇（ou_4514aa6582f32fd92d9c001fa3349f27）。 - Bot 经常“不响应”补充排查口径（管志成 2026-06-09）：openclaw-tui 不是 openclaw gateway；没响应时先看 WebUI 是否有工具调用，也可以换模型试试，很多时候是后台在干活或模型响应慢。 - Bot 不响应排查新增案例（管志成 2026-06-09）：Feishu 插件被禁用（`plugins.entries.feishu.enabled=false`）会导致 Feishu WebSocket 连接未建立、飞书消息无法收到；处理是 `openclaw plugins enable feishu` 并重启 Gateway，确认 bot open_id 解析成功、ws client ready、Gateway health OK 且 Feishu configured。 - Exception: for Feishu-specific read/write/document/tool permission issues after script + AI repair fail, mention/route to ",
+    "privacy_signature": "sha256:4116addd68e32657d5a81dc692735912f97301f7f65ae65314b7f49c8ad116a5",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

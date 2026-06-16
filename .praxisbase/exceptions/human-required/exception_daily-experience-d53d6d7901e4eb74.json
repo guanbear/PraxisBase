@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-d53d6d7901e4eb74",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-98477e0c8",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77",
+    "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+    "redacted_summary": "- 机器人搜不到/无法加入群聊：不要转田雨；直接提示用户让飞书后台机器人的版本管理员修改机器人可见范围即可（高明达 2026-06-10 指示）。 - A2A 相关问题：转给/mention 刘刚（ou_78d417ab04a629e296c7c8bdc3ea917c）解答（高明达 2026-06-09 指示）。 - LiClaw 休眠计费口径（田雨 2026-06-01 确认）：休眠期间不是完全不计费，按 0.1 元/天计费；后续用户问「休眠期间是否还计费/云电脑费用」时按此回答。 - 定时任务/龙虾定时器相关问题：提示用户可在控制台 WebUI 操作，路径：控制台 → WebUI → 左侧「定时任务」，可查看/删除等；当机器人口头说取消但实际未取消、人工触发后重复发送时，优先建议去这里处理。 - 云端 LiClaw/OpenClaw 申请的飞书机器人不要混用（高明达 2026-06-09 校正口径）。核心思想：飞书机器人不要与其他程序/工具复用；包括 Claude Code 调用飞书 CLI 配置飞书信息、本地搭建其他 agent 工具等；混用会导致机器人不回复、重复回复等棘手问题。对外表达要先讲核心结论，避免绕。 - For ordinary chat or messages outside the defined trigger scenarios, stay silent.",
+    "privacy_signature": "sha256:d53d6d7901e4eb745cafb2d81d85ecfa51dc73f0b0f318cfb78bbe551625c7bc",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

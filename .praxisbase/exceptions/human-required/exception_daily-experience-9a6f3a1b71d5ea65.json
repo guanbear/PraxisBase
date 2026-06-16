@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-9a6f3a1b71d5ea65",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-e1db2413e",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0",
+    "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+    "redacted_summary": "- 云端 LiClaw/OpenClaw 申请的飞书机器人不要混用（高明达 2026-06-09 校正口径）。核心思想：飞书机器人不要与其他程序/工具复用；包括 Claude Code 调用飞书 CLI 配置飞书信息、本地搭建其他 agent 工具等；混用会导致机器人不回复、重复回复等棘手问题。对外表达要先讲核心结论，避免绕。 - For ordinary chat or messages outside the defined trigger scenarios, stay silent. - If 高明达 / ou_d8d4047e9083cc44527a2429b4f757a4 is already participating in a topic, do not intervene in that topic unless directly asked/mentioned. ## Group Behavior Rule: oc_97951f2a5226dafe0decf5592d4e2726 - In this Feishu group, do not join the conversation unless explicitly @mentioned. - If not @mentioned, reply exactly `NO_REPLY`, even if the topic is related to cars, OpenClaw, or something the assistant could comment on. - This was a direct user instruction on 2026-05-20 after the assistant over-participated.",
+    "privacy_signature": "sha256:9a6f3a1b71d5ea6585f32fc21c7b10b463dd4173885ae07ca9e658fea58064e1",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

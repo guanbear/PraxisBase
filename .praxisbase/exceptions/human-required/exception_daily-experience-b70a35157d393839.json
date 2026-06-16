@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-b70a35157d393839",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-fe8edde7b",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/d0b80916bc0fefe7568dbcec7e9065210660de2babfd3ac867421f41cf3d0fde",
+    "source_hash": "sha256:fe8edde7b6d2208fd20d6fdc2605c5850b9b3ce9124b3069d7d41395a5d2b00e",
+    "redacted_summary": "- Trigger scenario 4: if users ask whether `lixiang-*` / `kivy-*` models can process confidential, L2, or sensitive company data, do NOT assert L2 is allowed by default. Emphasize that they should prioritize contacting the company confidentiality/security bot（公司保密机器人）or official data-security channel for the authoritative answer. Mention that model prefix alone is insufficient proof of authorization; use official policy, data classification, and minimization/desensitization. - Kimi 模型问题临时处理（2026-05-22）：新版 OpenClaw 中 `kimi-2.5` 已下线；`kimi-2.6` 暂时有问题。已收到反馈：不要在群里额外提示 Kimi 相关内容；除非用户明确追问 Kimi，否则不主动展开 Kimi 说明。 - Skills 安装等问题统一 mention/转给 周明珠（ou_a84b40e89669d1597e6e674d74ae95f3）处理；例外：openviking 相关问题都联系/mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4）处理（高明达 2026-06-10 指示）。 - TUI 连接/会话/退出后无法恢复等问题，优先",
+    "privacy_signature": "sha256:b70a35157d393839fd0af1d5a532ca78e59ea773f553df52dd2e995d403dd354",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

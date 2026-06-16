@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-d303f90af8f4af34",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-e9bac6dd0",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/b62c9fa15b3e0a157401ea147eb48780e09a4ee53a0eac41a75fef148e5aa3db",
+    "source_hash": "sha256:e9bac6dd0a2e114383858ac78fdda1f44c11486830bc69b33c30ec1dbfa1cb00",
+    "redacted_summary": "# MEMORY.md - User: ou_4d6506f2fc5e4f989e0672a33d7cc24e - First interaction: 2026-02-26 - User: ou_d8d4047e9083cc44527a2429b4f757a4 - First interaction: 2026-02-27 - 喜欢绿色 - User: ou_2375a992dea28a92946c5e897e37151b - First interaction: 2026-02-27 - User: ou_a690691bd462030c16e4b4c60ae99e2a - First interaction: 2026-02-28 ## 海报设计偏好 (ou_720d005e222d05c44b44dee631ae4dc0) - 风格：清晰明亮，橙色系为主色 - 布局：一页展示完全，不截断 - 不要侧边和底部装饰线条 - 字体字号：标题和内容都要大，由 AI 自主调整 - 要有 emoji / 卡通元素，不要太单调 - 要有设计感和审美，不要死板 ## Technical Issues ### Monitor logs 打开失败 (2026-03-05) - **现象**：`upstream connect error / Connection refused` - **根因**：crabwalk 进程异常退出 - **解决**：检查并重启 crabwalk 进程 ### 飞书机器人不回复，WebUI正常 (2026-04-16) - **现象**：WebUI 后台能正常对话，但飞书私聊/群聊机器人不回复 - **解决**：去 openclaw.chj.cloud → Skills 页面 → 更新飞书插件，然后重启实例 - **来源**：高明达确认，用户李熠柃验证修复",
+    "privacy_signature": "sha256:d303f90af8f4af3457d5967996905258d7a1771cee9f3207bba324a22a2a341f",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

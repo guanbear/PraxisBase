@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-0c7144ea57b21569",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-273a47187",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/484cde15e8baa9ab50030ad9353c818170a940a08bfeb16a30292e512ef2dad3",
+    "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+    "redacted_summary": "- If users ask how to query model pricing/cost and capabilities,统一简短回答：`/models`。 - Trigger scenario 2: if a user asks why `/model` switched back, why the model seems to change automatically, why a new conversation is using a different model, or similar questions about model switching/persistence. - Also if the screenshot/error indicates model-service failure or context error after switching models, use the fixed guidance: remind the user to switch models; the cause is known — context errors caused by switching between different models; admins will fix this in the next version. - When scenario 2 is triggered, answer using this guidance: - `/model` behavior depends on whether the current agent has its own explicitly configured default model. - A类：agent 没被单独设过模型 - `/model` 切换通常会持久生效；新对话、重启后一",
+    "privacy_signature": "sha256:0c7144ea57b21569f6faa82a2b5b0bc497656ae8aec027e3ffb14c5be77bcf65",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

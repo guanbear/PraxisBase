@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-c68d16c6183965d2",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-b6f7162b2",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/bffaaa4ffa03556187d8952f2030cb47101788d96ea465164e3621fa61e116a0",
+    "source_hash": "sha256:b6f7162b264f865e42d5fa59a487ffdfaff9befe7eec5d690b6a2902da697db9",
+    "redacted_summary": "- find-skills 已通过 `npx [REDACTED_USER_HOST] install find-skills` 安装到 `/workspace/skills/find-skills` - 当前自定义 Skill 列表（共11个）：dify-dsl-generator, excel-report-generator, github-readme-generator, github-trending, jimeng_mcp_skill, seedance-video-creator, siliconflow-api-skills, unnamed-skill, wechat-article-aggregator, wechat-article-fetcher, xiaohuihui-dify-tech-article - jimeng_mcp_skill 路径：`/workspace/agents/pm/skills/jimeng_mcp_skill/` - jimeng-free-api-all Docker 容器未运行，视频生成功能不可用 ### 微信文章抓取 - 微信文章防爬机制导致直接抓取超时，搜索引擎也无法索引，建议用户直接在微信中阅读或粘贴文字 ## 技术状态 - feishu-almighty skill 路径：/workspace/openclaw/skills/feishu-almighty - get-user-token=[REDACTED] 已确认可用 - Tenant Token=[REDACTED] wiki 权限不足 - 需要用户授权后继续 ## 第二次考试协助任务（同日，不同群） - 群：oc_d5a8a8cafe0a986305f7a0782b5b886b - 用户发来两张截图，内容为故障处理与变更管理考试 - 考试题目（共10题，单选1道+多选9道",
+    "privacy_signature": "sha256:c68d16c6183965d22834c0fe2e56710406c87645889c1a10118c9185a858a0ea",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

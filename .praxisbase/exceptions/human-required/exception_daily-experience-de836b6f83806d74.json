@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-de836b6f83806d74",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-cfcba5397",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2a4220e4ecc01009e3a73ac8aa34773399b262779c1c919e234e023e41bae846",
+    "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+    "redacted_summary": "# 2026-02-26 - User greeted me.",
+    "privacy_signature": "sha256:de836b6f83806d74055b3f21b3180e6cb0c09637a817c0a3a62629810b78bc9e",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

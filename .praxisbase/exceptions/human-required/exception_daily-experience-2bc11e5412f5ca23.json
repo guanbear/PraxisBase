@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-2bc11e5412f5ca23",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-dd5113c71",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5",
+    "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+    "redacted_summary": "- **多选题9**：变更通知中需要包含哪些内容 → 答案：**ABCD**（全选） - 飞书文档需要登录才能访问，未能读取 - 最终基于云平台/SRE行业通用规范给出了答案（有不确定性，提示用户对照文档验证） ## 需求文档审查请求（群 oc_c3a41eeb30a7f36f8d0517a883bb8adc） - 用户发来需求文档链接：https://li.feishu.cn/wiki/POAQwkbPoixdijkKWvVcoQW4nWe - 请求：需求文档审查 - 尝试读取文档：cfe-feishu-server 代理返回 403（账号 gaomingda 无权限） - 尝试 feishu-almighty 缺省应用 Tenant Token 读取 wiki → 权限不足（99991672，需要 wiki:wiki:readonly） - 尝试触发用户授权登录流程 → 已终止（等待时间过长） - 直接 web_fetch 飞书文档 → 需要登录，跳转到登录页 - 已回复用户说明权限问题，请用户粘贴文档内容或确认文档权限",
+    "privacy_signature": "sha256:2bc11e5412f5ca23b94f2749f859c7a5d62b7c4c1bb66ab635e5a9583cc32344",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

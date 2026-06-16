@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-a8d30ee6c5b41907",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-8deb4f5e6",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2dbf07e37f67ccfc42d3b5801baae2f431e08ab6cfc440ecc9c21500354564ad",
+    "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+    "redacted_summary": "- 原理：通过 Gemini 多模态实现飞书语音 STT（.ogg/opus 格式） - **待完成**：需要配置 `google` provider（Gemini proxy baseUrl + apiKey）和 `tools.media.audio` 并重启 Gateway - 用户尚未提供 Gemini proxy 配置，等待跟进 ## Group Chat Activity (oc_d5a8a8cafe0a986305f7a0782b5b886b) ### 今日热点整理 - 用户 ou_0ab9a80cf7489440f3f045ce1f19f461 请求整理当日热点 - 整理并发送了 2026-03-03 热点：两会开幕、反腐动态、元宵月全食、中东局势、AI产业进展 ### Claude Code vs OpenClaw 源码分析 - 用户请求对比分析两者架构，从功能反推源码实现 - 完成了详细技术分析报告，内容包括： - Agentic Loop 核心流程对比（均为 LLM + Tool Call 循环） - Claude Code 四大工具实现（bash/read/write/edit）+ Steering 机制 - OpenClaw 三层架构（Channel → Gateway → Agent）+ WebSocket 协议 - Cron 调度系统、Compaction、会话持久化、沙盒权限模型 - 提供了 Python 最小 Coding Agent 实现示例（~100行） - 响应被截断（compaction 触发前）",
+    "privacy_signature": "sha256:a8d30ee6c5b41907edbd971ebe6470227c34fa876b86984029f6ebdbbf5e291c",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

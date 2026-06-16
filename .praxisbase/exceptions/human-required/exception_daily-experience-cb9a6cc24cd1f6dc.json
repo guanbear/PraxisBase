@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-cb9a6cc24cd1f6dc",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-f1d3f2e21",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6d26893d8543d3c19d5418337825924ef91012347381c7ad28429e59fc1b0b99",
+    "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
+    "redacted_summary": "# 2026-02-13 ## Troubleshooting - **Stuck Bot**: User reported bot was unresponsive to `/new` / `/reset`. - **Diagnosis**: Gateway process likely hung or crashed due to bad config (invalid model URL). - **Fix**: `openclaw gateway restart` (and check logs/config if it fails again). ## Configuration - **MCP (Model Context Protocol)**: User asked about installing Claude's MCP tool system. - **Context**: OpenClaw supports MCP via the **Claude Code CLI backend**. - **Config**: To enable MCP in the CLI backend, set `OPENCLAW_LIVE_CLI_BACKEND_DISABLE_MCP_CONFIG=0`. - **Reference**: `docs/gateway/cli-backends.md` and `docs/help/testing.md`.",
+    "privacy_signature": "sha256:cb9a6cc24cd1f6dcd22cac94e54a36d4a7994ee69b2fae490304d52a18bfbc8f",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

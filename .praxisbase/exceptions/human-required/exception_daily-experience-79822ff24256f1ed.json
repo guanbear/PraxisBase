@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-79822ff24256f1ed",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-803b9fd01",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/bed5aceb1333da5f2cd30306923dd74c9879ab134792e0150c4ae198381c57bc",
+    "source_hash": "sha256:803b9fd01b10c489d9bab732b9897d9e763075d3a8e1b7f33fccb01a3ac69de8",
+    "redacted_summary": "- 所有触发均以 NO_REPLY 静默处理，无用户可见输出 - 该 cron 任务可考虑禁用或删除（已完成使命，持续运行浪费资源） ## 飞书项目 Open API 调查（下午） - 群 `oc_a7e01d69fa0233d9baee814022112057` 用户询问能否获取「NEW企业系统项目管理」空间的需求信息 - 空间地址：`https://project.feishu.cn/yhsy_pmp/setting/integrationManagement`，project_key = `yhsy_pmp` - 飞书项目（project.feishu.cn）的 Open API **独立于飞书开放平台**，使用 `X-PLUGIN-TOKEN` 认证 - 关键接口：`POST https://project.feishu.cn/open_api/{project_key}/work_item/filter` - 需要用户在飞书项目集成管理中创建 Plugin 并提供 Plugin Token=[REDACTED] - feishu-almighty 技能有新版本 1.7.8（本地 1.7.5），提示用户可升级，待确认",
+    "privacy_signature": "sha256:79822ff24256f1ed869cf3f3a3dfe5996617be75347fe7c9a900db232182b41b",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

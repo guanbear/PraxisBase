@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-ad405f88f6d334a4",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-4b2bab827",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76",
+    "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+    "redacted_summary": "# 2026-03-05 Daily Notes ## prd-clarify 技能安装 - 用户通过命令 `npx skills add https://gitlab.chehejia.com/ai-market/lixiang-skills-marketplace/-/tree/master/packages/prd-clarify` 安装了 `prd-clarify` 技能 - 安装路径：`/workspace/agents/pm/.agents/skills/prd-clarify`（symlink → OpenClaw） - 技能来源：GitLab `gitlab.chehejia.com/ai-market/lixiang-skills-marketplace`，分支 `master`，路径 `packages/prd-clarify` - 安装成功，code 0 - 技能功能：多级别(L0-L2)深度审查PRD，生成P0/P1/P2分级报告 ## 其他事项 - 有用户在群 `oc_a7e01d69fa0233d9baee814022112057` 请求写飞书文档关于\"理想期车\"，但登录授权超时未完成（等待175秒后失败） - 用户尝试了 `/plugin install [REDACTED_USER_HOST]`（不支持的命令），后改用 npx 方式成功安装 ## claude-recovery-check Cron 状态（全天） - 该 cron 任务每 30 分钟运行一次，全天检查均显示 `claudeRecoveredNotified: true` - Claude 模型恢复通知已于 2026-02-28 18:21 发送过，无需重复操作 - 所有触发均以 NO_REPLY 静默处理，无用户可见输出 - 该 cron ",
+    "privacy_signature": "sha256:ad405f88f6d334a4a7f5962bf4a5e26b7bc8b76ecc70f0e60b584fae67c8a8e6",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

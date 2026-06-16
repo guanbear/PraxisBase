@@ -1,0 +1,48 @@
+Case-sensitive database comparisons can miss logically equivalent values.
+
+# Case-sensitive database comparisons can miss logically equivalent values.
+
+## When to Use
+Use this guidance when designing database schemas, writing SQL queries for lookups, or enforcing uniqueness constraints where case differences should be ignored (e.g., usernames, email addresses, or tags).
+
+## Context
+By default, many database systems perform case-sensitive string comparisons. This behavior can lead to logical errors where `Value` and `value` are treated as distinct entities. If the application logic treats them as the same, this discrepancy can cause data duplication, failed lookups, or integrity violations.
+
+## Procedure
+To ensure comparisons and uniqueness checks ignore case:
+
+1. Identify the columns requiring case-insensitive logic (e.g., `username`, `email`).
+2. Apply a case-insensitive collation to the column definition or index.
+   - In SQLite, use the `NOCASE` collation.
+   - In MySQL, use an appropriate case-insensitive collation such as a `_ci` collation for the target character set.
+   - In PostgreSQL, use a suitable case-insensitive strategy such as `citext`, a nondeterministic ICU collation, or a functional index on `lower(column)`, depending on schema and version constraints.
+3. When performing ad-hoc queries, explicitly cast or use collation functions if the column defaults to case-sensitive.
+
+## Verify
+Test lookups and constraints using mixed-case values:
+- Attempt to insert `User` and `user`; ensure the second insert fails if uniqueness is required.
+- Query for `USER` and ensure the record for `user` is returned.
+
+## Reusable Lessons
+- When database lookups or uniqueness checks should ignore case, use case-insensitive collation such as NOCASE for the relevant comparison or index.
+- Explicitly define collation at the schema level to avoid reliance on application-level normalization.
+
+## Agent Use
+Use this page when:
+- Case-sensitive database comparisons can miss logically equivalent values.
+
+Apply it by:
+- Use case-insensitive collation such as NOCASE for the relevant comparison or index.
+
+Verify by:
+- Test lookups with mixed-case values.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]
+* [[stale-caches-can-hide-current-behavior-or-serve-outdated-assets|Stale caches can hide current behavior or serve outdated assets]]

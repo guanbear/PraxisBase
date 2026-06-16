@@ -1,0 +1,12 @@
+{
+  "id": "wiki-human_required_broken-wikilink-kb-known-fixes-ack-timing-before-long-running-agent-work-md",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "rule": "broken_wikilink",
+  "reason": "Broken wikilink target: openclaw-gateway-restart-after-configuration-changes",
+  "details": {
+    "target": "openclaw-gateway-restart-after-configuration-changes"
+  },
+  "created_at": "2026-06-16T02:36:28.063Z"
+}

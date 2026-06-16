@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-251024cf3fc2ffaf",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-b2390ce0f",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8e67df0474158324d567a04e84259a42f270e98d526843e017885e03d2717604",
+    "source_hash": "sha256:b2390ce0fa0be3b8618eb20ef2a5810b64d260fd2001ed965b95988d6573a9ca",
+    "redacted_summary": "# 2026-02-28 ## Browser Login Task - User (ou_a690691bd462030c16e4b4c60ae99e2a) in group oc_3bd0b31badd33f2174384dcc4b6ad7d8 requested browser login to lixiang.com - First attempted www-ontest.lixiang.com — got 403 Forbidden (test env, needs VPN/internal network) - Then attempted www.lixiang.com — successfully logged in via password=[REDACTED] tab - Login URL: `https://www.lixiang.com/login.html?originalUrl=https%3A%2F%2Fwww.lixiang.com%2F%3FregisterAction%3D107%23li` - Account: 18501113247, password=[REDACTED] - Key finding: lixiang.com login page has two tabs: \"验证码登录\" (default) and \"密码登录\" — need to switch tab for password=[REDACTED] - Agreement checkbox (用户协议) must be clicked before login button works - Model was switched to vendor-claude-google/google-claude-opus-4-6 during session ## Notes - The open",
+    "privacy_signature": "sha256:251024cf3fc2ffaf8288b327445e1b70b2a8727c929f03a6e5acb85baa9e536e",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

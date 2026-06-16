@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-5ca220d0a850d0ac",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-3be56fa6f",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/1c1298ecee8a363877826c3bcccde76a51bece133987640fd85db86595b36eca",
+    "source_hash": "sha256:3be56fa6f21b34450a0ff865f070fe94f315badb484369503e8e0ed2e2aeb983",
+    "redacted_summary": "# 2026-03-04 Daily Notes ## Group Chat: oc_a7e01d69fa0233d9baee814022112057 ### Skills安装问题 - 用户 ou_c1aad6b8e27a0de6df116884b899f255 询问如何安装skills - 回复了两种方式：ClaWHub在线安装 + 手动安装到 skills/ 目录 ### 每日Bug提醒任务（未完成） - 用户需求：每日早9点，查询飞书项目 https://project.feishu.cn/yhsy_pmp/story/homepage 中本周进行中的项目，找到本人未解决的Bug，以表格形式发消息给用户自己 - 技术方案：使用飞书项目 Open API + cron job - 项目空间：yhsy_pmp - API路径：`/open_api/:project_key/work_item/filter`（过滤缺陷类型工作项） - 发送目标：发给用户本人（私信） - 授权状态：**未完成** - 尝试获取用户Token=[REDACTED] gaomingda，但用户175秒内未完成授权，超时 - 下一步：等待用户重新点击授权，或确认是否收到授权卡片 ### feishu-almighty skill 版本 - 当前版本：1.7.5 - 最新版本：1.7.7 - 用户未确认是否升级 ## 技术备注 - 飞书项目（project.feishu.cn）API属于业务协作类，应使用**用户应用**（不带--default-app）获取User Token - 飞书项目API文档页面是JS渲染，web_fetch无法直接抓取内容 - API端点：`POST https://project.feishu.cn/open_api/{project_key}/work_item/filt",
+    "privacy_signature": "sha256:5ca220d0a850d0ac1d1a0a90170cac66a203aa0c16ccab38a9021bef198df4fc",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

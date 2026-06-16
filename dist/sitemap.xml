@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>/index.html</loc></url>
+  <url><loc>/pages/ack-timing-before-long-running-agent-work.html</loc></url>
+  <url><loc>/pages/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.html</loc></url>
+  <url><loc>/pages/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.html</loc></url>
+  <url><loc>/pages/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.html</loc></url>
+  <url><loc>/pages/changes-can-introduce-regressions-when-not-tested-after-modification.html</loc></url>
+  <url><loc>/pages/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.html</loc></url>
+  <url><loc>/pages/openclaw-dispatch-routing-failures.html</loc></url>
+  <url><loc>/pages/openclaw-slack-replay-and-post-deploy-stability-failures.html</loc></url>
+  <url><loc>/pages/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.html</loc></url>
+  <url><loc>/pages/skill-openclaw-openclaw-dispatch-routing-failures.html</loc></url>
+  <url><loc>/pages/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.html</loc></url>
+</urlset>

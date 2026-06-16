@@ -1,0 +1,667 @@
+# PraxisBase Wiki
+
+Agent-readable knowledge exports.
+
+## ACK timing before long-running agent work
+Path: kb/known-fixes/ack-timing-before-long-running-agent-work.md
+Kind: pitfall
+
+# ACK timing before long-running agent work
+
+## When to Use
+Use this guidance when an agent is about to initiate any operation that may take more than a few seconds to complete, specifically:
+
+* Executing external tools or plugins.
+* Making network requests or API calls.
+* Dispatching tasks to runners (e.g., OctoClaw).
+* Performing complex analysis or deep reasoning that delays response.
+* Encountering periods of system unresponsiveness or diagnostic debugging.
+
+## Symptoms or Context
+* Users perceive the agent as "slow" or "unresponsive" even when the system is functioning correctly.
+* Client-side timeouts occur because the agent holds the connection open while processing long-running tasks.
+* User feedback indicates a need for confirmation that a request was received.
+* Interactive sessions feel sluggish due to the lack of immediate feedback during task execution.
+* Subagents running at maximum depth combined with dispatch errors might fail silently if the user assumes the system has hung.
+
+## Operating Rule
+Always send a brief, user-facing acknowledgment (ACK) immediately after receiving a request, before initiating any long-running operation.
+
+### Procedure
+1. **Receive Request**: Accept the user input or trigger event.
+2. **Send Immediate ACK**: Output a short, synchronous confirmation message immediately. Examples include:
+   * "Received, looking into it."
+   * "Processing..."
+   * "On it."
+3. **Execute Task**: Proceed with the actual operation (tool use, network call, dispatch).
+4. **Deliver Result**: Provide the final output once the operation completes.
+
+This rule applies regardless of the pipeline being used, including OpenClaw/OctoClaw dispatch systems. Before deep-diving into network or tool failures during periods of unresponsiveness, first acknowledge the delayed state to prevent redundant process spawning.
+
+## Verify
+* Check that the agent sends a response within 1-2 seconds of the user prompt.
+* Review interaction logs to ensure an ACK message precedes all tool calls or network activity.
+* Confirm that user feedback regarding "slowness" decreases after implementation.
+* Validate that dispatch systems do not fail silently; an ACK confirms receipt even if the dispatch backend experiences issues.
+
+## Reusable Lessons
+* Sending an immediate ACK before processing prevents client-side timeouts and significantly improves perceived responsiveness.
+* Failing to ACK long-running tasks degrades user experience and perceived agent reliability.
+* During periods of unresponsiveness or diagnostic debugging, acknowledging the delayed state first prevents redundant process spawning or confusion about system status.
+* Health/Version checks should be strictly isolated from complex analytical tasks in subagent dispatch architectures to prevent confusion during ACK sequences.
+
+## Agent Use
+Use this page when:
+- A task will use tools, network calls, subagents, dispatch runners, or other work that may take more than a few seconds.
+
+Apply it by:
+- Send a short ACK before starting the slow work.
+- Then continue with the tool, dispatch, or analysis work and report progress when useful.
+
+Verify by:
+- Confirm the user sees an initial response within 1-2 seconds.
+- Check that the ACK appears before tool calls or dispatch activity in the interaction log.
+
+Do not use it when:
+- The request can be answered immediately without tools, waiting, or delegation.
+
+## Provenance
+- source-inventory://openclaw/../../.openclaw/memory/main.sqlite#2953ee38f9c8a6422d41165b5fedbc1af5d54c9582d035f952badea4ec101ed8 (sha256:060dbc5e4afaa6b9ec682a179dc67ae90338fbc616243ecf02c61e3b43f56e27)
+
+## Related Wiki Pages
+* [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
+* [[openclaw-gateway-restart-after-configuration-changes|OpenClaw gateway restart after configuration changes]]
+* [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
+
+## Actions on the wrong target machine or host can cause unsafe operational changes.
+Path: kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md
+Kind: procedure
+
+# Actions on the wrong target machine or host can cause unsafe operational changes.
+
+## When to Use
+Use this procedure before performing any restart, modification, or operational action on a system, server, or host.
+
+## Context
+Operational actions often involve destructive or disruptive changes such as restarts or configuration mutations. Performing these actions on the wrong target machine can lead to service outages, data loss, or unsafe operational states. Verification of the target identity is a critical safety step.
+
+## Procedure
+Before initiating any operational action:
+
+1.  Pause before executing the command or change.
+2.  Confirm the target machine or host matches the intended target specified in the operation plan or ticket.
+3.  Validate that the session context, terminal prompt, or management console is connected to the correct host.
+4.  Proceed with the action only after confirmation is successful.
+
+### Operating Rule
+Do not restart or mutate systems before confirming the target.
+
+## Verify
+Verify the selected target matches the intended machine or host by checking the hostname, IP address, or unique system identifier against the operational instructions.
+
+## Reusable Lessons
+*   Before restarting, modifying, or operating on a target machine or host, confirm the target machine or host before taking action.
+*   Do not restart or mutate systems before confirming the target.
+
+## Agent Use
+*   **Use this page when:** An agent is about to execute a shell command, API call, or configuration change that affects system state (restart, stop, modify).
+*   **Apply it by:** Interrogating the current environment (e.g., running `hostname`, checking environment variables, or verifying session metadata) to ensure it aligns with the requested target parameters provided in the task prompt.
+*   **Verify by:** Cross-referencing the discovered environment details with the target details in the user prompt or task definition before emitting the final tool call or command.
+*   **Do not use it when:** Performing read-only operations that do not alter state or target machines, or when the operation is explicitly context-agnostic (e.g., local temporary resource generation).
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]
+* OpenClaw gateway restart after configuration changes
+
+## Agents can mislead users if failures are reported as successful outcomes.
+Path: kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md
+Kind: known_fix
+
+# Agents can mislead users if failures are reported as successful outcomes.
+
+## When to Use
+Use this guidance when designing or operating agents that perform operations, delegate tasks, or enforce guards. It is particularly relevant when implementing error handling, status reporting, or verification logic.
+
+## Symptoms or Context
+Agents may report a task as "completed" or "successful" even when the underlying work failed, returned an error, or the outcome could not be verified. This creates a false sense of security and can lead to data inconsistency or further operational failures.
+
+## What To Do
+Implement a "fail closed" strategy for all operations, delegations, and guards. If an operation fails, returns an uncertain status, or cannot be verified, the agent must explicitly state the failure. **Do not pretend success when the underlying work failed or was not verified.**
+
+## Verify
+Check that success is only reported after confirmed successful completion of the task. Ensure that any exception, error code, or timeout results in a failure status being communicated to the user or calling system.
+
+## Reusable Lessons
+* When an operation, delegation, or guard fails or returns uncertain status, fail closed and state the failure honestly instead of claiming success.
+* Do not pretend success when the underlying work failed or was not verified.
+
+## Agent Use
+* **Use this page when:** You are implementing agent logic that handles external API calls, file system operations, or sub-agent delegation, specifically within the error handling or response generation blocks.
+* **Apply it by:** Ensuring your control flow strictly separates "executed" and "verified successful." Only return a success signal if the verification step passes.
+* **Verify by:** Reviewing logs and traces to confirm that no successful status codes were returned corresponding to error IDs or exception logs.
+* **Do not use it when:** The operation is a pure "best effort" fire-and-forget task where verification is explicitly defined as out of scope (though this should be rare in high-stakes environments).
+
+## Provenance
+- source-inventory://openclaw/../../.openclaw/memory/main.sqlite#5e011796e9e4e2b34d4f2621e990675c478d8ba0964a678077a22b582a523d70 (sha256:ad9b1897cf677fe8407009f01998a4b3dd6452f9eedff1056e6fe1a5cdfec94d)
+
+## Related Wiki Pages
+ACK timing before long-running agent work
+[[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
+OpenClaw gateway restart after configuration changes
+[[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
+
+## Case-sensitive database comparisons can miss logically equivalent values.
+Path: kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md
+Kind: procedure
+
+# Case-sensitive database comparisons can miss logically equivalent values.
+
+## When to Use
+Use this guidance when designing database schemas, writing SQL queries for lookups, or enforcing uniqueness constraints where case differences should be ignored (e.g., usernames, email addresses, or tags).
+
+## Context
+By default, many database systems perform case-sensitive string comparisons. This behavior can lead to logical errors where `Value` and `value` are treated as distinct entities. If the application logic treats them as the same, this discrepancy can cause data duplication, failed lookups, or integrity violations.
+
+## Procedure
+To ensure comparisons and uniqueness checks ignore case:
+
+1. Identify the columns requiring case-insensitive logic (e.g., `username`, `email`).
+2. Apply a case-insensitive collation to the column definition or index.
+   - In SQLite, use the `NOCASE` collation.
+   - In MySQL, use an appropriate case-insensitive collation such as a `_ci` collation for the target character set.
+   - In PostgreSQL, use a suitable case-insensitive strategy such as `citext`, a nondeterministic ICU collation, or a functional index on `lower(column)`, depending on schema and version constraints.
+3. When performing ad-hoc queries, explicitly cast or use collation functions if the column defaults to case-sensitive.
+
+## Verify
+Test lookups and constraints using mixed-case values:
+- Attempt to insert `User` and `user`; ensure the second insert fails if uniqueness is required.
+- Query for `USER` and ensure the record for `user` is returned.
+
+## Reusable Lessons
+- When database lookups or uniqueness checks should ignore case, use case-insensitive collation such as NOCASE for the relevant comparison or index.
+- Explicitly define collation at the schema level to avoid reliance on application-level normalization.
+
+## Agent Use
+Use this page when:
+- Case-sensitive database comparisons can miss logically equivalent values.
+
+Apply it by:
+- Use case-insensitive collation such as NOCASE for the relevant comparison or index.
+
+Verify by:
+- Test lookups with mixed-case values.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]
+* [[stale-caches-can-hide-current-behavior-or-serve-outdated-assets|Stale caches can hide current behavior or serve outdated assets]]
+
+## Changes can introduce regressions when not tested after modification
+Path: kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md
+Kind: pitfall
+
+# Changes can introduce regressions when not tested after modification
+
+## When to Use
+Use this page when performing modifications to code, configuration, or operational procedures. It is particularly relevant when deploying changes to production environments or critical systems where stability is paramount.
+
+## Context
+Changes are a constant in system development and maintenance. However, even minor adjustments can have unintended side effects on existing functionality. Assuming a change is successful based solely on successful implementation, without validating system behavior, often leads to regressions that go undetected until they cause operational failures.
+
+## Operating Rule
+After making code, configuration, or operational changes, run a self-test or verification immediately following the modification. 
+
+**Do not** claim the change is complete without post-change verification.
+
+## Procedure
+1.  Implement the required code, configuration, or operational change.
+2.  Identify the relevant test suite or verification command for the modified component.
+3.  Execute the self-test or verification process.
+4.  Analyze the results to ensure the system behaves as expected.
+5.  Only mark the task as complete if verification passes.
+
+## Verify
+Use the relevant test or verification command associated with the modified component and confirm that it passes. Ensure that existing functionality remains unaffected by the change.
+
+## Reusable Lessons
+*   After making code, configuration, or operational changes, run a self-test or verification after the change.
+*   Do not claim the change is complete without post-change verification.
+
+## Agent Use
+*   **Use this page when:** You are instructed to modify system code, update configuration files, or alter operational workflows.
+*   **Apply it by:** Immediately triggering the defined verification step or test suite associated with the specific component you modified.
+*   **Verify by:** Checking the output of the test or verification command for a success state and confirming no new errors were introduced.
+*   **Do not use it when:** Performing read-only operations or when a verification mechanism does not exist for the specific component (in which case, flag the need for a test).
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes|Actions on the wrong target machine or host can cause unsafe operational changes]]
+* ACK timing before long-running agent work
+
+## Missing replay data compromises the ability to debug or verify past execution behaviors
+Path: kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md
+Kind: known_fix
+
+# Missing replay data compromises the ability to debug or verify past execution behaviors
+
+## When to Use
+Use this guidance when executing stability tests (e.g., Stability Smoke v2) or nightly replay lanes result in failures specifically related to missing replay data. This is particularly relevant for post-deployment verification where historical execution behavior must be validated.
+
+## Symptoms
+*   Execution of stability test suites (e.g., `Stability Smoke v2`) fails during post-deployment checks.
+*   Error logs indicate a `replay_missing` error within nightly replay processes.
+*   The inability to verify the status of specific lanes (e.g., unknown status for nightly lanes) while others may pass or fail explicitly (e.g., `slack_delivery` failure).
+*   General compromise in the ability to debug or verify past execution behaviors due to data gaps.
+
+## Context
+In complex system testing, particularly post-deployment, replay data is essential for ensuring that the system behaves as expected under load or specific conditions. When this data is missing, the integrity of the stability check is compromised, leaving certain execution paths unverified.
+
+## Fix
+To resolve issues stemming from missing replay data and ensure successful stability verification:
+
+1.  **Investigate Data Pipelines**: Check the ingestion and storage mechanisms responsible for capturing replay data during the execution window.
+2.  **Validate Collection Jobs**: Ensure that background jobs or agents responsible for collecting logs and state data for replay did not fail silently.
+3.  **Retry Data Collection**: If possible, trigger a retry for the missing data collection or re-run the specific test case to generate the required replay artifacts.
+4.  **System Health Check**: Verify that storage systems (databases, object storage) are healthy and accessible to the test infrastructure.
+5.  **Address Root Cause**: Identify why the data was missing (e.g., resource exhaustion, network partitioning) and apply patches to prevent recurrence in future test runs.
+
+## Verify
+Confirm the resolution by:
+*   Re-running the Stability Smoke v2 or relevant test suite and observing the absence of `replay_missing` errors.
+*   Checking that nightly replay lanes report a definitive status (pass/fail) rather than remaining unknown.
+*   Successfully retrieving and inspecting the replay data for the specific execution window to validate past behaviors.
+
+## Reusable Lessons
+*   **Data Integrity is Critical**: Stability tests are only as good as the data they produce; gaps in data directly translate to gaps in system confidence.
+*   **Monitoring is Key**: Implement alerts for data collection failures within test infrastructure to catch missing replay issues immediately rather than at the end of a test cycle.
+
+## Agent Use
+Use this page when:
+- A stability, replay, or regression lane reports `replay_missing`, `unknown`, or cannot verify a past execution window.
+
+Apply it by:
+- Check whether replay artifacts were produced, retained, and reachable before debugging product behavior.
+- Separate missing-data failures from live runtime failures in the report.
+
+Verify by:
+- Confirm replay lanes return a definitive pass or fail result.
+- Retrieve and inspect the expected replay data for the affected execution window.
+
+Do not use it when:
+- Replay artifacts exist and the failure is a live Slack delivery, routing, or model behavior regression.
+
+## Provenance
+*   Evidence derived from `log://openclaw/2026-05-20-03-24-40-stability-summary.txt` regarding Stability Smoke v2 post-deploy failures.
+
+## OpenClaw dispatch routing failures
+Path: kb/known-fixes/openclaw-dispatch-routing-failures.md
+Kind: known_fix
+
+# OpenClaw dispatch routing failures
+
+## When to Use
+
+Apply this guidance when:
+
+* OpenClaw or OctoClaw runners fail with `ReferenceError: stickyResult is not defined`.
+* Post-deploy smoke tests report structural mismatches in delegation routes (e.g., expected `delegate` but got `reply`).
+* The task queue shows zero active tasks or "Runner: missing" despite incoming requests.
+* Sub-agent spawn attempts fail due to canonical hash mismatches or parameter validation errors.
+* Long-running agent work is initiated without an initial user acknowledgment, leading to perceived unresponsiveness.
+
+## Symptoms or Context
+
+* **Runtime Dispatch Errors**: The `octoclaw_dispatch` process fails consecutively, often resulting in a complete inability to process tasks.
+* **Structural Validation Failures**: In `slack_delivery` lanes, structural assertions regarding delegation route, footer, and transport mechanisms fail, even if message content is valid.
+* **Hash Mismatches**: Sub-agent spawning fails because the canonical hash generated during dispatch does not match the hash received during spawn (`sessions_spawn` parameter validation failure).
+* **Empty Status Panels**: The OctoClaw status panel indicates no running, queued, or recently completed tasks, suggesting a total dispatch failure rather than a delay.
+* **Perceived Timeouts**: Tasks involving tools, internet access, or dispatch execution appear stalled because the agent did not send an immediate ACK message.
+
+## What To Do
+
+### Implement Asynchronous Acknowledgment Protocol
+
+To mitigate user perception of delays during long-running operations:
+
+1. Send a brief ACK (e.g., "收到，处理中") **immediately** before executing tasks that require tools, internet access, or dispatch.
+2. Ensure this ACK is sent for any task expected to take longer than a few seconds.
+3. This protocol is critical for maintaining user trust during sub-agent spawning or complex workflow execution.
+
+### Diagnose the Dispatch Layer
+
+When tasks fail to produce expected analysis or execution results, verify the health of the underlying dispatch/orchestration layer before investigating the analytical logic.
+
+1. Check for `stickyResult is not defined` errors in logs, which indicate a systemic routing error in the dispatch chain.
+2. Inspect the dispatched plan payload to ensure tasks are not incorrectly mapped to basic system checks (e.g., `openclaw --version`).
+3. Review the `slack_delivery` lane logic for runtime bugs in delegation orchestration, specifically checking route and footer via path assertions.
+
+### Normalize Parameters and Validate Hashes
+
+1. Verify parameter normalization logic specifically around the `task` field when dispatching tasks.
+2. Ensure that the canonical hash generation during dispatch is consistent with the hash validation during the `sessions_spawn` phase.
+3. Confirm that the OpenClaw Gateway is operational and system load is acceptable, ruling out infrastructure issues.
+
+### Monitor Dispatch Chain
+
+1. Implement checks to detect when the runner is missing or when 0 active tasks are present.
+2. Validate structural metadata (route, transport, session IDs) explicitly in post-deploy smoke tests.
+3. Ensure delegation routes follow expected patterns (e.g., `delegate` vs `reply`) and footer transport mechanisms (e.g., `native_announce` vs `budgeted_main_escalation`) are correctly configured.
+
+## Verify
+
+* **User Interaction**: Confirm that immediate ACK messages are received by the user prior to the commencement of long-running tasks.
+* **Log Analysis**: Confirm absence of `stickyResult` reference errors and successful completion of dispatch cycles.
+* **Test Execution**: Post-deploy stability smoke tests (e.g., `slack_delivery` lane) should pass all structural assertions, including route, footer, and transport.
+* **Queue Activity**: The OctoClaw status panel should show active, queued, or recently completed tasks corresponding to the workload.
+* **Sub-agent Spawning**: Sub-agent creation should succeed without parameter validation or canonical hash errors.
+
+## Reusable Lessons
+
+* **ACK Timing**: Always send a brief ACK before executing tasks that require tools, internet access, dispatch, or may take more than a few seconds to prevent user confusion.
+* **Dispatch First**: Always verify the health of the dispatch/orchestration layer before investigating specific task failures. A broken dispatch chain manifests as analysis failures, but the root cause is often routing.
+* **Payload Hygiene**: Verify the dispatched plan payload to prevent tasks from being mapped to basic system checks (like version checks) instead of actual execution units.
+* **Structural Integrity**: Structural metadata (route, transport, session IDs) must be explicitly asserted and validated, not just the message content.
+* **Hash Consistency**: Ensure canonical hash generation is deterministic across the dispatch and spawn phases to prevent validation failures.
+
+## Agent Use
+Use this page when:
+- OpenClaw or OctoClaw dispatch fails, routes to `reply` instead of `delegate`, reports `Runner: missing`, or shows `stickyResult`/spawn hash errors.
+
+Apply it by:
+- Check dispatch/orchestration health before debugging individual task content.
+- Inspect route, transport, session ids, spawn payloads, and canonical hashes.
+- Send an ACK before any long dispatch investigation.
+
+Verify by:
+- Confirm dispatch cycles complete without `stickyResult` or parameter validation errors.
+- Confirm smoke tests pass structural route, footer, transport, and spawn assertions.
+- Confirm the task queue reflects active, queued, or recently completed work.
+
+Do not use it when:
+- The only failure is missing replay data or stale gateway configuration.
+
+## Provenance
+
+* OpenClaw stability reports and smoke tests (2026-05-20).
+* REM sleep reflections and diagnostic logs regarding `octoclaw_dispatch` and `stickyResult` errors (2026-04-26, 2026-04-27).
+* OpenClaw memory logs regarding task dispatching anomalies, user feedback on ACK protocols, and parameter validation (2026-05-16, 2026-05-21).
+
+## Related Wiki Pages
+
+* ACK timing before long-running agent work
+* OpenClaw gateway restart after configuration changes
+* [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
+* [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution|Missing replay data compromises the ability to debug or verify past execution behaviors]]
+
+## OpenClaw Slack replay and post-deploy stability failures
+Path: kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md
+Kind: procedure
+
+# OpenClaw Slack replay and post-deploy stability failures
+
+## When to Use
+
+Apply this procedure when the Stability Smoke v2 post-deploy test suite fails, specifically if you observe:
+
+*   `live_slack_case_failed` errors in the `slack_delivery` lane (e.g., `delegate_core.native_final`, simple chat, long replies).
+*   `replay_missing` errors in nightly regression lanes (e.g., `route_quality`, `delegation_health`).
+*   Test reports indicating 'unknown' status for multiple lanes due to infrastructure or data unavailability.
+
+## Context
+
+Post-deploy stability runs often encounter two distinct failure modes that can mask the true health of the system:
+
+*   **Live Slack Failures:** Runtime bugs causing mismatches in replay footprints (missing native announce footers, delivery transport mismatches, child session spawn intents) or timeouts waiting for expected content (e.g., ACK timeouts).
+*   **Missing Replay Artifacts:** Nightly lanes fail to start or report `replay_missing`, indicating required historical data is unavailable or inaccessible.
+*   **Synthetic Success:** While `synthetic_fixtures` often pass, the combined failure of live integration and replay tests causes the overall stability gate to fail.
+*   **Environment Issues:** Failures may be classified as `environment_issue` if external dependencies like the Slack API are unhealthy.
+
+## Procedure
+
+To resolve stability failures and prevent future occurrences, follow these steps:
+
+1.  **Verify External Dependencies:**
+    Check the health of external dependencies (e.g., Slack API status) before running live Slack integration tests. This helps distinguish between actual code regressions and infrastructure unhealthiness.
+
+2.  **Audit Replay Data Pipelines:**
+    Ensure that the data generation and retention pipelines for nightly replay artifacts are functioning correctly. Verify that replay data exists and is accessible before initiating post-deploy regression suites to avoid `replay_missing` errors.
+
+3.  **Distinguish Test Types:**
+    Configure post-deploy checks to explicitly distinguish between live functional tests and data-dependent replay tests. This allows for accurate reporting of issues (e.g., separating `runtime_bug` from `replay_missing`).
+
+4.  **Adjust for Latency:**
+    Investigate upstream latency if ACK timeouts persist during delegation cases (e.g., `delegate_core.native_final`), even if final replies eventually succeed. Adjust timeout thresholds if necessary, accounting for sub-processes like model policy resolution and prompt projection building.
+
+5.  **Validate Task Event Rendering:**
+    Ensure that internal task events (e.g., `handoff_ready`) are correctly translated into user-friendly event timelines and interactive payloads during rendering.
+
+## Verify
+
+Confirm the fix by validating the following:
+
+*   **Replay Availability:** Nightly replay data exists and is accessible, allowing `nightly_replay` tests to execute.
+*   **Slack Delivery Integrity:** The `slack_delivery` lane executes without `live_slack_case_failed` errors, replay footprint mismatches (footer, transport, spawn data), or timeouts.
+*   **Gate Status:** The overall stability gate achieves a 'pass' status with clear resolution for all test lanes (live, synthetic, and nightly).
+
+## Reusable Lessons
+
+*   Post-deployment checks must include verification of external dependency health before flagging runtime bugs.
+*   Missing nightly replay data masks the actual health of route quality, commit ack, and delegation health metrics.
+*   Sub-processes like model policy resolution and prompt projection building add measurable latency and should be factored into performance expectations.
+*   Task events should be translated into user-friendly event timelines to aid debugging and user experience.
+
+## Agent Use
+Use this page when:
+- A post-deploy stability run combines Slack delivery failures, replay-missing lanes, unknown statuses, or environment dependency issues.
+
+Apply it by:
+- Split the investigation into live Slack delivery, replay availability, synthetic fixtures, and external dependency health.
+- Treat missing replay artifacts as data-pipeline failures before judging route quality.
+- Account for model policy and prompt projection latency when investigating ACK timeouts.
+
+Verify by:
+- Confirm nightly replay artifacts exist and replay lanes execute.
+- Confirm Slack delivery passes without footprint mismatches or timeouts.
+- Confirm the overall stability gate reports a clear pass or a specific failing lane.
+
+Do not use it when:
+- The report only shows a stale gateway configuration or a single isolated dispatch routing error.
+
+## Provenance
+
+- log://openclaw/2026-05-20-03-09-16-stability-report.md (sha256:0641118511b3cb45e9e3a7597bc3aa4f3154bf896647c3802b5146a52c0c06a1)
+- log://openclaw/2026-05-20-03-24-40-stability-report. (sha256:12abb99af30713eaa6d82919198a5dc072ed97e84abf2efde56adf73863a729d)
+- log://openclaw/2026-05-20-03-24-40-stability-report.md (sha256:4216d95ae65c168bd4c064e865c07de884579d59d22de1030e27cdb831aebd1e)
+- log://openclaw/2026-05-20-03-32-09-stability-report.md (sha256:64b1a048cdfe4391c815a2ecce8bbfdae49d580d9755fe327c7d9b84a40cb557)
+- log://openclaw/2026-05-20-03-32-09-stability-summary.txt (sha256:660d0dd83baeea126f5a05c555d01cc1703adcd0adbc0c20dfffbd30588f94c6)
+- log://openclaw/2026-05-20-04-50-10-stability-report. (sha256:678a9086bd3b66e78e994bb1e5b91a688a208c13bc64cbf855a69afbb8f58ea1)
+- log://openclaw/2026-05-20-04-50-10-stability-report.md (sha256:68f28f264e8c849879c2e747e3863c06fdbf9db9f6f481dc58ec316dc6f6b081)
+- log://openclaw/2026-05-20-04-55-58-stability-report.md (sha256:6a88421038ff0c71752a75a9baeada0c313457f17e154864608583e2f6b32af7)
+- log://openclaw/2026-05-20-05-03-48-stability-report.md (sha256:7f94a240caa37da45ca6a1d0d09265aa920729fbe046170f7010ff8d5dbd7119)
+- log://openclaw/2026-05-20-05-03-48-stability-summary.txt (sha256:8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0)
+- log://openclaw/2026-05-20-05-16-02-stability-report. (sha256:af8d39e1dcc92c1fc8ca6912578f46f3b91e232c169dd8881402e163f5cc86df)
+- log://openclaw/2026-05-20-05-16-02-stability-report.md (sha256:ee931e002b89fbb9cf9cdc105063f86eced80308aed5272ad603ac18b868c2c3)
+- log://openclaw/2026-05-20-05-28-22-stability-report. (sha256:f0af2b27277e8c75f867993a8d4edf3db4bd71fee06674052ae2803aeb80afbb)
+- log://openclaw/slack-acceptance-2026-05-17-12-46-37.md (sha256:f9513d29b442cfd9655dcf3e8547aab271c07749c437c292149c993a2dff88c6)
+- raw-vault://codex/rollout-2026-04-06T11-57-17-019d60f0-0b6a-7c12-8dfd-8bb17626c166 (sha256:fea52e8dd0654c0366fae51eaa28322450863b909ed0b79fde22be0d86935579)
+
+## Related Wiki Pages
+
+*   [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution|Missing replay data compromises the ability to debug or verify past execution behaviors]]
+*   ACK timing before long-running agent work
+*   [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
+*   OpenClaw gateway restart after configuration changes
+
+## Post-deploy stability smoke test run 'openclaw' resulted in an overall failure
+Path: kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md
+Kind: known_fix
+
+# Post-deploy stability smoke test run 'openclaw' resulted in an overall failure
+
+## When to Use
+Use this guidance when investigating failures in the OpenClaw post-deploy stability smoke tests, specifically when the 'overallGate' status is 'fail' and the 'slack_delivery' lane reports runtime bugs or replay lanes return 'unknown'.
+
+## Context
+The 'openclaw' stability smoke test run failed, triggered by critical runtime issues in the live Slack integration tests. While the 'synthetic_fixtures' lane passed successfully, the 'slack_delivery' lane encountered errors. Additionally, multiple nightly replay lanes could not determine success or failure due to missing replay data.
+
+## Symptoms
+*   **Overall Failure:** The stability report indicates `overallGate: "fail"`.
+*   **Runtime Bugs:** The 'slack_delivery' lane fails with runtime errors, specifically in test cases `delegate_core.native_final` and `footer_truth.current_model` (error type: `live_slack_case_failed`).
+*   **Unknown Status:** All nightly replay lanes (route quality, commit ack, execution transition, delegation health, delivery) return an 'unknown' status.
+*   **Missing Data:** Replay lanes report 'unknown' status specifically due to missing replay data.
+
+## Fix
+1.  **Investigate Runtime Bugs:** Analyze the stack traces and logs for `delegate_core.native_final` and `footer_truth.current_model` within the 'slack_delivery' lane to identify the root cause of the `live_slack_case_failed` error.
+2.  **Verify Replay Data Pipelines:** Audit the data ingestion and storage mechanisms for the nightly replay lanes. Ensure that historical data required for route quality, commit ack, and other replay tests is being correctly captured and is available at test runtime.
+3.  **Patch and Retest:** Apply fixes to the identified runtime bugs in the delegate core or footer truth models. Resolve data pipeline issues to restore replay data availability.
+4.  **Rerun Smoke Tests:** Execute the 'openclaw' post-deploy stability smoke test again to verify that the 'slack_delivery' lane passes and nightly replay lanes return definitive results.
+
+## Verify
+*   Confirm the 'openclaw' stability report shows `overallGate: "pass"`.
+*   Verify the 'slack_delivery' lane executes `delegate_core.native_final` and `footer_truth.current_model` without runtime errors.
+*   Ensure all nightly replay lanes return a definitive 'pass' or 'fail' status instead of 'unknown'.
+
+## Reusable Lessons
+*   Missing replay data directly compromises the ability to verify past execution behaviors, resulting in inconclusive test statuses.
+*   Live integration lanes (like Slack delivery) are sensitive to runtime bugs in core logic components, such as delegation models, which can cause immediate post-deploy stability gate failures.
+
+## Agent Use
+Use this page when:
+- An OpenClaw post-deploy stability smoke run reports `overallGate: "fail"` with Slack delivery runtime bugs and unknown replay lanes.
+
+Apply it by:
+- Investigate the named Slack delivery runtime bugs first.
+- Audit replay data availability for nightly lanes before treating unknown lanes as product regressions.
+- Rerun the smoke suite after runtime and replay-data fixes.
+
+Verify by:
+- Confirm `overallGate` becomes `pass`.
+- Confirm Slack delivery cases run without runtime errors.
+- Confirm nightly replay lanes return pass or fail instead of unknown.
+
+Do not use it when:
+- The failure is only a gateway restart issue or only a missing task runner status.
+
+## Provenance
+- log://openclaw/2026-05-20-03-32-09-stability-report. (sha256:9eb9cf6f4acf30440426284f82965eb7b3f36cec1518fd0d0cfba384e41523f3)
+
+## Related Wiki Pages
+*   ACK timing before long-running agent work
+*   [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution|Missing replay data compromises the ability to debug or verify past execution behaviors]]
+*   [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
+*   OpenClaw gateway restart after configuration changes
+*   [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
+
+## OpenClaw dispatch routing failures
+Path: skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md
+Kind: skill
+
+# OpenClaw dispatch routing failures
+
+## When To Use
+Use this when OpenClaw or OctoClaw delegation, runner dispatch, or task routing looks successful from the main chat but the evidence shows missing runners, route mismatches, parameter validation failures, canonical hash mismatches, or errors such as `stickyResult is not defined`.
+
+## Procedure
+1. Send a short acknowledgement before starting any tool, network, or delegation work that may take more than a few seconds.
+2. Verify dispatch evidence before saying the task was delegated or completed: check the runner state, queue state, spawned task id, and expected route.
+3. If the task queue shows zero active tasks or `Runner: missing`, inspect the dispatch/orchestration layer before debugging the requested business logic.
+4. If logs show `stickyResult is not defined`, route/footer mismatches, canonical hash mismatches, or parameter validation errors, treat the delegation as failed until a spawn or runner execution proof exists.
+5. Compare the dispatched plan payload with the user's actual request; reject false positives such as a plan being reduced to `openclaw --version` or another unrelated health check.
+6. If the main session already performed work directly, report that direct work honestly instead of claiming the delegate failed or succeeded.
+7. After applying a routing fix, rerun the smallest dispatch smoke that proves spawn, route selection, and result reporting all work.
+
+## Verification
+- Confirm there is concrete evidence for one of: spawned task id, runner execution record, queue transition, or delegate result artifact.
+- Re-run the workflow that originally failed and verify the response does not claim delegation success without execution proof.
+- Check the related wiki page for current failure signatures before applying this skill.
+
+## Reusable Lessons
+- Do not report delegation success without dispatch evidence.
+- Diagnose orchestration and routing failures before investigating downstream task logic.
+- Long-running agent work should acknowledge first, then verify and report the real execution path.
+
+## Agent Use
+Use this page when:
+- OpenClaw, OctoClaw, dispatch, delegation, runner, spawn, or route mismatch symptoms appear.
+
+Apply it by:
+- Load this skill and compare the current task against the trigger and procedure.
+- Prefer stable PraxisBase wiki evidence over raw session text when deciding whether this skill applies.
+
+Verify by:
+- Confirm the dispatch path has concrete execution evidence before reporting delegation success.
+- Check the related wiki page for current failure signatures.
+
+## Pitfalls
+- Do not confuse a healthy CLI/version check with a successful delegated task.
+- Do not expose internal tool failures to the user unless they affect the outcome or the user asks.
+- Do not use this for unrelated OpenClaw application bugs that have no dispatch, runner, or delegation symptom.
+
+## Do Not Use When
+- The issue is a one-off UI, database, or deployment bug with no agent dispatch path.
+- Evidence is only raw private transcript text and has not been promoted or summarized by PraxisBase.
+
+## Related Wiki Pages
+- [[kb/known-fixes/openclaw-dispatch-routing-failures.md]]
+
+## Provenance
+- log://openclaw/2026-05-20-05-03-48-stability-report. (sha256:027fb599399a145d9b9ffbdb6a7531b5fe996d732dea12db17a3fcd879af19bc)
+- raw-vault://codex/rollout-2026-04-04T19-26-57-019d583f-02e6-74d0-9351-b636055d911c (sha256:d8e4f4a00e20c94f9a8116c72c73aa21cfbffc12d934158a1831e723fcb54078)
+
+## Stale caches can hide current behavior or serve outdated assets
+Path: kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md
+Kind: procedure
+
+# Stale caches can hide current behavior or serve outdated assets
+
+## When to Use
+Use this procedure when:
+* Updates to web assets or API responses are not reflected immediately for end-users.
+* Testing recent code changes results in unexpected behavior that matches previous versions.
+* Debugging issues where the client or proxy appears to be ignoring server-side updates.
+
+## Symptoms or Context
+* Users report seeing old data or interfaces despite a confirmed deployment.
+* Browser DevTools shows 304 Not Modified responses or 200 OK responses with old content timestamps.
+* System behavior does not match the expected logic of the currently deployed code version.
+
+## What To Do
+Implement explicit cache busting to force the retrieval of fresh content. Common methods include:
+
+1. **Timestamped Cache Keys:** Append a timestamp or version number to asset filenames or query parameters (e.g., `style.v123.css` or `script.js?t=1698765432`).
+2. **Versioned File Paths:** Update the directory or filename of static assets during the build process (e.g., `/static/v1.2.3/image.png`).
+3. **Cache-Control Headers:** Configure server headers to reduce the Time-To-Live (TTL) for specific resources that change frequently.
+
+Apply these methods specifically when cache-sensitive content changes or when stale results are suspected.
+
+## Verify
+* Confirm that the fresh content is fetched rather than a stale cached copy.
+* Check network requests in browser DevTools to ensure new cache keys or headers trigger a full response (200 OK) rather than a cached validation (304 Not Modified).
+* Verify that the user interface reflects the latest changes immediately after the update.
+
+## Reusable Lessons
+* When cache-sensitive content changes or stale results are suspected, use explicit cache busting such as timestamped cache keys where appropriate.
+* Relying solely on browser or intermediary cache expiration logic can lead to user-facing inconsistencies during updates.
+
+## Agent Use
+* **Use this page when:** Investigating issues involving outdated content delivery, inconsistent user experiences post-deployment, or "ghost" bugs related to old code.
+* **Apply it by:** Injecting version identifiers into asset URLs, modifying query parameters for dynamic requests, or adjusting server-side cache control headers.
+* **Verify by:** Asserting that the response payload corresponds to the latest source data and that new cache keys are generated for content updates.
+* **Do not use it when:** The issue is related to server-side errors (5xx) or network connectivity failures that prevent content retrieval entirely.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]
+* [[case-sensitive-database-comparisons-can-miss-logically-equivalent-values|Case-sensitive database comparisons can miss logically equivalent values]]

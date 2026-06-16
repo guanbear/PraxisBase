@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-70eadc18937b5291",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-31384b954",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/647b0b2aa4ef15d0d9fdfa4d631daf5c1f7d2e38f102647cb8ee1c0d4d5d6251",
+    "source_hash": "sha256:31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
+    "redacted_summary": "# 2026-05-09 Daily Notes ## Feishu 群聊话题回复失误 - 在 Feishu 群聊里，本应沿着已有话题串继续回复，却先直接发到了主群，导致回复位置不对。 - 后续修正时确认：`message(action=\"thread-reply\")` 在当前环境下需要显式传 `messageId`，只传 `threadId` 会报错：`Feishu thread-reply requires messageId.` - 经验规则：当用户是在回复某条消息、且上下文明显属于话题延续时，优先使用话题回复，不要散回主群。 - 后续默认做法：优先读取当前消息的 reply 上下文，能挂在线程里就挂在线程里。",
+    "privacy_signature": "sha256:70eadc18937b5291bd7e8a8491ef8ff6e94632b12ae936fe27ad47e536bf9e5e",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

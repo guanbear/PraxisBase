@@ -1,0 +1,1277 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PraxisBase Review Queue</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">PraxisBase Wiki</a>
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Search knowledge" autocomplete="off">
+      <div id="searchResults" class="search-results" hidden></div>
+    </div>
+    <nav class="topnav" aria-label="Wiki views">
+      <a href="wiki/index.md">Index</a>
+      <a href="review.html">Review</a>
+      <a href="graph.html">Graph</a>
+      <a href="issues.html">Issues</a>
+    </nav>
+  </header>
+  <main class="review-shell">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Review center</p>
+      <h1>Review Queue</h1>
+      <p class="lede">Confirm AI-generated wiki candidates, inspect blocked records, and see what has reached stable knowledge.</p>
+    </div>
+  </section>
+  <section class="metrics">
+    <a class="metric-link" href="#pending-candidates"><span>Review required</span><strong>0</strong></a>
+    <a class="metric-link" href="#approved-candidates"><span>Approved</span><strong>0</strong></a>
+    <a class="metric-link" href="#human-required"><span>Current privacy</span><strong>34</strong></a>
+    <a class="metric-link" href="#human-required"><span>Privacy backlog</span><strong>37</strong></a>
+    
+    <a class="metric-link" href="#rejected"><span>Rejected</span><strong>0</strong></a>
+    <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>7</strong></a>
+  </section>
+  
+  <section class="wiki-compiler-status">
+  <h2>Wiki Compiler</h2>
+  <p class="eyebrow">2026-06-16 &middot; review &middot; AI degraded &middot; gpt-5.5</p>
+  <div class="metrics">
+    <article><span>Observations</span><strong>0</strong></article>
+    <article><span>Topics</span><strong>0</strong></article>
+    <article><span>Plan Create</span><strong>0</strong></article>
+<article><span>Plan Update</span><strong>0</strong></article>
+<article><span>Plan Merge</span><strong>0</strong></article>
+<article><span>Plan Supersede</span><strong>0</strong></article>
+<article><span>Plan Archive</span><strong>0</strong></article>
+    <article><span>Dup source-hash groups</span><strong>0</strong></article>
+    <article><span>Hard blocks</span><strong>0</strong></article>
+    <article><span>Quality review needed</span><strong>0</strong></article>
+    <article><span>Written proposals</span><strong>0</strong></article>
+    <article><span>Proposal limit</span><strong>8</strong></article>
+    <article><span>Limit reason</span><strong>max_curation_proposals</strong></article>
+    
+    
+  </div>
+</section>
+  <section class="review-section" data-status="pending">
+    <h2>Confirm from Terminal</h2>
+    <p>This static site cannot execute local commands. Run these after inspecting candidates you want to accept.</p>
+    <div class="command-strip">
+      <code>praxisbase review --auto</code>
+      <code>praxisbase promote --auto</code>
+      <code>praxisbase wiki build-site --json</code>
+    </div>
+  </section>
+  <section id="pending-candidates" class="review-section" data-status="pending">
+  <div class="section-heading">
+    <div>
+      <h2><span id="review-required"></span>Review Required</h2>
+      <p>No review-required candidates.</p>
+    </div>
+    <strong>0</strong>
+  </div>
+  <div class="command-strip"><code>praxisbase review --auto</code>
+<code>praxisbase promote --auto</code>
+<code>praxisbase wiki build-site --json</code></div>
+  
+</section>
+  <section id="approved-candidates" class="review-section" data-status="approved">
+  <div class="section-heading">
+    <div>
+      <h2>Reviewed / Approved</h2>
+      <p>No approved candidates waiting for promotion.</p>
+    </div>
+    <strong>0</strong>
+  </div>
+  <div class="command-strip"><code>praxisbase promote --auto</code>
+<code>praxisbase wiki build-site --json</code></div>
+  
+</section>
+  <section id="human-required" class="review-section" data-status="needs_human">
+  <div class="section-heading">
+    <div>
+      <h2><span id="privacy-required"></span>Privacy Required</h2>
+      <p>Latest daily blocked 34 item(s); historical backlog has 37 record(s).</p>
+    </div>
+    <strong>34</strong>
+  </div>
+  <div class="command-strip">
+    <code>praxisbase privacy triage --mode personal --auto-release --progress --json</code>
+    <code>praxisbase personal run --open --json</code>
+  </div>
+  
+  
+  <ol class="experience-list">
+    <li id="exception_daily-experience-0c7144ea57b21569" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-273a47187</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-0c7144ea57b21569.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-0d62ba5167311843" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-1e5ae91e7</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-0d62ba5167311843.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-12c9caf5999d25cf" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-85c6325c6</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-12c9caf5999d25cf.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-1f7524e8ea7c5493" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-bdd86a156</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-1f7524e8ea7c5493.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-251024cf3fc2ffaf" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-b2390ce0f</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-251024cf3fc2ffaf.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-26e20af34a56d959" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-b3b1891ee</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-26e20af34a56d959.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-2bc11e5412f5ca23" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-dd5113c71</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-2bc11e5412f5ca23.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-355aea4949afabe8" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-6a00c70c9</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-355aea4949afabe8.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-4116addd68e32657" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-8107f53d4</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-4116addd68e32657.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-444ad40b7503112d" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-f7aee701a</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-444ad40b7503112d.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-5ca220d0a850d0ac" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-3be56fa6f</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5ca220d0a850d0ac.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-5cb54c626295b4d9" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-19c2eeefa</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5cb54c626295b4d9.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-5fe8e5312427b66d" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-64f06eeeb</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5fe8e5312427b66d.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-70eadc18937b5291" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-31384b954</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-70eadc18937b5291.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-744f37e98e5b409e" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, team_rejects_private_chat, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-92320b389</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-744f37e98e5b409e.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-79822ff24256f1ed" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-803b9fd01</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-79822ff24256f1ed.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-81e477a050db55f0" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-c721715b0</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-81e477a050db55f0.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-86b8adf55a71c900" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-dbfb119fc</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-86b8adf55a71c900.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-89b1816966184deb" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-54fe93b6d</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-89b1816966184deb.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-9a6f3a1b71d5ea65" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-e1db2413e</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-9a6f3a1b71d5ea65.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-9fff94571a51c4aa" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-e3e17b88c</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-9fff94571a51c4aa.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-a8d30ee6c5b41907" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-8deb4f5e6</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-a8d30ee6c5b41907.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-ad405f88f6d334a4" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-4b2bab827</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-ad405f88f6d334a4.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-b70a35157d393839" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-fe8edde7b</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b70a35157d393839.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-b7c16f24ab0be689" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-745fa543d</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b7c16f24ab0be689.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-c578b794158d6fe2" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-9fd2e910e</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c578b794158d6fe2.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-c68d16c6183965d2" class="review-card">
+      <p><strong>Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-b6f7162b2</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c68d16c6183965d2.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-c7f8e014dbf89c90" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-e437220d9</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c7f8e014dbf89c90.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-caad32421e9bf573" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-5535ee36f</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-caad32421e9bf573.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-cb9a6cc24cd1f6dc" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-f1d3f2e21</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-cb9a6cc24cd1f6dc.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-cf5dab7be3851c0b" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-14edce26a</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-cf5dab7be3851c0b.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-d303f90af8f4af34" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-e9bac6dd0</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-d53d6d7901e4eb74" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-98477e0c8</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d53d6d7901e4eb74.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="exception_daily-experience-de836b6f83806d74" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>experience_openclaw-answer-bot-sha256-cfcba5397</code></dd>
+        <dt>Agent</dt><dd>openclaw</dd>
+        <dt>Scope</dt><dd>team</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-de836b6f83806d74.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md" class="review-card">
+      <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
+        <dt>Agent</dt><dd>unknown</dd>
+        <dt>Scope</dt><dd>unknown</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md" class="review-card">
+      <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md</code></dd>
+        <dt>Agent</dt><dd>unknown</dd>
+        <dt>Scope</dt><dd>unknown</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+<li id="wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve" class="review-card">
+      <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">Privacy required</span></p>
+      <dl>
+        <dt>Source</dt><dd><code>stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md</code></dd>
+        <dt>Agent</dt><dd>unknown</dd>
+        <dt>Scope</dt><dd>unknown</dd>
+        
+        
+        <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve.json</code></dd>
+        <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+        <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode personal --auto-release --progress --json</code></dd>
+        
+      </dl>
+    </li>
+  </ol>
+</section>
+  <section id="rejected" class="review-section" data-status="rejected">
+  <div class="section-heading">
+    <div>
+      <h2>Rejected</h2>
+      <p>Low-signal, duplicate, private, or quality-blocked material that intentionally did not become wiki.</p>
+    </div>
+    <strong>0</strong>
+  </div>
+  <dl class="queue-summary">
+    <dt>Daily rejected</dt><dd>0</dd>
+    <dt>Low signal</dt><dd>0</dd>
+    <dt>Quality rejected</dt><dd>0</dd>
+    <dt>Duplicate groups</dt><dd>0</dd>
+    <dt>Curation rejected</dt><dd>0</dd>
+    <dt>Hard blocks</dt><dd>0</dd>
+    <dt>Recommended</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
+  </dl>
+</section>
+  <section id="promoted-candidates" class="review-section" data-status="promoted">
+  <div class="section-heading">
+    <div>
+      <h2>Promoted</h2>
+      <p>7 item(s)</p>
+    </div>
+    <strong>7</strong>
+  </div>
+  <div class="command-strip"><code>praxisbase gbrain export --mode personal --write --json</code>
+<code>praxisbase agentmemory export --mode personal --write --json</code></div>
+  <ol class="experience-list"><li id="pending-wiki-proposal_kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful" class="review-card">
+    <p><strong>Agents Can Mislead Users If Failures Are Reported As Successful Outcomes</strong> <span class="status-pill">Promoted</span></p>
+    <p>* When an operation, delegation, or guard fails or returns uncertain status, fail closed and state the failure honestly instead of claiming success. * Do not pretend success when the underlying work failed or was not verified. * **Use this page when:** You are implementing age...</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md</code></dd>
+      <dt>Kind</dt><dd>known_fix</dd>
+      <dt>Scope</dt><dd>personal</dd>
+      <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md</code></dd>
+      
+      <dt>Confidence</dt><dd>0.65</dd>
+      <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+      
+      
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>---
+id: wiki-agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes
+protocol_version: &quot;0.1&quot;
+type: known_fix
+knowledge_type: known_fix
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: &quot;stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md&quot;
+    hash: &quot;sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195&quot;
+source_count: 1
+confidence: 0.65
+updated_at: &quot;2026-06-16T02:36:27.192Z&quot;
+---
+# Agents Can Mislead Users If Failures Are Reported As Successful Outcomes
+
+## Reusable Lessons
+* When an operation, delegation, or guard fails or returns uncertain status, fail closed and state the failure honestly instead of claiming success.
+* Do not pretend success when the underlying work failed or was not verified.
+
+## Agent Use
+* **Use this page when:** You are implementing agent logic that handles external API calls, file system operations, or sub-agent delegation, specifically within the error handling or response generation blocks.
+* **Apply it by:** Ensuring your control flow strictly separates &quot;executed&quot; and &quot;verified successful.&quot; Only return a success signal if the verification step passes.
+* **Verify by:** Reviewing logs and traces to confirm that no successful status codes were returned corresponding to error IDs or exception logs.
+* **Do not use it when:** The operation is a pure &quot;best effort&quot; fire-and-forget task where verification is explicitly defined as out of scope (though this should be rare in high-stakes environments).
+
+## Provenance
+- source-inventory://openclaw/../../.openclaw/memory/main.sqlite#5e011796e9e4e2b34d4f2621e990675c478d8ba0964a678077a22b582a523d70 (sha256:ad9b1897cf677fe8407009f01998a4b3dd6452f9eedff1056e6fe1a5cdfec94d)
+
+## Related Wiki Pages
+ACK timing before long-running agent work
+[[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
+OpenClaw gateway restart after configuration changes
+[[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
+
+## Sources
+- stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md
+- sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-proposal_kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify" class="review-card">
+    <p><strong>Missing Replay Data Compromises The Ability To Debug Or Verify Past Execution</strong> <span class="status-pill">Promoted</span></p>
+    <p>In complex system testing, particularly post-deployment, replay data is essential for ensuring that the system behaves as expected under load or specific conditions. When this data is missing, the integrity of the stability check is compromised, leaving certain execution paths...</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md</code></dd>
+      <dt>Kind</dt><dd>known_fix</dd>
+      <dt>Scope</dt><dd>personal</dd>
+      <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md</code></dd>
+      
+      <dt>Confidence</dt><dd>0.65</dd>
+      <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+      
+      
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>---
+id: wiki-missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution
+protocol_version: &quot;0.1&quot;
+type: known_fix
+knowledge_type: known_fix
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: &quot;stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md&quot;
+    hash: &quot;sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8&quot;
+source_count: 1
+confidence: 0.65
+updated_at: &quot;2026-06-16T02:36:27.192Z&quot;
+---
+# Missing Replay Data Compromises The Ability To Debug Or Verify Past Execution
+
+## Context
+In complex system testing, particularly post-deployment, replay data is essential for ensuring that the system behaves as expected under load or specific conditions. When this data is missing, the integrity of the stability check is compromised, leaving certain execution paths unverified.
+
+## Fix
+To resolve issues stemming from missing replay data and ensure successful stability verification:
+
+1.  **Investigate Data Pipelines**: Check the ingestion and storage mechanisms responsible for capturing replay data during the execution window.
+2.  **Validate Collection Jobs**: Ensure that background jobs or agents responsible for collecting logs and state data for replay did not fail silently.
+3.  **Retry Data Collection**: If possible, trigger a retry for the missing data collection or re-run the specific test case to generate the required replay artifacts.
+4.  **System Health Check**: Verify that storage systems (databases, object storage) are healthy and accessible to the test infrastructure.
+5.  **Address Root Cause**: Identify why the data was missing (e.g., resource exhaustion, network partitioning) and apply patches to prevent recurrence in future test runs.
+
+## Verify
+Confirm the resolution by:
+*   Re-running the Stability Smoke v2 or relevant test suite and observing the absence of `replay_missing` errors.
+*   Checking that nightly replay lanes report a definitive status (pass/fail) rather than remaining unknown.
+*   Successfully retrieving and inspecting the replay data for the specific execution window to validate past behaviors.
+
+## Reusable Lessons
+*   **Data Integrity is Critical**: Stability tests are only as good as the data they produce; gaps in data directly translate to gaps in system confidence.
+*   **Monitoring is Key**: Implement alerts for data collection failures within test infrastructure to catch missing replay issues immediately rather than at the end of a test cycle.
+
+## Agent Use
+Use this page when:
+- A stability, replay, or regression lane reports `replay_missing`, `unknown`, or cannot verify a past execution window.
+
+Apply it by:
+- Check whether replay artifacts were produced, retained, and reachable before debugging product behavior.
+- Separate missing-data failures from live runtime failures in the report.
+
+Verify by:
+- Confirm replay lanes return a definitive pass or fail result.
+- Retrieve and inspect the expected replay data for the affected execution window.
+
+Do not use it when:
+- Replay artifacts exist and the failure is a live Slack delivery, routing, or model behavior regression.
+
+## Provenance
+*   Evidence derived from `log://openclaw/2026-05-20-03-24-40-stability-summary.txt` regarding Stability Smoke v2 post-deploy failures.
+
+## Sources
+- stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md
+- sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-proposal_kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures-md" class="review-card">
+    <p><strong>Openclaw Slack Replay And Post Deploy Stability Failures</strong> <span class="status-pill">Promoted</span></p>
+    <p>Post-deploy stability runs often encounter two distinct failure modes that can mask the true health of the system: * **Live Slack Failures:** Runtime bugs causing mismatches in replay footprints (missing native announce footers, delivery transport mismatches, child session spa...</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md</code></dd>
+      <dt>Kind</dt><dd>procedure</dd>
+      <dt>Scope</dt><dd>personal</dd>
+      <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md</code></dd>
+      
+      <dt>Confidence</dt><dd>0.65</dd>
+      <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+      
+      
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>---
+id: wiki-openclaw-slack-replay-and-post-deploy-stability-failures
+protocol_version: &quot;0.1&quot;
+type: procedure
+knowledge_type: procedure
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: &quot;stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md&quot;
+    hash: &quot;sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d&quot;
+source_count: 1
+confidence: 0.65
+updated_at: &quot;2026-06-16T02:36:27.192Z&quot;
+---
+# Openclaw Slack Replay And Post Deploy Stability Failures
+
+## Context
+Post-deploy stability runs often encounter two distinct failure modes that can mask the true health of the system:
+
+*   **Live Slack Failures:** Runtime bugs causing mismatches in replay footprints (missing native announce footers, delivery transport mismatches, child session spawn intents) or timeouts waiting for expected content (e.g., ACK timeouts).
+*   **Missing Replay Artifacts:** Nightly lanes fail to start or report `replay_missing`, indicating required historical data is unavailable or inaccessible.
+*   **Synthetic Success:** While `synthetic_fixtures` often pass, the combined failure of live integration and replay tests causes the overall stability gate to fail.
+*   **Environment Issues:** Failures may be classified as `environment_issue` if external dependencies like the Slack API are unhealthy.
+
+## Procedure
+
+To resolve stability failures and prevent future occurrences, follow these steps:
+
+1.  **Verify External Dependencies:**
+    Check the health of external dependencies (e.g., Slack API status) before running live Slack integration tests. This helps distinguish between actual code regressions and infrastructure unhealthiness.
+
+2.  **Audit Replay Data Pipelines:**
+    Ensure that the data generation and retention pipelines for nightly replay artifacts are functioning correctly. Verify that replay data exists and is accessible before initiating post-deploy regression suites to avoid `replay_missing` errors.
+
+3.  **Distinguish Test Types:**
+    Configure post-deploy checks to explicitly distinguish between live functional tests and data-dependent replay tests. This allows for accurate reporting of issues (e.g., separating `runtime_bug` from `replay_missing`).
+
+4.  **Adjust for Latency:**
+    Investigate upstream latency if ACK timeouts persist during delegation cases (e.g., `delegate_core.native_final`), even if final replies eventually succeed. Adjust timeout thresholds if necessary, accounting for sub-processes like model policy resolution and prompt projection building.
+
+5.  **Validate Task Event Rendering:**
+    Ensure that internal task events (e.g., `handoff_ready`) are correctly translated into user-friendly event timelines and interactive payloads during rendering.
+
+## Verify
+
+Confirm the fix by validating the following:
+
+*   **Replay Availability:** Nightly replay data exists and is accessible, allowing `nightly_replay` tests to execute.
+*   **Slack Delivery Integrity:** The `slack_delivery` lane executes without `live_slack_case_failed` errors, replay footprint mismatches (footer, transport, spawn data), or timeouts.
+*   **Gate Status:** The overall stability gate achieves a &#39;pass&#39; status with clear resolution for all test lanes (live, synthetic, and nightly).
+
+## Reusable Lessons
+*   Post-deployment checks must include verification of external dependency health before flagging runtime bugs.
+*   Missing nightly replay data masks the actual health of route quality, commit ack, and delegation health metrics.
+*   Sub-processes like model policy resolution and prompt projection building add measurable latency and should be factored into performance expectations.
+*   Task events should be translated into user-friendly event timelines to aid debugging and user experience.
+
+## Agent Use
+Use this page when:
+- A post-deploy stability run combines Slack delivery failures, replay-missing lanes, unknown statuses, or environment dependency issues.
+
+Apply it by:
+- Split the investigation into live Slack delivery, replay availability, synthetic fixtures, and external dependency health.
+- Treat missing replay artifacts as data-pipeline failures before judging route quality.
+- Account for model policy and prompt projection latency when investigating ACK timeouts.
+
+Verify by:
+- Confirm nightly replay artifacts exist and replay lanes execute.
+- Confirm Slack delivery passes without footprint mismatches or timeouts.
+- Confirm the overall stability gate reports a clear pass or a specific failing lane.
+
+Do not use it when:
+- The report only shows a stale gateway configuration or a single isolated dispatch routing error.
+
+## Provenance
+
+- log://openclaw/2026-05-20-03-09-16-stability-report.md (sha256:0641118511b3cb45e9e3a7597bc3aa4f3154bf896647c3802b5146a52c0c06a1)
+- log://openclaw/2026-05-20-03-24-40-stability-report. (sha256:12abb99af30713eaa6d82919198a5dc072ed97e84abf2efde56adf73863a729d)
+- log://openclaw/2026-05-20-03-24-40-stability-report.md (sha256:4216d95ae65c168bd4c064e865c07de884579d59d22de1030e27cdb831aebd1e)
+- log://openclaw/2026-05-20-03-32-09-stability-report.md (sha256:64b1a048cdfe4391c815a2ecce8bbfdae49d580d9755fe327c7d9b84a40cb557)
+- log://openclaw/2026-05-20-03-32-09-stability-summary.txt (sha256:660d0dd83baeea126f5a05c555d01cc1703adcd0adbc0c20dfffbd30588f94c6)
+- log://openclaw/2026-05-20-04-50-10-stability-report. (sha256:678a9086bd3b66e78e994bb1e5b91a688a208c13bc64cbf855a69afbb8f58ea1)
+- log://openclaw/2026-05-20-04-50-10-stability-report.md (sha256:68f28f264e8c849879c2e747e3863c06fdbf9db9f6f481dc58ec316dc6f6b081)
+- log://openclaw/2026-05-20-04-55-58-stability-report.md (sha256:6a88421038ff0c71752a75a9baeada0c313457f17e154864608583e2f6b32af7)
+- log://openclaw/2026-05-20-05-03-48-stability-report.md (sha256:7f94a240caa37da45ca6a1d0d09265aa920729fbe046170f7010ff8d5dbd7119)
+- log://openclaw/2026-05-20-05-03-48-stability-summary.txt (sha256:8dd881b6e1635da314a309400d99f0560613e27bb1b220943f66c8eb345cecb0)
+- log://openclaw/2026-05-20-05-16-02-stability-report. (sha256:af8d39e1dcc92c1fc8ca6912578f46f3b91e232c169dd8881402e163f5cc86df)
+- log://openclaw/2026-05-20-05-16-02-stability-report.md (sha256:ee931e002b89fbb9cf9cdc105063f86eced80308aed5272ad603ac18b868c2c3)
+- log://openclaw/2026-05-20-05-28-22-stability-report. (sha256:f0af2b27277e8c75f867993a8d4edf3db4bd71fee06674052ae2803aeb80afbb)
+- log://openclaw/slack-acceptance-2026-05-17-12-46-37.md (sha256:f9513d29b442cfd9655dcf3e8547aab271c07749c437c292149c993a2dff88c6)
+- raw-vault://codex/rollout-2026-04-06T11-57-17-019d60f0-0b6a-7c12-8dfd-8bb17626c166 (sha256:fea52e8dd0654c0366fae51eaa28322450863b909ed0b79fde22be0d86935579)
+
+## Related Wiki Pages
+
+*   [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution|Missing replay data compromises the ability to debug or verify past execution behaviors]]
+*   ACK timing before long-running agent work
+*   [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
+*   OpenClaw gateway restart after configuration changes
+
+## Sources
+- stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md
+- sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-proposal_kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an" class="review-card">
+    <p><strong>Post Deploy Stability Smoke Test Run Openclaw Resulted In An Overall Failure</strong> <span class="status-pill">Promoted</span></p>
+    <p>The &#39;openclaw&#39; stability smoke test run failed, triggered by critical runtime issues in the live Slack integration tests. While the &#39;synthetic_fixtures&#39; lane passed successfully, the &#39;slack_delivery&#39; lane encountered errors. Additionally, multiple nightly replay lanes could no...</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md</code></dd>
+      <dt>Kind</dt><dd>known_fix</dd>
+      <dt>Scope</dt><dd>personal</dd>
+      <dt>Source</dt><dd><code>stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md</code></dd>
+      
+      <dt>Confidence</dt><dd>0.65</dd>
+      <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+      
+      
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>---
+id: wiki-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure
+protocol_version: &quot;0.1&quot;
+type: known_fix
+knowledge_type: known_fix
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: &quot;stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md&quot;
+    hash: &quot;sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa&quot;
+source_count: 1
+confidence: 0.65
+updated_at: &quot;2026-06-16T02:36:27.192Z&quot;
+---
+# Post Deploy Stability Smoke Test Run Openclaw Resulted In An Overall Failure
+
+## Context
+The &#39;openclaw&#39; stability smoke test run failed, triggered by critical runtime issues in the live Slack integration tests. While the &#39;synthetic_fixtures&#39; lane passed successfully, the &#39;slack_delivery&#39; lane encountered errors. Additionally, multiple nightly replay lanes could not determine success or failure due to missing replay data.
+
+## Symptoms
+*   **Overall Failure:** The stability report indicates `overallGate: &quot;fail&quot;`.
+*   **Runtime Bugs:** The &#39;slack_delivery&#39; lane fails with runtime errors, specifically in test cases `delegate_core.native_final` and `footer_truth.current_model` (error type: `live_slack_case_failed`).
+*   **Unknown Status:** All nightly replay lanes (route quality, commit ack, execution transition, delegation health, delivery) return an &#39;unknown&#39; status.
+*   **Missing Data:** Replay lanes report &#39;unknown&#39; status specifically due to missing replay data.
+
+## Fix
+1.  **Investigate Runtime Bugs:** Analyze the stack traces and logs for `delegate_core.native_final` and `footer_truth.current_model` within the &#39;slack_delivery&#39; lane to identify the root cause of the `live_slack_case_failed` error.
+2.  **Verify Replay Data Pipelines:** Audit the data ingestion and storage mechanisms for the nightly replay lanes. Ensure that historical data required for route quality, commit ack, and other replay tests is being correctly captured and is available at test runtime.
+3.  **Patch and Retest:** Apply fixes to the identified runtime bugs in the delegate core or footer truth models. Resolve data pipeline issues to restore replay data availability.
+4.  **Rerun Smoke Tests:** Execute the &#39;openclaw&#39; post-deploy stability smoke test again to verify that the &#39;slack_delivery&#39; lane passes and nightly replay lanes return definitive results.
+
+## Verify
+*   Confirm the &#39;openclaw&#39; stability report shows `overallGate: &quot;pass&quot;`.
+*   Verify the &#39;slack_delivery&#39; lane executes `delegate_core.native_final` and `footer_truth.current_model` without runtime errors.
+*   Ensure all nightly replay lanes return a definitive &#39;pass&#39; or &#39;fail&#39; status instead of &#39;unknown&#39;.
+
+## Reusable Lessons
+*   Missing replay data directly compromises the ability to verify past execution behaviors, resulting in inconclusive test statuses.
+*   Live integration lanes (like Slack delivery) are sensitive to runtime bugs in core logic components, such as delegation models, which can cause immediate post-deploy stability gate failures.
+
+## Agent Use
+Use this page when:
+- An OpenClaw post-deploy stability smoke run reports `overallGate: &quot;fail&quot;` with Slack delivery runtime bugs and unknown replay lanes.
+
+Apply it by:
+- Investigate the named Slack delivery runtime bugs first.
+- Audit replay data availability for nightly lanes before treating unknown lanes as product regressions.
+- Rerun the smoke suite after runtime and replay-data fixes.
+
+Verify by:
+- Confirm `overallGate` becomes `pass`.
+- Confirm Slack delivery cases run without runtime errors.
+- Confirm nightly replay lanes return pass or fail instead of unknown.
+
+Do not use it when:
+- The failure is only a gateway restart issue or only a missing task runner status.
+
+## Provenance
+- log://openclaw/2026-05-20-03-32-09-stability-report. (sha256:9eb9cf6f4acf30440426284f82965eb7b3f36cec1518fd0d0cfba384e41523f3)
+
+## Related Wiki Pages
+*   ACK timing before long-running agent work
+*   [[missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution|Missing replay data compromises the ability to debug or verify past execution behaviors]]
+*   [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
+*   OpenClaw gateway restart after configuration changes
+*   [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
+
+## Sources
+- stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md
+- sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-proposal_kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after" class="review-card">
+    <p><strong>Changes Can Introduce Regressions When Not Tested After Modification</strong> <span class="status-pill">Promoted</span></p>
+    <p>Changes are a constant in system development and maintenance. However, even minor adjustments can have unintended side effects on existing functionality. Assuming a change is successful based solely on successful implementation, without validating system behavior, often leads ...</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md</code></dd>
+      <dt>Kind</dt><dd>pitfall</dd>
+      <dt>Scope</dt><dd>personal</dd>
+      <dt>Source</dt><dd><code>stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md</code></dd>
+      
+      <dt>Confidence</dt><dd>0.65</dd>
+      <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+      
+      
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>---
+id: wiki-changes-can-introduce-regressions-when-not-tested-after-modification
+protocol_version: &quot;0.1&quot;
+type: pitfall
+knowledge_type: pitfall
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: &quot;stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md&quot;
+    hash: &quot;sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6&quot;
+source_count: 1
+confidence: 0.65
+updated_at: &quot;2026-06-16T02:36:27.192Z&quot;
+---
+# Changes Can Introduce Regressions When Not Tested After Modification
+
+## Context
+Changes are a constant in system development and maintenance. However, even minor adjustments can have unintended side effects on existing functionality. Assuming a change is successful based solely on successful implementation, without validating system behavior, often leads to regressions that go undetected until they cause operational failures.
+
+## Operating Rule
+After making code, configuration, or operational changes, run a self-test or verification immediately following the modification. 
+
+**Do not** claim the change is complete without post-change verification.
+
+## Procedure
+1.  Implement the required code, configuration, or operational change.
+2.  Identify the relevant test suite or verification command for the modified component.
+3.  Execute the self-test or verification process.
+4.  Analyze the results to ensure the system behaves as expected.
+5.  Only mark the task as complete if verification passes.
+
+## Verify
+Use the relevant test or verification command associated with the modified component and confirm that it passes. Ensure that existing functionality remains unaffected by the change.
+
+## Reusable Lessons
+*   After making code, configuration, or operational changes, run a self-test or verification after the change.
+*   Do not claim the change is complete without post-change verification.
+
+## Agent Use
+*   **Use this page when:** You are instructed to modify system code, update configuration files, or alter operational workflows.
+*   **Apply it by:** Immediately triggering the defined verification step or test suite associated with the specific component you modified.
+*   **Verify by:** Checking the output of the test or verification command for a success state and confirming no new errors were introduced.
+*   **Do not use it when:** Performing read-only operations or when a verification mechanism does not exist for the specific component (in which case, flag the need for a test).
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes|Actions on the wrong target machine or host can cause unsafe operational changes]]
+* ACK timing before long-running agent work
+
+## Sources
+- stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md
+- sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-proposal_kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe" class="review-card">
+    <p><strong>Actions On The Wrong Target Machine Or Host Can Cause Unsafe Operational Changes</strong> <span class="status-pill">Promoted</span></p>
+    <p>Operational actions often involve destructive or disruptive changes such as restarts or configuration mutations. Performing these actions on the wrong target machine can lead to service outages, data loss, or unsafe operational states. Verification of the target identity is a ...</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md</code></dd>
+      <dt>Kind</dt><dd>procedure</dd>
+      <dt>Scope</dt><dd>personal</dd>
+      <dt>Source</dt><dd><code>stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md</code></dd>
+      
+      <dt>Confidence</dt><dd>0.65</dd>
+      <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+      
+      
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>---
+id: wiki-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes
+protocol_version: &quot;0.1&quot;
+type: procedure
+knowledge_type: procedure
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: &quot;stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md&quot;
+    hash: &quot;sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96&quot;
+source_count: 1
+confidence: 0.65
+updated_at: &quot;2026-06-16T02:36:27.192Z&quot;
+---
+# Actions On The Wrong Target Machine Or Host Can Cause Unsafe Operational Changes
+
+## Context
+Operational actions often involve destructive or disruptive changes such as restarts or configuration mutations. Performing these actions on the wrong target machine can lead to service outages, data loss, or unsafe operational states. Verification of the target identity is a critical safety step.
+
+## Procedure
+Before initiating any operational action:
+
+1.  Pause before executing the command or change.
+2.  Confirm the target machine or host matches the intended target specified in the operation plan or ticket.
+3.  Validate that the session context, terminal prompt, or management console is connected to the correct host.
+4.  Proceed with the action only after confirmation is successful.
+
+### Operating Rule
+Do not restart or mutate systems before confirming the target.
+
+## Verify
+Verify the selected target matches the intended machine or host by checking the hostname, IP address, or unique system identifier against the operational instructions.
+
+## Reusable Lessons
+*   Before restarting, modifying, or operating on a target machine or host, confirm the target machine or host before taking action.
+*   Do not restart or mutate systems before confirming the target.
+
+## Agent Use
+*   **Use this page when:** An agent is about to execute a shell command, API call, or configuration change that affects system state (restart, stop, modify).
+*   **Apply it by:** Interrogating the current environment (e.g., running `hostname`, checking environment variables, or verifying session metadata) to ensure it aligns with the requested target parameters provided in the task prompt.
+*   **Verify by:** Cross-referencing the discovered environment details with the target details in the user prompt or task definition before emitting the final tool call or command.
+*   **Do not use it when:** Performing read-only operations that do not alter state or target machines, or when the operation is explicitly context-agnostic (e.g., local temporary resource generation).
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]
+* OpenClaw gateway restart after configuration changes
+
+## Sources
+- stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md
+- sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-proposal_kb-procedures-case-sensitive-database-comparisons-can-miss-logically" class="review-card">
+    <p><strong>Case Sensitive Database Comparisons Can Miss Logically Equivalent Values</strong> <span class="status-pill">Promoted</span></p>
+    <p>By default, many database systems perform case-sensitive string comparisons. This behavior can lead to logical errors where `Value` and `value` are treated as distinct entities. If the application logic treats them as the same, this discrepancy can cause data duplication, fail...</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md</code></dd>
+      <dt>Kind</dt><dd>procedure</dd>
+      <dt>Scope</dt><dd>personal</dd>
+      <dt>Source</dt><dd><code>stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md</code></dd>
+      
+      <dt>Confidence</dt><dd>0.65</dd>
+      <dt>Created</dt><dd>2026-06-16T02:36:27.192Z</dd>
+      
+      
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code>---
+id: wiki-case-sensitive-database-comparisons-can-miss-logically-equivalent-values
+protocol_version: &quot;0.1&quot;
+type: procedure
+knowledge_type: procedure
+scope: personal
+status: draft
+maturity: draft
+sources:
+  - uri: &quot;stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md&quot;
+    hash: &quot;sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678&quot;
+source_count: 1
+confidence: 0.65
+updated_at: &quot;2026-06-16T02:36:27.192Z&quot;
+---
+# Case Sensitive Database Comparisons Can Miss Logically Equivalent Values
+
+## Context
+By default, many database systems perform case-sensitive string comparisons. This behavior can lead to logical errors where `Value` and `value` are treated as distinct entities. If the application logic treats them as the same, this discrepancy can cause data duplication, failed lookups, or integrity violations.
+
+## Procedure
+To ensure comparisons and uniqueness checks ignore case:
+
+1. Identify the columns requiring case-insensitive logic (e.g., `username`, `email`).
+2. Apply a case-insensitive collation to the column definition or index.
+   - In SQLite, use the `NOCASE` collation.
+   - In MySQL, use an appropriate case-insensitive collation such as a `_ci` collation for the target character set.
+   - In PostgreSQL, use a suitable case-insensitive strategy such as `citext`, a nondeterministic ICU collation, or a functional index on `lower(column)`, depending on schema and version constraints.
+3. When performing ad-hoc queries, explicitly cast or use collation functions if the column defaults to case-sensitive.
+
+## Verify
+Test lookups and constraints using mixed-case values:
+- Attempt to insert `User` and `user`; ensure the second insert fails if uniqueness is required.
+- Query for `USER` and ensure the record for `user` is returned.
+
+## Reusable Lessons
+- When database lookups or uniqueness checks should ignore case, use case-insensitive collation such as NOCASE for the relevant comparison or index.
+- Explicitly define collation at the schema level to avoid reliance on application-level normalization.
+
+## Agent Use
+Use this page when:
+- Case-sensitive database comparisons can miss logically equivalent values.
+
+Apply it by:
+- Use case-insensitive collation such as NOCASE for the relevant comparison or index.
+
+Verify by:
+- Test lookups with mixed-case values.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)
+
+## Related Wiki Pages
+* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]
+* [[stale-caches-can-hide-current-behavior-or-serve-outdated-assets|Stale caches can hide current behavior or serve outdated assets]]
+
+## Sources
+- stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md
+- sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678
+</code></pre>
+    </details>
+  </li></ol>
+</section>
+</main>
+  <script>window.__WIKI_BASE__="";</script>
+  <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[{"id":"ack-timing-before-long-running-agent-work","slug":"ack-timing-before-long-running-agent-work","title":"ACK timing before long-running agent work","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:642e7b61c3de34e024ad144aa03719fb48ecb3d26fde4e6bac7b70588d36ed5f","stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md"]},{"id":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","slug":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","title":"Actions on the wrong target machine or host can cause unsafe operational changes.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96","stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"]},{"id":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","slug":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","title":"Agents can mislead users if failures are reported as successful outcomes.","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195","stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"]},{"id":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","slug":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","title":"Case-sensitive database comparisons can miss logically equivalent values.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678","stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"]},{"id":"changes-can-introduce-regressions-when-not-tested-after-modification","slug":"changes-can-introduce-regressions-when-not-tested-after-modification","title":"Changes can introduce regressions when not tested after modification","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6","stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"]},{"id":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","slug":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","title":"Missing replay data compromises the ability to debug or verify past execution behaviors","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8","stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"]},{"id":"openclaw-dispatch-routing-failures","slug":"openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"known_fix","scope":"team","maturity":"verified","source_ids":["sha256:b6657ec798ebefe7645b79f6e63a468fadbc2a903d066d2adaceae312a18cb96","stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md"]},{"id":"openclaw-slack-replay-and-post-deploy-stability-failures","slug":"openclaw-slack-replay-and-post-deploy-stability-failures","title":"OpenClaw Slack replay and post-deploy stability failures","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d","stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"]},{"id":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","slug":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","title":"Post-deploy stability smoke test run 'openclaw' resulted in an overall failure","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa","stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"]},{"id":"skill-openclaw-openclaw-dispatch-routing-failures","slug":"skill-openclaw-openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"skill","scope":"personal","maturity":"draft","source_ids":["sha256:f542be934e8bf474df3cbcf1f6fad52e421f7d8625c27f2dff8e790be0e50336","skill:skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"]},{"id":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","slug":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","title":"Stale caches can hide current behavior or serve outdated assets","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d","stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"]}],"links":[{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","type":"related","weight":1,"confidence":0.8},{"from":"changes-can-introduce-regressions-when-not-tested-after-modification","to":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"skill-openclaw-openclaw-dispatch-routing-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8}],"backlinks":{"openclaw-dispatch-routing-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","skill-openclaw-openclaw-dispatch-routing-failures"],"openclaw-slack-replay-and-post-deploy-stability-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-dispatch-routing-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"changes-can-introduce-regressions-when-not-tested-after-modification":["actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","case-sensitive-database-comparisons-can-miss-logically-equivalent-values","stale-caches-can-hide-current-behavior-or-serve-outdated-assets"],"stale-caches-can-hide-current-behavior-or-serve-outdated-assets":["case-sensitive-database-comparisons-can-miss-logically-equivalent-values"],"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes":["changes-can-introduce-regressions-when-not-tested-after-modification"],"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution":["openclaw-dispatch-routing-failures","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"case-sensitive-database-comparisons-can-miss-logically-equivalent-values":["stale-caches-can-hide-current-behavior-or-serve-outdated-assets"]},"broken_links":[{"from":"ack-timing-before-long-running-agent-work","target":"openclaw-gateway-restart-after-configuration-changes"}],"orphans":[],"duplicates":[]};</script>
+  <script src="site.js"></script>
+</body>
+</html>

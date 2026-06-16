@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-355aea4949afabe8",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-6a00c70c9",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/0e92ce33a0e6f928264ccf3f028b41f1fa6b60260443a9c650956c393c679e09",
+    "source_hash": "sha256:6a00c70c9cf57a059e3dc45e8e73ff772b5b38b3090c9dddb690f033e9af6428",
+    "redacted_summary": "- **根因示例**：确认是空间/内存占满（用户反馈为“内存满了”），清理 `/tmp` 后重启恢复。 - **处理**：若费用正常且不是休眠/手动停止，检查磁盘/`/tmp` 空间；清理后重启实例。 ### Cron `sessionTarget: \"main\"` Bug (2026-02-27) - All cron jobs with `sessionTarget: \"main\"` + `payload.kind: \"systemEvent\"` fail with 400 error - Root cause: Framework doesn't save actual main session key, stores literal \"main\" string - Workaround: Use `sessionTarget: \"isolated\"` + `payload.kind: \"agentTurn\"` + `delivery` config - Log location: `[REDACTED_PATH] ## Feishu Group Reply Convention - In Feishu topic/thread-style group conversations, reply under the user's topic/message instead of sending a separate standalone group message. - When context is clearly a reply chain, prefer `replyTo` / thread-aware replies to keep the conversation attached to the original ",
+    "privacy_signature": "sha256:355aea4949afabe859f9eb61d66db347db8c6ff98c054b278fa4a9ce1d125015",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

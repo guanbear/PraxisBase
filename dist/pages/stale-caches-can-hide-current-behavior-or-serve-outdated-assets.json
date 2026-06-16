@@ -1,0 +1,21 @@
+{
+  "id": "stale-caches-can-hide-current-behavior-or-serve-outdated-assets",
+  "slug": "stale-caches-can-hide-current-behavior-or-serve-outdated-assets",
+  "title": "Stale caches can hide current behavior or serve outdated assets",
+  "path": "kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md",
+  "kind": "procedure",
+  "scope": "personal",
+  "maturity": "draft",
+  "source_ids": [
+    "sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d",
+    "stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"
+  ],
+  "provenance_refs": [
+    {
+      "uri": "source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md",
+      "hash": "sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7"
+    }
+  ],
+  "signatures": [],
+  "body": "# Stale caches can hide current behavior or serve outdated assets\n\n## When to Use\nUse this procedure when:\n* Updates to web assets or API responses are not reflected immediately for end-users.\n* Testing recent code changes results in unexpected behavior that matches previous versions.\n* Debugging issues where the client or proxy appears to be ignoring server-side updates.\n\n## Symptoms or Context\n* Users report seeing old data or interfaces despite a confirmed deployment.\n* Browser DevTools shows 304 Not Modified responses or 200 OK responses with old content timestamps.\n* System behavior does not match the expected logic of the currently deployed code version.\n\n## What To Do\nImplement explicit cache busting to force the retrieval of fresh content. Common methods include:\n\n1. **Timestamped Cache Keys:** Append a timestamp or version number to asset filenames or query parameters (e.g., `style.v123.css` or `script.js?t=1698765432`).\n2. **Versioned File Paths:** Update the directory or filename of static assets during the build process (e.g., `/static/v1.2.3/image.png`).\n3. **Cache-Control Headers:** Configure server headers to reduce the Time-To-Live (TTL) for specific resources that change frequently.\n\nApply these methods specifically when cache-sensitive content changes or when stale results are suspected.\n\n## Verify\n* Confirm that the fresh content is fetched rather than a stale cached copy.\n* Check network requests in browser DevTools to ensure new cache keys or headers trigger a full response (200 OK) rather than a cached validation (304 Not Modified).\n* Verify that the user interface reflects the latest changes immediately after the update.\n\n## Reusable Lessons\n* When cache-sensitive content changes or stale results are suspected, use explicit cache busting such as timestamped cache keys where appropriate.\n* Relying solely on browser or intermediary cache expiration logic can lead to user-facing inconsistencies during updates.\n\n## Agent Use\n* **Use this page when:** Investigating issues involving outdated content delivery, inconsistent user experiences post-deployment, or \"ghost\" bugs related to old code.\n* **Apply it by:** Injecting version identifiers into asset URLs, modifying query parameters for dynamic requests, or adjusting server-side cache control headers.\n* **Verify by:** Asserting that the response payload corresponds to the latest source data and that new cache keys are generated for content updates.\n* **Do not use it when:** The issue is related to server-side errors (5xx) or network connectivity failures that prevent content retrieval entirely.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/trusted-remote-openclaw/source_guanzhicheng-openclaw/1756229c2de0ed90/002-f21b35795b39-MEMORY.md (sha256:07d7111a69d9e7ce4c0f8400455dfedc6acfaf46316612b7a4530ccd7bd2ebd7)\n\n## Related Wiki Pages\n* [[changes-can-introduce-regressions-when-not-tested-after-modification|Changes can introduce regressions when not tested after modification]]\n* [[case-sensitive-database-comparisons-can-miss-logically-equivalent-values|Case-sensitive database comparisons can miss logically equivalent values]]"
+}

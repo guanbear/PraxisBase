@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-1f7524e8ea7c5493",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-bdd86a156",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/a4ee36420500cc72c9c7960a056347306a3302f73506f01a06721591dc7129cf",
+    "source_hash": "sha256:bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
+    "redacted_summary": "# 2026-02-14 ## Preferences - User `ou_2a32896e8b25ebf7588d8d91dbaa6f4d` (in group `oc_97951f2a5226dafe0decf5592d4e2726`) requested to be called \"小帅\". - User `ou_31dd9694b0a4fa16c1da8c0c6db759e7` (in group `oc_97951f2a5226dafe0decf5592d4e2726`) is \"小美\".",
+    "privacy_signature": "sha256:1f7524e8ea7c54932e4767bc9dec7c29854c2bad8809a76a2f909d8472d572b0",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

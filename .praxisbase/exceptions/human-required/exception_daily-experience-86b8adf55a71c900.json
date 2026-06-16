@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-86b8adf55a71c900",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-dbfb119fc",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417",
+    "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+    "redacted_summary": "# 2026-05-19 ## /model 行为结论（用户要求后续按此口径回答） - /model 的效果取决于当前 agent 是否被单独设置过默认模型。 - A 类：agent 未被单独设过模型 - /model 切换通常会持久生效，新对话/重启后仍保持。 - 实际上相当于改了公共默认，会影响其他同样未单独设模型的 agent。 - 未单独设模型的子 agent 会跟着变；单独设过的不会。 - B 类：agent 被单独设过默认模型（pm/coder/designer 等命名 agent 多半属于此类） - /model 只对当前会话临时生效。 - 即使提示“已更新默认模型”也可能无效；应以 /status 为准。 - 开新对话、agent 重启、或派子 agent 干活后，会回到该 agent 自己配置的默认模型。 - 当前没有持久化办法，只能每次新对话重新 /model，直到后续产品改进上线。 - 两类通用补充 - 回复风格突然变化，常见原因是子 agent 在工作；子 agent 独立且可能使用自己的默认模型。 - 确认当前真实模型应使用 /status，不要靠自然语言问 agent “你是什么模型”。 - /status 只能看当前会话，不能看到刚才某个子 agent 用了什么模型。 - 已规划改进方向",
+    "privacy_signature": "sha256:86b8adf55a71c9001fcdd103101ca0a693752b9f7cfa48a95d1182e33f7d684c",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

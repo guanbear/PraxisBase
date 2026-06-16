@@ -1,0 +1,27 @@
+{
+  "id": "exception_daily-experience-26e20af34a56d959",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-b3b1891ee",
+  "reason": "Experience privacy verdict human_required: private_material_detected, feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/e0d8bd780bd4d7d0acc94dd3de06a1b295e0fdc6c94b65046de2633bcc0a8c53",
+    "source_hash": "sha256:b3b1891ee00104774570e3e1a1b84f3da47119d971cea424d87d231f3a4489a7",
+    "redacted_summary": "- https://li.feishu.cn/wiki/JbdfwFdgliUeDAksQv2ceFcXnne - 已尝试用缺省应用 Tenant Token 读取 wiki → 权限不足（需要 wiki:wiki:readonly） - 已发送用户授权登录卡片（进程 kind-shore 等待中），等待用户点击授权 - 进程 kind-shore 仍在运行，等待 gaomingda 完成飞书登录授权 ## 群聊支持问答（oc_8a7339d738dfbe70306fcd643041c1f3） ### 常见问题回答 - **机器人实例自动 Stopped**：常见原因有资源限制、健康检查失败、空闲超时（Scale to Zero）、节点驱逐、进程 OOM。排查方式：kubectl describe pod + kubectl logs --previous - **upstream connect error / Connection refused**：后端服务未运行或端口未监听，需检查 Pod 状态和日志 - **斜杠命令无法执行**：飞书群聊斜杠命令需在开放平台后台注册；建议在单聊中使用或改用 @Bot + 自然语言 - **扩容/申请时间**：未知，建议联系平台管理员 ### Skill 相关 - find-skills 已通过 `npx [REDACTED_USER_HOST] install find-skills` 安装到 `/workspace/skills/find-skills` - 当前自定义 Skill 列表（共11个）：dify-dsl-generator, excel-report-generator, github-readme-generator, github-trending, jimeng_mcp_skill, seedance-video-cre",
+    "privacy_signature": "sha256:26e20af34a56d95917107737072ae4d88403cb5fade94b1e2e3d049d8de62f05",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "private_material_detected",
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

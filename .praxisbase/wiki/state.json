@@ -1,0 +1,61 @@
+{
+  "protocol_version": "0.1",
+  "sources": {
+    "stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md": {
+      "source_hash": "sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195",
+      "last_compiled_at": "2026-06-16T02:36:27.192Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful"
+      ],
+      "page_ids": []
+    },
+    "stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md": {
+      "source_hash": "sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8",
+      "last_compiled_at": "2026-06-16T02:36:27.192Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify"
+      ],
+      "page_ids": []
+    },
+    "stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md": {
+      "source_hash": "sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d",
+      "last_compiled_at": "2026-06-16T02:36:27.192Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures-md"
+      ],
+      "page_ids": []
+    },
+    "stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md": {
+      "source_hash": "sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa",
+      "last_compiled_at": "2026-06-16T02:36:27.192Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an"
+      ],
+      "page_ids": []
+    },
+    "stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md": {
+      "source_hash": "sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6",
+      "last_compiled_at": "2026-06-16T02:36:27.192Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after"
+      ],
+      "page_ids": []
+    },
+    "stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md": {
+      "source_hash": "sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96",
+      "last_compiled_at": "2026-06-16T02:36:27.192Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe"
+      ],
+      "page_ids": []
+    },
+    "stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md": {
+      "source_hash": "sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678",
+      "last_compiled_at": "2026-06-16T02:36:27.192Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-case-sensitive-database-comparisons-can-miss-logically"
+      ],
+      "page_ids": []
+    }
+  }
+}

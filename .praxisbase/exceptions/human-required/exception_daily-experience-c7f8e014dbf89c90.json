@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-c7f8e014dbf89c90",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-e437220d9",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/cb0565346fdc853fc4f1db8e3568bf7c8ae2247cb009ed8b59691027b6d71f1a",
+    "source_hash": "sha256:e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+    "redacted_summary": "- 回复风格突然变化，常见原因是子 agent 在工作；子 agent 独立且可能使用自己的默认模型。 - 确认当前真实模型应使用 /status，不要靠自然语言问 agent “你是什么模型”。 - /status 只能看当前会话，不能看到刚才某个子 agent 用了什么模型。 - 已规划改进方向 - 未来计划将 /model 改为直接、持久修改“当前这个 agent”的默认模型，不再只改公共默认。 - 子 agent 使用独立默认模型的问题不在本次改进范围内。 ## 群规则写入（oc_8a7339d738dfbe70306fcd643041c1f3） - 用户要求：监听该群全部消息，但只在明显能提供帮助时回答。 - 已写入固定触发场景 1：当群消息表达“沙箱挂掉了 / 机器人不工作 / 机器人不响应 / 实例挂了 / 没反应 / 不回消息”等故障语义时，再介入回复。 - 该场景固定话术（要求尽量原样使用，不自由改写）：`可以尝试在控制台https://openclaw.chj.cloud/dashboard 实例列的自动修复按钮。可以优先尝试脚本修复，如果脚本修复失败了，使用AI修复。据统计通常可以解决99.99%的问题。` - 非上述触发场景时，保持安静。",
+    "privacy_signature": "sha256:c7f8e014dbf89c90995e6785daf968110a1d1f2b9d128a9947c31ac413d7f1d0",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

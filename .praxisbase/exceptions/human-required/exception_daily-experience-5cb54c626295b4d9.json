@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-5cb54c626295b4d9",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-19c2eeefa",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3",
+    "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+    "redacted_summary": "- Trigger scenario 1: if a user says the sandbox is down, the bot is not working, the bot is not responding, the instance is down, or uses similar failure wording. - Do NOT use the auto-repair guidance for billing/quota/sleep-after-payment problems; fee/quota issues are not suitable for automatic repair. - When scenario 1 is triggered, use the following fixed wording and do not freely rewrite it: `可以尝试在控制台https://openclaw.chj.cloud/dashboard 实例列的自动修复按钮。可以优先尝试脚本修复，如果脚本修复失败了，使用AI修复。据统计通常可以解决99.99%的问题。` - If the user already explicitly says both script repair and AI repair were tried and still failed, directly mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4） and 管志成（ou_17a0ae2d4c87a64e75294ea441084740） for follow-up instead of repeating the auto-repair guidance. 注意：不要误 @ 张瑞奇（ou_4514aa6582f32f",
+    "privacy_signature": "sha256:5cb54c626295b4d938e001bd8822fdd733cad75a360b575d65541e0a1d7b6b9b",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

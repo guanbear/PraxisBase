@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-444ad40b7503112d",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-f7aee701a",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9",
+    "source_hash": "sha256:f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
+    "redacted_summary": "- **解决**：去 openclaw.chj.cloud → Skills 页面 → 更新飞书插件，然后重启实例 - **来源**：高明达确认，用户李熠柃验证修复成功 ### Feishu pairing `access not configured` (2026-05-19) - **现象**：飞书里出现 `OpenClaw: access not configured`，并展示 pairing code，要求执行 `openclaw pairing approve feishu <code>` - **解释**：当前用户/会话尚未完成访问授权配对 - **处理**： - 常规处理：由实例管理员执行 `openclaw pairing approve feishu <code>` 完成授权 - 补充经验：如果是新用户，先重启一下实例，通常也能解决 - 更准确口径：如果是刚申请/刚接入的新用户，优先让用户去控制台点一次重启；这是已知问题，后续版本会修复；若重启后仍不行，再走 approve 授权流程 ### 实例 Stopped / 机器人不回复：`/tmp` 或磁盘空间满 (2026-05-25) - **现象**：机器人下午开始不回复，控制台实例状态 stopped。 - **根因示例**：确认是空间/内存占满（用户反馈为“内存满了”），清理 `/tmp` 后重启恢复。 - **处理**：若费用正常且不是休眠/手动停止，检查磁盘/`/tmp` 空间；清理后重启实例。 ### Cron `sessionTarget: \"main\"` Bug (2026-02-27) - All cron jobs with `sessionTarget: \"main\"` + `payload.kind: \"systemEvent\"` fail with 400 error",
+    "privacy_signature": "sha256:444ad40b7503112d79e4ed9d9dad15f89a1e2f6d1627434f1930bd32916b8d89",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}

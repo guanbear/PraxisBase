@@ -1,0 +1,26 @@
+{
+  "id": "exception_daily-experience-5fe8e5312427b66d",
+  "protocol_version": "0.1",
+  "type": "exception_record",
+  "category": "human_required",
+  "source_id": "experience_openclaw-answer-bot-sha256-64f06eeeb",
+  "reason": "Experience privacy verdict human_required: feishu_channel_team_review_first",
+  "details": {
+    "source_id": "source_openclaw-answer-bot",
+    "agent": "openclaw",
+    "channel": "feishu",
+    "scope_hint": "team",
+    "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/96275568696686fbae153debca63c95d2252a4a627c904a1157fff1e1ce884c2",
+    "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+    "redacted_summary": "- 00:03 cron：按原文向飞书群 chat:oc_8a7339d738dfbe70306fcd643041c1f3 发送了私有化模型安全提醒与 qwen3_6 切换通知。",
+    "privacy_signature": "sha256:5fe8e5312427b66dace2d9a86e2059c3e6543b279ec08744a9d410a4681b49f0",
+    "privacy": {
+      "mode": "team-git",
+      "verdict": "human_required",
+      "reasons": [
+        "feishu_channel_team_review_first"
+      ]
+    }
+  },
+  "created_at": "2026-06-16T02:36:27.192Z"
+}
