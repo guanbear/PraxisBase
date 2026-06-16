@@ -92,74 +92,11 @@
     {
       "id": "wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
       "slug": "pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
-      "title": "ACK timing before long-running agent work",
+      "title": "长耗时代理工作前的 ACK 时机",
       "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
       "kind": "pending:pitfall",
       "href": "review.html#pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
-      "text": "ACK timing before long-running agent work\nAgents should send a brief acknowledgement before starting slow tool, network, dispatch, delegation, or other long-running work so users receive timely feedback before the operation begins.\nkb/known-fixes/ack-timing-before-long-running-agent-work.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
-    },
-    {
-      "id": "wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-0ce7713e4fba280a",
-      "slug": "pending-wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-0ce7713e4fba280a",
-      "title": "OpenClaw dispatch routing failures",
-      "path": "kb/known-fixes/openclaw-dispatch-routing-failures.md",
-      "kind": "pending:pitfall",
-      "href": "review.html#pending-wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-0ce7713e4fba280a",
-      "text": "OpenClaw dispatch routing failures\nOperational guidance for diagnosing OpenClaw/OctoClaw dispatch routing failures, including route mismatches, missing runners, spawn validation errors, and user-facing support routing pitfalls. Emphasizes dispatch-layer diagnosis, immediate acknowledgment for long-running work, transparent AI identity when human support is requested without details, and safe sanitization of routing documentation.\nkb/known-fixes/openclaw-dispatch-routing-failures.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json, source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json"
-    },
-    {
-      "id": "wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down",
-      "slug": "pending-wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down",
-      "title": "Users may report that an interactive environment or bot is down, sleeping, or unresponsive",
-      "path": "kb/known-fixes/users-may-report-that-an-interactive-environment-or-bot-is-down-sleeping-or.md",
-      "kind": "pending:known_fix",
-      "href": "review.html#pending-wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down",
-      "text": "Users may report that an interactive environment or bot is down, sleeping, or unresponsive\nFor a down, sleeping, or unresponsive interactive environment or bot, first direct the user to the product console’s automatic repair option, unless the issue appears related to billing, quota, or payment. If both script-based and AI-based repair have already failed, escalate instead of repeating repair steps.\nkb/known-fixes/users-may-report-that-an-interactive-environment-or-bot-is-down-sleeping-or.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json"
-    },
-    {
-      "id": "wiki-curated_kb-pitfalls-bypassing-authorization-failures-can-violate-access-controls",
-      "slug": "pending-wiki-curated_kb-pitfalls-bypassing-authorization-failures-can-violate-access-controls",
-      "title": "Bypassing Authorization Failures Can Violate Access Controls, Privacy Expectations, or System Policy",
-      "path": "kb/pitfalls/bypassing-authorization-failures-can-violate-access-controls-privacy.md",
-      "kind": "pending:pitfall",
-      "href": "review.html#pending-wiki-curated_kb-pitfalls-bypassing-authorization-failures-can-violate-access-controls",
-      "text": "Bypassing Authorization Failures Can Violate Access Controls, Privacy Expectations, or System Policy\nWhen authorized document retrieval fails, agents must not seek mirrors, cached copies, alternate accounts, or indirect access paths. Stop retrieval attempts and ask the requester to provide access, paste the content, or upload it through an approved channel.\nkb/pitfalls/bypassing-authorization-failures-can-violate-access-controls-privacy.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json"
-    },
-    {
-      "id": "wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about",
-      "slug": "pending-wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about",
-      "title": "Agents may provide unreliable or hallucinated answers about their own runtime model or configuration",
-      "path": "kb/procedures/agents-may-provide-unreliable-or-hallucinated-answers-about-their-own-runtime.md",
-      "kind": "pending:procedure",
-      "href": "review.html#pending-wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about",
-      "text": "Agents may provide unreliable or hallucinated answers about their own runtime model or configuration\nUse an authoritative runtime/session status mechanism, not an agent's natural-language self-report, to verify the active model or runtime configuration.\nkb/procedures/agents-may-provide-unreliable-or-hallucinated-answers-about-their-own-runtime.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json"
-    },
-    {
-      "id": "wiki-curated_kb-procedures-reply-inside-existing-threaded-chat-conversation-md-sha256",
-      "slug": "pending-wiki-curated_kb-procedures-reply-inside-existing-threaded-chat-conversation-md-sha256",
-      "title": "Reply Inside an Existing Threaded Chat Conversation",
-      "path": "kb/procedures/reply-inside-existing-threaded-chat-conversation.md",
-      "kind": "pending:procedure",
-      "href": "review.html#pending-wiki-curated_kb-procedures-reply-inside-existing-threaded-chat-conversation-md-sha256",
-      "text": "Reply Inside an Existing Threaded Chat Conversation\nBefore sending a chat reply, determine whether the interaction belongs inside an existing thread. If it does, include the platform-required parent message identifier so the reply appears in the thread instead of the main channel or group timeline.\nkb/procedures/reply-inside-existing-threaded-chat-conversation.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json"
-    },
-    {
-      "id": "wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective",
-      "slug": "pending-wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective",
-      "title": "Verify Effective Runtime Model After a Reported Model Switch",
-      "path": "kb/procedures/the-agent-or-ui-may-report-success-even-when-the-effective-runtime-model.md",
-      "kind": "pending:procedure",
-      "href": "review.html#pending-wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective",
-      "text": "Verify Effective Runtime Model After a Reported Model Switch\nAgents or UIs may report that a model switch succeeded even when the active runtime model is still different from the intended model. Confirm model changes with an explicit session status, diagnostic, or configuration command before relying on the new model.\nkb/procedures/the-agent-or-ui-may-report-success-even-when-the-effective-runtime-model.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json"
-    },
-    {
-      "id": "wiki-curated_kb-procedures-verify-session-level-configuration-changes-before-relying-on",
-      "slug": "pending-wiki-curated_kb-procedures-verify-session-level-configuration-changes-before-relying-on",
-      "title": "Verify Session-Level Configuration Changes Before Relying on Them",
-      "path": "kb/procedures/verify-session-level-configuration-changes-before-relying-on-them.md",
-      "kind": "pending:procedure",
-      "href": "review.html#pending-wiki-curated_kb-procedures-verify-session-level-configuration-changes-before-relying-on",
-      "text": "Verify Session-Level Configuration Changes Before Relying on Them\nTreat session-level configuration or behavior changes as temporary until the active configuration is explicitly inspected in the current session or worker context.\nkb/procedures/verify-session-level-configuration-changes-before-relying-on-them.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json"
+      "text": "长耗时代理工作前的 ACK 时机\n当代理即将执行工具调用、网络请求、任务分发或其他长耗时工作时，应先发送简短确认消息，再开始慢操作，以避免用户误以为系统无响应。\nkb/known-fixes/ack-timing-before-long-running-agent-work.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
     }
   ]
 }

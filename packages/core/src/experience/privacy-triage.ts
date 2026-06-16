@@ -39,6 +39,7 @@ export interface PrivacyTriageProgressEvent {
     auto_released: number;
     keep_human_required: number;
     team_review_only: number;
+    rejected_low_signal: number;
   };
   warnings: string[];
 }
@@ -315,6 +316,26 @@ function isLowSignalTeamReleaseText(text: string): boolean {
     || /\bno operational, personal, or sensitive details\b/i.test(text);
 }
 
+function isGreetingOnlyLowSignalText(text: string): boolean {
+  return /\b(?:generic|benign) greetings?\b/i.test(text)
+    || /\bgreeting-only\b/i.test(text)
+    || /\bonly a generic greeting\b/i.test(text)
+    || /\bcontains only a generic greeting\b/i.test(text);
+}
+
+function isLowSignalTeamTriage(input: {
+  exception: ExceptionRecord;
+  ai: TriageAiDecision;
+}): boolean {
+  if (input.ai.classification !== "safe_personal_experience" || input.ai.confidence < 0.85) return false;
+  const exceptionSummary = (input.exception as unknown as { summary?: unknown }).summary;
+  const summary = typeof exceptionSummary === "string"
+    ? exceptionSummary
+    : "";
+  const combined = [summary, input.ai.rationale].filter(Boolean).join("\n");
+  return isGreetingOnlyLowSignalText(combined);
+}
+
 function teamAutoReviewThreshold(ai: TriageAiDecision): number | undefined {
   if (ai.classification === "safe_personal_experience") return 0.82;
   if (ai.classification === "needs_redaction") return 0.78;
@@ -380,12 +401,16 @@ function releaseDecision(input: {
   authorityMode: RunPrivacyTriageInput["authorityMode"];
   autoRelease: boolean;
   teamAutoReview: boolean;
+  teamLowSignal?: boolean;
   scope?: string;
   hardBlockReasons: string[];
   ai: TriageAiDecision;
   teamReleaseSummary?: TeamReleaseSummary;
 }): TriageDecision {
   if (input.authorityMode === "team-git") {
+    if (input.teamLowSignal) {
+      return "rejected_low_signal";
+    }
     return input.teamAutoReview && input.teamReleaseSummary ? "auto_released" : "team_review_only";
   }
   const releasableScope = input.scope === "personal" || input.scope === "project" || !input.scope;
@@ -538,6 +563,7 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
         auto_released: items.filter((item) => item.decision === "auto_released").length,
         keep_human_required: items.filter((item) => item.decision === "keep_human_required").length,
         team_review_only: items.filter((item) => item.decision === "team_review_only").length,
+        rejected_low_signal: items.filter((item) => item.decision === "rejected_low_signal").length,
       },
       warnings,
     });
@@ -617,6 +643,7 @@ export async function runPrivacyTriage(root: string, input: RunPrivacyTriageInpu
       auto_released: items.filter((item) => item.decision === "auto_released").length,
       keep_human_required: items.filter((item) => item.decision === "keep_human_required").length,
       team_review_only: items.filter((item) => item.decision === "team_review_only").length,
+      rejected_low_signal: items.filter((item) => item.decision === "rejected_low_signal").length,
     },
     changed_stable_knowledge: false,
     outputs,
@@ -679,11 +706,17 @@ async function triageException(input: {
     })
       ? await generateTeamReleaseSummary({ exception, ai, aiClient: input.aiClient, warnings: input.warnings })
       : undefined;
+    let teamLowSignal = input.warnings.includes(`privacy_triage_team_auto_review_low_signal:${exception.id}`);
+    if (!teamLowSignal && isLowSignalTeamTriage({ exception, ai })) {
+      input.warnings.push(`privacy_triage_team_auto_review_low_signal:${exception.id}`);
+      teamLowSignal = true;
+    }
 
     const decision = releaseDecision({
       authorityMode: input.authorityMode,
       autoRelease: input.autoRelease,
       teamAutoReview: input.teamAutoReview,
+      teamLowSignal,
       scope,
       hardBlockReasons,
       ai,

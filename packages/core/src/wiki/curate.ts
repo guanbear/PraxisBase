@@ -6,6 +6,7 @@ import { protocolPaths } from "../protocol/paths.js";
 import { readAiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient } from "../ai/client.js";
 import type { AiJsonClient } from "../ai/client.js";
+import type { ProjectLanguage } from "../config/project.js";
 import { writeJson } from "../store/file-store.js";
 import { collectWikiSources } from "./collect.js";
 import { analyzeWikiSource } from "./analyze.js";
@@ -40,7 +41,7 @@ import { ExperienceLessonSchema, type ExperienceLesson } from "../experience/les
 import { buildWikiEvidenceFromLessons } from "./lesson-compiler.js";
 
 const REPORTS_WIKI_CURATION = ".praxisbase/reports/wiki-curation";
-const REPORTS_WIKI_SOURCE_SUMMARIES = ".praxisbase/reports/wiki-source-summaries";
+const REPORTS_WIKI_SOURCE_SUMMARIES = protocolPaths.reportsWikiSourceSummaries;
 
 async function writeWikiSourceSummaries(root: string, input: {
   evidence: WikiEvidenceItem[];
@@ -215,6 +216,7 @@ export interface CurateWikiOptions {
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
   aiTimeoutMs?: number;
+  language?: ProjectLanguage;
   onProgress?: (progress: WikiCurationProgress) => void | Promise<void>;
 }
 
@@ -241,7 +243,7 @@ function textForSource(source: WikiSource): string {
 }
 
 function hasConcreteExperienceTerms(text: string): boolean {
-  return /\b(user preference|preference|operating policy|fixed|resolved|passed|verified|validated|workaround|pitfall|decision|failed|avoid|lesson|ack)\b/i.test(text);
+  return /\b(user preference|preference|operating policy|fixed|resolved|passed|verified|validated|workaround|pitfall|decision|failed|avoid|lesson|ack)\b|用户|偏好|策略|修复|解决|通过|验证|规避|坑|决策|失败|避免|经验|沉淀|检查|重试/i.test(text);
 }
 
 function hasExplicitUserExperienceMarker(text: string): boolean {
@@ -363,17 +365,17 @@ function cleanEvidenceSummary(summary: string): string {
 }
 
 function inferActions(text: string): string[] {
-  const matches = sentences(text).filter((line) => /\b(refresh|retry|restart|run|fix|fixed|update|promote|verify|send|ack|continue)\b/i.test(line));
+  const matches = sentences(text).filter((line) => /\b(refresh|retry|restart|run|fix|fixed|update|promote|verify|send|ack|continue)\b|刷新|重试|重启|运行|执行|修复|更新|提升|验证|发送|确认|继续|检查/i.test(line));
   return matches.length > 0 ? matches.slice(0, 4) : [];
 }
 
 function inferVerification(text: string): string[] {
-  const matches = sentences(text).filter((line) => /\b(test|check|verify|passed|sync|build|pnpm|pytest)\b/i.test(line));
+  const matches = sentences(text).filter((line) => /\b(test|check|verify|passed|sync|build|pnpm|pytest)\b|测试|检查|验证|通过|同步|构建/i.test(line));
   return matches.length > 0 ? matches.slice(0, 3) : [];
 }
 
 function inferReusableLessons(text: string): string[] {
-  const matches = sentences(text).filter((line) => /\b(lesson|remember|prefer|preference|refresh|avoid|use|run|should|must|ack|before retrying)\b/i.test(line));
+  const matches = sentences(text).filter((line) => /\b(lesson|remember|prefer|preference|refresh|avoid|use|run|should|must|ack|before retrying)\b|经验|记住|优先|偏好|刷新|避免|使用|运行|应该|必须|确认|重试前|沉淀/i.test(line));
   return matches.length > 0 ? matches.slice(0, 4) : [];
 }
 
@@ -560,7 +562,7 @@ export async function buildWikiEvidencePoolFromRoot(root: string): Promise<WikiE
   if (lessonItems.length > 0) {
     return {
       ...sourcePool,
-      items: mergeEvidenceItems(lessonItems),
+      items: mergeEvidenceItems([...sourcePool.items, ...lessonItems]),
     };
   }
   return {
@@ -1248,14 +1250,14 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
 
 export async function synthesizeCuratedWikiProposal(
   cluster: WikiEvidenceCluster,
-  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient; synthesisContext?: SynthesisContext; planAction?: WikiPagePlanAction },
+  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient; synthesisContext?: SynthesisContext; planAction?: WikiPagePlanAction; language?: ProjectLanguage },
 ): Promise<CuratedProposalResult> {
   const now = options.now ?? new Date().toISOString();
   const planAction = options.planAction ?? options.synthesisContext?.pagePlanAction;
   try {
     let proposal: CuratedWikiProposal;
     if (options.client) {
-      const prompt = buildWikiCuratorPrompt(cluster, options.evidence, options.synthesisContext);
+      const prompt = buildWikiCuratorPrompt(cluster, options.evidence, options.synthesisContext, { language: options.language });
       const response = await options.client.generateJson({
         system: prompt.system,
         user: prompt.user,
@@ -1564,6 +1566,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       client: aiClient,
       synthesisContext,
       planAction: plan.action,
+      language: options.language,
     });
     if (result.ok) {
       const proposal = CuratedWikiProposalSchema.parse({

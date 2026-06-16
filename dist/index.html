@@ -3,305 +3,163 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PraxisBase Knowledge Health</title>
+  <title>PraxisBase 知识库健康</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="index.html">PraxisBase Wiki</a>
+    <a class="brand" href="index.html" data-i18n="brand">PraxisBase 知识库</a>
     <div class="search">
-      <input id="searchInput" type="search" placeholder="Search knowledge" autocomplete="off">
+      <input id="searchInput" type="search" placeholder="搜索知识" autocomplete="off">
       <div id="searchResults" class="search-results" hidden></div>
     </div>
-    <nav class="topnav" aria-label="Wiki views">
-      <a href="wiki/index.md">Index</a>
-      <a href="review.html">Review</a>
-      <a href="graph.html">Graph</a>
-      <a href="issues.html">Issues</a>
+    <nav class="topnav" aria-label="知识库视图" data-i18n-aria-label="nav.aria">
+      <a href="index.html" data-i18n="nav.index">索引</a>
+      <a href="review.html" data-i18n="nav.review">审核</a>
+      <a href="graph.html" data-i18n="nav.graph">图谱</a>
+      <a href="issues.html" data-i18n="nav.issues">问题</a>
+      <div class="language-switch" aria-label="切换语言" data-i18n-aria-label="language.switch">
+        <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M3 12h18"></path>
+          <path d="M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9"></path>
+          <path d="M12 3C9.6 5.5 8.4 8.5 8.4 12s1.2 6.5 3.6 9"></path>
+        </svg>
+        <button type="button" data-language-option="zh-CN" aria-pressed="true">中</button>
+        <button type="button" data-language-option="en" aria-pressed="false">EN</button>
+        <select id="languageSelect" class="language-select-native" aria-label="Language" tabindex="-1">
+          <option value="zh-CN" selected>中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
     </nav>
   </header>
   <main class="dashboard">
   <section class="hero">
     <div>
-      <p class="eyebrow">Agent-ready knowledge base</p>
-      <h1>Knowledge Health</h1>
-      <p class="lede">Reviewed fixes, skills, provenance, and graph context for repair workflows.</p>
+      <p class="eyebrow" data-i18n="dashboard.eyebrow">面向 Agent 的知识库</p>
+      <h1 data-i18n="dashboard.title">知识库健康</h1>
+      <p class="lede" data-i18n="dashboard.lede">已审核的修复、技能、溯源和图谱上下文，服务机器人修复工作流。</p>
     </div>
   </section>
   <section class="metrics">
-    <a class="metric-link" href="#knowledge-pages"><span>Sources</span><strong>22</strong></a>
-<a class="metric-link" href="#knowledge-pages"><span>Pages</span><strong>11</strong></a>
-<a class="metric-link" href="issues.html"><span>Broken links</span><strong>0</strong></a>
-<a class="metric-link" href="issues.html"><span>Duplicates</span><strong>0</strong></a>
-<a class="metric-link" href="graph.html"><span>Orphans</span><strong>0</strong></a>
-<a class="metric-link" href="issues.html"><span>Stale</span><strong>0</strong></a>
-<a class="metric-link" href="issues.html"><span>Quality findings</span><strong>0</strong></a>
-<article><span>Bundle status</span><strong>not built</strong></article>
+    <a class="metric-link" href="#knowledge-pages"><span data-i18n="dashboard.metric.sources">来源</span><strong>22</strong></a>
+<a class="metric-link" href="#knowledge-pages"><span data-i18n="dashboard.metric.pages">页面</span><strong>11</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.brokenLinks">断链</span><strong>0</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.duplicates">重复</span><strong>0</strong></a>
+<a class="metric-link" href="graph.html"><span data-i18n="dashboard.metric.orphans">孤立项</span><strong>0</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.stale">过期</span><strong>0</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.quality">质量问题</span><strong>0</strong></a>
+<article><span data-i18n="dashboard.metric.bundle">包状态</span><strong>not built</strong></article>
   </section>
   <section class="daily-update">
-  <h2>Latest Daily Experience</h2>
+  <h2>最新 Daily 经验</h2>
   <p class="eyebrow">2026-06-16 &middot; team-git</p>
   <div class="metrics">
-    <article><span>Sources</span><strong>1</strong></article>
-<article><span>Imported</span><strong>0</strong></article>
-<article><span>Rejected</span><strong>0</strong></article>
-<a class="metric-link" href="review.html#human-required"><span>Human required</span><strong>13</strong></a>
-<a class="metric-link" href="review.html#pending-candidates"><span>Proposals</span><strong>8</strong></a>
-<article><span>Site pages</span><strong>11</strong></article>
-    <article><span>Context Economy</span><strong>On</strong></article>
-    <article><span>Reduced items</span><strong>0</strong></article>
-    <article><span>Saved bytes</span><strong>0</strong></article>
-    <article><span>Context Juice</span><strong>On</strong></article>
-    <article><span>Budgeted items</span><strong>0</strong></article>
-    <article><span>Juice saved bytes</span><strong>0</strong></article>
-    <article><span>Pre-summaries</span><strong>0</strong></article>
-	    
-	    
-	    <article><span>Lifecycle proposals</span><strong>1</strong></article>
-	      <article><span>Lifecycle promote</span><strong>1</strong></article>
-	      
-	      
-	      
-	      
-	    
-	    <article><span>M25 Lessons</span><strong>50 extracted</strong></article>
-	    <article><span>Lesson active personal</span><strong>0</strong></article>
-	    <article><span>Lesson wiki ready</span><strong>0</strong></article>
-	    <article><span>Lesson skill ready</span><strong>13</strong></article>
-	    <article><span>Lesson human required</span><strong>0</strong></article>
-	    <article><span>Lesson rejected</span><strong>0</strong></article>
-	    <article><span>Lesson wiki evidence</span><strong>13</strong></article>
-	    <article><span>Lesson AI cache hits</span><strong>0</strong></article>
-	    <article><span>Lesson AI cache misses</span><strong>21</strong></article>
-	    
+    <article><span>来源</span><strong>1</strong></article>
+<article><span>已导入</span><strong>0</strong></article>
+<article><span>已拒绝</span><strong>0</strong></article>
+<a class="metric-link" href="review.html#human-required"><span>需要人工</span><strong>14</strong></a>
+<a class="metric-link" href="review.html#pending-candidates"><span>提案</span><strong>1</strong></a>
+<article><span>站点页面</span><strong>11</strong></article>
+    <article><span>上下文瘦身</span><strong>开启</strong></article>
+    <article><span>已压缩项</span><strong>0</strong></article>
+    <article><span>节省字节</span><strong>0</strong></article>
+    <article><span>上下文预算</span><strong>开启</strong></article>
+    <article><span>预算内项目</span><strong>0</strong></article>
+    <article><span>预算节省字节</span><strong>0</strong></article>
+    <article><span>预摘要</span><strong>0</strong></article>
+
+
+	    <article><span>生命周期提案</span><strong>1</strong></article>
+	      <article><span>生命周期提升</span><strong>1</strong></article>
+
+
+
+
+
+	    <article><span>M25 Lessons</span><strong>2 已提取</strong></article>
+	    <article><span>个人活跃 Lesson</span><strong>0</strong></article>
+	    <article><span>Wiki 就绪 Lesson</span><strong>0</strong></article>
+	    <article><span>技能就绪 Lesson</span><strong>1</strong></article>
+	    <article><span>Lesson 需人工</span><strong>0</strong></article>
+	    <article><span>Lesson 已拒绝</span><strong>0</strong></article>
+	    <article><span>Lesson Wiki 证据</span><strong>1</strong></article>
+
+
 	  </div>
   <div class="review-section" id="lesson-candidates">
-    <h2>Lesson Candidates</h2>
+    <h2>Lesson 候选</h2>
     <ol class="link-list">
       <li>
         <strong>Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first, then proceed with the slow operation.</strong>
         <span>skill_ready / safe / agent-runtime, dispatch, network, tooling</span>
         <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
       </li>
-<li>
-        <strong>If both automated script repair and AI-assisted repair have failed, avoid repeating the same repair loop and escalate to platform support.</strong>
-        <span>candidate / safe</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
-      </li>
-<li>
-        <strong>When a bot appears not to respond, check for delayed or running backend tool calls before declaring failure; if backend execution is not the cause, try another model to isolate the issue.</strong>
-        <span>candidate / safe</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
-      </li>
-<li>
-        <strong>When diagnosing chat-connector failures, verify the chat plugin is enabled, restart the service, and continue troubleshooting if the failure remains.</strong>
-        <span>candidate / safe</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
-      </li>
-<li>
-        <strong>Use issue categories such as installation or document integration, terminal session recovery, capacity or quota requests, bot visibility, and protocol-specific questions to choose an appropriate support path.</strong>
-        <span>candidate / safe</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0 source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_span_0</code>
-      </li>
-<li>
-        <strong>When turning internal support notes into reusable documentation, remove personal routing, internal links, and project-specific identifiers while preserving the operational decision logic.</strong>
-        <span>skill_ready / safe</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
-      </li>
-<li>
-        <strong>When answering model-related support questions, distinguish between pricing/capability differences, whether the user&#39;s selected model persists, and whether an agent-specific default may override that selection.</strong>
-        <span>candidate / safe</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
-      </li>
-<li>
-        <strong>For recurring context errors that occur after model switching, use a consistent explanation and troubleshooting guidance rather than improvising each response.</strong>
-        <span>candidate / safe</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
-      </li>
     </ol>
   </div>
-  
-  
-  
-  
+
+
+
+
 </section>
-  
+
   <section class="wiki-compiler-status">
-  <h2>Wiki Compiler</h2>
+  <h2>Wiki 编译器</h2>
   <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>Observations</span><strong>13</strong></article>
-    <article><span>Topics</span><strong>12</strong></article>
-    <article><span>Plan Create</span><strong>9</strong></article>
-<article><span>Plan Update</span><strong>1</strong></article>
-<article><span>Plan Merge</span><strong>2</strong></article>
-<article><span>Plan Supersede</span><strong>0</strong></article>
-<article><span>Plan Archive</span><strong>0</strong></article>
-    <article><span>Dup source-hash groups</span><strong>2</strong></article>
-    <article><span>Hard blocks</span><strong>0</strong></article>
-    <article><span>Quality review needed</span><strong>8</strong></article>
-    <article><span>Written proposals</span><strong>8</strong></article>
-    <article><span>Proposal limit</span><strong>8</strong></article>
-    <article><span>Limit reason</span><strong>max_curation_proposals</strong></article>
-    
-    <article><span>Required links</span><strong>0</strong></article>
-<article><span>Suggested links</span><strong>4</strong></article>
-<article><span>Merge plans</span><strong>2</strong></article>
-<article><span>Ambiguous merges</span><strong>1</strong></article>
-<article><span>Isolated topics</span><strong>10</strong></article>
-<article><span>Orphan risk after plan</span><strong>10</strong></article>
+    <article><span>观察项</span><strong>7</strong></article>
+    <article><span>主题</span><strong>6</strong></article>
+    <article><span>计划 新建</span><strong>4</strong></article>
+<article><span>计划 更新</span><strong>1</strong></article>
+<article><span>计划 合并</span><strong>1</strong></article>
+<article><span>计划 替代</span><strong>0</strong></article>
+<article><span>计划 归档</span><strong>0</strong></article>
+    <article><span>重复 source-hash 分组</span><strong>1</strong></article>
+    <article><span>硬阻断</span><strong>2</strong></article>
+    <article><span>需质量审核</span><strong>1</strong></article>
+    <article><span>已写入提案</span><strong>1</strong></article>
+    <article><span>提案上限</span><strong>30</strong></article>
+    <article><span>上限原因</span><strong>max_curation_proposals</strong></article>
+
+    <article><span>必需链接</span><strong>0</strong></article>
+<article><span>建议链接</span><strong>4</strong></article>
+<article><span>合并计划</span><strong>1</strong></article>
+<article><span>歧义合并</span><strong>1</strong></article>
+<article><span>孤立主题</span><strong>4</strong></article>
+<article><span>孤儿风险</span><strong>4</strong></article>
   </div>
 </section>
   <section class="pending-candidates">
   <div class="section-heading">
     <div>
-      <h2><a href="review.html#pending-candidates">Pending Experience Candidates</a></h2>
-      <p>AI-generated wiki drafts waiting for review. Stable <code>kb/</code> files are unchanged until promotion.</p>
+      <h2><a href="review.html#pending-candidates" data-i18n="pending.title">待审核经验候选</a></h2>
+      <p>AI 生成的 wiki 草稿正在等待审核。稳定的 <code>kb/</code> 文件在提升前不会改变。</p>
     </div>
-    <strong>8</strong>
+    <strong>1</strong>
   </div>
   <ol class="experience-list">
     <li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256">
-      <p><strong>ACK timing before long-running agent work</strong></p>
-      <p>Agents should send a brief acknowledgement before starting slow tool, network, dispatch, delegation, or other long-running work so users receive timely feedback before the operation begins.</p>
+      <p><strong>长耗时代理工作前的 ACK 时机</strong></p>
+      <p>当代理即将执行工具调用、网络请求、任务分发或其他长耗时工作时，应先发送简短确认消息，再开始慢操作，以避免用户误以为系统无响应。</p>
       <dl>
-        <dt>Target</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
-        <dt>Kind</dt><dd>pitfall</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json</code></dd>
-        <dt>Sources</dt><dd>1</dd>
-        <dt>Confidence</dt><dd>0.93</dd>
-        <dt>Why review</dt><dd>canonical_relationship</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Do not treat an acknowledgement as a success report; it only confirms receipt or that work is starting.; Avoid exposing raw transcripts, credentials, tokens, cookies, authorization headers, or private keys in acknowledgement text, logs, or provenance.; If the platform already sends automatic receipt indicators, avoid redundant or noisy ACKs while still ensuring the user has timely feedback before slow work begins.; quality_human_required:team_or_global_scope</dd>
-        
+        <dt>目标</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
+        <dt>类型</dt><dd>pitfall</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.93</dd>
+        <dt>审核原因</dt><dd>canonical_relationship</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>ACK 只确认请求已收到并开始处理，不应暗示任务已经成功完成。; 如果运行环境或协议要求先完成工具调用再输出用户可见文本，应优先遵守该更高优先级约束。; 避免为非常短、可立即完成的请求添加不必要 ACK，以免增加噪音。; quality_human_required:team_or_global_scope</dd>
+
         <dt>Suggested links</dt><dd><code>agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes</code> Agents can mislead users if failures are reported as successful outcomes. <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-slack-replay-and-post-deploy-stability-failures</code> OpenClaw Slack replay and post-deploy stability failures <small>entity_overlap</small></dd>
 <dt>Merge candidates</dt><dd>ACK timing before long-running agent work <code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code> <small>same_title_or_slug, entity_overlap</small></dd>
 <dt>Relationship reasons</dt><dd>entity_overlap, same_title_or_slug</dd>
-        
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-0ce7713e4fba280a">
-      <p><strong>OpenClaw dispatch routing failures</strong></p>
-      <p>Operational guidance for diagnosing OpenClaw/OctoClaw dispatch routing failures, including route mismatches, missing runners, spawn validation errors, and user-facing support routing pitfalls. Emphasizes dispatch-layer diagnosis, immediate acknowledgment for long-running work, transparent AI identity when human support is requested without details, and safe sanitization of routing documentation.</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/known-fixes/openclaw-dispatch-routing-failures.md</code></dd>
-        <dt>Kind</dt><dd>pitfall</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json, source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json</code></dd>
-        <dt>Sources</dt><dd>2</dd>
-        <dt>Confidence</dt><dd>0.94</dd>
-        <dt>Why review</dt><dd>ambiguous_merge_target; multiple_canonical_targets</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Existing page content contained more specific operational examples than the new evidence; these were preserved where broadly useful but kept at a non-sensitive level.; No relationship links were supplied for this compilation, so no new wiki links were added.; Guidance involving support routing was generalized to avoid exposing private escalation paths or internal identifiers.; quality_human_required:missing_wikilinks; quality_human_required:team_or_global_scope; quality_human_required:ambiguous_merge_target</dd>
-        
-        <dt>Merge candidates</dt><dd>OpenClaw dispatch routing failures <code>kb/known-fixes/openclaw-dispatch-routing-failures.md</code> <small>same_title_or_slug</small><br>OpenClaw dispatch routing failures <code>skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md</code> <small>same_title_or_slug</small></dd>
-<dt>Relationship reasons</dt><dd>same_title_or_slug</dd>
-        
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down">
-      <p><strong>Users may report that an interactive environment or bot is down, sleeping, or unresponsive</strong></p>
-      <p>For a down, sleeping, or unresponsive interactive environment or bot, first direct the user to the product console’s automatic repair option, unless the issue appears related to billing, quota, or payment. If both script-based and AI-based repair have already failed, escalate instead of repeating repair steps.</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/known-fixes/users-may-report-that-an-interactive-environment-or-bot-is-down-sleeping-or.md</code></dd>
-        <dt>Kind</dt><dd>known_fix</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json</code></dd>
-        <dt>Sources</dt><dd>1</dd>
-        <dt>Confidence</dt><dd>0.93</dd>
-        <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>The evidence does not name a specific product console or repair UI path, so keep instructions generic unless product-specific documentation is available.; Do not apply this flow to billing, quota, or payment-related sleep conditions.; Escalate rather than repeating repair steps when both script-based and AI-based repair have already failed.; quality_human_required:team_or_global_scope</dd>
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-pitfalls-bypassing-authorization-failures-can-violate-access-controls">
-      <p><strong>Bypassing Authorization Failures Can Violate Access Controls, Privacy Expectations, or System Policy</strong></p>
-      <p>When authorized document retrieval fails, agents must not seek mirrors, cached copies, alternate accounts, or indirect access paths. Stop retrieval attempts and ask the requester to provide access, paste the content, or upload it through an approved channel.</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/pitfalls/bypassing-authorization-failures-can-violate-access-controls-privacy.md</code></dd>
-        <dt>Kind</dt><dd>pitfall</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json</code></dd>
-        <dt>Sources</dt><dd>1</dd>
-        <dt>Confidence</dt><dd>0.93</dd>
-        <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>This page is intentionally conservative: it treats authorization failures as boundaries and does not provide bypass techniques.; Agents should still follow higher-priority system, organizational, or product-specific policy if it gives stricter instructions.; quality_human_required:team_or_global_scope</dd>
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about">
-      <p><strong>Agents may provide unreliable or hallucinated answers about their own runtime model or configuration</strong></p>
-      <p>Use an authoritative runtime/session status mechanism, not an agent&#39;s natural-language self-report, to verify the active model or runtime configuration.</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/procedures/agents-may-provide-unreliable-or-hallucinated-answers-about-their-own-runtime.md</code></dd>
-        <dt>Kind</dt><dd>procedure</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json</code></dd>
-        <dt>Sources</dt><dd>1</dd>
-        <dt>Confidence</dt><dd>0.93</dd>
-        <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Specific status command names vary by platform; use the local authoritative runtime/session status mechanism when `system/status` is unavailable.; Do not expose raw runtime metadata if it contains sensitive operational details; report only the configuration facts needed for the task.; If no authoritative source is available, avoid asserting a specific active model based only on agent self-report.; quality_human_required:team_or_global_scope</dd>
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-procedures-reply-inside-existing-threaded-chat-conversation-md-sha256">
-      <p><strong>Reply Inside an Existing Threaded Chat Conversation</strong></p>
-      <p>Before sending a chat reply, determine whether the interaction belongs inside an existing thread. If it does, include the platform-required parent message identifier so the reply appears in the thread instead of the main channel or group timeline.</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/procedures/reply-inside-existing-threaded-chat-conversation.md</code></dd>
-        <dt>Kind</dt><dd>procedure</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json</code></dd>
-        <dt>Sources</dt><dd>1</dd>
-        <dt>Confidence</dt><dd>0.93</dd>
-        <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Platform-specific field names vary; agents must consult the active platform adapter or API contract for the exact parent/root message identifier field.; Attaching an incorrect parent message identifier can misroute a reply to the wrong thread.; Do not fabricate or reuse parent identifiers when the current interaction is not part of an existing thread.; quality_human_required:team_or_global_scope</dd>
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective">
-      <p><strong>Verify Effective Runtime Model After a Reported Model Switch</strong></p>
-      <p>Agents or UIs may report that a model switch succeeded even when the active runtime model is still different from the intended model. Confirm model changes with an explicit session status, diagnostic, or configuration command before relying on the new model.</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/procedures/the-agent-or-ui-may-report-success-even-when-the-effective-runtime-model.md</code></dd>
-        <dt>Kind</dt><dd>procedure</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json</code></dd>
-        <dt>Sources</dt><dd>1</dd>
-        <dt>Confidence</dt><dd>0.93</dd>
-        <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Specific verification commands are platform-dependent and must be selected from the relevant system documentation or available interface.; If no explicit status or configuration inspection is available, the active model cannot be conclusively verified from self-report alone.; Additional verification may be unnecessary for low-risk exploratory interactions where exact model identity has no operational impact.; quality_human_required:team_or_global_scope</dd>
-        
-        
-        
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-procedures-verify-session-level-configuration-changes-before-relying-on">
-      <p><strong>Verify Session-Level Configuration Changes Before Relying on Them</strong></p>
-      <p>Treat session-level configuration or behavior changes as temporary until the active configuration is explicitly inspected in the current session or worker context.</p>
-      <dl>
-        <dt>Target</dt><dd><code>kb/procedures/verify-session-level-configuration-changes-before-relying-on-them.md</code></dd>
-        <dt>Kind</dt><dd>procedure</dd>
-        <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json</code></dd>
-        <dt>Sources</dt><dd>1</dd>
-        <dt>Confidence</dt><dd>0.93</dd>
-        <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Source evidence is a single lesson, so the procedure is intentionally general rather than tied to a specific tool or command.; No raw credentials, tokens, cookies, auth headers, private keys, or sensitive transcript content were included.; quality_human_required:team_or_global_scope</dd>
-        
-        
-        
+
       </dl>
     </li>
   </ol>
-  <div class="command-strip" aria-label="Confirm pending candidates">
+  <div class="command-strip" aria-label="确认待审核候选">
     <code>praxisbase review --auto</code>
     <code>praxisbase promote --auto</code>
     <code>praxisbase wiki build-site --json</code>
@@ -309,7 +167,7 @@
 </section>
   <section class="dashboard-grid">
     <div id="knowledge-pages">
-      <h2>Knowledge Pages</h2>
+      <h2 data-i18n="dashboard.knowledgePages">知识页</h2>
       <ol class="link-list">
         <li data-page-kind="known_fix"><a href="pages/openclaw-dispatch-routing-failures.html">OpenClaw dispatch routing failures</a><span>known_fix</span></li>
 <li data-page-kind="pitfall"><a href="pages/ack-timing-before-long-running-agent-work.html">ACK timing before long-running agent work</a><span>pitfall</span></li>
@@ -320,20 +178,21 @@
       </ol>
     </div>
     <div>
-      <h2>Top Signatures</h2>
+      <h2 data-i18n="dashboard.topSignatures">高频特征</h2>
       <ol class="link-list">
         <li><code>openclaw:dispatch-routing-failure</code></li>
       </ol>
     </div>
   </section>
-  <section class="filters" aria-label="Knowledge type filters">
-    <button type="button" data-kind-filter="all">All</button>
+  <section class="filters" aria-label="知识类型筛选" data-i18n-aria-label="filters.knowledgeType">
+    <button type="button" data-kind-filter="all" data-i18n="filters.all">全部</button>
 <button type="button" data-kind-filter="known_fix">known_fix</button>
 <button type="button" data-kind-filter="pitfall">pitfall</button>
 <button type="button" data-kind-filter="procedure">procedure</button>
 <button type="button" data-kind-filter="skill">skill</button>
   </section>
 </main>
+  <script>window.__PRAXISBASE_LANGUAGE__="zh-CN";</script>
   <script>window.__WIKI_BASE__="";</script>
   <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[{"id":"ack-timing-before-long-running-agent-work","slug":"ack-timing-before-long-running-agent-work","title":"ACK timing before long-running agent work","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:3164c59926591e51e2b026dec1f81c38f68926a504b50825557ebc1721b119e9","stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md"]},{"id":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","slug":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","title":"Actions on the wrong target machine or host can cause unsafe operational changes.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96","stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"]},{"id":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","slug":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","title":"Agents can mislead users if failures are reported as successful outcomes.","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195","stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"]},{"id":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","slug":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","title":"Case-sensitive database comparisons can miss logically equivalent values.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678","stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"]},{"id":"changes-can-introduce-regressions-when-not-tested-after-modification","slug":"changes-can-introduce-regressions-when-not-tested-after-modification","title":"Changes can introduce regressions when not tested after modification","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6","stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"]},{"id":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","slug":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","title":"Missing replay data compromises the ability to debug or verify past execution behaviors","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8","stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"]},{"id":"openclaw-dispatch-routing-failures","slug":"openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"known_fix","scope":"team","maturity":"verified","source_ids":["sha256:b6657ec798ebefe7645b79f6e63a468fadbc2a903d066d2adaceae312a18cb96","stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md"]},{"id":"openclaw-slack-replay-and-post-deploy-stability-failures","slug":"openclaw-slack-replay-and-post-deploy-stability-failures","title":"OpenClaw Slack replay and post-deploy stability failures","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d","stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"]},{"id":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","slug":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","title":"Post-deploy stability smoke test run 'openclaw' resulted in an overall failure","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa","stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"]},{"id":"skill-openclaw-openclaw-dispatch-routing-failures","slug":"skill-openclaw-openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"skill","scope":"personal","maturity":"draft","source_ids":["sha256:f542be934e8bf474df3cbcf1f6fad52e421f7d8625c27f2dff8e790be0e50336","skill:skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"]},{"id":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","slug":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","title":"Stale caches can hide current behavior or serve outdated assets","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d","stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"]}],"links":[{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","type":"related","weight":1,"confidence":0.8},{"from":"changes-can-introduce-regressions-when-not-tested-after-modification","to":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"skill-openclaw-openclaw-dispatch-routing-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8}],"backlinks":{"openclaw-dispatch-routing-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","skill-openclaw-openclaw-dispatch-routing-failures"],"openclaw-slack-replay-and-post-deploy-stability-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-dispatch-routing-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"changes-can-introduce-regressions-when-not-tested-after-modification":["actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","case-sensitive-database-comparisons-can-miss-logically-equivalent-values","stale-caches-can-hide-current-behavior-or-serve-outdated-assets"],"stale-caches-can-hide-current-behavior-or-serve-outdated-assets":["case-sensitive-database-comparisons-can-miss-logically-equivalent-values"],"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes":["changes-can-introduce-regressions-when-not-tested-after-modification"],"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution":["openclaw-dispatch-routing-failures","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"case-sensitive-database-comparisons-can-miss-logically-equivalent-values":["stale-caches-can-hide-current-behavior-or-serve-outdated-assets"]},"broken_links":[],"orphans":[],"duplicates":[]};</script>
   <script src="site.js"></script>

@@ -32,8 +32,14 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .topbar { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: 180px minmax(220px, 560px) auto; gap: 1rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--line); background: rgba(251, 252, 248, .96); }
 .brand { color: var(--ink); font-weight: 750; }
-.topnav { display: flex; justify-content: flex-end; gap: .75rem; flex-wrap: wrap; }
+.topnav { display: flex; justify-content: flex-end; gap: .75rem; flex-wrap: wrap; align-items: center; }
 .topnav a { color: var(--muted); font-size: .9rem; }
+.language-switch { position: relative; display: inline-flex; align-items: center; gap: .15rem; height: 32px; border: 1px solid var(--line); border-radius: 999px; background: white; padding: 2px; box-shadow: 0 6px 18px rgba(23, 33, 27, .06); }
+.language-switch-icon { width: 17px; height: 17px; margin: 0 .25rem 0 .35rem; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.language-switch button { min-width: 34px; height: 26px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; }
+.language-switch button[aria-pressed="true"] { background: var(--accent); color: white; box-shadow: 0 3px 10px rgba(20, 108, 92, .18); }
+.language-switch button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.language-select-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
 .search { position: relative; }
 .search input { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: 6px; padding: 0 .75rem; background: white; color: var(--ink); }
 .search-results { position: absolute; top: 42px; left: 0; right: 0; border: 1px solid var(--line); border-radius: 6px; background: white; box-shadow: 0 12px 28px rgba(23, 33, 27, .12); overflow: hidden; }
@@ -75,6 +81,11 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .queue-summary { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: .45rem .8rem; border: 1px solid var(--line); border-radius: 8px; background: white; padding: .9rem; }
 .queue-summary dt { color: var(--muted); }
 .queue-summary dd { margin: 0; overflow-wrap: anywhere; }
+.table-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.coverage-table { width: 100%; border-collapse: collapse; min-width: 860px; }
+.coverage-table th, .coverage-table td { padding: .55rem .65rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.coverage-table th { color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; }
+.coverage-table code { overflow-wrap: anywhere; }
 .status-pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: .15rem .5rem; color: var(--muted); font-size: .78rem; }
 .review-card pre { max-height: 320px; overflow: auto; border-radius: 6px; background: #18231d; color: #f2f7f2; padding: .85rem; white-space: pre-wrap; }
 .review-card details { margin-top: .7rem; }
@@ -102,7 +113,119 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 export const SITE_JS = `(() => {
   const input = document.getElementById("searchInput");
   const box = document.getElementById("searchResults");
+  const languageSelect = document.getElementById("languageSelect");
+  const languageButtons = Array.from(document.querySelectorAll("[data-language-option]"));
   const base = window.__WIKI_BASE__ || "";
+  const labels = {
+    en: {
+      "brand": "PraxisBase Wiki",
+      "nav.aria": "Wiki views",
+      "nav.index": "Index",
+      "nav.review": "Review",
+      "nav.graph": "Graph",
+      "nav.issues": "Issues",
+      "language.switch": "Switch language",
+      "filters.knowledgeType": "Knowledge type filters",
+      "filters.all": "All",
+      "dashboard.eyebrow": "Agent-ready knowledge base",
+      "dashboard.title": "Knowledge Health",
+      "dashboard.lede": "Reviewed fixes, skills, provenance, and graph context for repair workflows.",
+      "dashboard.metric.sources": "Sources",
+      "dashboard.metric.pages": "Pages",
+      "dashboard.metric.brokenLinks": "Broken links",
+      "dashboard.metric.duplicates": "Duplicates",
+      "dashboard.metric.orphans": "Orphans",
+      "dashboard.metric.stale": "Stale",
+      "dashboard.metric.quality": "Quality findings",
+      "dashboard.metric.bundle": "Bundle status",
+      "dashboard.knowledgePages": "Knowledge Pages",
+      "dashboard.topSignatures": "Top Signatures",
+      "dashboard.noSignatures": "No signatures indexed",
+      "pending.title": "Pending Experience Candidates",
+      "graph.eyebrow": "Knowledge graph",
+      "graph.title": "Graph",
+      "graph.lede": "Backlinks, source overlap, and related repair knowledge for agent context.",
+      "graph.nodes": "Nodes",
+      "graph.links": "Links",
+      "issues.eyebrow": "Wiki quality",
+      "issues.title": "Quality Issues",
+      "issues.lede": "Findings that should be reviewed before agents rely on this knowledge.",
+      "issues.noIssues": "No quality issues found.",
+      "issues.dailyPrivacy": "Daily Privacy Findings"
+    },
+    "zh-CN": {
+      "brand": "PraxisBase 知识库",
+      "nav.aria": "知识库视图",
+      "nav.index": "索引",
+      "nav.review": "审核",
+      "nav.graph": "图谱",
+      "nav.issues": "问题",
+      "language.switch": "切换语言",
+      "filters.knowledgeType": "知识类型筛选",
+      "filters.all": "全部",
+      "dashboard.eyebrow": "面向 Agent 的知识库",
+      "dashboard.title": "知识库健康",
+      "dashboard.lede": "已审核的修复、技能、溯源和图谱上下文，服务机器人修复工作流。",
+      "dashboard.metric.sources": "来源",
+      "dashboard.metric.pages": "页面",
+      "dashboard.metric.brokenLinks": "断链",
+      "dashboard.metric.duplicates": "重复",
+      "dashboard.metric.orphans": "孤立项",
+      "dashboard.metric.stale": "过期",
+      "dashboard.metric.quality": "质量问题",
+      "dashboard.metric.bundle": "包状态",
+      "dashboard.knowledgePages": "知识页",
+      "dashboard.topSignatures": "高频特征",
+      "dashboard.noSignatures": "暂无特征索引",
+      "pending.title": "待审核经验候选",
+      "graph.eyebrow": "知识图谱",
+      "graph.title": "图谱",
+      "graph.lede": "面向 Agent 上下文的反向链接、来源重叠和关联修复知识。",
+      "graph.nodes": "节点",
+      "graph.links": "关系",
+      "issues.eyebrow": "Wiki 质量",
+      "issues.title": "质量问题",
+      "issues.lede": "Agent 依赖这些知识前应先处理的发现。",
+      "issues.noIssues": "未发现质量问题。",
+      "issues.dailyPrivacy": "Daily 隐私发现"
+    }
+  };
+  const applyLanguage = (language) => {
+    const dictionary = labels[language] || labels.en;
+    document.documentElement.lang = language;
+    if (input) input.setAttribute("placeholder", language === "zh-CN" ? "搜索知识" : "Search knowledge");
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      const key = node.getAttribute("data-i18n");
+      if (key && dictionary[key]) node.textContent = dictionary[key];
+    });
+    document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+      const key = node.getAttribute("data-i18n-aria-label");
+      if (key && dictionary[key]) node.setAttribute("aria-label", dictionary[key]);
+    });
+    languageButtons.forEach((button) => {
+      button.setAttribute("aria-pressed", button.getAttribute("data-language-option") === language ? "true" : "false");
+    });
+  };
+  if (languageSelect) {
+    const storedLanguage = localStorage.getItem("praxisbase.language");
+    if (storedLanguage === "zh-CN" || storedLanguage === "en") {
+      languageSelect.value = storedLanguage;
+      applyLanguage(storedLanguage);
+    }
+    languageSelect.addEventListener("change", () => {
+      localStorage.setItem("praxisbase.language", languageSelect.value);
+      applyLanguage(languageSelect.value);
+    });
+    languageButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const language = button.getAttribute("data-language-option");
+        if (language !== "zh-CN" && language !== "en") return;
+        languageSelect.value = language;
+        localStorage.setItem("praxisbase.language", language);
+        applyLanguage(language);
+      });
+    });
+  }
   if (!input || !box) return;
   let docs = [];
   fetch(base + "search-index.json").then((res) => res.json()).then((data) => { docs = data.documents || []; }).catch(() => {});

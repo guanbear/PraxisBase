@@ -1,4 +1,5 @@
 import type { WikiEvidenceCluster, WikiEvidenceItem, WikiPagePlanAction } from "./curation-model.js";
+import { languageInstruction, type ProjectLanguage } from "../config/project.js";
 
 /** A structured wiki link with slug, label, path, and reason for inclusion. */
 export interface StructuredLink {
@@ -52,7 +53,8 @@ function normalizeRequiredLink(link: string | StructuredLink): StructuredLink {
   return { slug, label: slug, path: link, reason: "required_link" };
 }
 
-export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], context?: SynthesisContext): { system: string; user: string } {
+export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], context?: SynthesisContext, options: { language?: ProjectLanguage } = {}): { system: string; user: string } {
+  const language = options.language ?? "en";
   const systemLines = [
     "You are the PraxisBase wiki curator.",
     "Return only JSON.",
@@ -62,6 +64,7 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
     "The ## Agent Use section must tell agents when to retrieve the page, how to apply it, how to verify it, and when not to use it.",
     "Avoid report-style narration, long machine signature lists, and source metadata as the primary guidance.",
     "When relationship links are supplied, include a ## Related Wiki Pages section using exact [[slug|label]] wiki links.",
+    languageInstruction(language),
   ];
 
   const userObj: Record<string, unknown> = {
@@ -74,6 +77,7 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
       confidence: "number 0..1",
       risk_notes: ["string"],
     },
+    output_language: language,
     cluster,
     evidence: evidence.map((item) => ({
       id: item.id,

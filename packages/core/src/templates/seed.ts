@@ -2,6 +2,9 @@ export const seedFiles: Record<string, string> = {
   ".praxisbase/config.yaml": `protocol_version: "0.1"
 name: praxisbase-openclaw-repair
 default_scope: team
+language: zh-CN
+ui_language: zh-CN
+content_language: zh-CN
 `,
   ".praxisbase/schedules.yaml": `schedules:
   - id: review-proposals

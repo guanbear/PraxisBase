@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import { escapeHtml, escapeJsonForHtml } from "../build/html.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { readJson, readText, safePath, writeJson, writeText } from "../store/file-store.js";
+import { readProjectLanguageConfig, type ProjectLanguage } from "../config/project.js";
 import { collectWikiSources } from "./collect.js";
 import { inferWikiConfidence, inferWikiLifecycle, makeWikiSlug, type WikiSource } from "./model.js";
 import { runWikiLint } from "./lint.js";
@@ -297,10 +298,12 @@ function markdownToHtml(markdown: string, pages: WikiSitePage[] = []): string {
   return html.join("\n");
 }
 
-function renderLayout(input: { title: string; body: string; graph?: WikiGraph; pages: WikiSitePage[]; assetPrefix?: string }): string {
+function renderLayout(input: { title: string; body: string; graph?: WikiGraph; pages: WikiSitePage[]; assetPrefix?: string; language?: ProjectLanguage }): string {
   const prefix = input.assetPrefix ?? "";
+  const language = input.language ?? "en";
+  const zh = language === "zh-CN";
   return `<!doctype html>
-<html lang="zh-CN">
+<html lang="${escapeHtml(language)}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -309,19 +312,34 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="${escapeHtml(prefix)}index.html">PraxisBase Wiki</a>
+    <a class="brand" href="${escapeHtml(prefix)}index.html" data-i18n="brand">${escapeHtml(zh ? "PraxisBase 知识库" : "PraxisBase Wiki")}</a>
     <div class="search">
-      <input id="searchInput" type="search" placeholder="Search knowledge" autocomplete="off">
+      <input id="searchInput" type="search" placeholder="${escapeHtml(zh ? "搜索知识" : "Search knowledge")}" autocomplete="off">
       <div id="searchResults" class="search-results" hidden></div>
     </div>
-    <nav class="topnav" aria-label="Wiki views">
-      <a href="${escapeHtml(prefix)}wiki/index.md">Index</a>
-      <a href="${escapeHtml(prefix)}review.html">Review</a>
-      <a href="${escapeHtml(prefix)}graph.html">Graph</a>
-      <a href="${escapeHtml(prefix)}issues.html">Issues</a>
+    <nav class="topnav" aria-label="${escapeHtml(zh ? "知识库视图" : "Wiki views")}" data-i18n-aria-label="nav.aria">
+      <a href="${escapeHtml(prefix)}index.html" data-i18n="nav.index">${escapeHtml(zh ? "索引" : "Index")}</a>
+      <a href="${escapeHtml(prefix)}review.html" data-i18n="nav.review">${escapeHtml(zh ? "审核" : "Review")}</a>
+      <a href="${escapeHtml(prefix)}graph.html" data-i18n="nav.graph">${escapeHtml(zh ? "图谱" : "Graph")}</a>
+      <a href="${escapeHtml(prefix)}issues.html" data-i18n="nav.issues">${escapeHtml(zh ? "问题" : "Issues")}</a>
+      <div class="language-switch" aria-label="${escapeHtml(zh ? "切换语言" : "Switch language")}" data-i18n-aria-label="language.switch">
+        <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M3 12h18"></path>
+          <path d="M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9"></path>
+          <path d="M12 3C9.6 5.5 8.4 8.5 8.4 12s1.2 6.5 3.6 9"></path>
+        </svg>
+        <button type="button" data-language-option="zh-CN" aria-pressed="${zh ? "true" : "false"}">中</button>
+        <button type="button" data-language-option="en" aria-pressed="${!zh ? "true" : "false"}">EN</button>
+        <select id="languageSelect" class="language-select-native" aria-label="Language" tabindex="-1">
+          <option value="zh-CN"${zh ? " selected" : ""}>中文</option>
+          <option value="en"${!zh ? " selected" : ""}>English</option>
+        </select>
+      </div>
     </nav>
   </header>
   ${input.body}
+  <script>window.__PRAXISBASE_LANGUAGE__=${escapeJsonForHtml(language)};</script>
   <script>window.__WIKI_BASE__=${escapeJsonForHtml(prefix)};</script>
   <script>window.__WIKI_GRAPH__=${escapeJsonForHtml(input.graph ?? null)};</script>
   <script src="${escapeHtml(prefix)}site.js"></script>
@@ -329,75 +347,77 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
 </html>`;
 }
 
-function renderDailyUpdateSection(report: DailyReportSummary): string {
+function renderDailyUpdateSection(report: DailyReportSummary, language: ProjectLanguage = "en"): string {
+  const useZh = zh(language);
+  const label = (english: string, chinese: string) => useZh ? chinese : english;
   const dateLabel = report.created_at.slice(0, 10);
   const contextEconomy = report.context_economy;
   const contextJuice = report.context_juice;
   const semanticReview = report.semantic_review;
   const skillSynthesis = report.skill_synthesis;
   const dailyCards: Array<{ label: string; value: string; href?: string }> = [
-    { label: "Sources", value: String(report.source_count) },
-    { label: "Imported", value: String(report.imported) },
-    { label: "Rejected", value: String(report.rejected) },
-    { label: "Human required", value: String(report.human_required), href: "review.html#human-required" },
-    { label: "Proposals", value: String(report.proposal_candidates), href: "review.html#pending-candidates" },
-    { label: "Site pages", value: String(report.site_pages) },
+    { label: label("Sources", "来源"), value: String(report.source_count) },
+    { label: label("Imported", "已导入"), value: String(report.imported) },
+    { label: label("Rejected", "已拒绝"), value: String(report.rejected) },
+    { label: label("Human required", "需要人工"), value: String(report.human_required), href: "review.html#human-required" },
+    { label: label("Proposals", "提案"), value: String(report.proposal_candidates), href: "review.html#pending-candidates" },
+    { label: label("Site pages", "站点页面"), value: String(report.site_pages) },
   ];
   return `<section class="daily-update">
-  <h2>Latest Daily Experience</h2>
+  <h2>${label("Latest Daily Experience", "最新 Daily 经验")}</h2>
   <p class="eyebrow">${escapeHtml(dateLabel)} &middot; ${escapeHtml(report.authority_mode)}</p>
   <div class="metrics">
     ${dailyCards.map((card) => card.href
       ? `<a class="metric-link" href="${escapeHtml(card.href)}"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></a>`
       : `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`).join("\n")}
-    ${contextEconomy ? `<article><span>Context Economy</span><strong>${escapeHtml(contextEconomy.enabled ? "On" : "Off")}</strong></article>
-    <article><span>Reduced items</span><strong>${escapeHtml(String(contextEconomy.items_reduced))}</strong></article>
-    <article><span>Saved bytes</span><strong>${escapeHtml(contextEconomy.saved_bytes.toLocaleString("en-US"))}</strong></article>` : ""}
-    ${contextJuice ? `<article><span>Context Juice</span><strong>${escapeHtml(contextJuice.enabled ? "On" : "Off")}</strong></article>
-    <article><span>Budgeted items</span><strong>${escapeHtml(String(contextJuice.items_budgeted))}</strong></article>
-    <article><span>Juice saved bytes</span><strong>${escapeHtml(contextJuice.saved_bytes.toLocaleString("en-US"))}</strong></article>
-    <article><span>Pre-summaries</span><strong>${escapeHtml(String(contextJuice.presummary_summarized))}</strong></article>` : ""}
-	    ${semanticReview && semanticReview.enabled ? `<article><span>Semantic review</span><strong>${escapeHtml(String(semanticReview.reviewed))} reviewed</strong></article>
-	    <article><span>Semantic promote</span><strong>${escapeHtml(String(semanticReview.promote))}</strong></article>
-	    <article><span>Semantic reject</span><strong>${escapeHtml(String(semanticReview.reject))}</strong></article>
-	    <article><span>Semantic needs human</span><strong>${escapeHtml(String(semanticReview.needs_human))}</strong></article>` : ""}
-	    ${skillSynthesis && skillSynthesis.enabled ? `<article><span>Skill synthesis</span><strong>${escapeHtml(String(skillSynthesis.reviewed))} reviewed</strong></article>
-	    <article><span>Skill candidates</span><strong>${escapeHtml(String(skillSynthesis.candidates))}</strong></article>
-	    <article><span>Skill approved</span><strong>${escapeHtml(String(skillSynthesis.approved))}</strong></article>
-	    <article><span>Skill skipped</span><strong>${escapeHtml(String(skillSynthesis.skipped ?? 0))}</strong></article>
-	    <article><span>Skill rejected signals</span><strong>${escapeHtml(String(skillSynthesis.rejected_signals ?? 0))}</strong></article>
-	    <article><span>Skill needs human</span><strong>${escapeHtml(String(skillSynthesis.needs_human))}</strong></article>` : ""}
+    ${contextEconomy ? `<article><span>${label("Context Economy", "上下文瘦身")}</span><strong>${escapeHtml(contextEconomy.enabled ? label("On", "开启") : label("Off", "关闭"))}</strong></article>
+    <article><span>${label("Reduced items", "已压缩项")}</span><strong>${escapeHtml(String(contextEconomy.items_reduced))}</strong></article>
+    <article><span>${label("Saved bytes", "节省字节")}</span><strong>${escapeHtml(contextEconomy.saved_bytes.toLocaleString("en-US"))}</strong></article>` : ""}
+    ${contextJuice ? `<article><span>${label("Context Juice", "上下文预算")}</span><strong>${escapeHtml(contextJuice.enabled ? label("On", "开启") : label("Off", "关闭"))}</strong></article>
+    <article><span>${label("Budgeted items", "预算内项目")}</span><strong>${escapeHtml(String(contextJuice.items_budgeted))}</strong></article>
+    <article><span>${label("Juice saved bytes", "预算节省字节")}</span><strong>${escapeHtml(contextJuice.saved_bytes.toLocaleString("en-US"))}</strong></article>
+    <article><span>${label("Pre-summaries", "预摘要")}</span><strong>${escapeHtml(String(contextJuice.presummary_summarized))}</strong></article>` : ""}
+	    ${semanticReview && semanticReview.enabled ? `<article><span>${label("Semantic review", "语义审核")}</span><strong>${escapeHtml(String(semanticReview.reviewed))} ${label("reviewed", "已审核")}</strong></article>
+	    <article><span>${label("Semantic promote", "语义提升")}</span><strong>${escapeHtml(String(semanticReview.promote))}</strong></article>
+	    <article><span>${label("Semantic reject", "语义拒绝")}</span><strong>${escapeHtml(String(semanticReview.reject))}</strong></article>
+	    <article><span>${label("Semantic needs human", "语义需人工")}</span><strong>${escapeHtml(String(semanticReview.needs_human))}</strong></article>` : ""}
+	    ${skillSynthesis && skillSynthesis.enabled ? `<article><span>${label("Skill synthesis", "技能合成")}</span><strong>${escapeHtml(String(skillSynthesis.reviewed))} ${label("reviewed", "已审核")}</strong></article>
+	    <article><span>${label("Skill candidates", "技能候选")}</span><strong>${escapeHtml(String(skillSynthesis.candidates))}</strong></article>
+	    <article><span>${label("Skill approved", "技能已批准")}</span><strong>${escapeHtml(String(skillSynthesis.approved))}</strong></article>
+	    <article><span>${label("Skill skipped", "技能已跳过")}</span><strong>${escapeHtml(String(skillSynthesis.skipped ?? 0))}</strong></article>
+	    <article><span>${label("Skill rejected signals", "技能拒绝信号")}</span><strong>${escapeHtml(String(skillSynthesis.rejected_signals ?? 0))}</strong></article>
+	    <article><span>${label("Skill needs human", "技能需人工")}</span><strong>${escapeHtml(String(skillSynthesis.needs_human))}</strong></article>` : ""}
 	    ${report.lifecycle ? (() => {
 	      const decisions = report.lifecycle.proposals_by_decision;
 	      const total = Object.values(decisions).reduce((sum, count) => sum + count, 0);
-	      return total > 0 ? `<article><span>Lifecycle proposals</span><strong>${escapeHtml(String(total))}</strong></article>
-	      ${decisions["promote"] ? `<article><span>Lifecycle promote</span><strong>${escapeHtml(String(decisions["promote"]))}</strong></article>` : ""}
-	      ${decisions["decay"] ? `<article><span>Lifecycle decay</span><strong>${escapeHtml(String(decisions["decay"]))}</strong></article>` : ""}
-	      ${decisions["archive"] ? `<article><span>Lifecycle archive</span><strong>${escapeHtml(String(decisions["archive"]))}</strong></article>` : ""}
-	      ${decisions["conflict"] ? `<article><span>Lifecycle conflict</span><strong>${escapeHtml(String(decisions["conflict"]))}</strong></article>` : ""}
-	      ${decisions["no_op"] ? `<article><span>Lifecycle no-op</span><strong>${escapeHtml(String(decisions["no_op"]))}</strong></article>` : ""}` : "";
+	      return total > 0 ? `<article><span>${label("Lifecycle proposals", "生命周期提案")}</span><strong>${escapeHtml(String(total))}</strong></article>
+	      ${decisions["promote"] ? `<article><span>${label("Lifecycle promote", "生命周期提升")}</span><strong>${escapeHtml(String(decisions["promote"]))}</strong></article>` : ""}
+	      ${decisions["decay"] ? `<article><span>${label("Lifecycle decay", "生命周期衰减")}</span><strong>${escapeHtml(String(decisions["decay"]))}</strong></article>` : ""}
+	      ${decisions["archive"] ? `<article><span>${label("Lifecycle archive", "生命周期归档")}</span><strong>${escapeHtml(String(decisions["archive"]))}</strong></article>` : ""}
+	      ${decisions["conflict"] ? `<article><span>${label("Lifecycle conflict", "生命周期冲突")}</span><strong>${escapeHtml(String(decisions["conflict"]))}</strong></article>` : ""}
+	      ${decisions["no_op"] ? `<article><span>${label("Lifecycle no-op", "生命周期无操作")}</span><strong>${escapeHtml(String(decisions["no_op"]))}</strong></article>` : ""}` : "";
 	    })() : ""}
-	    ${report.skill_validation && report.skill_validation.total_reports > 0 ? `<article><span>Skill validation reports</span><strong>${escapeHtml(String(report.skill_validation.total_reports))}</strong></article>
-	    ${report.skill_validation.by_decision["pass"] ? `<article><span>Validation pass</span><strong>${escapeHtml(String(report.skill_validation.by_decision["pass"]))}</strong></article>` : ""}
-	    ${report.skill_validation.by_decision["fail"] ? `<article><span>Validation fail</span><strong>${escapeHtml(String(report.skill_validation.by_decision["fail"]))}</strong></article>` : ""}
-	    ${report.skill_validation.by_decision["needs_human"] ? `<article><span>Validation needs human</span><strong>${escapeHtml(String(report.skill_validation.by_decision["needs_human"]))}</strong></article>` : ""}
-	    ${report.skill_validation.candidates_without_passing > 0 ? `<article><span>Candidates needing validation</span><strong>${escapeHtml(String(report.skill_validation.candidates_without_passing))}</strong></article>` : ""}` : ""}
-	    ${report.lessons && report.lessons.enabled ? `<article><span>M25 Lessons</span><strong>${escapeHtml(String(report.lessons.deterministic_lessons + report.lessons.ai_lessons))} extracted</strong></article>
-	    <article><span>Lesson active personal</span><strong>${escapeHtml(String(report.lessons.active_personal))}</strong></article>
-	    <article><span>Lesson wiki ready</span><strong>${escapeHtml(String(report.lessons.wiki_ready))}</strong></article>
-	    <article><span>Lesson skill ready</span><strong>${escapeHtml(String(report.lessons.skill_ready))}</strong></article>
-	    <article><span>Lesson human required</span><strong>${escapeHtml(String(report.lessons.human_required))}</strong></article>
-	    <article><span>Lesson rejected</span><strong>${escapeHtml(String(report.lessons.rejected))}</strong></article>
-	    <article><span>Lesson wiki evidence</span><strong>${escapeHtml(String(report.lessons.wiki_evidence))}</strong></article>
-	    ${report.lessons.ai_cache && report.lessons.ai_cache.enabled ? `<article><span>Lesson AI cache hits</span><strong>${escapeHtml(String(report.lessons.ai_cache.hits))}</strong></article>
-	    <article><span>Lesson AI cache misses</span><strong>${escapeHtml(String(report.lessons.ai_cache.misses))}</strong></article>` : ""}
-	    ${report.lessons.golden_validation && report.lessons.golden_validation.length > 0 ? report.lessons.golden_validation.map((gv) => `<article><span>Golden ${escapeHtml(gv.fixture)}</span><strong>${escapeHtml(String(gv.matches))} matches / ${escapeHtml(String(gv.privateLeakCount))} leaks</strong></article>`).join("\n") : ""}` : ""}
+	    ${report.skill_validation && report.skill_validation.total_reports > 0 ? `<article><span>${label("Skill validation reports", "技能验证报告")}</span><strong>${escapeHtml(String(report.skill_validation.total_reports))}</strong></article>
+	    ${report.skill_validation.by_decision["pass"] ? `<article><span>${label("Validation pass", "验证通过")}</span><strong>${escapeHtml(String(report.skill_validation.by_decision["pass"]))}</strong></article>` : ""}
+	    ${report.skill_validation.by_decision["fail"] ? `<article><span>${label("Validation fail", "验证失败")}</span><strong>${escapeHtml(String(report.skill_validation.by_decision["fail"]))}</strong></article>` : ""}
+	    ${report.skill_validation.by_decision["needs_human"] ? `<article><span>${label("Validation needs human", "验证需人工")}</span><strong>${escapeHtml(String(report.skill_validation.by_decision["needs_human"]))}</strong></article>` : ""}
+	    ${report.skill_validation.candidates_without_passing > 0 ? `<article><span>${label("Candidates needing validation", "需验证候选")}</span><strong>${escapeHtml(String(report.skill_validation.candidates_without_passing))}</strong></article>` : ""}` : ""}
+	    ${report.lessons && report.lessons.enabled ? `<article><span>M25 Lessons</span><strong>${escapeHtml(String(report.lessons.deterministic_lessons + report.lessons.ai_lessons))} ${label("extracted", "已提取")}</strong></article>
+	    <article><span>${label("Lesson active personal", "个人活跃 Lesson")}</span><strong>${escapeHtml(String(report.lessons.active_personal))}</strong></article>
+	    <article><span>${label("Lesson wiki ready", "Wiki 就绪 Lesson")}</span><strong>${escapeHtml(String(report.lessons.wiki_ready))}</strong></article>
+	    <article><span>${label("Lesson skill ready", "技能就绪 Lesson")}</span><strong>${escapeHtml(String(report.lessons.skill_ready))}</strong></article>
+	    <article><span>${label("Lesson human required", "Lesson 需人工")}</span><strong>${escapeHtml(String(report.lessons.human_required))}</strong></article>
+	    <article><span>${label("Lesson rejected", "Lesson 已拒绝")}</span><strong>${escapeHtml(String(report.lessons.rejected))}</strong></article>
+	    <article><span>${label("Lesson wiki evidence", "Lesson Wiki 证据")}</span><strong>${escapeHtml(String(report.lessons.wiki_evidence))}</strong></article>
+	    ${report.lessons.ai_cache && report.lessons.ai_cache.enabled ? `<article><span>${label("Lesson AI cache hits", "Lesson AI 缓存命中")}</span><strong>${escapeHtml(String(report.lessons.ai_cache.hits))}</strong></article>
+	    <article><span>${label("Lesson AI cache misses", "Lesson AI 缓存未命中")}</span><strong>${escapeHtml(String(report.lessons.ai_cache.misses))}</strong></article>` : ""}
+	    ${report.lessons.golden_validation && report.lessons.golden_validation.length > 0 ? report.lessons.golden_validation.map((gv) => `<article><span>Golden ${escapeHtml(gv.fixture)}</span><strong>${escapeHtml(String(gv.matches))} ${label("matches", "匹配")} / ${escapeHtml(String(gv.privateLeakCount))} ${label("leaks", "泄漏")}</strong></article>`).join("\n") : ""}` : ""}
 	  </div>
-  ${report.lessons?.details && report.lessons.details.length > 0 ? renderLessonDetails(report.lessons.details) : ""}
+  ${report.lessons?.details && report.lessons.details.length > 0 ? renderLessonDetails(report.lessons.details, language) : ""}
   ${report.personal_ga ? renderPersonalGaSection(report.personal_ga) : ""}
   ${renderAgentMemoryStatus(report)}
   ${renderGBrainStatus(report)}
-  ${contextJuice && contextJuice.warnings.length > 0 ? `<p class="muted">Context juice warnings: ${escapeHtml(contextJuice.warnings.join("; "))}</p>` : ""}
+  ${contextJuice && contextJuice.warnings.length > 0 ? `<p class="muted">${label("Context juice warnings", "上下文预算警告")}: ${escapeHtml(contextJuice.warnings.join("; "))}</p>` : ""}
 </section>`;
 }
 
@@ -461,9 +481,10 @@ function countBy<T>(items: T[], keyFn: (item: T) => string): Record<string, numb
   return counts;
 }
 
-function renderLessonDetails(details: NonNullable<DailyReportSummary["lessons"]>["details"]): string {
+function renderLessonDetails(details: NonNullable<DailyReportSummary["lessons"]>["details"], language: ProjectLanguage = "en"): string {
+  const useZh = zh(language);
   return `<div class="review-section" id="lesson-candidates">
-    <h2>Lesson Candidates</h2>
+    <h2>${useZh ? "Lesson 候选" : "Lesson Candidates"}</h2>
     <ol class="link-list">
       ${details.map((lesson) => `<li>
         <strong>${escapeHtml(lesson.safe_claim)}</strong>
@@ -574,11 +595,12 @@ function renderExperienceSummaries(summaries: ExperienceSummary[]): string {
 </section>`;
 }
 
-function renderMetricCard(card: { label: string; value: string; href?: string }): string {
+function renderMetricCard(card: { label: string; value: string; href?: string; i18nKey?: string }): string {
+  const label = card.i18nKey ? `<span data-i18n="${escapeHtml(card.i18nKey)}">${escapeHtml(card.label)}</span>` : `<span>${escapeHtml(card.label)}</span>`;
   if (card.href) {
-    return `<a class="metric-link" href="${escapeHtml(card.href)}"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></a>`;
+    return `<a class="metric-link" href="${escapeHtml(card.href)}">${label}<strong>${escapeHtml(card.value)}</strong></a>`;
   }
-  return `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`;
+  return `<article>${label}<strong>${escapeHtml(card.value)}</strong></article>`;
 }
 
 function renderRelationshipDetails(item: PendingWikiProposalCandidate): string {
@@ -622,13 +644,14 @@ function renderSemanticReviewHtml(info: SemanticReviewInfo): string {
   return `<dt>Semantic review</dt><dd>${escapeHtml(info.decision)} &middot; score ${escapeHtml(info.score)}${info.reason ? ` &middot; ${escapeHtml(info.reason)}` : ""}</dd>`;
 }
 
-function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): string {
+function renderPendingCandidates(candidates: PendingWikiProposalCandidate[], language: ProjectLanguage = "en"): string {
   if (candidates.length === 0) return "";
+  const useZh = zh(language);
   return `<section class="pending-candidates">
   <div class="section-heading">
     <div>
-      <h2><a href="review.html#pending-candidates">Pending Experience Candidates</a></h2>
-      <p>AI-generated wiki drafts waiting for review. Stable <code>kb/</code> files are unchanged until promotion.</p>
+      <h2><a href="review.html#pending-candidates" data-i18n="pending.title">${escapeHtml(useZh ? "待审核经验候选" : "Pending Experience Candidates")}</a></h2>
+      <p>${useZh ? "AI 生成的 wiki 草稿正在等待审核。稳定的 " : "AI-generated wiki drafts waiting for review. Stable "}<code>kb/</code>${useZh ? " 文件在提升前不会改变。" : " files are unchanged until promotion."}</p>
     </div>
     <strong>${escapeHtml(String(candidates.length))}</strong>
   </div>
@@ -637,21 +660,21 @@ function renderPendingCandidates(candidates: PendingWikiProposalCandidate[]): st
       <p><strong>${escapeHtml(item.title)}</strong></p>
       <p>${escapeHtml(item.summary)}</p>
       <dl>
-        <dt>Target</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
-        <dt>Kind</dt><dd>${escapeHtml(item.kind)}</dd>
-        <dt>Scope</dt><dd>${escapeHtml(item.scope)}</dd>
-        <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
-        ${item.source_count !== undefined ? `<dt>Sources</dt><dd>${escapeHtml(String(item.source_count))}</dd>` : ""}
-        ${item.confidence !== undefined ? `<dt>Confidence</dt><dd>${escapeHtml(item.confidence.toFixed(2))}</dd>` : ""}
-        ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
-        ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
-        ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
+        <dt>${useZh ? "目标" : "Target"}</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
+        <dt>${useZh ? "类型" : "Kind"}</dt><dd>${escapeHtml(item.kind)}</dd>
+        <dt>${useZh ? "范围" : "Scope"}</dt><dd>${escapeHtml(item.scope)}</dd>
+        <dt>${useZh ? "来源" : "Source"}</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+        ${item.source_count !== undefined ? `<dt>${useZh ? "来源数" : "Sources"}</dt><dd>${escapeHtml(String(item.source_count))}</dd>` : ""}
+        ${item.confidence !== undefined ? `<dt>${useZh ? "置信度" : "Confidence"}</dt><dd>${escapeHtml(item.confidence.toFixed(2))}</dd>` : ""}
+        ${item.review_hint ? `<dt>${useZh ? "审核原因" : "Why review"}</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>${useZh ? "建议" : "Suggested"}</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
+        ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>${useZh ? "风险提示" : "Risk notes"}</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
+        ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>${useZh ? "守卫失败" : "Guard failures"}</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
         ${renderRelationshipDetails(item)}
         ${item.review_hint && item.review_hint.risk_notes.length > 0 ? (() => { const sr = extractSemanticReviewFromRiskNotes(item.review_hint.risk_notes); return sr ? renderSemanticReviewHtml(sr) : ""; })() : ""}
       </dl>
     </li>`).join("\n")}
   </ol>
-  <div class="command-strip" aria-label="Confirm pending candidates">
+  <div class="command-strip" aria-label="${escapeHtml(useZh ? "确认待审核候选" : "Confirm pending candidates")}">
     <code>praxisbase review --auto</code>
     <code>praxisbase promote --auto</code>
     <code>praxisbase wiki build-site --json</code>
@@ -699,6 +722,44 @@ function statusLabel(status: CandidateStatus): string {
   return "Human required";
 }
 
+function zh(language: ProjectLanguage | undefined): boolean {
+  return language === "zh-CN";
+}
+
+function candidateStatusLabel(status: CandidateStatus, language: ProjectLanguage): string {
+  if (!zh(language)) return statusLabel(status);
+  if (status === "pending") return "待审核";
+  if (status === "approved") return "已审核";
+  if (status === "promoted") return "已沉淀";
+  return "需要人工";
+}
+
+function coverageStatusLabel(status: string, language: ProjectLanguage): string {
+  if (!zh(language)) return status;
+  const labels: Record<string, string> = {
+    raw_only: "仅原始数据",
+    privacy_blocked: "隐私待确认",
+    low_signal_rejected: "低信号已拒绝",
+    lesson_only: "已成 Lesson",
+    wiki_evidence: "已有 Wiki 证据",
+    proposal: "已有提案",
+    stable_kb: "已进稳定知识库",
+  };
+  return labels[status] ?? status;
+}
+
+function privacyDecisionLabel(decision: string | undefined, language: ProjectLanguage): string {
+  if (!decision || !zh(language)) return decision ?? "-";
+  const labels: Record<string, string> = {
+    auto_released: "自动释放",
+    team_review_only: "团队人工确认",
+    rejected_low_signal: "低信号拒绝",
+    human_required: "需要人工",
+    keep_human_required: "保持人工确认",
+  };
+  return labels[decision] ?? decision;
+}
+
 function recommendedCandidateCommand(item: ReviewQueueCandidate): string {
   const status = item.status;
   if (status === "promoted") return "praxisbase gbrain export --mode personal --write --json";
@@ -708,31 +769,32 @@ function recommendedCandidateCommand(item: ReviewQueueCandidate): string {
   return "praxisbase review --auto";
 }
 
-function renderCandidateCard(item: ReviewQueueCandidate): string {
+function renderCandidateCard(item: ReviewQueueCandidate, language: ProjectLanguage = "en"): string {
+  const useZh = zh(language);
   const validationStatus = item.validation_status
     ? ` <span class="status-pill">${escapeHtml(item.validation_status)}</span>`
     : "";
   return `<li id="${escapeHtml(item.anchor)}" class="review-card">
-    <p><strong>${escapeHtml(item.title)}</strong> <span class="status-pill">${escapeHtml(statusLabel(item.status))}</span>${validationStatus}</p>
+    <p><strong>${escapeHtml(item.title)}</strong> <span class="status-pill">${escapeHtml(candidateStatusLabel(item.status, language))}</span>${validationStatus}</p>
     <p>${escapeHtml(item.summary)}</p>
     <dl>
-      <dt>Target</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
-      <dt>Kind</dt><dd>${escapeHtml(item.kind)}</dd>
-      <dt>Scope</dt><dd>${escapeHtml(item.scope)}</dd>
-      <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
-      ${item.source_count !== undefined ? `<dt>Sources</dt><dd>${escapeHtml(String(item.source_count))}</dd>` : ""}
-      ${item.confidence !== undefined ? `<dt>Confidence</dt><dd>${escapeHtml(item.confidence.toFixed(2))}</dd>` : ""}
-      <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
-      ${item.review_hint ? `<dt>Why review</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>Suggested</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
-      ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>Risk notes</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
-      ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>Guard failures</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
-      ${item.validation_status ? `<dt>Validation</dt><dd>${escapeHtml(item.validation_status)}</dd>` : ""}
-      <dt>Recommended</dt><dd><code>${escapeHtml(recommendedCandidateCommand(item))}</code></dd>
+      <dt>${useZh ? "目标" : "Target"}</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
+      <dt>${useZh ? "类型" : "Kind"}</dt><dd>${escapeHtml(item.kind)}</dd>
+      <dt>${useZh ? "范围" : "Scope"}</dt><dd>${escapeHtml(item.scope)}</dd>
+      <dt>${useZh ? "来源" : "Source"}</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+      ${item.source_count !== undefined ? `<dt>${useZh ? "来源数" : "Sources"}</dt><dd>${escapeHtml(String(item.source_count))}</dd>` : ""}
+      ${item.confidence !== undefined ? `<dt>${useZh ? "置信度" : "Confidence"}</dt><dd>${escapeHtml(item.confidence.toFixed(2))}</dd>` : ""}
+      <dt>${useZh ? "创建时间" : "Created"}</dt><dd>${escapeHtml(item.created_at)}</dd>
+      ${item.review_hint ? `<dt>${useZh ? "审核原因" : "Why review"}</dt><dd>${escapeHtml(item.review_hint.why_review)}</dd><dt>${useZh ? "建议" : "Suggested"}</dt><dd>${escapeHtml(item.review_hint.suggested_decision)}</dd>` : ""}
+      ${item.review_hint && item.review_hint.risk_notes.length > 0 ? `<dt>${useZh ? "风险提示" : "Risk notes"}</dt><dd>${escapeHtml(item.review_hint.risk_notes.join("; "))}</dd>` : ""}
+      ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>${useZh ? "守卫失败" : "Guard failures"}</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
+      ${item.validation_status ? `<dt>${useZh ? "验证" : "Validation"}</dt><dd>${escapeHtml(item.validation_status)}</dd>` : ""}
+      <dt>${useZh ? "建议命令" : "Recommended"}</dt><dd><code>${escapeHtml(recommendedCandidateCommand(item))}</code></dd>
       ${renderRelationshipDetails(item)}
       ${item.review_hint && item.review_hint.risk_notes.length > 0 ? (() => { const sr = extractSemanticReviewFromRiskNotes(item.review_hint.risk_notes); return sr ? renderSemanticReviewHtml(sr) : ""; })() : ""}
     </dl>
     <details>
-      <summary>Preview generated markdown</summary>
+      <summary>${useZh ? "预览生成的 Markdown" : "Preview generated markdown"}</summary>
       <pre><code>${escapeHtml(item.patch_content)}</code></pre>
     </details>
   </li>`;
@@ -746,26 +808,30 @@ function renderCandidateSection(input: {
   candidates: ReviewQueueCandidate[];
   empty: string;
   commands: string[];
+  language?: ProjectLanguage;
 }): string {
+  const language = input.language ?? "en";
   const candidates = input.candidates.filter((item) => item.status === input.status);
   return `<section id="${escapeHtml(input.id)}" class="review-section" data-status="${escapeHtml(input.status)}">
   <div class="section-heading">
     <div>
       <h2>${input.aliasId ? `<span id="${escapeHtml(input.aliasId)}"></span>` : ""}${escapeHtml(input.title)}</h2>
-      <p>${escapeHtml(candidates.length === 0 ? input.empty : `${candidates.length} item(s)`)}</p>
+      <p>${escapeHtml(candidates.length === 0 ? input.empty : zh(language) ? `${candidates.length} 条` : `${candidates.length} item(s)`)}</p>
     </div>
     <strong>${escapeHtml(String(candidates.length))}</strong>
   </div>
   ${input.commands.length > 0 ? `<div class="command-strip">${input.commands.map((command) => `<code>${escapeHtml(command)}</code>`).join("\n")}</div>` : ""}
-  ${candidates.length > 0 ? `<ol class="experience-list">${candidates.map(renderCandidateCard).join("\n")}</ol>` : ""}
+  ${candidates.length > 0 ? `<ol class="experience-list">${candidates.map((item) => renderCandidateCard(item, language)).join("\n")}</ol>` : ""}
 </section>`;
 }
 
 function renderHumanRequired(
   records: HumanRequiredRecord[],
   dailyReport: DailyReportSummary | null,
-  privacyTriageReport: PrivacyTriageReportSummary | null
+  privacyTriageReport: PrivacyTriageReportSummary | null,
+  language: ProjectLanguage = "en",
 ): string {
+  const useZh = zh(language);
   const latestPrivacyRequired = dailyReport?.privacy_required ?? records.length;
   const visibleRecords = records.slice(0, 50);
   const isTeamGit = dailyReport?.authority_mode === "team-git";
@@ -778,8 +844,8 @@ function renderHumanRequired(
   return `<section id="human-required" class="review-section" data-status="needs_human">
   <div class="section-heading">
     <div>
-      <h2><span id="privacy-required"></span>Privacy Required</h2>
-      <p>Latest daily blocked ${escapeHtml(String(latestPrivacyRequired))} item(s); historical backlog has ${escapeHtml(String(records.length))} record(s).</p>
+      <h2><span id="privacy-required"></span>${useZh ? "隐私待确认" : "Privacy Required"}</h2>
+      <p>${useZh ? `最新 daily 阻塞 ${escapeHtml(String(latestPrivacyRequired))} 条；历史待处理 ${escapeHtml(String(records.length))} 条。` : `Latest daily blocked ${escapeHtml(String(latestPrivacyRequired))} item(s); historical backlog has ${escapeHtml(String(records.length))} record(s).`}</p>
     </div>
     <strong>${escapeHtml(String(latestPrivacyRequired))}</strong>
   </div>
@@ -788,39 +854,39 @@ function renderHumanRequired(
     <code>${escapeHtml(followupCommand)}</code>
   </div>
   ${privacyTriageReport ? `<dl class="queue-summary">
-    <dt>Latest triage</dt><dd>${escapeHtml(privacyTriageReport.created_at)}</dd>
-    <dt>Scanned</dt><dd>${escapeHtml(String(privacyTriageReport.scanned))}</dd>
-    <dt>Auto released</dt><dd>${escapeHtml(String(privacyTriageReport.auto_released))}</dd>
-    <dt>Kept human-required</dt><dd>${escapeHtml(String(privacyTriageReport.keep_human_required))}</dd>
-    <dt>Team review-only</dt><dd>${escapeHtml(String(privacyTriageReport.team_review_only))}</dd>
-    <dt>Skipped already triaged</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_already_triaged))}</dd>
-    <dt>Skipped non-privacy</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_non_privacy))}</dd>
+    <dt>${useZh ? "最近 triage" : "Latest triage"}</dt><dd>${escapeHtml(privacyTriageReport.created_at)}</dd>
+    <dt>${useZh ? "已扫描" : "Scanned"}</dt><dd>${escapeHtml(String(privacyTriageReport.scanned))}</dd>
+    <dt>${useZh ? "自动释放" : "Auto released"}</dt><dd>${escapeHtml(String(privacyTriageReport.auto_released))}</dd>
+    <dt>${useZh ? "保持人工确认" : "Kept human-required"}</dt><dd>${escapeHtml(String(privacyTriageReport.keep_human_required))}</dd>
+    <dt>${useZh ? "团队人工确认" : "Team review-only"}</dt><dd>${escapeHtml(String(privacyTriageReport.team_review_only))}</dd>
+    <dt>${useZh ? "跳过已处理" : "Skipped already triaged"}</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_already_triaged))}</dd>
+    <dt>${useZh ? "跳过非隐私项" : "Skipped non-privacy"}</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_non_privacy))}</dd>
   </dl>` : ""}
-  ${records.length > visibleRecords.length ? `<p class="muted">Showing the latest ${escapeHtml(String(visibleRecords.length))} privacy records. Older backlog is intentionally hidden from the default page to keep current daily work readable.</p>` : ""}
+  ${records.length > visibleRecords.length ? `<p class="muted">${useZh ? `仅展示最近 ${escapeHtml(String(visibleRecords.length))} 条隐私记录；更早的历史待处理项默认隐藏，以便聚焦当天结果。` : `Showing the latest ${escapeHtml(String(visibleRecords.length))} privacy records. Older backlog is intentionally hidden from the default page to keep current daily work readable.`}</p>` : ""}
   ${visibleRecords.length > 0 ? `<ol class="experience-list">
     ${visibleRecords.map((item) => {
       const detailsReleased = humanRequiredDetailsReleased(item);
       return `<li id="${escapeHtml(item.id)}" class="review-card">
-      <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">Privacy required</span></p>
+      <p><strong>${escapeHtml(item.reason)}</strong> <span class="status-pill">${useZh ? "隐私待确认" : "Privacy required"}</span></p>
       <dl>
-        <dt>Source</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
-        <dt>Agent</dt><dd>${escapeHtml(item.agent ?? "unknown")}</dd>
-        <dt>Scope</dt><dd>${escapeHtml(item.scope ?? "unknown")}</dd>
+        <dt>${useZh ? "来源" : "Source"}</dt><dd><code>${escapeHtml(item.source_id)}</code></dd>
+        <dt>${useZh ? "代理" : "Agent"}</dt><dd>${escapeHtml(item.agent ?? "unknown")}</dd>
+        <dt>${useZh ? "范围" : "Scope"}</dt><dd>${escapeHtml(item.scope ?? "unknown")}</dd>
         ${detailsReleased ? `<dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>` : ""}
-        ${detailsReleased && item.redacted_summary ? `<dt>Summary</dt><dd>${escapeHtml(item.redacted_summary)}</dd>` : ""}
-        <dt>File</dt><dd><code>${escapeHtml(item.path)}</code></dd>
-        <dt>Created</dt><dd>${escapeHtml(item.created_at)}</dd>
-        <dt>Recommended</dt><dd><code>${escapeHtml(triageCommand)}</code></dd>
+        ${detailsReleased && item.redacted_summary ? `<dt>${useZh ? "摘要" : "Summary"}</dt><dd>${escapeHtml(item.redacted_summary)}</dd>` : ""}
+        <dt>${useZh ? "文件" : "File"}</dt><dd><code>${escapeHtml(item.path)}</code></dd>
+        <dt>${useZh ? "创建时间" : "Created"}</dt><dd>${escapeHtml(item.created_at)}</dd>
+        <dt>${useZh ? "建议命令" : "Recommended"}</dt><dd><code>${escapeHtml(triageCommand)}</code></dd>
         ${item.triage ? `
         <dt>Triage</dt><dd>${escapeHtml(item.triage.classification ?? "unknown")} / ${escapeHtml(item.triage.decision ?? "unknown")}</dd>
-        <dt>Confidence</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
-        ${detailsReleased ? `<dt>Rationale</dt><dd>${escapeHtml(item.triage.rationale ?? "n/a")}</dd>` : `<dt>Details</dt><dd>Sensitive details hidden until privacy triage releases this record.</dd>`}
-        ${detailsReleased && item.triage.suggested_redactions.length > 0 ? `<dt>Suggested Redactions</dt><dd>${escapeHtml(item.triage.suggested_redactions.join(", "))}</dd>` : ""}
+        <dt>${useZh ? "置信度" : "Confidence"}</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
+        ${detailsReleased ? `<dt>${useZh ? "理由" : "Rationale"}</dt><dd>${escapeHtml(item.triage.rationale ?? "n/a")}</dd>` : `<dt>${useZh ? "详情" : "Details"}</dt><dd>${useZh ? "敏感详情会在隐私 triage 释放后展示。" : "Sensitive details hidden until privacy triage releases this record."}</dd>`}
+        ${detailsReleased && item.triage.suggested_redactions.length > 0 ? `<dt>${useZh ? "建议脱敏" : "Suggested Redactions"}</dt><dd>${escapeHtml(item.triage.suggested_redactions.join(", "))}</dd>` : ""}
         ` : ""}
       </dl>
     </li>`;
     }).join("\n")}
-  </ol>` : "<p>No privacy-required records.</p>"}
+  </ol>` : `<p>${useZh ? "没有隐私待确认记录。" : "No privacy-required records."}</p>`}
 </section>`;
 }
 
@@ -829,7 +895,8 @@ function humanRequiredDetailsReleased(item: HumanRequiredRecord): boolean {
   return item.triage.decision === "auto_released";
 }
 
-function renderRejectedSection(dailyReport: DailyReportSummary | null, curationReport: WikiCurationReportSummary | null): string {
+function renderRejectedSection(dailyReport: DailyReportSummary | null, curationReport: WikiCurationReportSummary | null, language: ProjectLanguage = "en"): string {
+  const useZh = zh(language);
   const dailyRejected = dailyReport?.rejected ?? 0;
   const lowSignal = dailyReport?.rejected_low_signal ?? 0;
   const qualityRejected = (dailyReport?.rejected_quality ?? 0) + (curationReport?.compiler_hard_blocks ?? 0);
@@ -840,21 +907,53 @@ function renderRejectedSection(dailyReport: DailyReportSummary | null, curationR
   return `<section id="rejected" class="review-section" data-status="rejected">
   <div class="section-heading">
     <div>
-      <h2>Rejected</h2>
-      <p>Low-signal, duplicate, private, or quality-blocked material that intentionally did not become wiki.</p>
+      <h2>${useZh ? "已拒绝" : "Rejected"}</h2>
+      <p>${useZh ? "低信号、重复、隐私或质量不达标的材料，不会进入 wiki。" : "Low-signal, duplicate, private, or quality-blocked material that intentionally did not become wiki."}</p>
     </div>
     <strong>${escapeHtml(String(total))}</strong>
   </div>
   <dl class="queue-summary">
-    <dt>Daily rejected</dt><dd>${escapeHtml(String(dailyRejected))}</dd>
-    <dt>Low signal</dt><dd>${escapeHtml(String(lowSignal))}</dd>
-    <dt>Quality rejected</dt><dd>${escapeHtml(String(qualityRejected))}</dd>
-    <dt>Duplicate groups</dt><dd>${escapeHtml(String(duplicates))}</dd>
-    <dt>Curation rejected</dt><dd>${escapeHtml(String(curationRejected))}</dd>
-    <dt>Hard blocks</dt><dd>${escapeHtml(String(hardBlocks))}</dd>
-    <dt>Recommended</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
+    <dt>${useZh ? "Daily 拒绝" : "Daily rejected"}</dt><dd>${escapeHtml(String(dailyRejected))}</dd>
+    <dt>${useZh ? "低信号" : "Low signal"}</dt><dd>${escapeHtml(String(lowSignal))}</dd>
+    <dt>${useZh ? "质量拒绝" : "Quality rejected"}</dt><dd>${escapeHtml(String(qualityRejected))}</dd>
+    <dt>${useZh ? "重复分组" : "Duplicate groups"}</dt><dd>${escapeHtml(String(duplicates))}</dd>
+    <dt>${useZh ? "Curation 拒绝" : "Curation rejected"}</dt><dd>${escapeHtml(String(curationRejected))}</dd>
+    <dt>${useZh ? "硬阻断" : "Hard blocks"}</dt><dd>${escapeHtml(String(hardBlocks))}</dd>
+    <dt>${useZh ? "建议命令" : "Recommended"}</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
   </dl>
 </section>`;
+}
+
+function renderExperienceCoverage(dailyReport: DailyReportSummary | null, language: ProjectLanguage = "en"): string {
+  const coverage = dailyReport?.experience_coverage;
+  if (!coverage) return "";
+  const useZh = zh(language);
+  const rows = coverage.items.slice(0, 80).map((item) => `<tr>
+    <td><code>${escapeHtml(item.source_id)}</code></td>
+    <td>${escapeHtml(privacyDecisionLabel(item.privacy_decision, language))}</td>
+    <td>${escapeHtml(String(item.lesson_count))}</td>
+    <td>${escapeHtml(String(item.wiki_evidence_count))}</td>
+    <td>${escapeHtml(String(item.proposal_count))}</td>
+    <td>${escapeHtml(coverageStatusLabel(item.status, language))}</td>
+    <td>${item.proposal_titles.length > 0 ? escapeHtml(item.proposal_titles.join("; ")) : "-"}</td>
+  </tr>`).join("\n");
+  return `<section class="review-section" id="experience-coverage">
+    <h2>经验覆盖</h2>
+    <div class="metrics">
+      <article><span>原始项</span><strong>${escapeHtml(String(coverage.total_items))}</strong></article>
+      <article><span>隐私结果</span><strong>${escapeHtml(String(coverage.with_privacy_result))}</strong></article>
+      <article><span>${useZh ? "已成 lesson" : "Lessons"}</span><strong>${escapeHtml(String(coverage.with_lessons))}</strong></article>
+      <article><span>${useZh ? "Wiki 证据" : "Wiki evidence"}</span><strong>${escapeHtml(String(coverage.with_wiki_evidence))}</strong></article>
+      <article><span>${useZh ? "提案" : "Proposal"}</span><strong>${escapeHtml(String(coverage.with_proposals))}</strong></article>
+      <article><span>${useZh ? "稳定知识" : "Stable KB"}</span><strong>${escapeHtml(String(coverage.stable_kb))}</strong></article>
+    </div>
+    <div class="table-scroll">
+      <table class="coverage-table">
+        <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "lessons" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan=\"7\">${useZh ? "没有覆盖记录。" : "No coverage records."}</td></tr>`}</tbody>
+      </table>
+    </div>
+  </section>`;
 }
 
 function renderReviewPage(
@@ -863,8 +962,10 @@ function renderReviewPage(
   queue: ReviewQueue,
   curationReport: WikiCurationReportSummary | null,
   dailyReport: DailyReportSummary | null,
-  privacyTriageReport: PrivacyTriageReportSummary | null
+  privacyTriageReport: PrivacyTriageReportSummary | null,
+  language: ProjectLanguage = "en",
 ): string {
+  const useZh = zh(language);
   const candidateHuman = queue.candidates.filter((item) => item.status === "needs_human").length;
   const currentPrivacyRequired = dailyReport?.privacy_required ?? queue.human_required.length;
   const counts = {
@@ -878,42 +979,44 @@ function renderReviewPage(
   };
 
   return renderLayout({
-    title: "PraxisBase Review Queue",
+    title: useZh ? "PraxisBase 审核队列" : "PraxisBase Review Queue",
     pages,
     graph,
+    language,
     body: `<main class="review-shell">
   <section class="hero">
     <div>
-      <p class="eyebrow">Review center</p>
-      <h1>Review Queue</h1>
-      <p class="lede">Confirm AI-generated wiki candidates, inspect blocked records, and see what has reached stable knowledge.</p>
+      <p class="eyebrow">${useZh ? "审核中心" : "Review center"}</p>
+      <h1>${useZh ? "审核队列" : "Review Queue"}</h1>
+      <p class="lede">${useZh ? "确认 AI 生成的知识候选项，检查被隐私策略阻断的记录，并查看哪些内容已经进入稳定知识库。" : "Confirm AI-generated wiki candidates, inspect blocked records, and see what has reached stable knowledge."}</p>
     </div>
   </section>
   <section class="metrics">
-    <a class="metric-link" href="#pending-candidates"><span>Review required</span><strong>${escapeHtml(String(counts.pending))}</strong></a>
-    <a class="metric-link" href="#approved-candidates"><span>Approved</span><strong>${escapeHtml(String(counts.approved))}</strong></a>
-    <a class="metric-link" href="#human-required"><span>Current privacy</span><strong>${escapeHtml(String(counts.current_privacy))}</strong></a>
-    <a class="metric-link" href="#human-required"><span>Privacy backlog</span><strong>${escapeHtml(String(counts.backlog_privacy))}</strong></a>
-    ${counts.candidate_human > 0 ? `<a class="metric-link" href="#human-required"><span>Candidate human</span><strong>${escapeHtml(String(counts.candidate_human))}</strong></a>` : ""}
-    <a class="metric-link" href="#rejected"><span>Rejected</span><strong>${escapeHtml(String(counts.rejected))}</strong></a>
-    <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
+    <a class="metric-link" href="#pending-candidates"><span>${useZh ? "待审核" : "Review required"}</span><strong>${escapeHtml(String(counts.pending))}</strong></a>
+    <a class="metric-link" href="#approved-candidates"><span>${useZh ? "已审核" : "Approved"}</span><strong>${escapeHtml(String(counts.approved))}</strong></a>
+    <a class="metric-link" href="#human-required"><span>${useZh ? "本次隐私" : "Current privacy"}</span><strong>${escapeHtml(String(counts.current_privacy))}</strong></a>
+    <a class="metric-link" href="#human-required"><span>${useZh ? "隐私积压" : "Privacy backlog"}</span><strong>${escapeHtml(String(counts.backlog_privacy))}</strong></a>
+    ${counts.candidate_human > 0 ? `<a class="metric-link" href="#human-required"><span>${useZh ? "候选需人工" : "Candidate human"}</span><strong>${escapeHtml(String(counts.candidate_human))}</strong></a>` : ""}
+    <a class="metric-link" href="#rejected"><span>${useZh ? "已拒绝" : "Rejected"}</span><strong>${escapeHtml(String(counts.rejected))}</strong></a>
+    <a class="metric-link" href="#promoted-candidates"><span>${useZh ? "已沉淀" : "Promoted"}</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
   </section>
   ${dailyReport?.personal_ga ? renderPersonalGaSection(dailyReport.personal_ga) : ""}
-  ${curationReport ? renderWikiCompilerSection(curationReport) : ""}
+  ${curationReport ? renderWikiCompilerSection(curationReport, language) : ""}
+  ${renderExperienceCoverage(dailyReport, language)}
   <section class="review-section" data-status="pending">
-    <h2>Confirm from Terminal</h2>
-    <p>This static site cannot execute local commands. Run these after inspecting candidates you want to accept.</p>
+    <h2>${useZh ? "在终端确认" : "Confirm from Terminal"}</h2>
+    <p>${useZh ? "这个静态页面不能直接执行本地命令。检查候选项后，在终端运行下面的命令。" : "This static site cannot execute local commands. Run these after inspecting candidates you want to accept."}</p>
     <div class="command-strip">
       <code>praxisbase review --auto</code>
       <code>praxisbase promote --auto</code>
       <code>praxisbase wiki build-site --json</code>
     </div>
   </section>
-  ${renderCandidateSection({ id: "pending-candidates", aliasId: "review-required", title: "Review Required", status: "pending", candidates: queue.candidates, empty: "No review-required candidates.", commands: ["praxisbase review --auto", "praxisbase promote --auto", "praxisbase wiki build-site --json"] })}
-  ${renderCandidateSection({ id: "approved-candidates", title: "Reviewed / Approved", status: "approved", candidates: queue.candidates, empty: "No approved candidates waiting for promotion.", commands: ["praxisbase promote --auto", "praxisbase wiki build-site --json"] })}
-  ${renderHumanRequired(queue.human_required, dailyReport, privacyTriageReport)}
-  ${renderRejectedSection(dailyReport, curationReport)}
-  ${renderCandidateSection({ id: "promoted-candidates", title: "Promoted", status: "promoted", candidates: queue.candidates, empty: "No promoted candidates from the current inbox.", commands: ["praxisbase gbrain export --mode personal --write --json", "praxisbase agentmemory export --mode personal --write --json"] })}
+  ${renderCandidateSection({ id: "pending-candidates", aliasId: "review-required", title: useZh ? "待审核" : "Review Required", status: "pending", candidates: queue.candidates, empty: useZh ? "没有待审核候选项。" : "No review-required candidates.", commands: ["praxisbase review --auto", "praxisbase promote --auto", "praxisbase wiki build-site --json"], language })}
+  ${renderCandidateSection({ id: "approved-candidates", title: useZh ? "已审核 / 已批准" : "Reviewed / Approved", status: "approved", candidates: queue.candidates, empty: useZh ? "没有等待提升的已批准候选项。" : "No approved candidates waiting for promotion.", commands: ["praxisbase promote --auto", "praxisbase wiki build-site --json"], language })}
+  ${renderHumanRequired(queue.human_required, dailyReport, privacyTriageReport, language)}
+  ${renderRejectedSection(dailyReport, curationReport, language)}
+  ${renderCandidateSection({ id: "promoted-candidates", title: useZh ? "已沉淀" : "Promoted", status: "promoted", candidates: queue.candidates, empty: useZh ? "当前 inbox 没有已沉淀候选项。" : "No promoted candidates from the current inbox.", commands: ["praxisbase gbrain export --mode personal --write --json", "praxisbase agentmemory export --mode personal --write --json"], language })}
 </main>`,
   });
 }
@@ -929,64 +1032,67 @@ function renderDashboard(
   personalFacetCounts: PersonalFacetCounts,
   experienceSummaries: ExperienceSummary[],
   pendingCandidates: PendingWikiProposalCandidate[],
-  curationReport: WikiCurationReportSummary | null
+  curationReport: WikiCurationReportSummary | null,
+  language: ProjectLanguage = "en",
 ): string {
+  const useZh = zh(language);
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
   const recent = [...pages]
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
     .slice(0, 6);
   const cards = [
-    { label: "Sources", value: String(new Set(pages.flatMap((page) => page.source_ids)).size), href: "#knowledge-pages" },
-    { label: "Pages", value: String(pages.length), href: "#knowledge-pages" },
-    { label: "Broken links", value: String(graph.broken_links.length), href: "issues.html" },
-    { label: "Duplicates", value: String(graph.duplicates.length), href: "issues.html" },
-    { label: "Orphans", value: String(graph.orphans.length), href: "graph.html" },
-    { label: "Stale", value: String(stalePages), href: "issues.html" },
-    { label: "Quality findings", value: String(qualityFindings), href: "issues.html" },
-    { label: "Bundle status", value: bundleStatus },
+    { label: useZh ? "来源" : "Sources", value: String(new Set(pages.flatMap((page) => page.source_ids)).size), href: "#knowledge-pages", i18nKey: "dashboard.metric.sources" },
+    { label: useZh ? "页面" : "Pages", value: String(pages.length), href: "#knowledge-pages", i18nKey: "dashboard.metric.pages" },
+    { label: useZh ? "断链" : "Broken links", value: String(graph.broken_links.length), href: "issues.html", i18nKey: "dashboard.metric.brokenLinks" },
+    { label: useZh ? "重复" : "Duplicates", value: String(graph.duplicates.length), href: "issues.html", i18nKey: "dashboard.metric.duplicates" },
+    { label: useZh ? "孤立项" : "Orphans", value: String(graph.orphans.length), href: "graph.html", i18nKey: "dashboard.metric.orphans" },
+    { label: useZh ? "过期" : "Stale", value: String(stalePages), href: "issues.html", i18nKey: "dashboard.metric.stale" },
+    { label: useZh ? "质量问题" : "Quality findings", value: String(qualityFindings), href: "issues.html", i18nKey: "dashboard.metric.quality" },
+    { label: useZh ? "包状态" : "Bundle status", value: bundleStatus, i18nKey: "dashboard.metric.bundle" },
   ];
 
   return renderLayout({
-    title: "PraxisBase Knowledge Health",
+    title: useZh ? "PraxisBase 知识库健康" : "PraxisBase Knowledge Health",
     pages,
     graph,
+    language,
     body: `<main class="dashboard">
   <section class="hero">
     <div>
-      <p class="eyebrow">Agent-ready knowledge base</p>
-      <h1>Knowledge Health</h1>
-      <p class="lede">Reviewed fixes, skills, provenance, and graph context for repair workflows.</p>
+      <p class="eyebrow" data-i18n="dashboard.eyebrow">${escapeHtml(useZh ? "面向 Agent 的知识库" : "Agent-ready knowledge base")}</p>
+      <h1 data-i18n="dashboard.title">${escapeHtml(useZh ? "知识库健康" : "Knowledge Health")}</h1>
+      <p class="lede" data-i18n="dashboard.lede">${escapeHtml(useZh ? "已审核的修复、技能、溯源和图谱上下文，服务机器人修复工作流。" : "Reviewed fixes, skills, provenance, and graph context for repair workflows.")}</p>
     </div>
   </section>
   <section class="metrics">
     ${cards.map(renderMetricCard).join("\n")}
   </section>
-  ${dailyReport ? renderDailyUpdateSection(dailyReport) : ""}
+  ${dailyReport ? renderDailyUpdateSection(dailyReport, language) : ""}
   ${renderRuntimeContextSection(agentBundleReport, personalFacetCounts)}
-  ${curationReport ? renderWikiCompilerSection(curationReport) : ""}
-  ${renderPendingCandidates(pendingCandidates)}
+  ${curationReport ? renderWikiCompilerSection(curationReport, language) : ""}
+  ${renderPendingCandidates(pendingCandidates, language)}
   <section class="dashboard-grid">
     <div id="knowledge-pages">
-      <h2>Knowledge Pages</h2>
+      <h2 data-i18n="dashboard.knowledgePages">${escapeHtml(useZh ? "知识页" : "Knowledge Pages")}</h2>
       <ol class="link-list">
         ${recent.map((page) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
       </ol>
     </div>
     <div>
-      <h2>Top Signatures</h2>
+      <h2 data-i18n="dashboard.topSignatures">${escapeHtml(useZh ? "高频特征" : "Top Signatures")}</h2>
       <ol class="link-list">
-        ${signatures.length > 0 ? signatures.map((signature) => `<li><code>${escapeHtml(signature)}</code></li>`).join("\n") : "<li>No signatures indexed</li>"}
+        ${signatures.length > 0 ? signatures.map((signature) => `<li><code>${escapeHtml(signature)}</code></li>`).join("\n") : `<li data-i18n="dashboard.noSignatures">${escapeHtml(useZh ? "暂无特征索引" : "No signatures indexed")}</li>`}
       </ol>
     </div>
   </section>
-  <section class="filters" aria-label="Knowledge type filters">
-    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}">${escapeHtml(kind === "all" ? "All" : kind)}</button>`).join("\n")}
+  <section class="filters" aria-label="${escapeHtml(useZh ? "知识类型筛选" : "Knowledge type filters")}" data-i18n-aria-label="filters.knowledgeType">
+    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}"${kind === "all" ? " data-i18n=\"filters.all\"" : ""}>${escapeHtml(kind === "all" ? useZh ? "全部" : "All" : kind)}</button>`).join("\n")}
   </section>
 </main>`,
   });
 }
 
-function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph): string {
+function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph, language: ProjectLanguage = "en"): string {
   const related = relatedPages(page, pages, graph);
   const nav = pages.map((item) => `<a href="${escapeHtml(`${item.slug}.html`)}"${item.id === page.id ? " aria-current=\"page\"" : ""}>${escapeHtml(item.title)}</a>`).join("\n");
   const relatedHtml = related.length > 0
@@ -1000,6 +1106,7 @@ function renderPage(page: WikiSitePage, pages: WikiSitePage[], graph: WikiGraph)
     title: page.title,
     pages,
     graph,
+    language,
     assetPrefix: "../",
     body: `<main class="page-shell">
   <nav class="side-nav" aria-label="Knowledge pages">${nav}</nav>
@@ -1032,31 +1139,33 @@ function kindFilters(pages: WikiSitePage[]): string[] {
   return ["all", ...Array.from(new Set(pages.map((page) => page.page_kind ?? "note"))).sort()];
 }
 
-function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph): string {
+function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph, language: ProjectLanguage = "en"): string {
+  const useZh = zh(language);
   return renderLayout({
-    title: "PraxisBase Wiki Graph",
+    title: useZh ? "PraxisBase 知识图谱" : "PraxisBase Wiki Graph",
     pages,
     graph,
+    language,
     body: `<main class="graph-shell">
   <section class="hero">
     <div>
-      <p class="eyebrow">Knowledge graph</p>
-      <h1>Graph</h1>
-      <p class="lede">Backlinks, source overlap, and related repair knowledge for agent context.</p>
+      <p class="eyebrow" data-i18n="graph.eyebrow">${escapeHtml(useZh ? "知识图谱" : "Knowledge graph")}</p>
+      <h1 data-i18n="graph.title">${escapeHtml(useZh ? "图谱" : "Graph")}</h1>
+      <p class="lede" data-i18n="graph.lede">${escapeHtml(useZh ? "面向 Agent 上下文的反向链接、来源重叠和关联修复知识。" : "Backlinks, source overlap, and related repair knowledge for agent context.")}</p>
     </div>
   </section>
-  <section class="filters" aria-label="Knowledge type filters">
-    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}">${escapeHtml(kind === "all" ? "All" : kind)}</button>`).join("\n")}
+  <section class="filters" aria-label="${escapeHtml(useZh ? "知识类型筛选" : "Knowledge type filters")}" data-i18n-aria-label="filters.knowledgeType">
+    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}"${kind === "all" ? " data-i18n=\"filters.all\"" : ""}>${escapeHtml(kind === "all" ? useZh ? "全部" : "All" : kind)}</button>`).join("\n")}
   </section>
   <section class="graph-grid">
     <div class="graph-panel">
-      <h2>Nodes</h2>
+      <h2 data-i18n="graph.nodes">${escapeHtml(useZh ? "节点" : "Nodes")}</h2>
       <ol class="link-list">
         ${pages.map((page) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
       </ol>
     </div>
     <div class="graph-panel">
-      <h2>Links</h2>
+      <h2 data-i18n="graph.links">${escapeHtml(useZh ? "关系" : "Links")}</h2>
       <ol class="link-list">
         ${graph.links.slice(0, 80).map((link) => `<li><code>${escapeHtml(link.from)} -> ${escapeHtml(link.to)}</code><span>${escapeHtml(link.type)}</span></li>`).join("\n")}
       </ol>
@@ -1070,76 +1179,81 @@ function renderIssuesPage(
   pages: WikiSitePage[],
   graph: WikiGraph,
   qualityFindings: Array<{ rule: string; severity: string; path: string; message: string }>,
-  dailyReport: DailyReportSummary | null
+  dailyReport: DailyReportSummary | null,
+  language: ProjectLanguage = "en",
 ): string {
+  const useZh = zh(language);
   return renderLayout({
-    title: "PraxisBase Quality Issues",
+    title: useZh ? "PraxisBase 质量问题" : "PraxisBase Quality Issues",
     pages,
     graph,
+    language,
     body: `<main class="issues-shell">
   <section class="hero">
     <div>
-      <p class="eyebrow">Wiki quality</p>
-      <h1>Quality Issues</h1>
-      <p class="lede">Findings that should be reviewed before agents rely on this knowledge.</p>
+      <p class="eyebrow" data-i18n="issues.eyebrow">${escapeHtml(useZh ? "Wiki 质量" : "Wiki quality")}</p>
+      <h1 data-i18n="issues.title">${escapeHtml(useZh ? "质量问题" : "Quality Issues")}</h1>
+      <p class="lede" data-i18n="issues.lede">${escapeHtml(useZh ? "Agent 依赖这些知识前应先处理的发现。" : "Findings that should be reviewed before agents rely on this knowledge.")}</p>
     </div>
   </section>
   <section class="issues-panel">
     <ol class="issue-list">
-      ${qualityFindings.length > 0 ? qualityFindings.map((finding) => `<li><strong>${escapeHtml(finding.rule)}</strong> <small>${escapeHtml(finding.severity)}</small><br>${escapeHtml(finding.message)}<br><small>${escapeHtml(finding.path)}</small></li>`).join("\n") : "<li>No quality issues found.</li>"}
+      ${qualityFindings.length > 0 ? qualityFindings.map((finding) => `<li><strong>${escapeHtml(finding.rule)}</strong> <small>${escapeHtml(finding.severity)}</small><br>${escapeHtml(finding.message)}<br><small>${escapeHtml(finding.path)}</small></li>`).join("\n") : `<li data-i18n="issues.noIssues">${escapeHtml(useZh ? "未发现质量问题。" : "No quality issues found.")}</li>`}
     </ol>
   </section>
-  ${dailyReport ? renderDailyPrivacyFindings(dailyReport) : ""}
+  ${dailyReport ? renderDailyPrivacyFindings(dailyReport, language) : ""}
 </main>`,
   });
 }
 
-function renderDailyPrivacyFindings(report: DailyReportSummary): string {
+function renderDailyPrivacyFindings(report: DailyReportSummary, language: ProjectLanguage = "en"): string {
   if (report.rejected === 0 && report.human_required === 0) {
     return "";
   }
+  const useZh = zh(language);
   return `<section class="issues-panel">
-  <h2>Daily Privacy Findings</h2>
+  <h2 data-i18n="issues.dailyPrivacy">${escapeHtml(useZh ? "Daily 隐私发现" : "Daily Privacy Findings")}</h2>
   <dl>
-    <dt>Rejected</dt><dd>${escapeHtml(String(report.rejected))}</dd>
-    <dt>Human required</dt><dd>${escapeHtml(String(report.human_required))}</dd>
+    <dt>${useZh ? "已拒绝" : "Rejected"}</dt><dd>${escapeHtml(String(report.rejected))}</dd>
+    <dt>${useZh ? "需要人工" : "Human required"}</dt><dd>${escapeHtml(String(report.human_required))}</dd>
   </dl>
 </section>`;
 }
 
-function renderWikiCompilerSection(report: WikiCurationReportSummary): string {
+function renderWikiCompilerSection(report: WikiCurationReportSummary, language: ProjectLanguage = "en"): string {
+  const useZh = zh(language);
   const dateLabel = report.created_at.slice(0, 10);
   const planCards = [
-    { label: "Create", value: String(report.compiler_page_plans_create) },
-    { label: "Update", value: String(report.compiler_page_plans_update) },
-    { label: "Merge", value: String(report.compiler_page_plans_merge) },
-    { label: "Supersede", value: String(report.compiler_page_plans_supersede) },
-    { label: "Archive", value: String(report.compiler_page_plans_archive) },
+    { label: useZh ? "新建" : "Create", value: String(report.compiler_page_plans_create) },
+    { label: useZh ? "更新" : "Update", value: String(report.compiler_page_plans_update) },
+    { label: useZh ? "合并" : "Merge", value: String(report.compiler_page_plans_merge) },
+    { label: useZh ? "替代" : "Supersede", value: String(report.compiler_page_plans_supersede) },
+    { label: useZh ? "归档" : "Archive", value: String(report.compiler_page_plans_archive) },
   ];
   const relationshipCards = [
-    { label: "Required links", value: report.relationship_required_links },
-    { label: "Suggested links", value: report.relationship_suggested_links },
-    { label: "Merge plans", value: report.relationship_merge_plans },
-    { label: "Ambiguous merges", value: report.relationship_ambiguous_merge_targets },
-    { label: "Isolated topics", value: report.relationship_isolated_topics },
-    { label: "Orphan risk after plan", value: report.relationship_orphan_risk_after_plan },
+    { label: useZh ? "必需链接" : "Required links", value: report.relationship_required_links },
+    { label: useZh ? "建议链接" : "Suggested links", value: report.relationship_suggested_links },
+    { label: useZh ? "合并计划" : "Merge plans", value: report.relationship_merge_plans },
+    { label: useZh ? "歧义合并" : "Ambiguous merges", value: report.relationship_ambiguous_merge_targets },
+    { label: useZh ? "孤立主题" : "Isolated topics", value: report.relationship_isolated_topics },
+    { label: useZh ? "孤儿风险" : "Orphan risk after plan", value: report.relationship_orphan_risk_after_plan },
   ];
   const hasRelationshipCounts = relationshipCards.some((card) => card.value > 0);
-  const aiLabel = report.ai_configured ? `AI ${report.ai_mode}` : "Deterministic";
+  const aiLabel = report.ai_configured ? `AI ${report.ai_mode}` : useZh ? "确定性模式" : "Deterministic";
   return `<section class="wiki-compiler-status">
-  <h2>Wiki Compiler</h2>
+  <h2>${useZh ? "Wiki 编译器" : "Wiki Compiler"}</h2>
   <p class="eyebrow">${escapeHtml(dateLabel)} &middot; ${escapeHtml(report.mode)} &middot; ${escapeHtml(aiLabel)}${report.ai_model ? ` &middot; ${escapeHtml(report.ai_model)}` : ""}</p>
   <div class="metrics">
-    <article><span>Observations</span><strong>${escapeHtml(String(report.compiler_observations))}</strong></article>
-    <article><span>Topics</span><strong>${escapeHtml(String(report.compiler_topics))}</strong></article>
-    ${planCards.map((card) => `<article><span>Plan ${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`).join("\n")}
-    <article><span>Dup source-hash groups</span><strong>${escapeHtml(String(report.compiler_duplicate_source_hash_groups))}</strong></article>
-    <article><span>Hard blocks</span><strong>${escapeHtml(String(report.compiler_hard_blocks))}</strong></article>
-    <article><span>Quality review needed</span><strong>${escapeHtml(String(report.compiler_human_required_quality))}</strong></article>
-    <article><span>Written proposals</span><strong>${escapeHtml(String(report.output_written_proposals))}</strong></article>
-    ${report.proposal_limit !== undefined ? `<article><span>Proposal limit</span><strong>${escapeHtml(String(report.proposal_limit))}</strong></article>` : ""}
-    ${report.limit_reason ? `<article><span>Limit reason</span><strong>${escapeHtml(report.limit_reason)}</strong></article>` : ""}
-    ${report.input_human_required > 0 ? `<article><span>Input/privacy triage</span><strong>${escapeHtml(String(report.input_human_required))}</strong></article>` : ""}
+    <article><span>${useZh ? "观察项" : "Observations"}</span><strong>${escapeHtml(String(report.compiler_observations))}</strong></article>
+    <article><span>${useZh ? "主题" : "Topics"}</span><strong>${escapeHtml(String(report.compiler_topics))}</strong></article>
+    ${planCards.map((card) => `<article><span>${useZh ? "计划" : "Plan"} ${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`).join("\n")}
+    <article><span>${useZh ? "重复 source-hash 分组" : "Dup source-hash groups"}</span><strong>${escapeHtml(String(report.compiler_duplicate_source_hash_groups))}</strong></article>
+    <article><span>${useZh ? "硬阻断" : "Hard blocks"}</span><strong>${escapeHtml(String(report.compiler_hard_blocks))}</strong></article>
+    <article><span>${useZh ? "需质量审核" : "Quality review needed"}</span><strong>${escapeHtml(String(report.compiler_human_required_quality))}</strong></article>
+    <article><span>${useZh ? "已写入提案" : "Written proposals"}</span><strong>${escapeHtml(String(report.output_written_proposals))}</strong></article>
+    ${report.proposal_limit !== undefined ? `<article><span>${useZh ? "提案上限" : "Proposal limit"}</span><strong>${escapeHtml(String(report.proposal_limit))}</strong></article>` : ""}
+    ${report.limit_reason ? `<article><span>${useZh ? "上限原因" : "Limit reason"}</span><strong>${escapeHtml(report.limit_reason)}</strong></article>` : ""}
+    ${report.input_human_required > 0 ? `<article><span>${useZh ? "输入/隐私 triage" : "Input/privacy triage"}</span><strong>${escapeHtml(String(report.input_human_required))}</strong></article>` : ""}
     ${hasRelationshipCounts ? relationshipCards.map((card) =>
       `<article><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(String(card.value))}</strong></article>`
     ).join("\n") : ""}
@@ -1271,6 +1385,24 @@ interface DailyReportSummary {
 	    total_reports: number;
 	    by_decision: Record<string, number>;
 	    candidates_without_passing: number;
+	  };
+	  experience_coverage?: {
+	    total_items: number;
+	    with_privacy_result: number;
+	    with_lessons: number;
+	    with_wiki_evidence: number;
+	    with_proposals: number;
+	    stable_kb: number;
+	    items: Array<{
+	      source_id: string;
+	      privacy_decision?: string;
+	      lesson_count: number;
+	      wiki_evidence_count: number;
+	      proposal_count: number;
+	      proposal_titles: string[];
+	      stable_kb_paths: string[];
+	      status: string;
+	    }>;
 	  };
 	  lessons?: {
 	    enabled: boolean;
@@ -1500,6 +1632,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	      by_decision?: Record<string, number>;
 	      candidates_without_passing?: number;
 	    };
+	    experience_coverage?: Record<string, unknown>;
 	    lessons?: {
 	      enabled?: boolean;
 	      source_items?: number;
@@ -1625,6 +1758,28 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	        : {},
 	      candidates_without_passing: typeof latest.skill_validation.candidates_without_passing === "number" ? latest.skill_validation.candidates_without_passing : 0,
 	    } : undefined,
+	    experience_coverage: latest.experience_coverage && typeof latest.experience_coverage === "object" ? (() => {
+	      const coverage = latest.experience_coverage as Record<string, unknown>;
+	      const rawItems = Array.isArray(coverage.items) ? coverage.items : [];
+	      return {
+	        total_items: typeof coverage.total_items === "number" ? coverage.total_items : rawItems.length,
+	        with_privacy_result: typeof coverage.with_privacy_result === "number" ? coverage.with_privacy_result : 0,
+	        with_lessons: typeof coverage.with_lessons === "number" ? coverage.with_lessons : 0,
+	        with_wiki_evidence: typeof coverage.with_wiki_evidence === "number" ? coverage.with_wiki_evidence : 0,
+	        with_proposals: typeof coverage.with_proposals === "number" ? coverage.with_proposals : 0,
+	        stable_kb: typeof coverage.stable_kb === "number" ? coverage.stable_kb : 0,
+	        items: rawItems.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item))).map((item) => ({
+	          source_id: typeof item.source_id === "string" ? item.source_id : "unknown",
+	          privacy_decision: typeof item.privacy_decision === "string" ? item.privacy_decision : undefined,
+	          lesson_count: typeof item.lesson_count === "number" ? item.lesson_count : 0,
+	          wiki_evidence_count: typeof item.wiki_evidence_count === "number" ? item.wiki_evidence_count : 0,
+	          proposal_count: typeof item.proposal_count === "number" ? item.proposal_count : 0,
+	          proposal_titles: Array.isArray(item.proposal_titles) ? item.proposal_titles.filter((title): title is string => typeof title === "string") : [],
+	          stable_kb_paths: Array.isArray(item.stable_kb_paths) ? item.stable_kb_paths.filter((path): path is string => typeof path === "string") : [],
+	          status: typeof item.status === "string" ? item.status : "raw_only",
+	        })),
+	      };
+	    })() : undefined,
 	    lessons: latestLessons ? (() => {
 	      const l = latestLessons;
 	      const gv = Array.isArray(l.golden_validation) ? (l.golden_validation as Array<Record<string, unknown>>).filter((item) => item && typeof item === "object").map((item) => ({
@@ -2124,6 +2279,8 @@ async function buildReviewQueue(root: string, candidates: PendingWikiProposalCan
 }
 
 export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> {
+  const languageConfig = await readProjectLanguageConfig(root);
+  const uiLanguage = languageConfig.uiLanguage;
   const pages = await collectWikiPages(root);
   const pendingCandidates = await collectPendingWikiProposalCandidates(root);
   const reviewQueue = await buildReviewQueue(root, pendingCandidates);
@@ -2143,8 +2300,8 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
   outputs.push(...rootArtifactOutputs);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, agentBundleReport, personalFacetCounts, experienceSummaries, pendingCandidates, curationReport));
-  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport, privacyTriageReport));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, agentBundleReport, personalFacetCounts, experienceSummaries, pendingCandidates, curationReport, uiLanguage));
+  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport, privacyTriageReport, uiLanguage));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: [
@@ -2169,8 +2326,8 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   });
   await writeJson(root, "dist/graph.json", graph);
   await writeJson(root, "dist/graph-slices/overview.json", buildWikiGraphSlice(graph, { mode: "overview", limit: 50 }));
-  await writeText(root, "dist/graph.html", renderGraphPage(pages, graph));
-  await writeText(root, "dist/issues.html", renderIssuesPage(pages, graph, qualityReport.findings, dailyReport));
+  await writeText(root, "dist/graph.html", renderGraphPage(pages, graph, uiLanguage));
+  await writeText(root, "dist/issues.html", renderIssuesPage(pages, graph, qualityReport.findings, dailyReport, uiLanguage));
   await writeJson(root, "dist/graph.jsonld", graphJsonLd(pages, graph));
   await writeText(root, "dist/llms.txt", renderLlms(pages, false));
   await writeText(root, "dist/llms-full.txt", renderLlms(pages, true));
@@ -2183,7 +2340,7 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   await rm(safePath(root, "dist/pages"), { recursive: true, force: true });
   for (const page of pages) {
     const base = `dist/pages/${page.slug}`;
-    await writeText(root, `${base}.html`, renderPage(page, pages, graph));
+    await writeText(root, `${base}.html`, renderPage(page, pages, graph, uiLanguage));
     await writeText(root, `${base}.txt`, `${page.title}\n\n${page.body_text}\n`);
     await writeJson(root, `${base}.json`, {
       id: page.id,

@@ -58,6 +58,12 @@ describe("AI experience distill", () => {
     assert.match(prompt.user, /Fixed OpenClaw auth/);
   });
 
+  it("builds a prompt that follows configured Chinese content language", () => {
+    const prompt = buildDistillPrompt(baseInput, { language: "zh-CN" });
+    assert.match(prompt.system, /Simplified Chinese/);
+    assert.match(prompt.user, /"output_language": "zh-CN"/);
+  });
+
   it("returns structured experience from a mocked AI client", async () => {
     const client: AiJsonClient = {
       async generateJson() {

@@ -7,6 +7,7 @@ import {
   PROTOCOL_VERSION,
   CuratedWikiProposalSchema,
   buildWikiEvidencePool,
+  buildWikiEvidencePoolFromRoot,
   clusterWikiEvidence,
   curatedWikiProposalToKnowledgeProposal,
 } from "@praxisbase/core";
@@ -217,6 +218,41 @@ describe("wiki evidence curation", () => {
     assert.deepEqual(pool.items.map((item) => item.id), ["preference"]);
     assert.equal(pool.filtered_noise, 1);
     assert.ok(pool.items[0].reusable_lessons.some((lesson) => /ACK/i.test(lesson)));
+  });
+
+  it("uses auto-released privacy triage summaries as wiki evidence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-auto-release-evidence-"));
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/exceptions/human-required/exception_openclaw.json"), JSON.stringify({
+      id: "exception_openclaw",
+      protocol_version: PROTOCOL_VERSION,
+      type: "exception_record",
+      category: "human_required",
+      source_id: "experience_openclaw-answer-bot-sha256-safe",
+      reason: "Experience privacy verdict human_required",
+      details: {
+        source_ref: "openclaw://answer-bot/chunks/safe",
+        source_hash: "sha256:safe",
+        agent: "openclaw",
+        scope_hint: "team",
+        redacted_summary: "raw transcript had token=abc123 and should not become wiki text",
+        triage: {
+          classification: "needs_redaction",
+          confidence: 0.91,
+          decision: "auto_released",
+          release_summary: "修复 OpenClaw 调度失败时，应先检查 dispatch 路由并重新运行验证，验证通过后再沉淀经验。",
+          triaged_at: "2026-06-16T00:00:00.000Z",
+        },
+      },
+      created_at: "2026-06-16T00:00:00.000Z",
+    }, null, 2), "utf8");
+
+    const pool = await buildWikiEvidencePoolFromRoot(root);
+
+    assert.equal(pool.items.length, 1);
+    assert.equal(pool.items[0].source_ref, "openclaw://answer-bot/chunks/safe");
+    assert.match(pool.items[0].summary, /OpenClaw 调度失败/);
+    assert.equal(pool.items[0].summary.includes("token=abc123"), false);
   });
 
   it("strips curation headings from evidence summaries before building wiki bodies", () => {

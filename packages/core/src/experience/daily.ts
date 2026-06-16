@@ -8,6 +8,7 @@ import { redactSensitiveValues } from "../protocol/redact.js";
 import { readAiProviderConfig, type AiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "../ai/client.js";
 import { distillExperience, DistilledExperienceSchema, type DistilledExperience } from "../ai/distill.js";
+import { readProjectLanguageConfig } from "../config/project.js";
 import {
   DailyExperienceReportSchema,
   ContextJuiceReportSchema,
@@ -22,7 +23,7 @@ import {
   type ContextReductionResult,
   type TrajectoryMicrocompactResult,
 } from "../protocol/schemas.js";
-import { readJson, writeJson } from "../store/file-store.js";
+import { readJson, safePath, writeJson } from "../store/file-store.js";
 import { compileWiki } from "../wiki/compile.js";
 import { curateWiki } from "../wiki/curate.js";
 import { CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal } from "../wiki/curation-model.js";
@@ -159,6 +160,7 @@ function statusFromCounts(input: { warnings: string[]; rejected: number; humanRe
 }
 
 type DailyAiDistill = DailyExperienceReport["ai_distill"];
+type DailyExperienceCoverage = NonNullable<DailyExperienceReport["experience_coverage"]>;
 const DISTILL_CACHE_VERSION = "ai-distill-v1";
 const DAILY_CONTEXT_JUICE_BUDGET_ID = `${CONTEXT_JUICE_VERSION}:daily-session-tool-output-${DEFAULT_SESSION_TOOL_OUTPUT_CAP_BYTES}`;
 
@@ -167,6 +169,184 @@ interface DailyContextJuiceState {
   microcompactResults: TrajectoryMicrocompactResult[];
   preSummaryResults: PayloadPreSummaryResult[];
   warnings: string[];
+}
+
+function sourceIdFromSourceRef(sourceRef: string | undefined): string | undefined {
+  if (!sourceRef) return undefined;
+  const match = sourceRef.match(/(experience_[a-z0-9_.-]+?)(?:\.json)?$/i)
+    ?? sourceRef.match(/chunks\/([a-f0-9]{16,})/i);
+  return match?.[1];
+}
+
+function coverageStatus(item: DailyExperienceCoverage["items"][number]): DailyExperienceCoverage["items"][number]["status"] {
+  if (item.stable_kb_paths.length > 0) return "stable_kb";
+  if (item.privacy_decision === "rejected_low_signal") return "low_signal_rejected";
+  if (item.proposal_count > 0) return "proposal";
+  if (item.wiki_evidence_count > 0) return "wiki_evidence";
+  if (item.lesson_count > 0) return "lesson_only";
+  if (item.privacy_decision && item.privacy_decision !== "auto_released") return "privacy_blocked";
+  return "raw_only";
+}
+
+async function readLatestPrivacyTriageItems(root: string): Promise<Array<Record<string, unknown>>> {
+  let files: string[];
+  try {
+    files = await readdir(safePath(root, protocolPaths.reportsPrivacyTriage));
+  } catch {
+    return [];
+  }
+  const reports: Array<{ created_at: string; items: Array<Record<string, unknown>> }> = [];
+  for (const file of files.filter((name) => name.endsWith(".json"))) {
+    try {
+      const report = await readJson<Record<string, unknown>>(root, `${protocolPaths.reportsPrivacyTriage}/${file}`);
+      if (report.type === "privacy_triage_report" && typeof report.created_at === "string" && Array.isArray(report.items)) {
+        reports.push({ created_at: report.created_at, items: report.items.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item))) });
+      }
+    } catch {
+      continue;
+    }
+  }
+  reports.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return reports[0]?.items ?? [];
+}
+
+async function readWikiSourceSummaries(root: string): Promise<Array<Record<string, unknown>>> {
+  let files: string[];
+  try {
+    files = await readdir(safePath(root, protocolPaths.reportsWikiSourceSummaries));
+  } catch {
+    return [];
+  }
+  const summaries: Array<Record<string, unknown>> = [];
+  for (const file of files.filter((name) => name.endsWith(".json"))) {
+    try {
+      const summary = await readJson<Record<string, unknown>>(root, `${protocolPaths.reportsWikiSourceSummaries}/${file}`);
+      if (summary.type === "wiki_source_summary") summaries.push(summary);
+    } catch {
+      continue;
+    }
+  }
+  return summaries;
+}
+
+async function buildExperienceCoverage(root: string, lessonReport: DailyLessonReport | undefined): Promise<DailyExperienceCoverage | undefined> {
+  const items = new Map<string, DailyExperienceCoverage["items"][number]>();
+  const ensure = (sourceId: string, seed: Partial<DailyExperienceCoverage["items"][number]> = {}) => {
+    const existing = items.get(sourceId);
+    if (existing) {
+      Object.assign(existing, seed);
+      return existing;
+    }
+    const created: DailyExperienceCoverage["items"][number] = {
+      source_id: sourceId,
+      lesson_count: 0,
+      lesson_states: {},
+      wiki_evidence_count: 0,
+      proposal_count: 0,
+      proposal_titles: [],
+      stable_kb_paths: [],
+      status: "raw_only",
+      ...seed,
+    };
+    items.set(sourceId, created);
+    return created;
+  };
+  const ensureByRefHash = (sourceRef: string | undefined, sourceHash: string | undefined, seed: Partial<DailyExperienceCoverage["items"][number]> = {}, options: { create?: boolean } = {}) => {
+    const byHash = sourceHash ? Array.from(items.values()).find((item) => item.source_hash === sourceHash) : undefined;
+    if (byHash) {
+      Object.assign(byHash, seed);
+      return byHash;
+    }
+    const byRef = sourceRef ? Array.from(items.values()).find((item) => item.source_ref === sourceRef) : undefined;
+    if (byRef) {
+      Object.assign(byRef, seed);
+      return byRef;
+    }
+    if (options.create === false) return undefined;
+    const sourceId = sourceIdFromSourceRef(sourceRef) ?? sourceHash ?? sourceRef;
+    return sourceId ? ensure(sourceId, seed) : undefined;
+  };
+
+  for (const item of await readLatestPrivacyTriageItems(root)) {
+    const sourceId = typeof item.source_id === "string" ? item.source_id : sourceIdFromSourceRef(typeof item.source_ref === "string" ? item.source_ref : undefined);
+    if (!sourceId) continue;
+    ensure(sourceId, {
+      source_ref: typeof item.source_ref === "string" ? item.source_ref : undefined,
+      source_hash: typeof item.source_hash === "string" ? item.source_hash : undefined,
+      privacy_decision: typeof item.decision === "string" ? item.decision : undefined,
+    });
+  }
+
+  for (const lesson of lessonReport?.lessons ?? []) {
+    for (const ref of lesson.source_refs) {
+      const sourceId = sourceIdFromSourceRef(ref) ?? ref;
+      const item = ensure(sourceId, { source_ref: ref, source_hash: lesson.source_hashes[0] });
+      item.lesson_count += 1;
+      item.lesson_states[lesson.state] = (item.lesson_states[lesson.state] ?? 0) + 1;
+      if (lesson.state === "wiki_ready" || lesson.state === "skill_ready") item.wiki_evidence_count += 1;
+    }
+  }
+
+  for (const summary of await readWikiSourceSummaries(root)) {
+    const sourceRef = typeof summary.source_ref === "string" ? summary.source_ref : undefined;
+    const sourceHash = typeof summary.source_hash === "string" ? summary.source_hash : undefined;
+    const item = ensureByRefHash(sourceRef, sourceHash, { source_ref: sourceRef, source_hash: sourceHash }, { create: false });
+    if (item && item.privacy_decision !== "rejected_low_signal") item.wiki_evidence_count += 1;
+  }
+
+  let proposalFiles: string[] = [];
+  try {
+    proposalFiles = await readdir(safePath(root, protocolPaths.inboxProposals));
+  } catch {
+    proposalFiles = [];
+  }
+  for (const file of proposalFiles.filter((name) => name.endsWith(".json"))) {
+    try {
+      const proposal = await readJson<Record<string, unknown>>(root, `${protocolPaths.inboxProposals}/${file}`);
+      const refs = Array.isArray(proposal.source_refs) ? proposal.source_refs.filter((ref): ref is string => typeof ref === "string") : [];
+      const hashes = Array.isArray(proposal.source_hashes) ? proposal.source_hashes.filter((hash): hash is string => typeof hash === "string") : [];
+      const title = typeof proposal.title === "string" ? proposal.title : file;
+      const targetPath = typeof proposal.target_path === "string" ? proposal.target_path : undefined;
+      let stablePath: string | undefined;
+      if (targetPath) {
+        try {
+          await readFile(safePath(root, targetPath), "utf8");
+          stablePath = targetPath;
+        } catch {
+          stablePath = undefined;
+        }
+      }
+      const refCount = Math.max(refs.length, hashes.length);
+      for (let index = 0; index < refCount; index++) {
+        const ref = refs[index];
+        const hash = hashes[index];
+        const item = ensureByRefHash(ref, hash, { source_ref: ref, source_hash: hash });
+        if (!item) continue;
+        item.proposal_count += 1;
+        if (!item.proposal_titles.includes(title)) item.proposal_titles.push(title);
+        if (stablePath && !item.stable_kb_paths.includes(stablePath)) item.stable_kb_paths.push(stablePath);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  const coverageItems = Array.from(items.values()).map((item) => ({
+    ...item,
+    proposal_titles: item.proposal_titles.slice(0, 8),
+    stable_kb_paths: item.stable_kb_paths.slice(0, 8),
+    status: coverageStatus(item),
+  })).sort((a, b) => a.source_id.localeCompare(b.source_id));
+  if (coverageItems.length === 0) return undefined;
+  return {
+    total_items: coverageItems.length,
+    with_privacy_result: coverageItems.filter((item) => Boolean(item.privacy_decision)).length,
+    with_lessons: coverageItems.filter((item) => item.lesson_count > 0).length,
+    with_wiki_evidence: coverageItems.filter((item) => item.wiki_evidence_count > 0).length,
+    with_proposals: coverageItems.filter((item) => item.proposal_count > 0).length,
+    stable_kb: coverageItems.filter((item) => item.stable_kb_paths.length > 0).length,
+    items: coverageItems,
+  };
 }
 
 interface LessonSourceReport {
@@ -1312,6 +1492,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const runStartedAtMs = Date.now();
   const stageStartedAtMs = new Map<DailyProgressStage, number>();
   const aiMode: DailyAiDistill["mode"] = input.noAi ? "disabled" : input.degraded ? "degraded" : "production";
+  const languageConfig = await readProjectLanguageConfig(root, input.env);
   const aiConfig = await readAiProviderConfig(root);
   const aiDistill: DailyAiDistill = {
     configured: Boolean(aiConfig || input.aiClient),
@@ -1719,6 +1900,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
             client: aiClient as AiJsonClient,
             maxOutputBytes: aiConfig?.max_output_bytes,
             authorityMode: input.authorityMode,
+            language: languageConfig.contentLanguage,
           });
           const cachePath = distillCachePath({
             authorityMode: input.authorityMode,
@@ -2049,8 +2231,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           now,
           maxSpans: 50,
           aiClient: lessonAiClient,
+          language: languageConfig.contentLanguage,
           ...(lessonAiClient ? { aiCacheIdentity: `daily:${distillModelName}` } : {}),
         });
+        sourceWarnings.push(...sourceReport.warnings);
+        warnings.push(...sourceReport.warnings);
         lessonReports.push(sourceReport);
         lessonSourceReports.push({
           source_name: lessonSource.source_name,
@@ -2112,6 +2297,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       },
       wiki_evidence: lessonWikiEvidence,
       authority_contract: buildLessonAuthorityContract(lessons, lessonWikiEvidence),
+      warnings: Array.from(new Set(lessonReports.flatMap((report) => report.warnings))).sort(),
       source_reports: lessonSourceReports,
     };
 
@@ -2205,6 +2391,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     env: input.env,
     fetchImpl: input.fetchImpl,
     aiTimeoutMs: input.aiTimeoutMs,
+    language: languageConfig.contentLanguage,
     onProgress: mode === "write"
       ? async (progress) => {
         await publishProgress({
@@ -2454,6 +2641,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       ],
     })
     : undefined;
+  const experienceCoverage = await buildExperienceCoverage(root, lessonReport);
 
   const makeReport = (sitePages: number, qualityFindings: number, outputPaths: string[]): DailyExperienceReport => {
     const reportOutputs = mode === "write"
@@ -2511,6 +2699,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
 	      },
 	      lifecycle: lifecycleSummary,
 	      skill_validation: validationSummary,
+	      ...(experienceCoverage ? { experience_coverage: experienceCoverage } : {}),
 	      lessons: lessonReport ? {
 	        enabled: true,
 	        source_items: lessonReport.source_items,

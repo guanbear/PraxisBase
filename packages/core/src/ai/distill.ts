@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PROTOCOL_VERSION } from "../protocol/types.js";
 import { AgentProfileSchema, ExperienceOutcomeSchema, ExperienceScopeHintSchema } from "../protocol/schemas.js";
 import { evaluatePostAiPrivacy } from "../experience/privacy-policy.js";
+import { languageInstruction, type ProjectLanguage } from "../config/project.js";
 import type { AiJsonClient } from "./client.js";
 
 const DistillAgentSchema = AgentProfileSchema;
@@ -71,19 +72,23 @@ export interface DistillExperienceOptions {
   client: AiJsonClient;
   maxOutputBytes?: number;
   authorityMode?: "personal-local" | "team-git";
+  language?: ProjectLanguage;
 }
 
-export function buildDistillPrompt(input: DistillInput): { system: string; user: string } {
+export function buildDistillPrompt(input: DistillInput, options: { language?: ProjectLanguage } = {}): { system: string; user: string } {
   const parsed = DistillInputSchema.parse(input);
+  const language = options.language ?? "en";
   return {
     system: [
       "You distill agent work records into reusable PraxisBase experience.",
       "Return only JSON that matches the DistilledExperience schema.",
       "Do not include secrets, tokens, cookies, auth headers, private keys, or raw logs.",
       "Do not invent verification. Use unknown outcome when evidence is unclear.",
+      languageInstruction(language),
     ].join(" "),
     user: JSON.stringify({
       task: "Extract durable, reusable agent experience from this bounded chunk.",
+      output_language: language,
       required_fields: [
         "source_ref",
         "source_hash",
@@ -298,7 +303,7 @@ export async function distillExperience(
     return { ok: false, category: "schema_error", error: parsedInput.error.message };
   }
 
-  const prompt = buildDistillPrompt(parsedInput.data);
+  const prompt = buildDistillPrompt(parsedInput.data, { language: options.language });
   const ai = await options.client.generateJson({
     ...prompt,
     schemaName: "DistilledExperience",

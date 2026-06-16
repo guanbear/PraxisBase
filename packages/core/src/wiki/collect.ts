@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import {
   AnyEpisodeSchema,
   CaptureRecordSchema,
+  ExceptionRecordSchema,
   MemoryImportReportSchema,
   NativeMemorySourceSchema,
   ProposalSchema,
@@ -59,6 +60,24 @@ function stringValue(value: unknown): string | undefined {
 
 function stringArrayValue(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function numberValue(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function titleFromSummary(summary: string, fallback: string): string {
+  const firstLine = summary
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*#\s]+/, "").trim())
+    .find((line) => line.length > 0);
+  if (!firstLine) return fallback;
+  return firstLine.length <= 96 ? firstLine : firstLine.slice(0, 96).replace(/\s+\S*$/, "").trim();
 }
 
 function fileId(relativePath: string): string {
@@ -352,6 +371,49 @@ async function collectExternalRefSources(root: string): Promise<WikiSource[]> {
   return sources;
 }
 
+async function collectAutoReleasedPrivacySources(root: string): Promise<WikiSource[]> {
+  const files = await listFiles(root, protocolPaths.exceptionsHumanRequired);
+  const sources: WikiSource[] = [];
+
+  for (const relativePath of files) {
+    if (!relativePath.endsWith(".json")) continue;
+
+    const source = await readJsonSource(root, relativePath);
+    if (!source) continue;
+
+    const parsed = ExceptionRecordSchema.safeParse(source.value);
+    if (!parsed.success) continue;
+
+    const record = parsed.data;
+    if (record.category !== "human_required" || !isRecord(record.details)) continue;
+    const triage = isRecord(record.details.triage) ? record.details.triage : {};
+    if (stringValue(triage.decision) !== "auto_released") continue;
+
+    const confidence = numberValue(triage.confidence);
+    if (confidence !== undefined && confidence < 0.75) continue;
+
+    const releaseSummary = stringValue(triage.release_summary);
+    const sourceRef = stringValue(record.details.source_ref);
+    const sourceHash = stringValue(record.details.source_hash);
+    if (!releaseSummary || !sourceRef || !sourceHash) continue;
+
+    const agent = stringValue(record.details.agent) ?? "agent";
+    sources.push({
+      id: `external_ref:auto-released:${record.id}`,
+      kind: "external_ref",
+      path: relativePath,
+      source_ref: sourceRef,
+      source_hash: sourceHash,
+      title: titleFromSummary(releaseSummary, `Auto-reviewed ${agent} experience`),
+      summary: releaseSummary,
+      scope: parseScope(record.details.scope_hint ?? record.details.scope, "team"),
+      created_at: stringValue(triage.triaged_at) ?? record.created_at,
+    });
+  }
+
+  return sources;
+}
+
 export async function collectWikiSources(
   root: string,
   options: CollectWikiSourcesOptions = {}
@@ -365,6 +427,7 @@ export async function collectWikiSources(
     proposalSources,
     reviewSources,
     externalRefSources,
+    autoReleasedPrivacySources,
   ] = await Promise.all([
     collectMarkdownSources(root, "kb", "stable_kb", "stable_kb:", () => true),
     collectMarkdownSources(
@@ -380,6 +443,7 @@ export async function collectWikiSources(
     collectProposalSources(root),
     collectReviewSources(root),
     collectExternalRefSources(root),
+    collectAutoReleasedPrivacySources(root),
   ]);
 
   const includePersonal = options.includePersonal ?? true;
@@ -392,6 +456,7 @@ export async function collectWikiSources(
     ...proposalSources,
     ...reviewSources,
     ...externalRefSources,
+    ...autoReleasedPrivacySources,
   ].filter((source) => includePersonal || source.scope !== "personal");
   all.sort((a, b) => a.id.localeCompare(b.id));
   return all;

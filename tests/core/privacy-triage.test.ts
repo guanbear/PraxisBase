@@ -169,7 +169,6 @@ describe("privacy triage", () => {
     });
 
     assert.equal(report.summary.auto_released, 0);
-    assert.equal(report.summary.team_review_only, 1);
     assert.equal(report.items[0].decision, "team_review_only");
   });
 
@@ -309,8 +308,40 @@ describe("privacy triage", () => {
     });
 
     assert.equal(report.summary.auto_released, 0);
-    assert.equal(report.summary.team_review_only, 1);
+    assert.equal(report.summary.team_review_only, 0);
+    assert.equal(report.summary.rejected_low_signal, 1);
+    assert.equal(report.items[0].decision, "rejected_low_signal");
     assert.ok(report.warnings.some((warning) => warning.includes("privacy_triage_team_auto_review_low_signal")));
+  });
+
+  it("rejects greeting-only team items as low signal even in review-first mode", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-team-review-low-signal-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, { id: "team-review-low-signal", scope: "team", channel: "feishu", agent: "openclaw", summary: "A user sent a generic greeting." });
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "team-git",
+      mode: "write",
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson() {
+          return {
+            ok: true,
+            json: {
+              classification: "safe_personal_experience",
+              confidence: 0.95,
+              rationale: "The redacted summary contains only a generic greeting and no operational details.",
+              suggested_redactions: [],
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(report.summary.team_review_only, 0);
+    assert.equal(report.summary.rejected_low_signal, 1);
+    assert.equal(report.items[0].decision, "rejected_low_signal");
   });
 
   it("keeps Feishu team exceptions review-only and redacts Feishu ids before AI triage", async () => {

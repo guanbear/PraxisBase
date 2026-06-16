@@ -78,6 +78,7 @@ export const protocolPaths = {
   agentToolsManifest: ".praxisbase/agent-tools/manifest.json",
   mcpManifest: ".praxisbase/agent-tools/mcp.json",
   reportsWikiQuality: ".praxisbase/reports/wiki-quality",
+  reportsWikiSourceSummaries: ".praxisbase/reports/wiki-source-summaries",
   runsWiki: ".praxisbase/runs/wiki",
   reportsWikiCompile: ".praxisbase/reports/wiki-compile",
   reportsWikiLint: ".praxisbase/reports/wiki-lint",

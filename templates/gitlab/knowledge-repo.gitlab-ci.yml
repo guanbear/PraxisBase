@@ -5,7 +5,7 @@ variables:
   PRAXISBASE_WRITEBACK: "false"
   PRAXISBASE_DAILY_LIMIT: "500"
   PRAXISBASE_MAX_AI_CHUNKS: "40"
-  PRAXISBASE_MAX_CURATION_PROPOSALS: "8"
+  PRAXISBASE_MAX_CURATION_PROPOSALS: "30"
   PRAXISBASE_AI_CONCURRENCY: "4"
   PRAXISBASE_PRIVACY_LIMIT: "500"
   PRAXISBASE_TEAM_AUTO_REVIEW: "false"
@@ -77,7 +77,7 @@ praxisbase:daily-harvest:
       if [ "${PRAXISBASE_NO_AI:-false}" = "true" ]; then
         PRAXISBASE_AI_FLAGS="--no-ai"
       fi
-      node /tmp/PraxisBase/packages/cli/dist/index.js daily run --mode team-git --limit "${PRAXISBASE_DAILY_LIMIT:-500}" --max-ai-chunks "${PRAXISBASE_MAX_AI_CHUNKS:-40}" --max-curation-proposals "${PRAXISBASE_MAX_CURATION_PROPOSALS:-8}" --ai-concurrency "${PRAXISBASE_AI_CONCURRENCY:-4}" $PRAXISBASE_AI_FLAGS --build-site --json > /tmp/praxisbase-daily.json
+      node /tmp/PraxisBase/packages/cli/dist/index.js daily run --mode team-git --limit "${PRAXISBASE_DAILY_LIMIT:-500}" --max-ai-chunks "${PRAXISBASE_MAX_AI_CHUNKS:-40}" --max-curation-proposals "${PRAXISBASE_MAX_CURATION_PROPOSALS:-30}" --ai-concurrency "${PRAXISBASE_AI_CONCURRENCY:-4}" $PRAXISBASE_AI_FLAGS --build-site --json > /tmp/praxisbase-daily.json
       cat /tmp/praxisbase-daily.json
       node -e 'const fs=require("fs"); const result=JSON.parse(fs.readFileSync(process.argv[1], "utf8")); if (result.ok === false) { console.error(result.message || "PraxisBase daily run failed"); process.exit(1); }' /tmp/praxisbase-daily.json
 

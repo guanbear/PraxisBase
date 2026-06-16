@@ -278,6 +278,7 @@ export const PrivacyTriageDecisionSchema = z.enum([
   "auto_released",
   "keep_human_required",
   "team_review_only",
+  "rejected_low_signal",
 ]);
 
 export const PrivacyTriageAiDecisionSchema = z.object({
@@ -321,6 +322,7 @@ export const PrivacyTriageReportSchema = z.object({
     auto_released: z.number().int().nonnegative(),
     keep_human_required: z.number().int().nonnegative(),
     team_review_only: z.number().int().nonnegative(),
+    rejected_low_signal: z.number().int().nonnegative().default(0),
   }),
   changed_stable_knowledge: z.literal(false),
   outputs: z.array(z.string()).default([]),
@@ -909,7 +911,7 @@ export const DailyExperienceReportSchema = z.object({
 	  }).default(() => ({
 	    proposals_by_decision: {},
 	  })).optional(),
-	  skill_validation: z.object({
+  skill_validation: z.object({
 	    total_reports: z.number().int().min(0).default(0),
 	    by_decision: z.record(z.string(), z.number().int().min(0)).default({}),
 	    candidates_without_passing: z.number().int().min(0).default(0),
@@ -917,7 +919,28 @@ export const DailyExperienceReportSchema = z.object({
 	    total_reports: 0,
 	    by_decision: {},
 	    candidates_without_passing: 0,
-	  })).optional(),
+  })).optional(),
+  experience_coverage: z.object({
+    total_items: z.number().int().min(0),
+    with_privacy_result: z.number().int().min(0),
+    with_lessons: z.number().int().min(0),
+    with_wiki_evidence: z.number().int().min(0),
+    with_proposals: z.number().int().min(0),
+    stable_kb: z.number().int().min(0),
+    items: z.array(z.object({
+      source_id: z.string().min(1),
+      source_ref: z.string().min(1).optional(),
+      source_hash: z.string().min(1).optional(),
+      privacy_decision: z.string().min(1).optional(),
+      lesson_count: z.number().int().min(0).default(0),
+      lesson_states: z.record(z.string(), z.number().int().min(0)).default({}),
+      wiki_evidence_count: z.number().int().min(0).default(0),
+      proposal_count: z.number().int().min(0).default(0),
+      proposal_titles: z.array(z.string().min(1)).default([]),
+      stable_kb_paths: z.array(z.string().min(1)).default([]),
+      status: z.enum(["raw_only", "privacy_blocked", "low_signal_rejected", "lesson_only", "wiki_evidence", "proposal", "stable_kb"]),
+    })),
+  }).optional(),
   lessons: z.object({
 	    enabled: z.boolean().default(false),
 	    source_items: z.number().int().min(0).default(0),

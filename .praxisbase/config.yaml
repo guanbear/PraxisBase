@@ -1,0 +1,6 @@
+protocol_version: "0.1"
+name: praxisbase-openclaw-repair
+default_scope: team
+language: zh-CN
+ui_language: zh-CN
+content_language: zh-CN

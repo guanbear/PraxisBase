@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { mkdtemp } from "node:fs/promises";
 import type { AiJsonClient } from "../ai/client.js";
+import type { ProjectLanguage } from "../config/project.js";
 import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
 import { abstractLessonPrivacy, redactEvidenceSpansForAi } from "./lesson-privacy.js";
 import {
@@ -51,6 +52,7 @@ export interface RunLessonPipelineInput {
   aiClient?: AiJsonClient;
   aiCacheIdentity?: string;
   cacheRoot?: string;
+  language?: ProjectLanguage;
 }
 
 export interface LessonPipelineReport {
@@ -69,6 +71,7 @@ export interface LessonPipelineReport {
   ai_cache: LessonExtractCacheStats & { enabled: boolean };
   wiki_evidence: number;
   authority_contract: LessonAuthorityContract;
+  warnings: string[];
 }
 
 export async function runLessonPipeline(root: string, input: RunLessonPipelineInput): Promise<LessonPipelineReport> {
@@ -80,6 +83,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
     origin: input.origin ?? "local",
   });
   const spans = planLessonSpans(inventory, { maxSpans: input.maxSpans ?? 50 });
+  const warnings: string[] = [];
   const deterministicLessons = extractDeterministicLessons(spans, {
     now,
     scope: input.scope,
@@ -95,6 +99,8 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
       now,
       scope: input.scope,
       agent: input.agent,
+      language: input.language,
+      onWarning: (warning) => warnings.push(warning),
       ...(input.aiCacheIdentity ? {
         cache: {
           root,
@@ -168,6 +174,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
     },
     wiki_evidence: wikiEvidence,
     authority_contract: authorityContract,
+    warnings,
   };
 }
 

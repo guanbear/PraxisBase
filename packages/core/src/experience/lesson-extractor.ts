@@ -2,6 +2,7 @@ import type { AiJsonClient } from "../ai/client.js";
 import { computeHash } from "../protocol/id.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { readJson, writeJson } from "../store/file-store.js";
+import { languageInstruction, type ProjectLanguage } from "../config/project.js";
 import {
   ExperienceLessonSchema,
   type EvidenceSpan,
@@ -13,6 +14,8 @@ export interface ExtractLessonsWithAiOptions {
   now: string;
   scope?: "personal" | "project" | "team" | "global" | "org";
   agent?: string;
+  language?: ProjectLanguage;
+  onWarning?: (warning: string) => void;
   cache?: {
     root: string;
     identity: string;
@@ -94,8 +97,12 @@ export async function extractLessonsWithAi(
     if (cached.status === "corrupt") options.cache.stats && (options.cache.stats.corrupt += 1);
   }
 
-  const first = await callExtractor(options.client, spans, buildSystemPrompt(), buildUserPrompt(spans));
-  if (!first.ok) return [];
+  const language = options.language ?? "en";
+  const first = await callExtractor(options.client, spans, buildSystemPrompt(language), buildUserPrompt(spans, language));
+  if (!first.ok) {
+    options.onWarning?.(`lesson_ai_error:${first.error}`);
+    return [];
+  }
 
   const parsed = parseLessonDrafts(first.json, spans, options);
   if (parsed.valid.length > 0 && parsed.invalid === 0) {
@@ -116,10 +123,11 @@ export async function extractLessonsWithAi(
   const retry = await callExtractor(
     options.client,
     spans,
-    buildRepairPrompt(spans),
+    buildRepairPrompt(spans, language),
     JSON.stringify(first.json),
   );
   if (!retry.ok) {
+    options.onWarning?.(`lesson_ai_repair_error:${retry.error}`);
     if (options.cache) {
       await writeLessonExtractorQuarantine(options.cache.root, spans, options, [
         { phase: "initial", invalid: parsed.invalid, json: first.json },
@@ -158,6 +166,7 @@ function lessonExtractCachePath(spans: EvidenceSpan[], options: ExtractLessonsWi
     plannerIdentity: options.cache?.plannerIdentity ?? "unspecified-planner",
     parserIdentity: options.cache?.parserIdentity ?? "unspecified-parser",
     reducerIdentity: options.cache?.reducerIdentity ?? "none",
+    language: options.language ?? "en",
     agent: options.agent ?? "generic",
     scope: options.scope ?? "personal",
     spans: spanIdentity,
@@ -244,17 +253,18 @@ async function callExtractor(
   });
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(language: ProjectLanguage): string {
   return [
     "You are an agent experience distiller.",
     "Extract reusable lessons, not summaries.",
     "Return JSON as {\"lessons\":[...]} only.",
     "Each lesson must include evidence_span_ids referencing the provided spans.",
     "Prefer fewer high-value lessons over padding weak or generic evidence.",
+    languageInstruction(language),
   ].join("\n");
 }
 
-function buildUserPrompt(spans: EvidenceSpan[]): string {
+function buildUserPrompt(spans: EvidenceSpan[], language: ProjectLanguage): string {
   const compact = spans.map((span) => ({
     span_id: span.span_id,
     excerpt: span.excerpt,
@@ -262,10 +272,10 @@ function buildUserPrompt(spans: EvidenceSpan[]): string {
     span_kind: span.span_kind,
     source_ref: span.source_ref,
   }));
-  return JSON.stringify({ spans: compact });
+  return JSON.stringify({ output_language: language, spans: compact });
 }
 
-function buildRepairPrompt(spans: EvidenceSpan[]): string {
+function buildRepairPrompt(spans: EvidenceSpan[], language: ProjectLanguage): string {
   const spanIds = spans.map((span) => span.span_id);
   return [
     "Your previous output failed validation.",
@@ -273,6 +283,7 @@ function buildRepairPrompt(spans: EvidenceSpan[]): string {
     `evidence_span_ids must reference: ${JSON.stringify(spanIds)}.`,
     "portability must be one of: universal, agent_family, project, environment, private_instance.",
     "privacy_tier must be one of: safe, personal_only, team_allowed, human_required, reject.",
+    languageInstruction(language),
   ].join("\n");
 }
 

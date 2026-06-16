@@ -140,7 +140,7 @@ Send an ACK before long-running agent work.
     assert.match(indexArtifact, /\[\[ack-timing\|ACK Timing\]\]/);
 
     const indexHtml = await readFile(join(root, "dist/index.html"), "utf8");
-    assert.ok(indexHtml.includes("href=\"wiki/index.md\""));
+    assert.ok(indexHtml.includes("href=\"index.html\""));
   });
 
   it("renders path-leaf wiki aliases when title slugs differ", async () => {
@@ -632,6 +632,70 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("id=\"rejected\""));
     assert.ok(review.includes("Experience privacy verdict human_required"));
     assert.ok(review.includes(".praxisbase/exceptions/human-required/exception_auth.json"));
+  });
+
+  it("renders experience coverage and Chinese UI language controls", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-coverage-"));
+    await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/config.yaml"), [
+      'protocol_version: "0.1"',
+      "language: zh-CN",
+      "ui_language: zh-CN",
+      "content_language: zh-CN",
+      "",
+    ].join("\n"));
+    await writeFile(join(root, ".praxisbase/reports/daily/daily_coverage.json"), JSON.stringify({
+      id: "daily_coverage",
+      protocol_version: "0.1",
+      type: "daily_experience_report",
+      authority_mode: "team-git",
+      mode: "write",
+      sources: [],
+      ai_distill: { privacy_required: 0, review_required: 0, rejected_low_signal: 1, rejected_quality: 0 },
+      proposal_candidates: 1,
+      quality_findings: 0,
+      site_pages: 0,
+      changed_stable_knowledge: false,
+      experience_coverage: {
+        total_items: 2,
+        with_privacy_result: 2,
+        with_lessons: 1,
+        with_wiki_evidence: 1,
+        with_proposals: 1,
+        stable_kb: 0,
+        items: [
+          { source_id: "experience_openclaw-a", privacy_decision: "auto_released", lesson_count: 1, lesson_states: { skill_ready: 1 }, wiki_evidence_count: 1, proposal_count: 1, proposal_titles: ["中文经验候选"], stable_kb_paths: [], status: "proposal" },
+          { source_id: "experience_openclaw-b", privacy_decision: "rejected_low_signal", lesson_count: 0, lesson_states: {}, wiki_evidence_count: 0, proposal_count: 0, proposal_titles: [], stable_kb_paths: [], status: "low_signal_rejected" },
+        ],
+      },
+      outputs: [],
+      warnings: [],
+      created_at: "2026-06-16T00:00:00.000Z",
+    }), "utf8");
+
+    await buildWikiSite(root);
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(index.includes("知识库健康"));
+    assert.ok(index.includes("知识页"));
+    assert.ok(index.includes('data-i18n="dashboard.title"'));
+    assert.ok(index.includes('href="index.html"'));
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes('lang="zh-CN"'));
+    assert.ok(review.includes('id="languageSelect"'));
+    assert.ok(review.includes('class="language-switch"'));
+    assert.ok(review.includes('data-language-option="zh-CN"'));
+    assert.ok(review.includes("经验覆盖"));
+    assert.ok(review.includes("原始项"));
+    assert.ok(review.includes("experience_openclaw-a"));
+    assert.ok(review.includes("中文经验候选"));
+    assert.ok(review.includes("低信号已拒绝"));
+    assert.equal(review.includes("raw transcript"), false);
+    const graph = await readFile(join(root, "dist/graph.html"), "utf8");
+    assert.ok(graph.includes("知识图谱"));
+    assert.ok(graph.includes("节点"));
+    const issues = await readFile(join(root, "dist/issues.html"), "utf8");
+    assert.ok(issues.includes("质量问题"));
+    assert.ok(issues.includes("未发现质量问题。"));
   });
 
   it("shows privacy triage metadata for human-required records", async () => {
