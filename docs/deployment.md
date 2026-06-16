@@ -88,6 +88,7 @@ The template clones the PraxisBase tool repo, builds the CLI, and executes it ag
 | `PRAXISBASE_MAX_AI_CHUNKS` | Maximum uncached AI distill calls per daily harvest. Defaults to `40`. |
 | `PRAXISBASE_MAX_CURATION_PROPOSALS` | Maximum AI wiki curation proposals per daily harvest. Defaults to `8`. |
 | `PRAXISBASE_AI_CONCURRENCY` | Maximum concurrent AI calls for daily harvest. Defaults to `4`. |
+| `PRAXISBASE_NO_AI` | Set to `true` for a manual no-AI smoke of source ingestion and writeback. |
 | `PRAXISBASE_PAGES` | Set to `true` to publish `dist/` through GitLab Pages. |
 
 When writeback is enabled, use a Project Access Token with the minimum write scope needed for that knowledge repo.
