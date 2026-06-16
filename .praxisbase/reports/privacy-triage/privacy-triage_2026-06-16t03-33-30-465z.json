@@ -1,0 +1,662 @@
+{
+  "id": "privacy-triage_2026-06-16t03-33-30-465z",
+  "protocol_version": "0.1",
+  "type": "privacy_triage_report",
+  "authority_mode": "team-git",
+  "mode": "write",
+  "ai": {
+    "configured": true,
+    "provider": "openai-compatible",
+    "model": "gpt-5.5"
+  },
+  "items": [
+    {
+      "exception_id": "exception_daily-experience-0c7144ea57b21569",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-0c7144ea57b21569.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-273a47187",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/484cde15e8baa9ab50030ad9353c818170a940a08bfeb16a30292e512ef2dad3",
+      "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-0d62ba5167311843",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-0d62ba5167311843.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-1e5ae91e7",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/1520da92e14f0a437090e90129b764bc690ea051da2dcc0f7567eaf9600d96b3",
+      "source_hash": "sha256:1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-12c9caf5999d25cf",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-12c9caf5999d25cf.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-85c6325c6",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/df7653b970e08d09eae123803c83a3ce7e16cdc3228c97eb02113a4f7d65be45",
+      "source_hash": "sha256:85c6325c60942c2d6c8e54503253ba6c2ef13e2b469126910947842a24f501a9",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-1f7524e8ea7c5493",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-1f7524e8ea7c5493.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-bdd86a156",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/a4ee36420500cc72c9c7960a056347306a3302f73506f01a06721591dc7129cf",
+      "source_hash": "sha256:bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-251024cf3fc2ffaf",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-251024cf3fc2ffaf.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-b2390ce0f",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8e67df0474158324d567a04e84259a42f270e98d526843e017885e03d2717604",
+      "source_hash": "sha256:b2390ce0fa0be3b8618eb20ef2a5810b64d260fd2001ed965b95988d6573a9ca",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-26e20af34a56d959",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-26e20af34a56d959.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-b3b1891ee",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/e0d8bd780bd4d7d0acc94dd3de06a1b295e0fdc6c94b65046de2633bcc0a8c53",
+      "source_hash": "sha256:b3b1891ee00104774570e3e1a1b84f3da47119d971cea424d87d231f3a4489a7",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-2bc11e5412f5ca23",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-2bc11e5412f5ca23.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-dd5113c71",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5",
+      "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-355aea4949afabe8",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-355aea4949afabe8.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-6a00c70c9",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/0e92ce33a0e6f928264ccf3f028b41f1fa6b60260443a9c650956c393c679e09",
+      "source_hash": "sha256:6a00c70c9cf57a059e3dc45e8e73ff772b5b38b3090c9dddb690f033e9af6428",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-4116addd68e32657",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-4116addd68e32657.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-8107f53d4",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319",
+      "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-444ad40b7503112d",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-444ad40b7503112d.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-f7aee701a",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9",
+      "source_hash": "sha256:f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-5ca220d0a850d0ac",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-5ca220d0a850d0ac.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-3be56fa6f",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/1c1298ecee8a363877826c3bcccde76a51bece133987640fd85db86595b36eca",
+      "source_hash": "sha256:3be56fa6f21b34450a0ff865f070fe94f315badb484369503e8e0ed2e2aeb983",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-5cb54c626295b4d9",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-5cb54c626295b4d9.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-19c2eeefa",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3",
+      "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-5fe8e5312427b66d",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-5fe8e5312427b66d.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-64f06eeeb",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/96275568696686fbae153debca63c95d2252a4a627c904a1157fff1e1ce884c2",
+      "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-70eadc18937b5291",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-70eadc18937b5291.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-31384b954",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/647b0b2aa4ef15d0d9fdfa4d631daf5c1f7d2e38f102647cb8ee1c0d4d5d6251",
+      "source_hash": "sha256:31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-744f37e98e5b409e",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-744f37e98e5b409e.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-92320b389",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab",
+      "source_hash": "sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-79822ff24256f1ed",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-79822ff24256f1ed.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-803b9fd01",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/bed5aceb1333da5f2cd30306923dd74c9879ab134792e0150c4ae198381c57bc",
+      "source_hash": "sha256:803b9fd01b10c489d9bab732b9897d9e763075d3a8e1b7f33fccb01a3ac69de8",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-81e477a050db55f0",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-81e477a050db55f0.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-c721715b0",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/38a33db7f206104cd1c4c23e53c37fac6416afeca945f552ea941b8881896d4f",
+      "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-86b8adf55a71c900",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-86b8adf55a71c900.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-dbfb119fc",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417",
+      "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-89b1816966184deb",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-89b1816966184deb.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-54fe93b6d",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/affc243831d9884b3b1eb30194dd8941838d7bcbedeacd2d1121e0583a01e17a",
+      "source_hash": "sha256:54fe93b6dddf3463f41c43bce59270b43fd4ffb9d7414dadbf79db4088407f61",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-9a6f3a1b71d5ea65",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-9a6f3a1b71d5ea65.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e1db2413e",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0",
+      "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-9fff94571a51c4aa",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-9fff94571a51c4aa.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e3e17b88c",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/50d29fba45c04a740ad1845f4780bfec697499a8eca9598bd18a5c5e098c965c",
+      "source_hash": "sha256:e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-a8d30ee6c5b41907",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-a8d30ee6c5b41907.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-8deb4f5e6",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2dbf07e37f67ccfc42d3b5801baae2f431e08ab6cfc440ecc9c21500354564ad",
+      "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-ad405f88f6d334a4",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-ad405f88f6d334a4.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-4b2bab827",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76",
+      "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-b70a35157d393839",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-b70a35157d393839.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-fe8edde7b",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/d0b80916bc0fefe7568dbcec7e9065210660de2babfd3ac867421f41cf3d0fde",
+      "source_hash": "sha256:fe8edde7b6d2208fd20d6fdc2605c5850b9b3ce9124b3069d7d41395a5d2b00e",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-b7c16f24ab0be689",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-b7c16f24ab0be689.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-745fa543d",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/b9e879dee5e970e643cce67f6a587350eacae6a38c4a851400cb67d52f447384",
+      "source_hash": "sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-c578b794158d6fe2",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-c578b794158d6fe2.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-9fd2e910e",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/4a33f4cf966c017e78d0f5569184d5c180f44f5ac08e93dfa61ea6b40332e34e",
+      "source_hash": "sha256:9fd2e910e455e963c35f9f3e100fd9e0003c33d50aceb40b2315aedd2b5665ab",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-c68d16c6183965d2",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-c68d16c6183965d2.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-b6f7162b2",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/bffaaa4ffa03556187d8952f2030cb47101788d96ea465164e3621fa61e116a0",
+      "source_hash": "sha256:b6f7162b264f865e42d5fa59a487ffdfaff9befe7eec5d690b6a2902da697db9",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-c7f8e014dbf89c90",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-c7f8e014dbf89c90.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e437220d9",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/cb0565346fdc853fc4f1db8e3568bf7c8ae2247cb009ed8b59691027b6d71f1a",
+      "source_hash": "sha256:e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-caad32421e9bf573",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-caad32421e9bf573.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-5535ee36f",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/7d903ce59380e64c1fa8e0c3f29210272282aa4bc42e6b55307c09af1f2e51dc",
+      "source_hash": "sha256:5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-cb9a6cc24cd1f6dc",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-cb9a6cc24cd1f6dc.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-f1d3f2e21",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6d26893d8543d3c19d5418337825924ef91012347381c7ad28429e59fc1b0b99",
+      "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-cf5dab7be3851c0b",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-cf5dab7be3851c0b.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-14edce26a",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/578c93fed49000856bedd6f4509320f98bfd5689fa2a77d8b6e288ff14dc4d94",
+      "source_hash": "sha256:14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-d303f90af8f4af34",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e9bac6dd0",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/b62c9fa15b3e0a157401ea147eb48780e09a4ee53a0eac41a75fef148e5aa3db",
+      "source_hash": "sha256:e9bac6dd0a2e114383858ac78fdda1f44c11486830bc69b33c30ec1dbfa1cb00",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-d53d6d7901e4eb74",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-d53d6d7901e4eb74.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-98477e0c8",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77",
+      "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-de836b6f83806d74",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-de836b6f83806d74.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-cfcba5397",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2a4220e4ecc01009e3a73ac8aa34773399b262779c1c919e234e023e41bae846",
+      "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "unclear",
+      "confidence": 0,
+      "rationale": "AI provider returned invalid PrivacyTriageDecision JSON",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    }
+  ],
+  "summary": {
+    "scanned": 34,
+    "skipped_already_triaged": 0,
+    "skipped_non_privacy": 4,
+    "auto_released": 0,
+    "keep_human_required": 0,
+    "team_review_only": 34
+  },
+  "changed_stable_knowledge": false,
+  "outputs": [
+    ".praxisbase/reports/privacy-triage/privacy-triage_2026-06-16t03-33-30-465z.json"
+  ],
+  "warnings": [
+    "privacy_triage_ai_error:exception_daily-experience-12c9caf5999d25cf:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-0c7144ea57b21569:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-1f7524e8ea7c5493:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-0d62ba5167311843:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-251024cf3fc2ffaf:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-2bc11e5412f5ca23:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-26e20af34a56d959:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-355aea4949afabe8:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-4116addd68e32657:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-444ad40b7503112d:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-5ca220d0a850d0ac:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-5cb54c626295b4d9:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-5fe8e5312427b66d:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-70eadc18937b5291:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-81e477a050db55f0:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-744f37e98e5b409e:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-79822ff24256f1ed:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-89b1816966184deb:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-86b8adf55a71c900:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-a8d30ee6c5b41907:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-9a6f3a1b71d5ea65:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-9fff94571a51c4aa:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-b70a35157d393839:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-b7c16f24ab0be689:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-ad405f88f6d334a4:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-c68d16c6183965d2:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-c578b794158d6fe2:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-c7f8e014dbf89c90:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-caad32421e9bf573:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-cb9a6cc24cd1f6dc:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-cf5dab7be3851c0b:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-d303f90af8f4af34:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-d53d6d7901e4eb74:AI provider returned invalid PrivacyTriageDecision JSON",
+    "privacy_triage_ai_error:exception_daily-experience-de836b6f83806d74:AI provider returned invalid PrivacyTriageDecision JSON"
+  ],
+  "created_at": "2026-06-16T03:33:30.465Z"
+}
