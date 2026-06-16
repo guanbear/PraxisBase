@@ -70,6 +70,8 @@ describe("split knowledge repo GitLab CI template", () => {
     assert.match(ci, /praxisbase:promote:[\s\S]*?resource_group:\s+praxisbase-write/);
     assert.ok(ci.includes("PRAXISBASE_WRITEBACK"));
     assert.ok(ci.includes("PRAXISBASE_PUSH_TOKEN"));
+    assert.ok(ci.includes('git config --global user.name "praxisbase-bot"'));
+    assert.ok(ci.includes('git add -f "$path"'));
   });
 
   it("can publish dist through GitLab Pages", async () => {

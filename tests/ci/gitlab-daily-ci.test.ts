@@ -60,6 +60,13 @@ describe("GitLab daily harvest CI template", () => {
     );
   });
 
+  it("fails the job when the daily command returns ok false", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+
+    assert.match(ci, /praxisbase-daily\.json/);
+    assert.match(ci, /result\.ok === false/);
+  });
+
   it("runs daily-harvest before review stage", async () => {
     const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
 
