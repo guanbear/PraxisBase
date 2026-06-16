@@ -2,7 +2,7 @@
   "protocol_version": "0.1",
   "type": "ai_provider_config",
   "provider": "openai-compatible",
-  "model": "codex-omni",
+  "model": "gpt-5.5",
   "base_url_env": "CODEX_OMNI_BASE_URL",
   "api_key_env": "CODEX_OMNI_API_KEY",
   "default_temperature": 0,
