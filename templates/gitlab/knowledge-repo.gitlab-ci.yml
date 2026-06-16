@@ -26,7 +26,11 @@ stages:
           https://*) PRAXISBASE_TOOL_CLONE_URL="https://oauth2:${PRAXISBASE_PUSH_TOKEN}@${PRAXISBASE_TOOL_REPO#https://}" ;;
         esac
       fi
-      git clone --depth 1 --branch "$PRAXISBASE_TOOL_REF" "$PRAXISBASE_TOOL_CLONE_URL" /tmp/PraxisBase
+      if ! git clone --depth 1 --branch "$PRAXISBASE_TOOL_REF" "$PRAXISBASE_TOOL_CLONE_URL" /tmp/PraxisBase; then
+        fallback_ref="${CI_COMMIT_REF_NAME:-${CI_DEFAULT_BRANCH:-master}}"
+        echo "PRAXISBASE_TOOL_REF=$PRAXISBASE_TOOL_REF is unavailable; falling back to $fallback_ref"
+        git clone --depth 1 --branch "$fallback_ref" "$PRAXISBASE_TOOL_CLONE_URL" /tmp/PraxisBase
+      fi
     - |
       if [ -n "${PRAXISBASE_PUSH_TOKEN:-}" ]; then
         git config --global url."https://oauth2:${PRAXISBASE_PUSH_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://${CI_SERVER_HOST}/"
