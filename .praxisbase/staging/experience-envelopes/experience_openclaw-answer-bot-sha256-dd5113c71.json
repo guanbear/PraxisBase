@@ -9,7 +9,7 @@
   "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
   "scope_hint": "team",
   "redacted_summary": "A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization=[REDACTED] The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed.",
-  "fetched_at": "2026-06-16T04:46:58.958Z",
+  "fetched_at": "2026-06-16T05:22:58.969Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

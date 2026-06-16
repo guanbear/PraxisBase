@@ -1,0 +1,2627 @@
+{
+  "id": "lesson_2026-06-16t05-22-58-969z",
+  "protocol_version": "0.1",
+  "type": "lesson_pipeline_report",
+  "authority_mode": "team-git",
+  "source_items": 21,
+  "selected_spans": 63,
+  "deterministic_lessons": 2,
+  "ai_lessons": 48,
+  "lessons": [
+    {
+      "lesson_id": "det_ack_before_slow_work_09823a8de90",
+      "claim": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and ...",
+      "safe_claim": "Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first, then proceed with the slow operation.",
+      "problem": "Slow tool, network, dispatch, or long-running work can leave users without timely feedback.",
+      "trigger": "Before starting slow work or work involving tools, network calls, or delegation dispatch.",
+      "action": "Send a short acknowledgement first, then proceed with the slow operation.",
+      "verification": "Confirm the acknowledgement is emitted before the long-running step begins.",
+      "negative_case": "Do not stay silent while beginning slow or externally dispatched work.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [
+        "agent-runtime",
+        "dispatch",
+        "network",
+        "tooling"
+      ],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "reflection",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json"
+      ],
+      "source_hashes": [
+        "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81",
+        "sha256:ef583790c97f627a2c01abfad69293d770d245a64c07e516f89f43dd4783d9ed"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json",
+          "source_hash": "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1081,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and ...",
+          "excerpt_hash": "sha256:c1199d5a808b6b66fbc64f4836da243af523f287dd653bceadf865e5d1c0503a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_825fac0cdb5b68b3",
+      "claim": "When automated script repair and AI-assisted repair have both already failed, stop cycling through the same repair attempts and escalate to the appropriate platform support role.",
+      "safe_claim": "If both automated script repair and AI-assisted repair have failed, avoid repeating the same repair loop and escalate to platform support.",
+      "problem": "Repeatedly retrying the same failed automated and AI-assisted repair paths wastes time and may delay resolution.",
+      "trigger": "A repair workflow has already attempted both automated script repair and AI-assisted repair without success.",
+      "action": "Stop repeating the same repair attempts; gather the failure context and escalate to the appropriate platform support role.",
+      "verification": "Confirm that both repair methods were attempted, failed, and that escalation has been initiated with relevant logs or context.",
+      "negative_case": "Do not escalate immediately if only one repair method has been tried or if there is new evidence suggesting a different repair path is likely to work.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.82,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json"
+      ],
+      "source_hashes": [
+        "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json",
+          "source_hash": "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1081,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and ...",
+          "excerpt_hash": "sha256:c1199d5a808b6b66fbc64f4836da243af523f287dd653bceadf865e5d1c0503a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_420dba8299b14b7c",
+      "claim": "For apparent bot non-response, first check whether backend tool calls are still running or delayed before treating the bot as failed; if the backend is not the issue, try an alternate model as a diagnostic step.",
+      "safe_claim": "When a bot appears not to respond, check for delayed or running backend tool calls before declaring failure; if backend execution is not the cause, try another model to isolate the issue.",
+      "problem": "A bot may appear unresponsive even though backend tool calls are still executing, and misclassifying this as bot failure can lead to unnecessary remediation.",
+      "trigger": "A user or operator observes apparent bot non-response, timeout-like behavior, or lack of visible output.",
+      "action": "Inspect backend/tool-call status for running or delayed operations; if no backend delay explains the issue, test with an alternate model as a diagnostic comparison.",
+      "verification": "Verify whether backend calls were active or delayed; if not, compare behavior using an alternate model and record whether the issue reproduces.",
+      "negative_case": "Do not switch models before checking backend execution state when tool calls may still be in progress.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json"
+      ],
+      "source_hashes": [
+        "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json",
+          "source_hash": "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1081,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and ...",
+          "excerpt_hash": "sha256:c1199d5a808b6b66fbc64f4836da243af523f287dd653bceadf865e5d1c0503a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_f6ad3113a52d602e",
+      "claim": "For chat-connector failures, include configuration checks in the diagnostic path: verify the chat plugin is enabled, restart the service, and then continue troubleshooting if the issue persists.",
+      "safe_claim": "When diagnosing chat-connector failures, verify the chat plugin is enabled, restart the service, and continue troubleshooting if the failure remains.",
+      "problem": "Chat-connector issues may be caused by disabled plugins or stale service state, which can be missed if diagnostics jump directly to deeper debugging.",
+      "trigger": "A chat connector, chat plugin, or related integration fails to respond or connect as expected.",
+      "action": "Check whether the chat plugin is enabled, restart the relevant service, and then proceed with additional troubleshooting if the issue persists.",
+      "verification": "Confirm plugin enabled state, confirm the service restart completed, and retest the chat connector to see whether the issue is resolved.",
+      "negative_case": "Do not assume a code or infrastructure defect before checking basic plugin configuration and service restart status.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "agent_family",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.81,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json"
+      ],
+      "source_hashes": [
+        "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json",
+          "source_hash": "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1081,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and ...",
+          "excerpt_hash": "sha256:c1199d5a808b6b66fbc64f4836da243af523f287dd653bceadf865e5d1c0503a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_4b5d9d05187040ae",
+      "claim": "Support requests should be routed by issue category to predefined owners or self-service paths rather than handled through ad hoc troubleshooting.",
+      "safe_claim": "Use issue categories such as installation or document integration, terminal session recovery, capacity or quota requests, bot visibility, and protocol-specific questions to choose an appropriate support path.",
+      "problem": "Ad hoc troubleshooting can send users to the wrong place, delay resolution, or expose internal routing details unnecessarily.",
+      "trigger": "A user asks for help with installation, document integration, terminal recovery, quota or capacity, bot visibility, or a protocol-specific issue.",
+      "action": "Classify the request into the closest predefined category, then provide the matching self-service guidance or route to the appropriate support owner without inventing a new escalation path.",
+      "verification": "Confirm that the chosen route matches the issue category and that the response gives either a clear self-service next step or an approved escalation path.",
+      "negative_case": "Do not use this lesson when the request is unrelated to support routing or when no category can be inferred; ask a clarifying question instead.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json"
+      ],
+      "source_hashes": [
+        "sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json",
+          "source_hash": "sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 991,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Team support routing guidance was consolidated into generic escalation categories. Installation and document-integration issues, terminal session recovery issues, capacity/quota requests, bot visibility problems, and protocol-specific questions should each follow predefined ownership or self-service guidance rather than ad hoc troubleshooting. Verification signal: the sanitized guidance removes personal routing, internal links, and project-specific identifiers while preserving the operational de...",
+          "excerpt_hash": "sha256:e88a004ee45f61ee9de6184735ba962b0a9a512198531e435375ceb8236d2aa9",
+          "span_kind": "json_message"
+        },
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json",
+          "source_hash": "sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_span_0",
+          "line_start": 1,
+          "line_end": 24,
+          "byte_start": 0,
+          "byte_end": 1264,
+          "heading_path": [],
+          "excerpt": "{\n  \"id\": \"experience_openclaw-answer-bot-sha256-c721715b0\",\n  \"protocol_version\": \"0.1\",\n  \"type\": \"experience_envelope\",\n  \"source_id\": \"source_openclaw-answer-bot\",\n  \"agent\": \"openclaw\",\n  \"channel\": \"feishu\",\n  \"source_ref\": \"openclaw://answer-bot/pm.sqlite/chunks/38a33db7f206104cd1c4c23e53c37fac6416afeca945f552ea941b8881896d4f\",\n  \"source_hash\": \"sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd\",\n  \"scope_hint\": \"team\",\n  \"redacted_summary\": \"Team support routing gui...",
+          "excerpt_hash": "sha256:c5081b21edaa245b8b707376bef78ab9e1a3cc818d621876e1499c4973c465a7",
+          "span_kind": "paragraph"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_96135a23b6becb8e",
+      "claim": "Internal support guidance should be sanitized before being converted into reusable documentation.",
+      "safe_claim": "When turning internal support notes into reusable documentation, remove personal routing, internal links, and project-specific identifiers while preserving the operational decision logic.",
+      "problem": "Raw internal guidance can leak sensitive routing details, private links, or instance-specific identifiers if reused directly.",
+      "trigger": "Internal support instructions are being rewritten as public, reusable, or broadly shareable documentation.",
+      "action": "Extract the general decision logic, remove or generalize personal names, private channels, internal URLs, tenant or project identifiers, and instance-specific labels, then publish only the sanitized workflow.",
+      "verification": "Review the rewritten documentation to ensure it preserves the support decision tree while excluding internal links, personal routing, and project-specific identifiers.",
+      "negative_case": "Do not remove details that are necessary and safe for the intended audience, such as public documentation links or generic product feature names.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json"
+      ],
+      "source_hashes": [
+        "sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json",
+          "source_hash": "sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 991,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Team support routing guidance was consolidated into generic escalation categories. Installation and document-integration issues, terminal session recovery issues, capacity/quota requests, bot visibility problems, and protocol-specific questions should each follow predefined ownership or self-service guidance rather than ad hoc troubleshooting. Verification signal: the sanitized guidance removes personal routing, internal links, and project-specific identifiers while preserving the operational de...",
+          "excerpt_hash": "sha256:e88a004ee45f61ee9de6184735ba962b0a9a512198531e435375ceb8236d2aa9",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_84227c078d88d703",
+      "claim": "Support guidance for model-related questions should cover pricing/capability explanations, model-selection persistence, and cases where an agent-specific default can override the user's selected model.",
+      "safe_claim": "When answering model-related support questions, distinguish between pricing/capability differences, whether the user's selected model persists, and whether an agent-specific default may override that selection.",
+      "problem": "Without separating these cases, support responses about model switching behavior can become inconsistent or misleading.",
+      "trigger": "A user asks about model pricing, capabilities, whether their model choice is remembered, or why an agent appears to use a different model than the one they selected.",
+      "action": "Explain the relevant case explicitly: describe pricing/capability differences if asked, state whether the user's model selection persists, and note when an agent-specific default can override that selection.",
+      "verification": "Check that the response addresses all model-selection factors relevant to the user's question and does not imply that user selection always or never controls the active model.",
+      "negative_case": "Do not give a blanket answer that model selection always persists or that agents always use the user's selected model, because agent defaults may change behavior.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "project",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json"
+      ],
+      "source_hashes": [
+        "sha256:c66eec4b3e0d01b6d5372f142ee78053d30e7b805c2a367a8df9a7b4f9e976f4"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json",
+          "source_hash": "sha256:c66eec4b3e0d01b6d5372f142ee78053d30e7b805c2a367a8df9a7b4f9e976f4",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 817,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Documented standardized support guidance for answering questions about model pricing, capabilities, and model-switching behavior. The update clarifies when model selection persists versus when an agent-specific default may override a user-selected model, and it provides a consistent response for known context errors after switching models.",
+          "excerpt_hash": "sha256:151d1d6a8c5d4d8b900e2fb6ac08cb23d88ca143d9aee9a9dd5970e6c5647064",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_55c950aa7bc2e679",
+      "claim": "Known context errors after users switch models should have a standardized support response.",
+      "safe_claim": "For recurring context errors that occur after model switching, use a consistent explanation and troubleshooting guidance rather than improvising each response.",
+      "problem": "If support agents improvise responses to the same recurring model-switching context error, users may receive inconsistent explanations or troubleshooting steps.",
+      "trigger": "A user reports a context error, lost context, or similar issue shortly after switching models.",
+      "action": "Use the approved standardized response for the known post-model-switch context error, including the expected explanation and troubleshooting steps.",
+      "verification": "Confirm the user's issue matches the known post-switch context-error pattern before applying the standard response, and ensure the response includes the agreed troubleshooting guidance.",
+      "negative_case": "Do not apply the standardized response to unrelated errors or to issues that did not occur after a model switch without first verifying the pattern.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "project",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json"
+      ],
+      "source_hashes": [
+        "sha256:c66eec4b3e0d01b6d5372f142ee78053d30e7b805c2a367a8df9a7b4f9e976f4"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json",
+          "source_hash": "sha256:c66eec4b3e0d01b6d5372f142ee78053d30e7b805c2a367a8df9a7b4f9e976f4",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 817,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Documented standardized support guidance for answering questions about model pricing, capabilities, and model-switching behavior. The update clarifies when model selection persists versus when an agent-specific default may override a user-selected model, and it provides a consistent response for known context errors after switching models.",
+          "excerpt_hash": "sha256:151d1d6a8c5d4d8b900e2fb6ac08cb23d88ca143d9aee9a9dd5970e6c5647064",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_2b807dc9e355a21c",
+      "claim": "When a user cannot find or add a bot, first check and adjust the bot’s visibility settings in the bot administration console rather than treating it as a deployment or permission failure.",
+      "safe_claim": "Bot discoverability or addability issues may be caused by visibility settings, so visibility should be checked early.",
+      "problem": "Users may be unable to find or add a bot even though the bot exists.",
+      "trigger": "A user reports that a bot cannot be found, added, or discovered.",
+      "action": "Check the bot administration console for the bot’s visibility settings and adjust them if needed before escalating to deployment or permission troubleshooting.",
+      "verification": "After changing visibility settings, confirm that the user can find and add the bot.",
+      "negative_case": "If visibility settings are already correct, continue investigating deployment status, permissions, tenant scope, or integration-specific issues.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.88,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json"
+      ],
+      "source_hashes": [
+        "sha256:f49e9bef8a5fbe3b9a5b99a65ac6db006edc21cdc1a763750162a78049668181"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json",
+          "source_hash": "sha256:f49e9bef8a5fbe3b9a5b99a65ac6db006edc21cdc1a763750162a78049668181",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1038,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Support guidance was sanitized to remove personal routing details, internal identifiers, and team-channel provenance. Verified reusable guidance includes: direct users to adjust bot visibility in the bot administration console when a bot cannot be found or added; avoid reusing the same chat bot across unrelated tools or agents because it can cause missing or duplicate replies; use the product console’s scheduled-task management area to review or cancel recurring tasks. For ordinary messages outs...",
+          "excerpt_hash": "sha256:939dd3c47e7f6a21e8e96d4a49e5558e0d416b438b5eae18c5bf42448a70eca1",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_9c65a61886a571fd",
+      "claim": "Do not reuse the same chat bot instance across unrelated tools or agents; this can lead to missing replies or duplicate replies. Use separate bot configurations for distinct integrations.",
+      "safe_claim": "Reusing one bot instance across unrelated integrations may cause response routing problems; separate bot configurations are safer.",
+      "problem": "A shared bot instance across unrelated tools or agents can produce missing replies, duplicate replies, or other routing confusion.",
+      "trigger": "Multiple unrelated tools, agents, or integrations are configured to use the same chat bot instance.",
+      "action": "Create and configure separate bot instances or bot configurations for each distinct integration or agent.",
+      "verification": "Send test messages through each integration and confirm that each bot replies exactly once and that no integration misses replies.",
+      "negative_case": "If the tools are intentionally part of the same integration and the platform explicitly supports sharing one bot instance, reuse may be acceptable after testing.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json"
+      ],
+      "source_hashes": [
+        "sha256:f49e9bef8a5fbe3b9a5b99a65ac6db006edc21cdc1a763750162a78049668181"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json",
+          "source_hash": "sha256:f49e9bef8a5fbe3b9a5b99a65ac6db006edc21cdc1a763750162a78049668181",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1038,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Support guidance was sanitized to remove personal routing details, internal identifiers, and team-channel provenance. Verified reusable guidance includes: direct users to adjust bot visibility in the bot administration console when a bot cannot be found or added; avoid reusing the same chat bot across unrelated tools or agents because it can cause missing or duplicate replies; use the product console’s scheduled-task management area to review or cancel recurring tasks. For ordinary messages outs...",
+          "excerpt_hash": "sha256:939dd3c47e7f6a21e8e96d4a49e5558e0d416b438b5eae18c5bf42448a70eca1",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_1449a1d9dc31b33b",
+      "claim": "For recurring or scheduled messages/tasks, guide users to the product console’s scheduled-task management area to review, modify, or cancel them.",
+      "safe_claim": "Scheduled or recurring bot tasks are usually managed from the product console’s scheduled-task management area.",
+      "problem": "Users may not know where to review, change, or cancel recurring bot messages or scheduled tasks.",
+      "trigger": "A user asks how to manage, modify, stop, or cancel recurring or scheduled messages or tasks.",
+      "action": "Direct the user to the product console’s scheduled-task management area and have them review, modify, disable, or cancel the relevant scheduled item.",
+      "verification": "Confirm that the scheduled item appears in the management area and that the requested change takes effect at the next scheduled run.",
+      "negative_case": "If the message is not managed by the product console scheduler, investigate external schedulers, automation rules, third-party integrations, or custom code.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json"
+      ],
+      "source_hashes": [
+        "sha256:f49e9bef8a5fbe3b9a5b99a65ac6db006edc21cdc1a763750162a78049668181"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json",
+          "source_hash": "sha256:f49e9bef8a5fbe3b9a5b99a65ac6db006edc21cdc1a763750162a78049668181",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1038,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Support guidance was sanitized to remove personal routing details, internal identifiers, and team-channel provenance. Verified reusable guidance includes: direct users to adjust bot visibility in the bot administration console when a bot cannot be found or added; avoid reusing the same chat bot across unrelated tools or agents because it can cause missing or duplicate replies; use the product console’s scheduled-task management area to review or cancel recurring tasks. For ordinary messages outs...",
+          "excerpt_hash": "sha256:939dd3c47e7f6a21e8e96d4a49e5558e0d416b438b5eae18c5bf42448a70eca1",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_1ce662f5d44ba315",
+      "claim": "Do not reuse the same messaging-platform bot identity or configuration across unrelated tools or agents.",
+      "safe_claim": "Give each unrelated bot integration its own isolated bot identity and configuration.",
+      "problem": "Shared bot identities or reused configuration can cause cross-talk, missed responses, or duplicate replies between unrelated tools or agents.",
+      "trigger": "When configuring a messaging-platform bot integration for a new tool, agent, environment, or workflow.",
+      "action": "Create a separate bot identity and configuration for the integration instead of reusing an existing unrelated bot identity or config.",
+      "verification": "Confirm that each integration has a distinct bot identity/configuration and that messages intended for one integration do not trigger responses from another.",
+      "negative_case": "Reusing the same bot identity/configuration across unrelated integrations, then observing cross-talk, duplicate replies, or missing responses.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e1db2413e.json"
+      ],
+      "source_hashes": [
+        "sha256:010466a00d663bb4192b087fd2e4d25979a1f82dd7f04b569038a76c960c0e8e"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e1db2413e.json",
+          "source_hash": "sha256:010466a00d663bb4192b087fd2e4d25979a1f82dd7f04b569038a76c960c0e8e",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 924,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies.",
+          "excerpt_hash": "sha256:dddea3ad5a7c48dfb28435d6ee17a840d730884a3bb84b06fa4128a1f6a4bd8a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_fa6c632b84071f84",
+      "claim": "Bot integrations should have explicit trigger conditions and be tested for silence outside those triggers.",
+      "safe_claim": "Define clear trigger conditions for bot integrations and validate both correct replies and correct non-replies.",
+      "problem": "A bot may over-participate, miss expected responses, or produce duplicate replies if its trigger behavior is not explicitly defined and tested.",
+      "trigger": "When implementing, configuring, or validating a bot integration that listens to messages or events.",
+      "action": "Specify the exact conditions under which the bot should respond, then test positive cases, negative cases, duplicate-response cases, and silence outside the trigger scope.",
+      "verification": "Validation passes only if the bot responds when expected, does not miss required replies, does not duplicate replies, and remains silent when trigger conditions are not met.",
+      "negative_case": "Only testing that the bot can respond in one successful scenario while failing to check whether it responds when it should remain silent.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e1db2413e.json"
+      ],
+      "source_hashes": [
+        "sha256:010466a00d663bb4192b087fd2e4d25979a1f82dd7f04b569038a76c960c0e8e"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e1db2413e.json",
+          "source_hash": "sha256:010466a00d663bb4192b087fd2e4d25979a1f82dd7f04b569038a76c960c0e8e",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 924,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies.",
+          "excerpt_hash": "sha256:dddea3ad5a7c48dfb28435d6ee17a840d730884a3bb84b06fa4128a1f6a4bd8a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_d8de5119dd89493f",
+      "claim": "Access or pairing failures should be treated as authorization or pairing setup issues, not as ordinary product/business errors.",
+      "safe_claim": "When a user reports an access or pairing failure, describe it as a setup, authorization, or approval-path issue unless there is clear evidence it is normal product behavior.",
+      "problem": "Misclassifying access/pairing failures as routine product errors can route responders into generic troubleshooting instead of setup or approval workflows.",
+      "trigger": "A user reports inability to access, pair, connect, or use a service shortly after onboarding or provisioning.",
+      "action": "Frame the response around authorization, pairing setup, and approval handling; direct the case to the appropriate setup/admin path rather than only debugging ordinary functionality.",
+      "verification": "Confirm whether the user is newly onboarded, whether pairing/access setup has completed, and whether an administrator or approval process is required.",
+      "negative_case": "Do not assume every product malfunction is an authorization issue; if access and pairing are already verified, investigate normal product behavior or service defects.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.85,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json"
+      ],
+      "source_hashes": [
+        "sha256:e327eadda42ede95ab8c32b08213ff3bbc477b3d6c6cce56d7a73f60d9c85011"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json",
+          "source_hash": "sha256:e327eadda42ede95ab8c32b08213ff3bbc477b3d6c6cce56d7a73f60d9c85011",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1075,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated support guidance for access/pairing failures so responders explain that the issue is an authorization or pairing setup problem rather than a normal business error. For newly onboarded users, the recommended first step is to restart the affected service from the admin console; if that does not resolve the issue, escalate to an instance administrator for approval handling. Updated data-sensitivity guidance so responders do not infer authorization=[REDACTED] model naming patterns and instea...",
+          "excerpt_hash": "sha256:13250ff603647a4bb345a1fb9e421942e5ede0b1d5ee1bf0f8dc3afe1cbdfb39",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_5dad53001ce69a49",
+      "claim": "For newly onboarded users with access or pairing failures, restarting the affected service from the admin console may be a first remediation step before escalation.",
+      "safe_claim": "If a newly onboarded user has an access or pairing failure, suggest an admin-console restart only when that is an approved local procedure; if it does not resolve the issue, escalate to an instance administrator for approval handling.",
+      "problem": "Skipping the known first remediation or failing to escalate can prolong onboarding/access issues.",
+      "trigger": "A newly onboarded user cannot access or pair with the affected service, and the environment supports service restarts from an admin console.",
+      "action": "Have an authorized operator restart the affected service from the admin console; if the problem persists, escalate to an instance administrator or approval owner.",
+      "verification": "Check that the restart was performed by an authorized admin/operator, then confirm whether the user can access or pair successfully afterward.",
+      "negative_case": "Do not instruct an end user to perform admin-only actions, and do not restart services where that is unsafe, unauthorized, or not part of the environment’s operating procedure.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "environment",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.78,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json"
+      ],
+      "source_hashes": [
+        "sha256:e327eadda42ede95ab8c32b08213ff3bbc477b3d6c6cce56d7a73f60d9c85011"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json",
+          "source_hash": "sha256:e327eadda42ede95ab8c32b08213ff3bbc477b3d6c6cce56d7a73f60d9c85011",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1075,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated support guidance for access/pairing failures so responders explain that the issue is an authorization or pairing setup problem rather than a normal business error. For newly onboarded users, the recommended first step is to restart the affected service from the admin console; if that does not resolve the issue, escalate to an instance administrator for approval handling. Updated data-sensitivity guidance so responders do not infer authorization=[REDACTED] model naming patterns and instea...",
+          "excerpt_hash": "sha256:13250ff603647a4bb345a1fb9e421942e5ede0b1d5ee1bf0f8dc3afe1cbdfb39",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_401023b4bca2e577",
+      "claim": "Support guidance should not infer or disclose sensitive authorization details from model names, naming patterns, or indirect signals.",
+      "safe_claim": "Avoid guessing or revealing authorization state based on model names or other indirect naming cues; rely on explicit authorized records or administrator confirmation.",
+      "problem": "Inferring authorization from names can expose sensitive access information, mislead users, or create unsafe support guidance.",
+      "trigger": "A request asks whether a model, service, tenant, or user is authorized based on its name, naming convention, or another indirect signal.",
+      "action": "State that authorization cannot be determined from naming patterns alone; recommend checking approved access records or asking an authorized administrator.",
+      "verification": "Confirm authorization through explicit permissions, approval records, or admin-console status rather than inferred naming patterns.",
+      "negative_case": "It is acceptable to discuss non-sensitive naming conventions in general, but not to infer or reveal a specific user’s or resource’s authorization state from them.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json"
+      ],
+      "source_hashes": [
+        "sha256:e327eadda42ede95ab8c32b08213ff3bbc477b3d6c6cce56d7a73f60d9c85011"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json",
+          "source_hash": "sha256:e327eadda42ede95ab8c32b08213ff3bbc477b3d6c6cce56d7a73f60d9c85011",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1075,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Updated support guidance for access/pairing failures so responders explain that the issue is an authorization or pairing setup problem rather than a normal business error. For newly onboarded users, the recommended first step is to restart the affected service from the admin console; if that does not resolve the issue, escalate to an instance administrator for approval handling. Updated data-sensitivity guidance so responders do not infer authorization=[REDACTED] model naming patterns and instea...",
+          "excerpt_hash": "sha256:13250ff603647a4bb345a1fb9e421942e5ede0b1d5ee1bf0f8dc3afe1cbdfb39",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_ec7f9b12ebc8526f",
+      "claim": "When a user reports an interactive environment or bot is down or unresponsive, first direct them to the product console’s automatic repair option.",
+      "safe_claim": "For down or unresponsive interactive environments or bots, suggest the product console’s automatic repair option before other troubleshooting, unless the issue is billing, quota, or payment-related sleep.",
+      "problem": "Users may report that an interactive environment or bot is down, sleeping, or unresponsive.",
+      "trigger": "A user says an interactive environment, workspace, service, or bot is down, not responding, unavailable, or needs repair.",
+      "action": "Direct the user to the product console’s automatic repair option. If they already tried both script-based and AI-based repair without success, escalate to the appropriate support contact rather than repeating the repair steps.",
+      "verification": "Confirm whether the issue is unrelated to billing, quota, or payment; ask whether they have already tried script-based repair and AI-based repair; verify whether the automatic repair option resolved the problem.",
+      "negative_case": "Do not use this repair flow for billing, quota, or payment-related sleep issues. Do not keep repeating repair instructions if both script-based and AI-based repair have already failed.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.91,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json"
+      ],
+      "source_hashes": [
+        "sha256:17a562eb836d9e9325d83f40fda627f5dad299567644d6af044e4ef1b4b10bad"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json",
+          "source_hash": "sha256:17a562eb836d9e9325d83f40fda627f5dad299567644d6af044e4ef1b4b10bad",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 910,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "For user reports that an interactive environment or bot is down or unresponsive, direct them to use the product console's automatic repair option before escalating. Do not apply this guidance to billing, quota, or payment-related sleep issues. If the user has already tried both script-based repair and AI-based repair without success, route to the appropriate support escalation contact rather than repeating the repair instructions.",
+          "excerpt_hash": "sha256:31f5ccab1a0627aa6d7b33b65c03b2831dd2c691dc4c2be5fbb99053cbfbcbd9",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_92e37ea868448ac0",
+      "claim": "Session-level model or behavior changes may not persist beyond the current conversation, restart, or delegated worker session.",
+      "safe_claim": "Treat session-level configuration or behavior changes as temporary unless the active configuration is explicitly verified.",
+      "problem": "A success-style response can be mistaken for proof that a default configuration changed persistently, causing later work to run under different assumptions.",
+      "trigger": "After requesting a model, default, or behavior change; after starting a new conversation; after a restart; or when using delegated worker sessions.",
+      "action": "Use a status, inspection, or equivalent configuration-check command to confirm the active model and behavior before relying on the change.",
+      "verification": "Confirm that the inspection output shows the intended active configuration in the current session or worker context.",
+      "negative_case": "Do not assume persistence solely because a prior request returned a success-style or acknowledgement response.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.92,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json"
+      ],
+      "source_hashes": [
+        "sha256:95549e9c1c7fb2b1b951f3b8467a68061d5251dbc9544c77cd53cc589c8e921d"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json",
+          "source_hash": "sha256:95549e9c1c7fb2b1b951f3b8467a68061d5251dbc9544c77cd53cc589c8e921d",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 859,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Model changes made with a session command should be treated as temporary unless verified otherwise. A success-style message may not mean the default was persistently changed, so use the status command as the verification signal. New conversations, restarts, or delegated worker sessions may revert to their own configured defaults, which can explain sudden style or behavior changes.",
+          "excerpt_hash": "sha256:5ad9f28408e72f859dde50167bac9eb12eace33721eab6bdd416bef8064b9e06",
+          "span_kind": "json_message"
+        },
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json",
+          "source_hash": "sha256:95549e9c1c7fb2b1b951f3b8467a68061d5251dbc9544c77cd53cc589c8e921d",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_span_0",
+          "line_start": 1,
+          "line_end": 24,
+          "byte_start": 0,
+          "byte_end": 1132,
+          "heading_path": [],
+          "excerpt": "{\n  \"id\": \"experience_openclaw-answer-bot-sha256-745fa543d\",\n  \"protocol_version\": \"0.1\",\n  \"type\": \"experience_envelope\",\n  \"source_id\": \"source_openclaw-answer-bot\",\n  \"agent\": \"openclaw\",\n  \"channel\": \"feishu\",\n  \"source_ref\": \"openclaw://answer-bot/pm.sqlite/chunks/b9e879dee5e970e643cce67f6a587350eacae6a38c4a851400cb67d52f447384\",\n  \"source_hash\": \"sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6\",\n  \"scope_hint\": \"team\",\n  \"redacted_summary\": \"Model changes made with ...",
+          "excerpt_hash": "sha256:d26d9ee7ea0e59a9a8e7cb9532dd9994b498356e94f634cb2d8e158d21bd722f",
+          "span_kind": "paragraph"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_a6ae783b5ae9974a",
+      "claim": "When bot platform plugin or messaging-integration failures occur, first update the messaging integration from the product console and restart the bot instance; this combined operational reset can resolve plugin-related failures before deeper debugging.",
+      "safe_claim": "For bot plugin or messaging-integration issues, try updating the integration from the product console and restarting the bot instance before moving to deeper debugging.",
+      "problem": "A bot platform plugin or messaging integration is failing.",
+      "trigger": "The user reports plugin-related failures, messaging integration errors, or the bot not working through the messaging platform.",
+      "action": "Ask the user to update the messaging integration from the product console, then restart the bot instance.",
+      "verification": "Confirm that the bot instance restarts successfully and that the messaging integration works after the update and restart.",
+      "negative_case": "Do not assume this will fix unrelated application logic bugs, billing issues, or permission/pairing problems that persist after the integration update and restart.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "project",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.82,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json"
+      ],
+      "source_hashes": [
+        "sha256:f3e7e3eb40bfd3273807cb6e1b301bb7325d3c298ac21cb93eb28e765fe3e2b2"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json",
+          "source_hash": "sha256:f3e7e3eb40bfd3273807cb6e1b301bb7325d3c298ac21cb93eb28e765fe3e2b2",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1253,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Several operational fixes were consolidated for the bot platform: updating the messaging integration from the product console and restarting the instance can resolve plugin-related failures. For new or newly authorized users seeing an access-not-configured pairing prompt, first have the user restart the instance from the console; if the issue persists, an instance administrator should complete the pairing approval flow. If an instance is stopped or the bot stops replying despite normal billing a...",
+          "excerpt_hash": "sha256:ccf40c0f3760c1f45965796d9307fc4ff17ac9da45efce1f1d8db9be07f39a55",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_90c9c62e149cc412",
+      "claim": "For new or newly authorized users who see an “access not configured” pairing prompt, ask the user to restart the instance from the console first; if the prompt persists, escalate to an instance administrator to complete the pairing approval flow.",
+      "safe_claim": "If a new or newly authorized user sees an access-not-configured pairing prompt, have them restart the instance first, then escalate to an administrator if the prompt remains.",
+      "problem": "A user sees an access-not-configured pairing prompt after being newly added or authorized.",
+      "trigger": "The user reports an “access not configured” message or pairing prompt, especially after new authorization.",
+      "action": "Tell the user to restart the instance from the console. If the prompt persists, escalate to an instance administrator for pairing approval.",
+      "verification": "Confirm whether the pairing prompt disappears after restart or, if escalated, after administrator approval.",
+      "negative_case": "Do not treat the prompt as a billing problem or generic outage if it is specific to a newly authorized user and requests pairing or access configuration.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "project",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json"
+      ],
+      "source_hashes": [
+        "sha256:f3e7e3eb40bfd3273807cb6e1b301bb7325d3c298ac21cb93eb28e765fe3e2b2"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json",
+          "source_hash": "sha256:f3e7e3eb40bfd3273807cb6e1b301bb7325d3c298ac21cb93eb28e765fe3e2b2",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1253,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Several operational fixes were consolidated for the bot platform: updating the messaging integration from the product console and restarting the instance can resolve plugin-related failures. For new or newly authorized users seeing an access-not-configured pairing prompt, first have the user restart the instance from the console; if the issue persists, an instance administrator should complete the pairing approval flow. If an instance is stopped or the bot stops replying despite normal billing a...",
+          "excerpt_hash": "sha256:ccf40c0f3760c1f45965796d9307fc4ff17ac9da45efce1f1d8db9be07f39a55",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_5519e4a4be022fa3",
+      "claim": "If billing appears normal but the bot instance is stopped or no longer replies, treat instance state and runtime health as separate from billing status; check whether the instance is stopped and restart it from the console before assuming an account or payment problem.",
+      "safe_claim": "When billing looks normal but the bot is stopped or unresponsive, check and restart the instance from the console before assuming a billing or account issue.",
+      "problem": "The bot instance is stopped or not replying even though billing appears normal.",
+      "trigger": "The user reports that the bot no longer responds, while account payment or billing status appears valid.",
+      "action": "Check the bot instance state and runtime health. If stopped, restart it from the console before investigating billing or payment causes.",
+      "verification": "Confirm that the instance is running and that the bot replies after restart.",
+      "negative_case": "Do not conclude that normal billing guarantees runtime availability; also do not continue billing troubleshooting before checking whether the instance is stopped.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "project",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json"
+      ],
+      "source_hashes": [
+        "sha256:f3e7e3eb40bfd3273807cb6e1b301bb7325d3c298ac21cb93eb28e765fe3e2b2"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json",
+          "source_hash": "sha256:f3e7e3eb40bfd3273807cb6e1b301bb7325d3c298ac21cb93eb28e765fe3e2b2",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 1253,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Several operational fixes were consolidated for the bot platform: updating the messaging integration from the product console and restarting the instance can resolve plugin-related failures. For new or newly authorized users seeing an access-not-configured pairing prompt, first have the user restart the instance from the console; if the issue persists, an instance administrator should complete the pairing approval flow. If an instance is stopped or the bot stops replying despite normal billing a...",
+          "excerpt_hash": "sha256:ccf40c0f3760c1f45965796d9307fc4ff17ac9da45efce1f1d8db9be07f39a55",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_6d9e45f518db1ce9",
+      "claim": "When a bot stops responding even to reset-style commands, the cause may be a gateway-process hang or crash rather than only a conversational-state problem.",
+      "safe_claim": "If an agent or bot ignores reset-style commands, consider checking the gateway or serving process health before assuming the issue is only conversation state.",
+      "problem": "A nonresponsive bot may not recover through conversational reset commands if the underlying gateway process is hung or crashed.",
+      "trigger": "Bot stops responding, including to reset-style or recovery commands.",
+      "action": "Restart the gateway or serving process as the immediate recovery step; if the issue recurs, inspect sanitized logs and relevant configuration.",
+      "verification": "After restart, confirm the bot responds normally; review sanitized logs for repeated gateway errors, crashes, or configuration failures if the behavior returns.",
+      "negative_case": "If the bot responds to reset commands or only a single conversation thread is affected, a conversation-state issue may be more likely than a gateway-process failure.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f1d3f2e21.json"
+      ],
+      "source_hashes": [
+        "sha256:acc763a4299b66ef122040116eab45932e157f5cbc47c778a421af29f0e7f371"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f1d3f2e21.json",
+          "source_hash": "sha256:acc763a4299b66ef122040116eab45932e157f5cbc47c778a421af29f0e7f371",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 889,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A bot became unresponsive to reset-style commands, likely due to a hung or crashed gateway process caused by invalid backend configuration. The immediate remediation was to restart the gateway and review sanitized logs/configuration if the issue recurs. A related configuration note confirmed that MCP support depends on the selected CLI backend and must be explicitly enabled through the documented feature flag.",
+          "excerpt_hash": "sha256:2c87a7555138306fcb9558fc8570b5c48ebf64787a69de953b79e88530a8b8eb",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_f884cbf48cddb3ee",
+      "claim": "Backend feature availability can depend on the selected CLI backend; MCP support may require both a compatible backend and an explicit documented feature flag.",
+      "safe_claim": "For backend-dependent features such as MCP support, verify that the selected CLI backend supports the feature and that any required documented feature flag is enabled.",
+      "problem": "A feature may appear unavailable or fail if the configured CLI backend does not support it or if a required flag is not enabled.",
+      "trigger": "Attempting to use MCP or another backend-dependent CLI feature and finding it unavailable, nonfunctional, or undocumented in the active backend behavior.",
+      "action": "Check the selected CLI backend, confirm it supports MCP, and explicitly enable the documented MCP feature flag if required.",
+      "verification": "Run the CLI with the intended backend and feature flag enabled, then confirm MCP functionality is detected or available according to the documented behavior.",
+      "negative_case": "If the backend already supports MCP and the required flag is enabled, failures are more likely due to configuration, connectivity, version mismatch, or MCP server issues.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "agent_family",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.82,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f1d3f2e21.json"
+      ],
+      "source_hashes": [
+        "sha256:acc763a4299b66ef122040116eab45932e157f5cbc47c778a421af29f0e7f371"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f1d3f2e21.json",
+          "source_hash": "sha256:acc763a4299b66ef122040116eab45932e157f5cbc47c778a421af29f0e7f371",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 889,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A bot became unresponsive to reset-style commands, likely due to a hung or crashed gateway process caused by invalid backend configuration. The immediate remediation was to restart the gateway and review sanitized logs/configuration if the issue recurs. A related configuration note confirmed that MCP support depends on the selected CLI backend and must be explicitly enabled through the documented feature flag.",
+          "excerpt_hash": "sha256:2c87a7555138306fcb9558fc8570b5c48ebf64787a69de953b79e88530a8b8eb",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_2c4b113ca2de9dee",
+      "claim": "When a user asks for human support but does not describe the issue, the bot should not imply a human has already joined or that a support ticket has enough context.",
+      "safe_claim": "If a user requests human support without issue details, transparently identify as an AI assistant, acknowledge any delay or inconvenience if relevant, and ask the user to describe the issue so it can be routed or handled appropriately.",
+      "problem": "A generic request for human support lacks the information needed to assist, triage, or route the request, and failing to clarify the bot's role may create false expectations.",
+      "trigger": "User asks for human support, an agent, or help from a person without providing the actual issue or context.",
+      "action": "Respond briefly: state that you are an AI assistant, acknowledge the request or any delay, and ask the user to provide details about the issue, including relevant context needed for routing or troubleshooting.",
+      "verification": "The response clearly says the assistant is AI, does not claim a human is present, and asks for the user's issue details before attempting routing or resolution.",
+      "negative_case": "Do not respond as though a human support representative has taken over, do not promise immediate human escalation without details, and do not close the conversation with a vague offer to help.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.94,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json"
+      ],
+      "source_hashes": [
+        "sha256:5fe5ee0ea54132b2f728acdf2a410422bc3633673dd60c266436c1ca86feb75d"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json",
+          "source_hash": "sha256:5fe5ee0ea54132b2f728acdf2a410422bc3633673dd60c266436c1ca86feb75d",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 729,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A user sent brief greetings and follow-up prompts, then requested human support. The automated assistant acknowledged the delay, clarified it was an AI assistant, and asked the user to provide issue details so the request could be handled appropriately.",
+          "excerpt_hash": "sha256:d112e281f1a2d86652f6802bcc0e18a24bd41214cfcfde070131b21ad41bf448",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_94450abd1a5d8030",
+      "claim": "When scheduled jobs targeting a primary session fail with client/session-resolution errors, check whether the job uses a system-event payload; a robust workaround is to recreate the job using isolated-session delivery, an agent-turn style payload, and explicit delivery configuration.",
+      "safe_claim": "For scheduled jobs that fail because they cannot resolve or attach to the intended client/session, switching from primary-session/system-event delivery to isolated-session delivery with an agent-turn style payload and explicit delivery settings may be a reliable workaround.",
+      "problem": "A scheduled job fails to deliver or execute because the target primary session cannot be resolved, often surfacing as client/session-resolution errors.",
+      "trigger": "A scheduled job targeting a primary session fails with errors related to client lookup, session resolution, session attachment, or delivery routing.",
+      "action": "Inspect the job payload and delivery mode. If it uses a system-event payload targeting the primary session, recreate the job using isolated-session delivery, an agent-turn style payload, and explicit delivery configuration.",
+      "verification": "Confirm that the recreated job runs successfully in the isolated-session configuration and no longer emits client/session-resolution errors.",
+      "negative_case": "Do not assume this workaround applies when the job failure is caused by unrelated issues such as invalid credentials, malformed cron timing, disabled scheduler infrastructure, or application-level exceptions after delivery succeeds.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "project",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-92320b389.json"
+      ],
+      "source_hashes": [
+        "sha256:b9bc879ba3cf34d16f2148afab46491f6fa96b18f9cfdbf0e2f49f90d2a42347"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-92320b389.json",
+          "source_hash": "sha256:b9bc879ba3cf34d16f2148afab46491f6fa96b18f9cfdbf0e2f49f90d2a42347",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 27,
+          "byte_start": 476,
+          "byte_end": 904,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A scheduled-job failure was traced to a framework issue where jobs targeting the primary session with a system-event payload could not resolve the intended session and returned client errors. The reliable workaround was to recreate the jobs using isolated-session delivery with an agent-turn style payload and explicit delivery configuration. Verification signal: the failing jobs were removed and recreated in the working mode.",
+          "excerpt_hash": "sha256:04b2eb12b2db582eb2af2de2e861f5b29cf5e668fbe068ab04e0617525a2f560",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_69f82fd7e853ede4",
+      "claim": "After changing scheduled-job delivery mode, verify recovery by removing the failing jobs and recreating them in the known-working configuration rather than only editing them in place.",
+      "safe_claim": "When recovering scheduled jobs after a delivery-mode problem, deleting the failing jobs and recreating them in a known-working configuration can be safer than relying only on in-place edits.",
+      "problem": "A scheduled job may retain stale or incompatible delivery metadata after in-place edits, causing continued failures despite apparent configuration changes.",
+      "trigger": "A scheduled job continues failing after its delivery mode, payload type, or target session configuration has been edited.",
+      "action": "Remove the failing scheduled job entries and recreate them from scratch using the configuration already known to work.",
+      "verification": "Check that only the newly recreated jobs remain active, then observe a scheduled run or manual test run completing successfully without the prior delivery errors.",
+      "negative_case": "Do not delete jobs without preserving their schedule, payload, ownership, and delivery settings if those details cannot be reconstructed safely.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "project",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.8,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-92320b389.json"
+      ],
+      "source_hashes": [
+        "sha256:b9bc879ba3cf34d16f2148afab46491f6fa96b18f9cfdbf0e2f49f90d2a42347"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-92320b389.json",
+          "source_hash": "sha256:b9bc879ba3cf34d16f2148afab46491f6fa96b18f9cfdbf0e2f49f90d2a42347",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 27,
+          "byte_start": 476,
+          "byte_end": 904,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A scheduled-job failure was traced to a framework issue where jobs targeting the primary session with a system-event payload could not resolve the intended session and returned client errors. The reliable workaround was to recreate the jobs using isolated-session delivery with an agent-turn style payload and explicit delivery configuration. Verification signal: the failing jobs were removed and recreated in the working mode.",
+          "excerpt_hash": "sha256:04b2eb12b2db582eb2af2de2e861f5b29cf5e668fbe068ab04e0617525a2f560",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_a9b1781a33b5d461",
+      "claim": "When asked to review a linked document, first verify that the agent or approved integration account has read access before attempting substantive review; if access is denied, clearly state the permission issue and request either pasted content or updated sharing permissions.",
+      "safe_claim": "Verify approved access to a linked document before reviewing it; if access is denied, ask the requester to paste the content or update permissions.",
+      "problem": "Attempting a substantive review without document access can lead to fabricated or incomplete feedback and wastes effort.",
+      "trigger": "A user asks the agent to review, summarize, edit, or analyze a linked document or file.",
+      "action": "Check access through approved channels first. If access fails, state that the document cannot be accessed and request pasted text, an uploaded file, or corrected sharing permissions.",
+      "verification": "Confirm that the document content is actually visible through the approved interface before providing substantive analysis.",
+      "negative_case": "Do not imply that the linked document was reviewed when access was denied or unavailable.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.95,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json"
+      ],
+      "source_hashes": [
+        "sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json",
+          "source_hash": "sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 26,
+          "byte_start": 476,
+          "byte_end": 955,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization=[REDACTED] The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed.",
+          "excerpt_hash": "sha256:2aae2284443ff65f5e946491bb5d566ccaf25c94a995c29cabc5170496e87252",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_81ee45117a835919",
+      "claim": "Do not try to bypass document authorization failures through unapproved retrieval paths; exhaust approved access methods, then escalate back to the requester for permission changes or alternative content delivery.",
+      "safe_claim": "If authorized document retrieval fails, do not use unapproved workarounds; ask the requester to provide access or content through an approved path.",
+      "problem": "Bypassing authorization failures can violate access controls, privacy expectations, or system policy.",
+      "trigger": "A linked document or external resource returns an access-denied, unauthorized, unavailable, or permission-related error.",
+      "action": "Use only approved retrieval methods. After they fail, stop attempting access and ask the requester for updated sharing permissions, pasted content, or an approved upload.",
+      "verification": "Ensure any subsequent review is based only on content obtained through authorized access or user-provided text.",
+      "negative_case": "Do not search for mirrors, cached copies, alternate accounts, or indirect retrieval routes unless explicitly approved by system policy and the requester’s authorization context.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.95,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json"
+      ],
+      "source_hashes": [
+        "sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json",
+          "source_hash": "sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 26,
+          "byte_start": 476,
+          "byte_end": 955,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization=[REDACTED] The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed.",
+          "excerpt_hash": "sha256:2aae2284443ff65f5e946491bb5d566ccaf25c94a995c29cabc5170496e87252",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_b9b7e98082e5d8c9",
+      "claim": "When adding chat-audio transcription, treat it as a multi-part rollout involving the multimodal model provider, media/audio handling utilities, and service restart or deployment steps.",
+      "safe_claim": "Chat-audio transcription should not be considered complete until provider configuration, audio/media processing, and deployment or restart steps have all been addressed.",
+      "problem": "A transcription feature can appear implemented in code while still failing at runtime because required provider, media-handling, or deployment configuration is missing.",
+      "trigger": "A task asks to add, debug, or review chat-audio transcription or multimodal audio input handling.",
+      "action": "Check and document all rollout layers: model/provider support for audio, media download and audio conversion utilities, API wiring, configuration or secrets, and restart/deployment requirements.",
+      "verification": "Confirm the service can receive an audio message, process or convert the media, call the intended multimodal/transcription provider, return text, and continue working after deployment or restart.",
+      "negative_case": "Do not mark the feature complete merely because a handler or prompt was added if provider setup, media handling, or deployment steps remain unverified.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json"
+      ],
+      "source_hashes": [
+        "sha256:f4e6d4d8c8b3dcccee203427c4fa96e1ed39a4b27b1ce53bbd53e3e3b2447e47"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json",
+          "source_hash": "sha256:f4e6d4d8c8b3dcccee203427c4fa96e1ed39a4b27b1ce53bbd53e3e3b2447e47",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 939,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A proposed voice transcription capability for chat audio was reviewed, using a multimodal model to process compressed audio messages. The implementation is not yet complete because the required model provider, media-audio tooling, and service restart steps still need to be configured. A separate architecture review compared two coding-agent designs at a high level and produced a reusable minimal-agent example, but the response was truncated before completion.",
+          "excerpt_hash": "sha256:12ae6952bc5939fe4ff5c11872c878cca44b61363b8520e646329f5df9538e92",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_b5b4e1eafe8c41de",
+      "claim": "For architecture reviews of coding-agent designs, include a minimal reusable agent example alongside the comparison.",
+      "safe_claim": "Architecture reviews for coding agents are more actionable when they include a small executable or reusable reference example, not only conceptual comparison notes.",
+      "problem": "High-level architecture notes alone may be insufficient for future implementers to translate design tradeoffs into a working coding-agent implementation.",
+      "trigger": "A task asks for a comparison, review, or design recommendation for coding-agent architecture or agent framework choices.",
+      "action": "Provide the architecture comparison plus a minimal reusable agent skeleton or example that demonstrates the recommended pattern in practice.",
+      "verification": "Check that the response contains both design rationale and a concrete reference implementation or pseudocode that can guide future coding work.",
+      "negative_case": "Do not provide only a prose comparison when the user needs implementation guidance for an agent design.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.82,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json"
+      ],
+      "source_hashes": [
+        "sha256:f4e6d4d8c8b3dcccee203427c4fa96e1ed39a4b27b1ce53bbd53e3e3b2447e47"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json",
+          "source_hash": "sha256:f4e6d4d8c8b3dcccee203427c4fa96e1ed39a4b27b1ce53bbd53e3e3b2447e47",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 939,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A proposed voice transcription capability for chat audio was reviewed, using a multimodal model to process compressed audio messages. The implementation is not yet complete because the required model provider, media-audio tooling, and service restart steps still need to be configured. A separate architecture review compared two coding-agent designs at a high level and produced a reusable minimal-agent example, but the response was truncated before completion.",
+          "excerpt_hash": "sha256:12ae6952bc5939fe4ff5c11872c878cca44b61363b8520e646329f5df9538e92",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_fbe2328626da45da",
+      "claim": "If an architecture or implementation response is truncated, treat it as incomplete and schedule a follow-up completion pass before relying on it.",
+      "safe_claim": "Truncated technical outputs should be explicitly labeled incomplete and completed in a follow-up before they are used for implementation decisions.",
+      "problem": "A truncated response may omit critical assumptions, steps, warnings, or code needed for correct implementation, causing downstream mistakes if treated as complete.",
+      "trigger": "An architecture, implementation, migration, or review response ends abruptly, is cut off, or otherwise appears incomplete.",
+      "action": "State that the output is incomplete, identify the missing continuation if possible, and perform or request a follow-up completion pass before using it as a basis for decisions.",
+      "verification": "Confirm the final artifact has a coherent ending, complete sections, and no missing code blocks or unfinished recommendations before implementation begins.",
+      "negative_case": "Do not rely on or execute plans from a visibly truncated technical response without completing and reviewing the missing portion.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json"
+      ],
+      "source_hashes": [
+        "sha256:f4e6d4d8c8b3dcccee203427c4fa96e1ed39a4b27b1ce53bbd53e3e3b2447e47"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json",
+          "source_hash": "sha256:f4e6d4d8c8b3dcccee203427c4fa96e1ed39a4b27b1ce53bbd53e3e3b2447e47",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 939,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A proposed voice transcription capability for chat audio was reviewed, using a multimodal model to process compressed audio messages. The implementation is not yet complete because the required model provider, media-audio tooling, and service restart steps still need to be configured. A separate architecture review compared two coding-agent designs at a high level and produced a reusable minimal-agent example, but the response was truncated before completion.",
+          "excerpt_hash": "sha256:12ae6952bc5939fe4ff5c11872c878cca44b61363b8520e646329f5df9538e92",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_eb94406c4bab1479",
+      "claim": "Do not assume automation can reach private network services by default; verify the runtime’s network reachability or provide an appropriate network path before designing workflows that depend on internal services.",
+      "safe_claim": "Automation runtimes may not have default access to private network services; confirm network reachability or provide an approved path before depending on internal endpoints.",
+      "problem": "A workflow design can fail if it assumes access to internal services that the automation runtime cannot reach.",
+      "trigger": "When a workflow, bot, or integration needs to call a private/internal network service.",
+      "action": "Verify the runtime’s network access from the actual execution environment, or arrange an appropriate network path such as an approved connector, gateway, VPN, proxy, or hosted endpoint before relying on the service.",
+      "verification": "Test connectivity from the same runtime that will execute the automation, not only from a developer workstation or local browser.",
+      "negative_case": "If the target service is publicly reachable from the automation runtime or has already been validated in the same execution environment, this caution is less relevant.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.88,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json"
+      ],
+      "source_hashes": [
+        "sha256:8dde3fc1ea86e5ce5f7f9dc98a94d549f9e98dadb4b73c9bdef386ece65cb3bc"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json",
+          "source_hash": "sha256:8dde3fc1ea86e5ce5f7f9dc98a94d549f9e98dadb4b73c9bdef386ece65cb3bc",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 995,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A team-scope support interaction clarified that access to private network services is not available by default unless the automation runtime has appropriate network reachability. The team reviewed available automation capabilities and confirmed that text-to-speech output is supported, while voice input depends on channel configuration. A voice-processing skill was installed successfully from an internal marketplace, with follow-up configuration still needed for the external multimodal provider a...",
+          "excerpt_hash": "sha256:79bc283d0fe2702a7ef15f78832ffc079836fe4e7e5c8c944eacadd6380713d5",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_d0d1375001f36f82",
+      "claim": "Separate voice capability checks into output and input: text-to-speech may be supported by the automation platform, while voice input can depend on the specific communication channel configuration.",
+      "safe_claim": "Voice output and voice input should be evaluated separately because platform support for text-to-speech does not guarantee that speech input is enabled in every channel.",
+      "problem": "Assuming bidirectional voice support can lead to incorrect capability claims or incomplete implementation plans.",
+      "trigger": "When assessing or designing voice features for an automation platform, chatbot, assistant, or communication channel.",
+      "action": "Check text-to-speech/output support separately from speech-to-text/input support, and verify the exact channel configuration used by end users.",
+      "verification": "Confirm both output and input behavior in the target channel with an end-to-end test.",
+      "negative_case": "If the solution only needs voice output, or if both voice input and output are already validated in the target channel, the distinction may not affect the design.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json"
+      ],
+      "source_hashes": [
+        "sha256:8dde3fc1ea86e5ce5f7f9dc98a94d549f9e98dadb4b73c9bdef386ece65cb3bc"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json",
+          "source_hash": "sha256:8dde3fc1ea86e5ce5f7f9dc98a94d549f9e98dadb4b73c9bdef386ece65cb3bc",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 995,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A team-scope support interaction clarified that access to private network services is not available by default unless the automation runtime has appropriate network reachability. The team reviewed available automation capabilities and confirmed that text-to-speech output is supported, while voice input depends on channel configuration. A voice-processing skill was installed successfully from an internal marketplace, with follow-up configuration still needed for the external multimodal provider a...",
+          "excerpt_hash": "sha256:79bc283d0fe2702a7ef15f78832ffc079836fe4e7e5c8c944eacadd6380713d5",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_dadcf2842c5966af",
+      "claim": "Installing a marketplace skill is not the same as completing integration; plan follow-up configuration for any external provider dependencies after the skill is installed.",
+      "safe_claim": "Marketplace skill installation should be treated as only one step; external provider configuration and dependency setup may still be required.",
+      "problem": "An integration may be considered complete too early if installation is confused with full configuration.",
+      "trigger": "When installing a marketplace skill, plugin, connector, app, or bot capability that depends on an external provider.",
+      "action": "After installation, identify and complete required provider-side setup such as accounts, credentials, permissions, endpoints, subscriptions, or channel-specific configuration.",
+      "verification": "Run an end-to-end test that exercises the installed skill against the external provider dependency.",
+      "negative_case": "If the skill is fully self-contained and has no external provider dependencies, additional provider setup may not be needed.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.89,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json"
+      ],
+      "source_hashes": [
+        "sha256:8dde3fc1ea86e5ce5f7f9dc98a94d549f9e98dadb4b73c9bdef386ece65cb3bc"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json",
+          "source_hash": "sha256:8dde3fc1ea86e5ce5f7f9dc98a94d549f9e98dadb4b73c9bdef386ece65cb3bc",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 995,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A team-scope support interaction clarified that access to private network services is not available by default unless the automation runtime has appropriate network reachability. The team reviewed available automation capabilities and confirmed that text-to-speech output is supported, while voice input depends on channel configuration. A voice-processing skill was installed successfully from an internal marketplace, with follow-up configuration still needed for the external multimodal provider a...",
+          "excerpt_hash": "sha256:79bc283d0fe2702a7ef15f78832ffc079836fe4e7e5c8c944eacadd6380713d5",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_4e5c5a0eb731ed43",
+      "claim": "When installing reusable agent skills, prefer the supported package-manager workflow over ad hoc or plugin-style commands.",
+      "safe_claim": "Use the officially supported installation workflow for reusable agent skills, and verify both installation success and runtime availability.",
+      "problem": "Ad hoc or plugin-style installation commands can appear to work but leave skills unavailable or unsupported at runtime.",
+      "trigger": "An agent needs to install or update reusable skills, tools, or extensions.",
+      "action": "Use the supported package-manager workflow. Treat a successful install exit status as necessary but not sufficient; also verify that the skill is available to the agent at runtime.",
+      "verification": "The package-manager install exits successfully, and a subsequent runtime check confirms the installed skill can be discovered and used.",
+      "negative_case": "Do not rely only on an ad hoc install command, plugin-style invocation, or zero exit status without checking runtime availability.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.83,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json"
+      ],
+      "source_hashes": [
+        "sha256:a0e14e84cabc78bde0614bc42965fd1d6f1e3f982d2f24371a31eb3c4e606877"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json",
+          "source_hash": "sha256:a0e14e84cabc78bde0614bc42965fd1d6f1e3f982d2f24371a31eb3c4e606877",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 26,
+          "byte_start": 476,
+          "byte_end": 960,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization=[REDACTED] out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.",
+          "excerpt_hash": "sha256:1473da175c8152a3435aee4978ecaf2e6d728cd995baa3d3625ffb713fed3829",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_80fc62a0d2b03242",
+      "claim": "For workflows that may require interactive authorization, add an upfront auth check or non-interactive authorization path before starting document-generation tasks.",
+      "safe_claim": "Check authorization before starting tasks that may require interactive approval, or provide a non-interactive authorization path.",
+      "problem": "Document-generation tasks can stall or fail if authorization is requested interactively after the task has already started.",
+      "trigger": "A workflow may need access tokens, account authorization, protected resources, or user approval during document generation.",
+      "action": "Run an upfront authorization check before beginning generation. If interaction is not available, configure a non-interactive authorization method or fail early with clear instructions.",
+      "verification": "Authorization is confirmed before generation begins, or the workflow exits early with an actionable authorization error instead of timing out mid-task.",
+      "negative_case": "Do not start a long-running document-generation process that may later block on an interactive authorization prompt.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.82,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json"
+      ],
+      "source_hashes": [
+        "sha256:a0e14e84cabc78bde0614bc42965fd1d6f1e3f982d2f24371a31eb3c4e606877"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json",
+          "source_hash": "sha256:a0e14e84cabc78bde0614bc42965fd1d6f1e3f982d2f24371a31eb3c4e606877",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 26,
+          "byte_start": 476,
+          "byte_end": 960,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization=[REDACTED] out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.",
+          "excerpt_hash": "sha256:1473da175c8152a3435aee4978ecaf2e6d728cd995baa3d3625ffb713fed3829",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_c8a1dc31e2e909f6",
+      "claim": "Design recurring recovery-check tasks to be idempotent and silent after a notification has already been sent.",
+      "safe_claim": "Recurring recovery checks should avoid sending duplicate notifications after an alert has already been emitted.",
+      "problem": "Repeated recovery-check runs can create duplicate alerts, causing noise and reducing trust in notifications.",
+      "trigger": "A scheduled or recurring recovery-check task detects a condition that has already triggered a notification.",
+      "action": "Record notification state or otherwise deduplicate alerts. On repeated runs, send a notification only if the state has changed or a new notification is warranted.",
+      "verification": "After the first notification, subsequent unchanged recovery-check runs complete without sending duplicate alerts.",
+      "negative_case": "Do not send the same recovery notification on every scheduled run when nothing material has changed.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json"
+      ],
+      "source_hashes": [
+        "sha256:a0e14e84cabc78bde0614bc42965fd1d6f1e3f982d2f24371a31eb3c4e606877"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json",
+          "source_hash": "sha256:a0e14e84cabc78bde0614bc42965fd1d6f1e3f982d2f24371a31eb3c4e606877",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 26,
+          "byte_start": 476,
+          "byte_end": 960,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization=[REDACTED] out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.",
+          "excerpt_hash": "sha256:1473da175c8152a3435aee4978ecaf2e6d728cd995baa3d3625ffb713fed3829",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_b28d99b7e4a59c0f",
+      "claim": "Scheduled team-chat notifications are useful for sending security reminders and advance notice of upcoming infrastructure or model-routing changes.",
+      "safe_claim": "Use scheduled notifications in team chat as a reusable operational pattern when teams need advance notice of security reminders or behavior-changing infrastructure/model-routing updates.",
+      "problem": "Teams may miss important operational changes if reminders or upcoming behavior changes are communicated ad hoc or too late.",
+      "trigger": "A security reminder, infrastructure change, model-routing update, or other operational change needs to be announced before it affects users.",
+      "action": "Schedule a team-chat notification with clear timing, audience, and a concise description of the expected change or required action.",
+      "verification": "Confirm the notification was scheduled for the intended audience and time, and that it states the operational change and any expected user impact or action.",
+      "negative_case": "Do not rely on scheduled notifications alone for urgent incidents that require immediate acknowledgement or escalation.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.88,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-64f06eeeb.json"
+      ],
+      "source_hashes": [
+        "sha256:cd904bfd714fa40498e0a18bf4734b2a43fdbbb0841f782e096d05456ddea7d8"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-64f06eeeb.json",
+          "source_hash": "sha256:cd904bfd714fa40498e0a18bf4734b2a43fdbbb0841f782e096d05456ddea7d8",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 747,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A scheduled notification job sent a team chat reminder about private model security practices and an upcoming model routing change. The channel identifier and source details were redacted, and the event is suitable for reuse as a generic operational notification pattern.",
+          "excerpt_hash": "sha256:e3acaaaace2db19e084da736dab0554953cc692a38534de569124ade736b85b7",
+          "span_kind": "json_message"
+        },
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-64f06eeeb.json",
+          "source_hash": "sha256:cd904bfd714fa40498e0a18bf4734b2a43fdbbb0841f782e096d05456ddea7d8",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_span_0",
+          "line_start": 1,
+          "line_end": 24,
+          "byte_start": 0,
+          "byte_end": 1020,
+          "heading_path": [],
+          "excerpt": "{\n  \"id\": \"experience_openclaw-answer-bot-sha256-64f06eeeb\",\n  \"protocol_version\": \"0.1\",\n  \"type\": \"experience_envelope\",\n  \"source_id\": \"source_openclaw-answer-bot\",\n  \"agent\": \"openclaw\",\n  \"channel\": \"feishu\",\n  \"source_ref\": \"openclaw://answer-bot/pm.sqlite/chunks/96275568696686fbae153debca63c95d2252a4a627c904a1157fff1e1ce884c2\",\n  \"source_hash\": \"sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4\",\n  \"scope_hint\": \"team\",\n  \"redacted_summary\": \"A scheduled notification...",
+          "excerpt_hash": "sha256:0e2ae92187aee8cc2be83817d9bad2d6851bc8721f348eb70ec2cef87b849467",
+          "span_kind": "paragraph"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_296a08902b4ecce1",
+      "claim": "Operational notification examples may expose internal routing or team metadata if copied verbatim.",
+      "safe_claim": "When preserving or sharing operational notification examples, redact channel identifiers and source details while keeping the reusable communication pattern.",
+      "problem": "Unredacted examples can leak internal channel IDs, routing details, source metadata, or team structure.",
+      "trigger": "An operational notification example is being documented, shared externally, reused in a prompt, or stored as a lesson.",
+      "action": "Remove or generalize channel identifiers, source details, and internal routing metadata before sharing or preserving the example.",
+      "verification": "Check that the example no longer contains concrete channel IDs, internal source names, private routing paths, or team-specific metadata while still conveying the reusable pattern.",
+      "negative_case": "Do not redact the operational meaning so heavily that future users cannot understand when or how to use the notification pattern.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "team_allowed",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-64f06eeeb.json"
+      ],
+      "source_hashes": [
+        "sha256:cd904bfd714fa40498e0a18bf4734b2a43fdbbb0841f782e096d05456ddea7d8"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-64f06eeeb.json",
+          "source_hash": "sha256:cd904bfd714fa40498e0a18bf4734b2a43fdbbb0841f782e096d05456ddea7d8",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 747,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A scheduled notification job sent a team chat reminder about private model security practices and an upcoming model routing change. The channel identifier and source details were redacted, and the event is suitable for reuse as a generic operational notification pattern.",
+          "excerpt_hash": "sha256:e3acaaaace2db19e084da736dab0554953cc692a38534de569124ade736b85b7",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_24811b94a6a205d2",
+      "claim": "In threaded chat systems, replies may require the parent message identifier rather than only a thread identifier.",
+      "safe_claim": "Before sending a reply in a threaded chat conversation, check whether the interaction belongs to an existing thread and use the platform-required parent message identifier when needed.",
+      "problem": "If an agent relies only on a thread identifier, the reply can be posted to the main group or channel instead of the intended thread.",
+      "trigger": "The agent is about to send a message in a chat system that supports threaded conversations.",
+      "action": "Determine whether the current interaction is part of an existing thread; if so, include the platform-specific parent message identifier required to reply inside that thread.",
+      "verification": "Confirm after sending that the message appears under the intended thread rather than in the main group or channel timeline.",
+      "negative_case": "If the conversation is not part of an existing thread, do not invent or attach a parent message identifier; send normally according to the platform rules.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.94,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json"
+      ],
+      "source_hashes": [
+        "sha256:e20dd6e152d52e25f5d4ee4431d9749cd77ff5029336b1e4268ee643df8661d6"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json",
+          "source_hash": "sha256:e20dd6e152d52e25f5d4ee4431d9749cd77ff5029336b1e4268ee643df8661d6",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 918,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "A chat reply was initially posted to the main group instead of continuing the existing discussion thread, causing the response to appear in the wrong place. The correction confirmed that thread replies in this environment require the parent message identifier, not only the thread identifier. Future replies should inspect the current reply context first and continue the thread when the user interaction is clearly part of an existing topic.",
+          "excerpt_hash": "sha256:554147ffdd7f275bfb3567cd39ade5342ab84c8f448a2d8cda71af752c6f173d",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_f295dc2ae9fa75d3",
+      "claim": "When diagnosing a bot that is not replying, first separate message receipt from response eligibility.",
+      "safe_claim": "For bot non-response incidents, check whether the bot received the message separately from whether the conversation type and trigger conditions make the message eligible for a reply.",
+      "problem": "Assuming that every non-reply means the integration or delivery path is broken can lead to wasted debugging effort.",
+      "trigger": "A user reports that a bot is not replying or appears silent after messages are sent.",
+      "action": "Verify message receipt, then confirm whether the channel, conversation type, mention/reply rules, and configured trigger conditions should cause the bot to respond.",
+      "verification": "Confirm logs or telemetry show the incoming message, then verify that eligibility rules classify the message as reply-worthy before investigating generation or dispatch failures.",
+      "negative_case": "If the bot did not receive the message at all, focus on ingestion, webhook, gateway, permissions, or delivery issues instead of trigger eligibility.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
+      ],
+      "source_hashes": [
+        "sha256:ef583790c97f627a2c01abfad69293d770d245a64c07e516f89f43dd4783d9ed"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+          "source_hash": "sha256:ef583790c97f627a2c01abfad69293d770d245a64c07e516f89f43dd4783d9ed",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 975,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Initial diagnosis indicated the integration was not universally failing to receive messages; at least one observed case was consistent with a group-chat trigger condition not being met. If users report that the bot is not replying, triage should separately verify whether the issue is trigger eligibility, a stuck conversation, or lack of model output. Operational checks should combine process status, gateway health, and recent dispatch activity rather than relying on a single command-line probe.",
+          "excerpt_hash": "sha256:5a83eaa8965312acc5a4c47042b11666d11c9667372eef726276cbbc75eac0af",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_80e7c3455652555c",
+      "claim": "Non-responsive bot reports should be triaged across trigger ineligibility, stuck conversation or state, and absence of model output.",
+      "safe_claim": "Classify bot non-response incidents into distinct failure modes such as trigger ineligibility, stuck conversation/state, and missing model output rather than treating them as one generic failure.",
+      "problem": "Treating all bot silence as a generic delivery failure can misdirect debugging and overlook state or generation problems.",
+      "trigger": "A bot has received a message but still does not produce a visible reply.",
+      "action": "Check whether the message was ineligible to trigger, whether conversation or workflow state is stuck, and whether the model or response-generation path produced output.",
+      "verification": "Use logs, state inspection, and generation traces to identify which failure mode occurred before applying a fix.",
+      "negative_case": "If no inbound message is recorded, start with message ingestion and transport diagnostics rather than these post-receipt failure modes.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.84,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
+      ],
+      "source_hashes": [
+        "sha256:ef583790c97f627a2c01abfad69293d770d245a64c07e516f89f43dd4783d9ed"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+          "source_hash": "sha256:ef583790c97f627a2c01abfad69293d770d245a64c07e516f89f43dd4783d9ed",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 975,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Initial diagnosis indicated the integration was not universally failing to receive messages; at least one observed case was consistent with a group-chat trigger condition not being met. If users report that the bot is not replying, triage should separately verify whether the issue is trigger eligibility, a stuck conversation, or lack of model output. Operational checks should combine process status, gateway health, and recent dispatch activity rather than relying on a single command-line probe.",
+          "excerpt_hash": "sha256:5a83eaa8965312acc5a4c47042b11666d11c9667372eef726276cbbc75eac0af",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_c6be3188763e5c91",
+      "claim": "Bot health checks should use multiple operational signals instead of a single command-line probe.",
+      "safe_claim": "When checking bot health, examine process status, gateway health, and recent dispatch activity because a single probe may miss partial failures.",
+      "problem": "A single command or health check can report success while part of the bot pipeline is degraded or stalled.",
+      "trigger": "An operator is validating whether a bot is healthy during a non-response or degraded-response incident.",
+      "action": "Check the bot process, gateway/connectivity status, and recent message dispatch or response activity together.",
+      "verification": "Confirm that all relevant signals indicate normal operation: the process is running, the gateway is healthy, and recent dispatch activity is present and timely.",
+      "negative_case": "For a purely local development issue with no gateway or dispatch layer, use the equivalent local signals available for that environment.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.82,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
+      ],
+      "source_hashes": [
+        "sha256:ef583790c97f627a2c01abfad69293d770d245a64c07e516f89f43dd4783d9ed"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+          "source_hash": "sha256:ef583790c97f627a2c01abfad69293d770d245a64c07e516f89f43dd4783d9ed",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 975,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Initial diagnosis indicated the integration was not universally failing to receive messages; at least one observed case was consistent with a group-chat trigger condition not being met. If users report that the bot is not replying, triage should separately verify whether the issue is trigger eligibility, a stuck conversation, or lack of model output. Operational checks should combine process status, gateway health, and recent dispatch activity rather than relying on a single command-line probe.",
+          "excerpt_hash": "sha256:5a83eaa8965312acc5a4c47042b11666d11c9667372eef726276cbbc75eac0af",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_e0789bc24ad80ec1",
+      "claim": "Changing an agent’s model can behave differently depending on whether that agent has its own configured default model.",
+      "safe_claim": "Before changing an agent’s model, check whether the agent has a dedicated default model; agents without one may persist changes more broadly, while agents with one may only apply a reported change for the current session.",
+      "problem": "A user or operator may assume a model switch succeeded persistently or only locally when the actual persistence semantics differ by agent configuration.",
+      "trigger": "You are asked to switch, validate, or reason about an agent’s model selection or default model behavior.",
+      "action": "Inspect or query the agent’s configured default model before making the change, then treat the result as potentially session-scoped unless persistence is explicitly confirmed.",
+      "verification": "After switching models, verify both the current session model and the configured default model or persistent configuration through an explicit status/configuration command.",
+      "negative_case": "Do not apply this lesson when the system has a documented single global model setting with no per-agent or per-session overrides.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "agent_family",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.83,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json"
+      ],
+      "source_hashes": [
+        "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
+          "source_hash": "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 940,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults.",
+          "excerpt_hash": "sha256:42c65354dae41f7fbe5b2c24e72ebfa393ab020ee4024e311da5227a5ab5734a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_d6a21d3a21b52909",
+      "claim": "Natural-language success messages from an agent are not sufficient proof that a model switch actually took effect.",
+      "safe_claim": "Verify model-switching results with an explicit session status or configuration command rather than relying only on the agent’s self-report or UI success message.",
+      "problem": "The agent or UI may report success even when the effective runtime model differs from the reported or intended model.",
+      "trigger": "An agent claims it has switched models, or a UI/bot reports that a model switch succeeded.",
+      "action": "Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session.",
+      "verification": "Confirm that the status output shows the intended model for the current session and, if needed, the persistent default configuration.",
+      "negative_case": "Do not require extra verification for low-risk exploratory interactions where exact model identity has no operational impact.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json"
+      ],
+      "source_hashes": [
+        "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
+          "source_hash": "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 940,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults.",
+          "excerpt_hash": "sha256:42c65354dae41f7fbe5b2c24e72ebfa393ab020ee4024e311da5227a5ab5734a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_95a562a4bfa5eb16",
+      "claim": "Sub-agents may not inherit the same model configuration as the parent or visible agent.",
+      "safe_claim": "Do not assume sub-agents share the parent agent’s model configuration; verify each relevant sub-agent’s default and active model separately.",
+      "problem": "A parent agent may appear to run one model while delegated sub-agents use independent defaults, causing inconsistent behavior or unexpected model usage.",
+      "trigger": "A workflow uses delegated agents, sub-agents, tools with agent-like behavior, or hidden/secondary agents after a model change.",
+      "action": "Identify the sub-agents involved and check their active model and default model independently before relying on uniform model behavior.",
+      "verification": "Use explicit status/configuration checks for each relevant sub-agent and compare them with the parent agent’s active and default model settings.",
+      "negative_case": "Do not apply this lesson when the platform explicitly guarantees and verifies that all sub-agents inherit the parent model configuration without overrides.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "agent_family",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json"
+      ],
+      "source_hashes": [
+        "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
+          "source_hash": "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 940,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults.",
+          "excerpt_hash": "sha256:42c65354dae41f7fbe5b2c24e72ebfa393ab020ee4024e311da5227a5ab5734a",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_fcb0e14ff8043774",
+      "claim": "Unexpected response-style changes may be caused by a sub-agent using different default model settings, not necessarily by a change in the main agent.",
+      "safe_claim": "When a user reports an unexpected response-style change, check whether a sub-agent or delegated component with separate defaults is handling the work before concluding the main agent changed behavior.",
+      "problem": "Misattributing behavior changes to the main agent can lead to incorrect debugging and user guidance.",
+      "trigger": "A user notices that responses suddenly have a different style, tone, verbosity, or capability profile.",
+      "action": "Inspect whether the task is being routed through a sub-agent or delegated workflow, and compare that component's model/default settings with the main agent's settings.",
+      "verification": "Confirm routing and active model/default settings through available status, logs, or configuration rather than relying on style alone.",
+      "negative_case": "Do not assume every style change is caused by sub-agent routing; other causes such as prompt changes, temperature, context, or product updates may also apply.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.83,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json"
+      ],
+      "source_hashes": [
+        "sha256:72f7f5e3edafca096ced63d7e1ff100f0f1c03c78b9c0cab1f75445276cbb577"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json",
+          "source_hash": "sha256:72f7f5e3edafca096ced63d7e1ff100f0f1c03c78b9c0cab1f75445276cbb577",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 921,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Clarified that response-style changes may occur when a sub-agent is handling work, because sub-agents can have independent default model settings. The reliable way to verify the active model for the current session is to use the status command rather than asking the agent in natural language. A team-channel automation rule was added to stay silent by default and only respond to clear service-failure reports with a standard repair suggestion.",
+          "excerpt_hash": "sha256:e8a8e18e18a817443185e772700372563cc29b40e0b4237abf9de54c6abe8ffa",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    },
+    {
+      "lesson_id": "ai_d2cd6f88f485aa63",
+      "claim": "The system/status command is a more reliable way to verify the active model in a session than asking the agent in natural language.",
+      "safe_claim": "To verify the active model in a session, use the available system/status command or equivalent runtime status mechanism instead of relying on a natural-language self-report from the agent.",
+      "problem": "Agents may provide unreliable or hallucinated answers about their own runtime model or configuration.",
+      "trigger": "A user asks which model is active, or there is uncertainty about the current model/session configuration.",
+      "action": "Run the system/status command or inspect the authoritative runtime/session status source.",
+      "verification": "Compare the command output with the expected session configuration or routing settings.",
+      "negative_case": "If no status command or authoritative runtime source is available, state the uncertainty rather than claiming a specific active model based only on the agent's self-report.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.9,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json"
+      ],
+      "source_hashes": [
+        "sha256:72f7f5e3edafca096ced63d7e1ff100f0f1c03c78b9c0cab1f75445276cbb577"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json",
+          "source_hash": "sha256:72f7f5e3edafca096ced63d7e1ff100f0f1c03c78b9c0cab1f75445276cbb577",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 921,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Clarified that response-style changes may occur when a sub-agent is handling work, because sub-agents can have independent default model settings. The reliable way to verify the active model for the current session is to use the status command rather than asking the agent in natural language. A team-channel automation rule was added to stay silent by default and only respond to clear service-failure reports with a standard repair suggestion.",
+          "excerpt_hash": "sha256:e8a8e18e18a817443185e772700372563cc29b40e0b4237abf9de54c6abe8ffa",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "skill_ready"
+    },
+    {
+      "lesson_id": "ai_acc643f66f44597b",
+      "claim": "Team-channel automation should usually remain silent unless there is a clear service-failure report, and then respond with a standard repair suggestion.",
+      "safe_claim": "For team-channel automation, default to not replying unless a message clearly reports a service failure; when replying, use a concise standard repair suggestion to avoid noisy or speculative responses.",
+      "problem": "Over-eager automation in team channels can create noise, confusion, or speculative troubleshooting.",
+      "trigger": "A team-channel message might be interpreted as a request for automation support or service troubleshooting.",
+      "action": "Only respond when the message clearly indicates a service failure; provide the approved standard repair suggestion rather than improvising speculative guidance.",
+      "verification": "Check that the message contains an explicit service-failure signal and that the response matches the standard repair template or guidance.",
+      "negative_case": "Do not respond to ambiguous chatter, casual complaints, or non-actionable mentions that do not clearly describe a service failure.",
+      "applies_to_agents": [
+        "openclaw"
+      ],
+      "applies_to_systems": [],
+      "portability": "universal",
+      "privacy_tier": "safe",
+      "scope": "team",
+      "confidence": 0.86,
+      "cue_family": "llm_inferred",
+      "source_refs": [
+        "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json"
+      ],
+      "source_hashes": [
+        "sha256:72f7f5e3edafca096ced63d7e1ff100f0f1c03c78b9c0cab1f75445276cbb577"
+      ],
+      "evidence_spans": [
+        {
+          "source_item_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256",
+          "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json",
+          "source_hash": "sha256:72f7f5e3edafca096ced63d7e1ff100f0f1c03c78b9c0cab1f75445276cbb577",
+          "span_id": "src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0",
+          "line_start": 1,
+          "line_end": 25,
+          "byte_start": 476,
+          "byte_end": 921,
+          "heading_path": [
+            "redacted_summary"
+          ],
+          "excerpt": "Clarified that response-style changes may occur when a sub-agent is handling work, because sub-agents can have independent default model settings. The reliable way to verify the active model for the current session is to use the status command rather than asking the agent in natural language. A team-channel automation rule was added to stay silent by default and only respond to clear service-failure reports with a standard repair suggestion.",
+          "excerpt_hash": "sha256:e8a8e18e18a817443185e772700372563cc29b40e0b4237abf9de54c6abe8ffa",
+          "span_kind": "json_message"
+        }
+      ],
+      "redaction_notes": [],
+      "created_at": "2026-06-16T05:22:58.969Z",
+      "state": "candidate"
+    }
+  ],
+  "cache_upserted": 50,
+  "counts_by_state": {
+    "skill_ready": 13,
+    "candidate": 36
+  },
+  "privacy": {
+    "abstracted": 0,
+    "human_required": 0,
+    "rejected": 0
+  },
+  "ai_cache": {
+    "enabled": true,
+    "hits": 0,
+    "misses": 21,
+    "writes": 21,
+    "corrupt": 0
+  },
+  "wiki_evidence": 13,
+  "authority_contract": {
+    "wiki_semantic_input": "lesson_clusters",
+    "context_rank": [
+      "stable_pb_page",
+      "promoted_skill",
+      "active_personal_lesson",
+      "gbrain_sidecar",
+      "agentmemory_sidecar",
+      "legacy_distilled",
+      "raw_audit"
+    ],
+    "promotion_evidence": {
+      "lesson_state_authority": true,
+      "legacy_distilled": false,
+      "gbrain_sidecar": false,
+      "agentmemory_sidecar": false
+    }
+  },
+  "source_reports": [
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 1,
+      "ai_lessons": 3,
+      "lessons": 4,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 2,
+      "lessons": 2,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-273a47187.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 2,
+      "lessons": 2,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-98477e0c8.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e1db2413e.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 2,
+      "lessons": 2,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 1,
+      "lessons": 1,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 1,
+      "lessons": 1,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f7aee701a.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-f1d3f2e21.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 2,
+      "lessons": 2,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 1,
+      "lessons": 1,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-92320b389.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 2,
+      "lessons": 2,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 2,
+      "lessons": 2,
+      "wiki_evidence": 2,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-4b2bab827.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-64f06eeeb.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 2,
+      "lessons": 2,
+      "wiki_evidence": 0,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 1,
+      "lessons": 1,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 1,
+      "ai_lessons": 3,
+      "lessons": 4,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 1,
+      "warnings": []
+    },
+    {
+      "source_name": "openclaw-answer-bot",
+      "source_path": "/builds/sre/praxisbase/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json",
+      "source_agent": "openclaw",
+      "source_scope": "team",
+      "source_items": 1,
+      "selected_spans": 3,
+      "deterministic_lessons": 0,
+      "ai_lessons": 3,
+      "lessons": 3,
+      "wiki_evidence": 1,
+      "warnings": []
+    }
+  ],
+  "created_at": "2026-06-16T05:22:58.969Z"
+}

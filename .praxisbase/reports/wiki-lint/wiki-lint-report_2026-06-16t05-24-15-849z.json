@@ -1,0 +1,23 @@
+{
+  "id": "wiki-lint-report_2026-06-16t05-24-15-849z",
+  "protocol_version": "0.1",
+  "type": "wiki_lint_report",
+  "findings": [
+    {
+      "rule": "broken_wikilink",
+      "severity": "error",
+      "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "page_id": "ack-timing-before-long-running-agent-work",
+      "message": "Broken wikilink target: openclaw-gateway-restart-after-configuration-changes",
+      "details": {
+        "target": "openclaw-gateway-restart-after-configuration-changes"
+      }
+    }
+  ],
+  "summary": {
+    "errors": 1,
+    "warnings": 0
+  },
+  "changed_stable_knowledge": false,
+  "created_at": "2026-06-16T05:24:15.849Z"
+}

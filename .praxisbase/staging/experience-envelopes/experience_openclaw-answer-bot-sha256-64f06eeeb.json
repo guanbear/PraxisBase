@@ -9,7 +9,7 @@
   "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
   "scope_hint": "team",
   "redacted_summary": "A scheduled notification job sent a team chat reminder about private model security practices and an upcoming model routing change. The channel identifier and source details were redacted, and the event is suitable for reuse as a generic operational notification pattern.",
-  "fetched_at": "2026-06-16T04:46:58.958Z",
+  "fetched_at": "2026-06-16T05:22:58.969Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

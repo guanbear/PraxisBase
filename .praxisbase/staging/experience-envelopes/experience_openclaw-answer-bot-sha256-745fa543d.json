@@ -9,7 +9,7 @@
   "source_hash": "sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
   "scope_hint": "team",
   "redacted_summary": "Model changes made with a session command should be treated as temporary unless verified otherwise. A success-style message may not mean the default was persistently changed, so use the status command as the verification signal. New conversations, restarts, or delegated worker sessions may revert to their own configured defaults, which can explain sudden style or behavior changes.",
-  "fetched_at": "2026-06-16T04:46:58.958Z",
+  "fetched_at": "2026-06-16T05:22:58.969Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

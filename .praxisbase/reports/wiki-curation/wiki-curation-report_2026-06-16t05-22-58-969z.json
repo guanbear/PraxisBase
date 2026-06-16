@@ -1,0 +1,109 @@
+{
+  "id": "wiki-curation-report_2026-06-16t05-22-58-969z",
+  "protocol_version": "0.1",
+  "type": "wiki_curation_report",
+  "created_at": "2026-06-16T05:22:58.969Z",
+  "mode": "review",
+  "ai": {
+    "configured": true,
+    "mode": "production",
+    "model": "gpt-5.5"
+  },
+  "input_counts": {
+    "evidence_items": 13,
+    "filtered_noise": 45,
+    "human_required": 0,
+    "rejected": 0,
+    "clusters": 12
+  },
+  "output_counts": {
+    "curated_proposals": 8,
+    "written_proposals": 8,
+    "conflicts": 0
+  },
+  "compiler_counts": {
+    "observations": 13,
+    "topics": 12,
+    "page_plans_by_action": {
+      "create": 9,
+      "update": 1,
+      "merge": 2,
+      "supersede": 0,
+      "archive": 0
+    },
+    "duplicate_source_hash_groups": 2,
+    "hard_blocks": 0,
+    "human_required_quality": 8,
+    "relationship_counts": {
+      "required_links": 0,
+      "suggested_links": 4,
+      "merge_plans": 2,
+      "ambiguous_merge_targets": 1,
+      "isolated_topics": 10,
+      "orphan_risk_after_plan": 10
+    }
+  },
+  "proposals": [
+    {
+      "id": "wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
+      "target_path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "title": "ACK timing before long-running agent work",
+      "source_count": 1,
+      "confidence": 0.93
+    },
+    {
+      "id": "wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-0ce7713e4fba280a",
+      "target_path": "kb/known-fixes/openclaw-dispatch-routing-failures.md",
+      "title": "OpenClaw dispatch routing failures",
+      "source_count": 2,
+      "confidence": 0.94
+    },
+    {
+      "id": "wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down",
+      "target_path": "kb/known-fixes/users-may-report-that-an-interactive-environment-or-bot-is-down-sleeping-or.md",
+      "title": "Users may report that an interactive environment or bot is down, sleeping, or unresponsive",
+      "source_count": 1,
+      "confidence": 0.93
+    },
+    {
+      "id": "wiki-curated_kb-pitfalls-bypassing-authorization-failures-can-violate-access-controls",
+      "target_path": "kb/pitfalls/bypassing-authorization-failures-can-violate-access-controls-privacy.md",
+      "title": "Bypassing Authorization Failures Can Violate Access Controls, Privacy Expectations, or System Policy",
+      "source_count": 1,
+      "confidence": 0.93
+    },
+    {
+      "id": "wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about",
+      "target_path": "kb/procedures/agents-may-provide-unreliable-or-hallucinated-answers-about-their-own-runtime.md",
+      "title": "Agents may provide unreliable or hallucinated answers about their own runtime model or configuration",
+      "source_count": 1,
+      "confidence": 0.93
+    },
+    {
+      "id": "wiki-curated_kb-procedures-reply-inside-existing-threaded-chat-conversation-md-sha256",
+      "target_path": "kb/procedures/reply-inside-existing-threaded-chat-conversation.md",
+      "title": "Reply Inside an Existing Threaded Chat Conversation",
+      "source_count": 1,
+      "confidence": 0.93
+    },
+    {
+      "id": "wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective",
+      "target_path": "kb/procedures/the-agent-or-ui-may-report-success-even-when-the-effective-runtime-model.md",
+      "title": "Verify Effective Runtime Model After a Reported Model Switch",
+      "source_count": 1,
+      "confidence": 0.93
+    },
+    {
+      "id": "wiki-curated_kb-procedures-verify-session-level-configuration-changes-before-relying-on",
+      "target_path": "kb/procedures/verify-session-level-configuration-changes-before-relying-on-them.md",
+      "title": "Verify Session-Level Configuration Changes Before Relying on Them",
+      "source_count": 1,
+      "confidence": 0.93
+    }
+  ],
+  "proposal_limit": 8,
+  "limit_reason": "max_curation_proposals",
+  "warnings": [
+    "limit:8"
+  ]
+}

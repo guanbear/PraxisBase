@@ -3,7 +3,7 @@
   "type": "wiki_source_summary",
   "source_id": "wiki-evidence-lesson_ai-92e37ea868448ac0-sha256-3bfbafaa52416e9f28412ced77041f6162c278bd0d83e372490e9",
   "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json",
-  "source_hash": "sha256:8ecc05290565bfc4467496fc5e8a691dc00cf05ce8aa4574b7ec426d1713398a",
+  "source_hash": "sha256:95549e9c1c7fb2b1b951f3b8467a68061d5251dbc9544c77cd53cc589c8e921d",
   "source_kind": "distilled_experience",
   "scope": "team",
   "summary": "A success-style response can be mistaken for proof that a default configuration changed persistently, causing later work to run under different assumptions. Use a status, inspection, or equivalent configuration-check command to confirm the active model and behavior before relying on the change.",
@@ -23,5 +23,5 @@
   ],
   "privacy_verdict": "safe",
   "contributed_to_pages": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }

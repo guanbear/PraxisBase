@@ -3,7 +3,7 @@
   "type": "wiki_source_summary",
   "source_id": "wiki-evidence-lesson_ai-d2cd6f88f485aa63-sha256-07b566b5a60a2fc32d617b3f5fb60f945dfc974f3e669f04d0d49",
   "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json",
-  "source_hash": "sha256:c6ed7403cee3a41d2bf489aebdd62935f4cbd52c8ac7b437a8d09dcbc0311f1f",
+  "source_hash": "sha256:72f7f5e3edafca096ced63d7e1ff100f0f1c03c78b9c0cab1f75445276cbb577",
   "source_kind": "distilled_experience",
   "scope": "team",
   "summary": "Agents may provide unreliable or hallucinated answers about their own runtime model or configuration. Run the system/status command or inspect the authoritative runtime/session status source.",
@@ -23,5 +23,5 @@
   ],
   "privacy_verdict": "safe",
   "contributed_to_pages": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }

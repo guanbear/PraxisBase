@@ -1,0 +1,93 @@
+{
+  "id": "wiki-curated_kb-pitfalls-bypassing-authorization-failures-can-violate-access-controls",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/pitfalls/bypassing-authorization-failures-can-violate-access-controls-privacy.md",
+  "action": "create",
+  "page_kind": "pitfall",
+  "scope": "team",
+  "title": "Bypassing Authorization Failures Can Violate Access Controls, Privacy Expectations, or System Policy",
+  "summary": "When authorized document retrieval fails, agents must not seek mirrors, cached copies, alternate accounts, or indirect access paths. Stop retrieval attempts and ask the requester to provide access, paste the content, or upload it through an approved channel.",
+  "body_markdown": "# Bypassing Authorization Failures Can Violate Access Controls, Privacy Expectations, or System Policy\n\n## When to Use\n\nUse this guidance when a requested document, file, page, repository, or other resource cannot be retrieved through an approved and authorized access path.\n\nThis applies when:\n\n- A link requires permissions the agent does not have.\n- A document appears private, restricted, expired, or inaccessible.\n- A retrieval tool returns an authorization, sharing, login, permission, or access-denied failure.\n- The requester expects analysis of content that the agent cannot lawfully or properly access through the available approved channel.\n\n## Context\n\nAuthorization failures are not simply technical obstacles. Attempting to bypass them can violate access controls, privacy expectations, contractual boundaries, organizational policy, or system policy.\n\nThe safe operating rule is: use only approved retrieval methods. If those methods fail, stop trying to access the resource and ask the requester to provide the content through an approved path.\n\n## Operating Rule\n\nDo not use unapproved workarounds after authorized retrieval fails.\n\nSpecifically, do not:\n\n- Search for mirrored copies of the restricted content.\n- Look for cached versions to avoid the access restriction.\n- Use alternate accounts or identities.\n- Try indirect retrieval routes that were not authorized.\n- Infer or reconstruct private content from unauthorized sources.\n- Continue probing for access after a clear permission failure.\n\nInstead:\n\n1. State that the resource is not accessible through the available authorized method.\n2. Ask the requester to update sharing permissions, paste the relevant content, or upload the file through an approved channel.\n3. Continue only after the content is provided through an authorized path.\n4. Base any review, summary, transformation, or decision only on content obtained through approved access or directly supplied by the requester.\n\n## What To Do\n\nWhen access fails:\n\n1. **Stop retrieval attempts.** Treat the authorization failure as a boundary, not as a challenge to route around.\n2. **Explain the limitation briefly.** Avoid excessive detail about possible bypass methods.\n3. **Offer approved alternatives.** Ask the user to:\n   - Grant the correct sharing permissions.\n   - Provide a fresh authorized link.\n   - Paste the relevant text into the conversation.\n   - Upload the file through the approved interface.\n4. **Proceed only with authorized content.** Once the requester provides the material through an approved path, perform the requested work using that content.\n\nExample response pattern:\n\n> I can’t access that document through the provided link. Please update the sharing permissions, paste the relevant content here, or upload the file through the approved channel, and I can review it.\n\n## Verify\n\nBefore continuing, verify that:\n\n- The content was obtained through an approved retrieval method, user-provided text, an approved upload, or updated sharing permissions.\n- No mirrored, cached, alternate-account, or indirect retrieval route was used unless explicitly allowed by applicable system policy and the requester’s authorization context.\n- The final answer, analysis, or review is based only on authorized content.\n\n## Reusable Lessons\n\n- If authorized document retrieval fails, do not use unapproved workarounds.\n- Ask the requester to provide access or content through an approved path.\n- Authorization failures should be treated as access-control boundaries.\n- Privacy expectations still matter even when content may be technically discoverable elsewhere.\n- A successful task outcome must not depend on bypassing permissions.\n\n## Agent Use\nUse this page when:\n- Bypassing authorization failures can violate access controls, privacy expectations, or system policy.\n\nApply it by:\n- Use only approved retrieval methods. After they fail, stop attempting access and ask the requester for updated sharing permissions, pasted content, or an approved upload.\n\nVerify by:\n- Ensure any subsequent review is based only on content obtained through authorized access or user-provided text.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json (sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json"
+  ],
+  "source_hashes": [
+    "sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-81ee45117a835919-sha256-4fa0c94e84b28bbfbe880eaf832526c9bb8cd67d48ae965001915"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json",
+      "source_hash": "sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270",
+      "excerpt": "Bypassing authorization failures can violate access controls, privacy expectations, or system policy. Use only approved retrieval methods. After they fail, stop attempting access and ask the requester for updated sharing permissions, pasted content, or an approved upload."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "This page is intentionally conservative: it treats authorization failures as boundaries and does not provide bypass techniques.",
+      "Agents should still follow higher-priority system, organizational, or product-specific policy if it gives stricter instructions.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T05:22:58.969Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T05:22:58.969Z"
+}

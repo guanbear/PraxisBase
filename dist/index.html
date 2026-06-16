@@ -45,7 +45,7 @@
     <article><span>Sources</span><strong>1</strong></article>
 <article><span>Imported</span><strong>0</strong></article>
 <article><span>Rejected</span><strong>0</strong></article>
-<a class="metric-link" href="review.html#human-required"><span>Human required</span><strong>11</strong></a>
+<a class="metric-link" href="review.html#human-required"><span>Human required</span><strong>13</strong></a>
 <a class="metric-link" href="review.html#pending-candidates"><span>Proposals</span><strong>8</strong></a>
 <article><span>Site pages</span><strong>0</strong></article>
     <article><span>Context Economy</span><strong>On</strong></article>
@@ -64,15 +64,15 @@
 	      
 	      
 	    
-	    <article><span>M25 Lessons</span><strong>52 extracted</strong></article>
+	    <article><span>M25 Lessons</span><strong>50 extracted</strong></article>
 	    <article><span>Lesson active personal</span><strong>0</strong></article>
 	    <article><span>Lesson wiki ready</span><strong>0</strong></article>
-	    <article><span>Lesson skill ready</span><strong>15</strong></article>
+	    <article><span>Lesson skill ready</span><strong>13</strong></article>
 	    <article><span>Lesson human required</span><strong>0</strong></article>
 	    <article><span>Lesson rejected</span><strong>0</strong></article>
-	    <article><span>Lesson wiki evidence</span><strong>15</strong></article>
+	    <article><span>Lesson wiki evidence</span><strong>13</strong></article>
 	    <article><span>Lesson AI cache hits</span><strong>0</strong></article>
-	    <article><span>Lesson AI cache misses</span><strong>23</strong></article>
+	    <article><span>Lesson AI cache misses</span><strong>21</strong></article>
 	    
 	  </div>
   <div class="review-section" id="lesson-candidates">
@@ -130,9 +130,9 @@
   <h2>Wiki Compiler</h2>
   <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>Observations</span><strong>15</strong></article>
-    <article><span>Topics</span><strong>14</strong></article>
-    <article><span>Plan Create</span><strong>11</strong></article>
+    <article><span>Observations</span><strong>13</strong></article>
+    <article><span>Topics</span><strong>12</strong></article>
+    <article><span>Plan Create</span><strong>9</strong></article>
 <article><span>Plan Update</span><strong>1</strong></article>
 <article><span>Plan Merge</span><strong>2</strong></article>
 <article><span>Plan Supersede</span><strong>0</strong></article>
@@ -148,8 +148,8 @@
 <article><span>Suggested links</span><strong>4</strong></article>
 <article><span>Merge plans</span><strong>2</strong></article>
 <article><span>Ambiguous merges</span><strong>1</strong></article>
-<article><span>Isolated topics</span><strong>12</strong></article>
-<article><span>Orphan risk after plan</span><strong>12</strong></article>
+<article><span>Isolated topics</span><strong>10</strong></article>
+<article><span>Orphan risk after plan</span><strong>10</strong></article>
   </div>
 </section>
   <section class="pending-candidates">
@@ -163,7 +163,7 @@
   <ol class="experience-list">
     <li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256">
       <p><strong>ACK timing before long-running agent work</strong></p>
-      <p>Send a short user-facing acknowledgement before starting slow agent work such as tool use, network calls, or delegation dispatch, so the user receives timely confirmation before the long-running step begins.</p>
+      <p>Agents should send a brief acknowledgement before starting slow tool, network, dispatch, delegation, or other long-running work so users receive timely feedback before the operation begins.</p>
       <dl>
         <dt>Target</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
         <dt>Kind</dt><dd>pitfall</dd>
@@ -172,7 +172,7 @@
         <dt>Sources</dt><dd>1</dd>
         <dt>Confidence</dt><dd>0.93</dd>
         <dt>Why review</dt><dd>canonical_relationship</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>The ACK must not be phrased as a completed result or success claim before the slow operation finishes.; Do not add acknowledgements to simple immediate answers where they would create unnecessary conversational overhead.; This guidance addresses interaction timing, not the correctness or reliability of the underlying tool, network, or dispatch operation.; quality_human_required:team_or_global_scope</dd>
+        <dt>Risk notes</dt><dd>Do not treat an acknowledgement as a success report; it only confirms receipt or that work is starting.; Avoid exposing raw transcripts, credentials, tokens, cookies, authorization headers, or private keys in acknowledgement text, logs, or provenance.; If the platform already sends automatic receipt indicators, avoid redundant or noisy ACKs while still ensuring the user has timely feedback before slow work begins.; quality_human_required:team_or_global_scope</dd>
         
         <dt>Suggested links</dt><dd><code>agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes</code> Agents can mislead users if failures are reported as successful outcomes. <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-slack-replay-and-post-deploy-stability-failures</code> OpenClaw Slack replay and post-deploy stability failures <small>entity_overlap</small></dd>
 <dt>Merge candidates</dt><dd>ACK timing before long-running agent work <code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code> <small>same_title_or_slug, entity_overlap</small></dd>
@@ -180,18 +180,18 @@
         
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-eec2baa68cf30e09">
+<li id="pending-wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-0ce7713e4fba280a">
       <p><strong>OpenClaw dispatch routing failures</strong></p>
-      <p>Known pitfalls and operating rules for OpenClaw/OctoClaw dispatch failures, including technical route/spawn failures, missing user acknowledgments, vague human-support requests, and safe sanitization of routing documentation.</p>
+      <p>Operational guidance for diagnosing OpenClaw/OctoClaw dispatch routing failures, including route mismatches, missing runners, spawn validation errors, and user-facing support routing pitfalls. Emphasizes dispatch-layer diagnosis, immediate acknowledgment for long-running work, transparent AI identity when human support is requested without details, and safe sanitization of routing documentation.</p>
       <dl>
         <dt>Target</dt><dd><code>kb/known-fixes/openclaw-dispatch-routing-failures.md</code></dd>
         <dt>Kind</dt><dd>pitfall</dd>
         <dt>Scope</dt><dd>team</dd>
         <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json, source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json</code></dd>
         <dt>Sources</dt><dd>2</dd>
-        <dt>Confidence</dt><dd>0.90</dd>
+        <dt>Confidence</dt><dd>0.94</dd>
         <dt>Why review</dt><dd>ambiguous_merge_target; multiple_canonical_targets</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Existing technical dispatch content was preserved and reorganized, while new evidence primarily strengthens conversation-level routing and documentation-sanitization guidance.; No internal source URIs, personal routing details, credentials, tokens, cookies, authorization headers, or private keys are included.; No related wiki links were added because no required or suggested relationship links were supplied for this compilation.; quality_human_required:missing_wikilinks; quality_human_required:team_or_global_scope; quality_human_required:ambiguous_merge_target</dd>
+        <dt>Risk notes</dt><dd>Existing page content contained more specific operational examples than the new evidence; these were preserved where broadly useful but kept at a non-sensitive level.; No relationship links were supplied for this compilation, so no new wiki links were added.; Guidance involving support routing was generalized to avoid exposing private escalation paths or internal identifiers.; quality_human_required:missing_wikilinks; quality_human_required:team_or_global_scope; quality_human_required:ambiguous_merge_target</dd>
         
         <dt>Merge candidates</dt><dd>OpenClaw dispatch routing failures <code>kb/known-fixes/openclaw-dispatch-routing-failures.md</code> <small>same_title_or_slug</small><br>OpenClaw dispatch routing failures <code>skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md</code> <small>same_title_or_slug</small></dd>
 <dt>Relationship reasons</dt><dd>same_title_or_slug</dd>
@@ -200,7 +200,7 @@
     </li>
 <li id="pending-wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down">
       <p><strong>Users may report that an interactive environment or bot is down, sleeping, or unresponsive</strong></p>
-      <p>Use the product console’s automatic repair option as the first fix for down or unresponsive interactive environments or bots, except when the issue is caused by billing, quota, or payment-related sleep. If script-based and AI-based repair have both already failed, escalate instead of repeating the same repair steps.</p>
+      <p>For a down, sleeping, or unresponsive interactive environment or bot, first direct the user to the product console’s automatic repair option, unless the issue appears related to billing, quota, or payment. If both script-based and AI-based repair have already failed, escalate instead of repeating repair steps.</p>
       <dl>
         <dt>Target</dt><dd><code>kb/known-fixes/users-may-report-that-an-interactive-environment-or-bot-is-down-sleeping-or.md</code></dd>
         <dt>Kind</dt><dd>known_fix</dd>
@@ -209,24 +209,24 @@
         <dt>Sources</dt><dd>1</dd>
         <dt>Confidence</dt><dd>0.93</dd>
         <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Evidence is based on a single operational lesson, though it is direct and internally consistent.; The article is product-agnostic; agents may need product-specific console navigation details from another source.; Automatic repair should not be used as the primary fix for billing, quota, or payment-related sleep states.; quality_human_required:team_or_global_scope</dd>
+        <dt>Risk notes</dt><dd>The evidence does not name a specific product console or repair UI path, so keep instructions generic unless product-specific documentation is available.; Do not apply this flow to billing, quota, or payment-related sleep conditions.; Escalate rather than repeating repair steps when both script-based and AI-based repair have already failed.; quality_human_required:team_or_global_scope</dd>
         
         
         
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-pitfalls-retaining-benign-greeting-only-interactions-md-sha256">
-      <p><strong>Retaining Benign Greeting-Only Interactions</strong></p>
-      <p>Guidance for preserving harmless greeting-only interactions in minimal form without over-redacting or inventing context.</p>
+<li id="pending-wiki-curated_kb-pitfalls-bypassing-authorization-failures-can-violate-access-controls">
+      <p><strong>Bypassing Authorization Failures Can Violate Access Controls, Privacy Expectations, or System Policy</strong></p>
+      <p>When authorized document retrieval fails, agents must not seek mirrors, cached copies, alternate accounts, or indirect access paths. Stop retrieval attempts and ask the requester to provide access, paste the content, or upload it through an approved channel.</p>
       <dl>
-        <dt>Target</dt><dd><code>kb/pitfalls/retaining-benign-greeting-only-interactions.md</code></dd>
+        <dt>Target</dt><dd><code>kb/pitfalls/bypassing-authorization-failures-can-violate-access-controls-privacy.md</code></dd>
         <dt>Kind</dt><dd>pitfall</dd>
         <dt>Scope</dt><dd>team</dd>
-        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json</code></dd>
+        <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json</code></dd>
         <dt>Sources</dt><dd>1</dd>
         <dt>Confidence</dt><dd>0.93</dd>
         <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Do not preserve raw transcripts if they contain personal, operational, sensitive, or identifying context.; A greeting that appears harmless in isolation may become sensitive when combined with surrounding metadata or conversation context.; Never retain credentials, tokens, cookies, authorization headers, private keys, or private identifiers as part of a greeting example.; quality_human_required:team_or_global_scope</dd>
+        <dt>Risk notes</dt><dd>This page is intentionally conservative: it treats authorization failures as boundaries and does not provide bypass techniques.; Agents should still follow higher-priority system, organizational, or product-specific policy if it gives stricter instructions.; quality_human_required:team_or_global_scope</dd>
         
         
         
@@ -234,7 +234,7 @@
     </li>
 <li id="pending-wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about">
       <p><strong>Agents may provide unreliable or hallucinated answers about their own runtime model or configuration</strong></p>
-      <p>Use an authoritative runtime/session status source, not a natural-language self-report from the agent, to verify the active model or runtime configuration.</p>
+      <p>Use an authoritative runtime/session status mechanism, not an agent&#39;s natural-language self-report, to verify the active model or runtime configuration.</p>
       <dl>
         <dt>Target</dt><dd><code>kb/procedures/agents-may-provide-unreliable-or-hallucinated-answers-about-their-own-runtime.md</code></dd>
         <dt>Kind</dt><dd>procedure</dd>
@@ -243,32 +243,32 @@
         <dt>Sources</dt><dd>1</dd>
         <dt>Confidence</dt><dd>0.93</dd>
         <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>The source evidence describes the general operational rule but does not specify a universal command name; different environments may expose runtime status through different mechanisms.; If no authoritative status mechanism is available, any claim about the active model or configuration remains uncertain.; quality_human_required:team_or_global_scope</dd>
+        <dt>Risk notes</dt><dd>Specific status command names vary by platform; use the local authoritative runtime/session status mechanism when `system/status` is unavailable.; Do not expose raw runtime metadata if it contains sensitive operational details; report only the configuration facts needed for the task.; If no authoritative source is available, avoid asserting a specific active model based only on agent self-report.; quality_human_required:team_or_global_scope</dd>
         
         
         
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-procedures-replying-in-threaded-chat-conversations-md-sha256-a9fe478798cde964">
-      <p><strong>Replying in Threaded Chat Conversations</strong></p>
-      <p>Procedure for ensuring chat replies land inside the intended existing thread by checking thread context and supplying the platform-required parent message identifier when needed.</p>
+<li id="pending-wiki-curated_kb-procedures-reply-inside-existing-threaded-chat-conversation-md-sha256">
+      <p><strong>Reply Inside an Existing Threaded Chat Conversation</strong></p>
+      <p>Before sending a chat reply, determine whether the interaction belongs inside an existing thread. If it does, include the platform-required parent message identifier so the reply appears in the thread instead of the main channel or group timeline.</p>
       <dl>
-        <dt>Target</dt><dd><code>kb/procedures/replying-in-threaded-chat-conversations.md</code></dd>
+        <dt>Target</dt><dd><code>kb/procedures/reply-inside-existing-threaded-chat-conversation.md</code></dd>
         <dt>Kind</dt><dd>procedure</dd>
         <dt>Scope</dt><dd>team</dd>
         <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json</code></dd>
         <dt>Sources</dt><dd>1</dd>
         <dt>Confidence</dt><dd>0.93</dd>
         <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Platform APIs differ: the required field name and identifier semantics must be confirmed against the specific chat platform before implementation.; Do not fabricate or reuse a parent message identifier when the interaction is not actually part of an existing thread.; quality_human_required:team_or_global_scope</dd>
+        <dt>Risk notes</dt><dd>Platform-specific field names vary; agents must consult the active platform adapter or API contract for the exact parent/root message identifier field.; Attaching an incorrect parent message identifier can misroute a reply to the wrong thread.; Do not fabricate or reuse parent identifiers when the current interaction is not part of an existing thread.; quality_human_required:team_or_global_scope</dd>
         
         
         
       </dl>
     </li>
 <li id="pending-wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective">
-      <p><strong>Verify the Effective Runtime Model After a Model Switch</strong></p>
-      <p>Agents and UIs can report that a model switch succeeded even when the active session is still using a different runtime model. For work where model identity matters, verify the effective current model with an explicit status, diagnostic, or configuration command.</p>
+      <p><strong>Verify Effective Runtime Model After a Reported Model Switch</strong></p>
+      <p>Agents or UIs may report that a model switch succeeded even when the active runtime model is still different from the intended model. Confirm model changes with an explicit session status, diagnostic, or configuration command before relying on the new model.</p>
       <dl>
         <dt>Target</dt><dd><code>kb/procedures/the-agent-or-ui-may-report-success-even-when-the-effective-runtime-model.md</code></dd>
         <dt>Kind</dt><dd>procedure</dd>
@@ -277,24 +277,24 @@
         <dt>Sources</dt><dd>1</dd>
         <dt>Confidence</dt><dd>0.93</dd>
         <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>The source evidence is a single team lesson, so the procedure is intentionally general rather than tied to a specific UI, CLI, or model provider.; Exact verification commands are environment-specific and must be obtained from the relevant platform documentation or tooling.; quality_human_required:team_or_global_scope</dd>
+        <dt>Risk notes</dt><dd>Specific verification commands are platform-dependent and must be selected from the relevant system documentation or available interface.; If no explicit status or configuration inspection is available, the active model cannot be conclusively verified from self-report alone.; Additional verification may be unnecessary for low-risk exploratory interactions where exact model identity has no operational impact.; quality_human_required:team_or_global_scope</dd>
         
         
         
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-procedures-untitled-topic-md-sha256-8ecc05290565bfc4467496fc5e8a691dc00cf05ce">
-      <p><strong>Verify Session Configuration Changes Before Relying on Them</strong></p>
+<li id="pending-wiki-curated_kb-procedures-verify-session-level-configuration-changes-before-relying-on">
+      <p><strong>Verify Session-Level Configuration Changes Before Relying on Them</strong></p>
       <p>Treat session-level configuration or behavior changes as temporary until the active configuration is explicitly inspected in the current session or worker context.</p>
       <dl>
-        <dt>Target</dt><dd><code>kb/procedures/untitled-topic.md</code></dd>
+        <dt>Target</dt><dd><code>kb/procedures/verify-session-level-configuration-changes-before-relying-on-them.md</code></dd>
         <dt>Kind</dt><dd>procedure</dd>
         <dt>Scope</dt><dd>team</dd>
         <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json</code></dd>
         <dt>Sources</dt><dd>1</dd>
         <dt>Confidence</dt><dd>0.93</dd>
         <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
-        <dt>Risk notes</dt><dd>Evidence comes from a single source, but the lesson is broadly applicable and low risk.; Procedure is intentionally generic because the evidence did not name a specific product, command, or configuration system.; quality_human_required:team_or_global_scope</dd>
+        <dt>Risk notes</dt><dd>Source evidence is a single lesson, so the procedure is intentionally general rather than tied to a specific tool or command.; No raw credentials, tokens, cookies, auth headers, private keys, or sensitive transcript content were included.; quality_human_required:team_or_global_scope</dd>
         
         
         

@@ -3,7 +3,7 @@
   "type": "wiki_source_summary",
   "source_id": "wiki-evidence-lesson_ai-81ee45117a835919-sha256-4fa0c94e84b28bbfbe880eaf832526c9bb8cd67d48ae965001915",
   "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json",
-  "source_hash": "sha256:1219ce6ad3ca1e3c589107492812ca34b5825bb2ab3035e432b974f01358f8dd",
+  "source_hash": "sha256:09262de575971491c21c3f2b84eaf9740ca52f304205003b0781c4ec3a727270",
   "source_kind": "distilled_experience",
   "scope": "team",
   "summary": "Bypassing authorization failures can violate access controls, privacy expectations, or system policy. Use only approved retrieval methods. After they fail, stop attempting access and ask the requester for updated sharing permissions, pasted content, or an approved upload.",
@@ -23,5 +23,5 @@
   ],
   "privacy_verdict": "safe",
   "contributed_to_pages": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }

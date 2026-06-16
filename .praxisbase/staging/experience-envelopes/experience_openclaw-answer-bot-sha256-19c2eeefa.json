@@ -9,7 +9,7 @@
   "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
   "scope_hint": "team",
   "redacted_summary": "For user reports that an interactive environment or bot is down or unresponsive, direct them to use the product console's automatic repair option before escalating. Do not apply this guidance to billing, quota, or payment-related sleep issues. If the user has already tried both script-based repair and AI-based repair without success, route to the appropriate support escalation contact rather than repeating the repair instructions.",
-  "fetched_at": "2026-06-16T04:46:58.958Z",
+  "fetched_at": "2026-06-16T05:22:58.969Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

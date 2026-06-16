@@ -3,7 +3,7 @@
   "type": "wiki_source_summary",
   "source_id": "wiki-evidence-lesson_ai-fbe2328626da45da-sha256-d8eff4c24dd871933e09c94206773eb96557afece143059b39099",
   "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8deb4f5e6.json",
-  "source_hash": "sha256:9f35d585274a0e65abae755de14b0cf64b50ec6163206deb0fde6a51b4a7a43a",
+  "source_hash": "sha256:f4e6d4d8c8b3dcccee203427c4fa96e1ed39a4b27b1ce53bbd53e3e3b2447e47",
   "source_kind": "distilled_experience",
   "scope": "team",
   "summary": "A truncated response may omit critical assumptions, steps, warnings, or code needed for correct implementation, causing downstream mistakes if treated as complete. State that the output is incomplete, identify the missing continuation if possible, and perform or request a follow-up completion pass before using it as a basis for decisions.",
@@ -23,5 +23,5 @@
   ],
   "privacy_verdict": "safe",
   "contributed_to_pages": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }

@@ -1,0 +1,131 @@
+{
+  "id": "wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-0ce7713e4fba280a",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/known-fixes/openclaw-dispatch-routing-failures.md",
+  "action": "update",
+  "page_kind": "pitfall",
+  "scope": "team",
+  "title": "OpenClaw dispatch routing failures",
+  "summary": "Operational guidance for diagnosing OpenClaw/OctoClaw dispatch routing failures, including route mismatches, missing runners, spawn validation errors, and user-facing support routing pitfalls. Emphasizes dispatch-layer diagnosis, immediate acknowledgment for long-running work, transparent AI identity when human support is requested without details, and safe sanitization of routing documentation.",
+  "body_markdown": "# OpenClaw dispatch routing failures\n\n## When to Use\n\nUse this guidance when OpenClaw or OctoClaw work appears to fail because requests are not being routed, delegated, spawned, or acknowledged correctly.\n\nApply it when:\n\n- OpenClaw or OctoClaw runners fail with `ReferenceError: stickyResult is not defined`.\n- Post-deploy smoke tests report structural mismatches in delegation routes, such as expected `delegate` but got `reply`.\n- The task queue shows zero active tasks or a missing runner despite incoming requests.\n- Sub-agent spawn attempts fail due to canonical hash mismatches or parameter validation errors.\n- Long-running agent work starts without an immediate user acknowledgment, making the system appear unresponsive.\n- A user asks for human support but does not provide enough issue details to route or handle the request.\n- Internal support notes need to be turned into reusable guidance without leaking private routing details, internal links, names, tenant identifiers, or project-specific labels.\n\n## Symptoms or Context\n\nOpenClaw dispatch failures often look like task-quality problems, but the root cause is usually the dispatch or orchestration layer.\n\nCommon symptoms:\n\n- **Runtime dispatch errors**: `octoclaw_dispatch` fails repeatedly, preventing tasks from being processed.\n- **Structural validation failures**: Delivery lanes fail assertions for route, footer, transport, or delegation metadata even when message content looks correct.\n- **Route mismatch**: Work that should be delegated is routed as a direct reply.\n- **Hash mismatch**: Sub-agent spawning fails because the canonical hash generated during dispatch does not match the hash validated during spawn.\n- **Empty status panels**: Status views show no running, queued, or recently completed tasks despite active requests.\n- **Perceived timeout**: A task that requires tools, internet access, dispatch, or sub-agent work appears stalled because no initial ACK was sent.\n- **Unroutable human-support request**: The user asks for a human but gives no issue details, leaving the agent unable to triage or route the request safely.\n- **Unsafe documentation reuse**: Internal support notes contain private routing details or identifiers that should not be copied into reusable docs.\n\n## What To Do\n\n### 1. Acknowledge long-running work immediately\n\nBefore starting work that requires dispatch, tools, internet access, or sub-agent execution:\n\n1. Send a brief acknowledgment immediately.\n2. Keep it short and do not imply the task has already completed.\n3. Use this for any operation expected to take more than a few seconds.\n\nExample pattern:\n\n> Received — I’m checking that now.\n\nThis prevents users from interpreting dispatch latency as silence or failure.\n\n### 2. Handle vague human-support requests transparently\n\nIf the user asks for human support but does not describe the issue:\n\n1. Be clear that the current responder is an AI assistant.\n2. Acknowledge the request and any delay or inconvenience if relevant.\n3. Ask the user to describe the issue and provide the context needed for routing or troubleshooting.\n4. Do not claim that a human has joined.\n5. Do not promise immediate escalation before the issue is understood.\n\nRecommended response pattern:\n\n> I’m an AI assistant. I can help route this, but I need a few details first. What issue are you trying to resolve, and what have you already tried?\n\nUse this when lack of details prevents useful routing. Once the user provides details, triage normally.\n\n### 3. Diagnose the dispatch layer before debugging task content\n\nWhen expected analysis or execution results do not appear:\n\n1. Check whether the dispatch/orchestration layer is healthy before inspecting the task’s reasoning or answer content.\n2. Look for `stickyResult is not defined` or equivalent runtime errors.\n3. Confirm that incoming tasks are not being reduced to basic system checks such as version probes.\n4. Inspect the dispatched plan payload and verify that it contains the intended execution unit.\n5. Review delivery-lane routing logic for runtime bugs in delegation orchestration.\n\nA broken dispatch chain can make valid tasks appear to fail analytically, even when the task content is not the problem.\n\n### 4. Validate route, transport, and structural metadata\n\nDo not rely only on message text. Explicitly verify dispatch structure:\n\n1. Confirm that delegation routes use the expected route type, such as `delegate` rather than `reply` when delegation is required.\n2. Confirm footer and transport metadata match the expected delivery path.\n3. Validate session identifiers and spawn metadata.\n4. Include route, footer, transport, and session assertions in post-deploy smoke tests.\n\nStructural metadata must be tested as first-class output, not treated as incidental formatting.\n\n### 5. Normalize parameters and validate canonical hashes\n\nWhen sub-agent spawning fails:\n\n1. Check parameter normalization, especially around the task payload.\n2. Confirm that canonical hash generation is deterministic during dispatch.\n3. Confirm the same canonical representation is used during spawn validation.\n4. Verify that gateway health and system load are acceptable before assuming an application-layer bug.\n\nHash mismatches often indicate inconsistent normalization between dispatch and spawn phases.\n\n### 6. Monitor the dispatch chain\n\nAdd or use checks that detect:\n\n- Missing runner state.\n- Zero active tasks when workload should exist.\n- Queued work that never transitions to running.\n- Recently completed task absence after known submissions.\n- Route mismatches between expected and actual behavior.\n- Repeated spawn validation failures.\n\nTreat an empty or missing runner state during active workload as a dispatch failure signal, not merely a delay.\n\n### 7. Sanitize internal routing notes before reuse\n\nWhen converting internal support notes into reusable documentation:\n\n1. Preserve the operational decision logic.\n2. Remove or generalize personal names.\n3. Remove private channels, private links, and internal URLs.\n4. Remove tenant identifiers, project identifiers, and instance-specific labels unless they are safe and necessary for the intended audience.\n5. Keep safe, necessary generic product terms and public documentation links.\n6. Review the final page for leakage before publishing.\n\nDo not copy raw internal transcripts, credentials, tokens, cookies, authorization headers, private keys, or private routing instructions into reusable guidance.\n\n## Verify\n\nVerify recovery or correctness by checking all relevant layers:\n\n- **User interaction**: The user receives an immediate ACK before long-running dispatch work begins.\n- **Human-support routing**: If the user asked for a human without details, the response clearly states that the assistant is AI and asks for issue details before routing.\n- **Runtime logs**: Dispatch cycles complete without `stickyResult` reference errors or repeated runtime failures.\n- **Route structure**: Smoke tests pass route, footer, transport, and delegation assertions.\n- **Queue state**: Status panels show active, queued, or recently completed tasks matching the workload.\n- **Spawn behavior**: Sub-agent creation succeeds without parameter validation or canonical hash errors.\n- **Payload correctness**: Dispatched plans contain the intended task, not an accidental fallback such as a version check.\n- **Documentation hygiene**: Rewritten guidance preserves the decision tree while excluding internal links, personal routing, project-specific identifiers, and sensitive material.\n\n## Reusable Lessons\n\n- Send a brief ACK before work that requires tools, internet access, dispatch, sub-agent execution, or more than a few seconds of processing.\n- Diagnose dispatch and orchestration health before debugging individual task reasoning or content.\n- Validate structural metadata explicitly; correct message text is not enough.\n- Keep canonical hash generation deterministic across dispatch and spawn validation.\n- Treat missing runners, empty active-task panels, and route mismatches as dispatch-chain signals.\n- If a user asks for human support without issue details, transparently identify as an AI assistant and ask for the information needed to route or troubleshoot.\n- Do not pretend a human has taken over, promise immediate escalation without details, or end with a vague offer that does not collect routing information.\n- When turning internal support notes into reusable documentation, remove private routing, internal links, names, tenant identifiers, and project-specific labels while preserving safe operational logic.\n\n## Agent Use\n\nUse this page when:\n\n- OpenClaw or OctoClaw dispatch fails.\n- Routes go to `reply` when delegation is expected.\n- The system reports missing runners, zero active tasks, `stickyResult` errors, spawn parameter failures, or canonical hash mismatches.\n- Users perceive the system as stalled during long-running dispatched work.\n- A user asks for human support without enough details to route the issue.\n- You are converting internal support-routing notes into reusable, safe operational guidance.\n\nApply it by:\n\n- Send an immediate ACK before beginning long-running dispatch investigation.\n- Check dispatch/orchestration health before debugging task content.\n- Inspect route, transport, footer, session IDs, spawn payloads, and canonical hashes.\n- Ask vague human-support requesters for issue details while clearly identifying as an AI assistant.\n- Sanitize internal routing material before documenting or reusing it.\n\nVerify by:\n\n- Confirm dispatch cycles complete without runtime or parameter validation errors.\n- Confirm smoke tests pass structural route, footer, transport, and spawn assertions.\n- Confirm the task queue reflects active, queued, or recently completed work.\n- Confirm user-facing replies do not imply a human is present unless that is true.\n- Confirm reusable documentation excludes private links, personal routing, sensitive identifiers, credentials, tokens, cookies, authorization headers, and private keys.\n\nDo not use it when:\n\n- The only issue is missing replay data unrelated to live dispatch behavior.\n- The failure is solely stale gateway configuration with no dispatch-routing symptoms.\n- The user has already provided a complete support issue and the correct next step is ordinary domain-specific troubleshooting.\n- The source material cannot be safely sanitized without losing the decision logic needed by the intended audience.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json (sha256:5fe5ee0ea54132b2f728acdf2a410422bc3633673dd60c266436c1ca86feb75d)\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json (sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json",
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json"
+  ],
+  "source_hashes": [
+    "sha256:5fe5ee0ea54132b2f728acdf2a410422bc3633673dd60c266436c1ca86feb75d",
+    "sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f"
+  ],
+  "source_count": 2,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-2c4b113ca2de9dee-sha256-9742361745143d9140c0866b52146027420d4c7ddf90f94c6ef6a",
+    "wiki-evidence-lesson_ai-96135a23b6becb8e-sha256-8c801cd2ee1c128685ba130dad0bf0dec96685161c0a477d0c77b"
+  ],
+  "confidence": 0.94,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json",
+      "source_hash": "sha256:5fe5ee0ea54132b2f728acdf2a410422bc3633673dd60c266436c1ca86feb75d",
+      "excerpt": "A generic request for human support lacks the information needed to assist, triage, or route the request, and failing to clarify the bot's role may create false expectations. Respond briefly: state that you are an AI assistant, acknowledge the request or any delay, and ask the user to provide details about the issue, including relevant context needed for routing or troubleshooting."
+    },
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json",
+      "source_hash": "sha256:b423ff5434834d4a69d1a46116a27a0bc783d6cf24db793e9fd39f4df8d76c6f",
+      "excerpt": "Raw internal guidance can leak sensitive routing details, private links, or instance-specific identifiers if reused directly. Extract the general decision logic, remove or generalize personal names, private channels, internal URLs, tenant or project identifiers, and instance-specific labels, then publish only the sanitized workflow."
+    }
+  ],
+  "review_hint": {
+    "why_review": "ambiguous_merge_target; multiple_canonical_targets",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "Existing page content contained more specific operational examples than the new evidence; these were preserved where broadly useful but kept at a non-sensitive level.",
+      "No relationship links were supplied for this compilation, so no new wiki links were added.",
+      "Guidance involving support routing was generalized to avoid exposing private escalation paths or internal identifiers.",
+      "quality_human_required:missing_wikilinks",
+      "quality_human_required:team_or_global_scope",
+      "quality_human_required:ambiguous_merge_target"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "related_pages": [
+    {
+      "slug": "openclaw-dispatch-routing-failures",
+      "path": "kb/known-fixes/openclaw-dispatch-routing-failures.md",
+      "title": "OpenClaw dispatch routing failures"
+    },
+    {
+      "slug": "openclaw-dispatch-routing-failures",
+      "path": "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md",
+      "title": "OpenClaw dispatch routing failures"
+    }
+  ],
+  "merge_candidates": [
+    {
+      "title": "OpenClaw dispatch routing failures",
+      "path": "kb/known-fixes/openclaw-dispatch-routing-failures.md",
+      "reason": "same_title_or_slug"
+    },
+    {
+      "title": "OpenClaw dispatch routing failures",
+      "path": "skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md",
+      "reason": "same_title_or_slug"
+    }
+  ],
+  "relationship_reasons": [
+    "same_title_or_slug"
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T05:22:58.969Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T05:22:58.969Z"
+}

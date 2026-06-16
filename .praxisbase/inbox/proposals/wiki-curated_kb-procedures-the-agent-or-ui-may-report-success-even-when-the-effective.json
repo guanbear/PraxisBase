@@ -6,14 +6,14 @@
   "action": "create",
   "page_kind": "procedure",
   "scope": "team",
-  "title": "Verify the Effective Runtime Model After a Model Switch",
-  "summary": "Agents and UIs can report that a model switch succeeded even when the active session is still using a different runtime model. For work where model identity matters, verify the effective current model with an explicit status, diagnostic, or configuration command.",
-  "body_markdown": "# Verify the Effective Runtime Model After a Model Switch\n\n## When to Use\n\nUse this procedure after changing or selecting an agent runtime model when the exact model affects the work, such as:\n\n- Production-impacting operations.\n- Cost-sensitive tasks.\n- Capability-sensitive tasks where reasoning depth, tool support, context length, or latency matters.\n- Reproducibility-sensitive debugging or evaluation.\n- Any workflow that depends on a specific configured default or active-session model.\n\n## Context\n\nA UI success message or an agent self-report may say that a model switch succeeded, but the effective runtime model for the active session may still differ from the intended or reported model.\n\nTreat model-selection confirmation as provisional until an explicit status, diagnostic, or configuration command reports the effective current model.\n\n## Procedure\n\n1. Request or run the environment’s explicit status, diagnostic, or configuration command that reports the model currently active for the session.\n2. Compare the reported effective runtime model with the intended model.\n3. If persistent defaults matter, also inspect the persistent/default configuration, not only the active session.\n4. If the effective model does not match the intended model:\n   - Re-apply the model-selection change using the supported configuration path.\n   - Re-run the explicit status or diagnostic command.\n   - Avoid proceeding with model-dependent work until the active model is confirmed.\n5. If the work is low-risk exploratory interaction where the exact model has no operational impact, do not add unnecessary verification overhead.\n\n## Verify\n\nVerification is successful when the explicit status, diagnostic, or configuration output shows:\n\n- The intended model is active for the current session.\n- If relevant, the persistent default configuration also points to the intended model.\n\nDo not rely solely on:\n\n- A UI toast or success banner.\n- The agent saying that it switched models.\n- A previous model-selection request without current-session confirmation.\n\n## Reusable Lessons\n\n- Verify model-switching results with an explicit session status or configuration command.\n- Treat UI success messages and agent self-reports as insufficient evidence when model identity matters.\n- Skip extra verification for low-risk exploratory interactions where exact model identity has no practical effect.\n\n## Agent Use\nUse this page when:\n- The agent or UI may report success even when the effective runtime model differs from the reported or intended model.\n\nApply it by:\n- Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session.\n\nVerify by:\n- Confirm that the status output shows the intended model for the current session and, if needed, the persistent default configuration.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json (sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520)\n",
+  "title": "Verify Effective Runtime Model After a Reported Model Switch",
+  "summary": "Agents or UIs may report that a model switch succeeded even when the active runtime model is still different from the intended model. Confirm model changes with an explicit session status, diagnostic, or configuration command before relying on the new model.",
+  "body_markdown": "# Verify Effective Runtime Model After a Reported Model Switch\n\n## When to Use\n\nUse this procedure when an agent, UI, CLI, or orchestration layer reports that a model switch or model selection succeeded and the exact active model matters for the work being performed.\n\nThis is especially important when:\n\n- The task depends on a specific model's capabilities, cost profile, latency, context window, safety behavior, or tool support.\n- A workflow requires reproducibility or auditability of which model handled a session.\n- A persistent default model and an active session model may differ.\n- The agent's self-report conflicts with observed behavior or configuration expectations.\n\n## Context\n\nA success message from an agent or UI does not always prove that the effective runtime model changed. The interface may acknowledge the request, update a visible label, or report success while the active session continues using another model.\n\nTreat model-switch success messages as provisional until confirmed by a command or diagnostic that reports the effective current model for the active session.\n\n## Procedure\n\n1. Request or perform the model switch using the normal interface.\n2. Do not rely only on the agent's self-report, banner, toast notification, or UI success message.\n3. Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session.\n4. If the system separates active session state from persistent defaults, check both when relevant:\n   - Current active session model.\n   - Persistent default model or configuration used for new sessions.\n5. Compare the reported effective model to the intended model.\n6. If the effective model is wrong, repeat the switch using the supported mechanism or escalate to the system-specific configuration path.\n7. Continue only after the effective model is confirmed, unless exact model identity has no operational impact.\n\n## Verify\n\nVerification is complete when the explicit status, diagnostic, or configuration output shows the intended model for the current active session.\n\nWhen persistent configuration matters, also confirm that the default model setting matches the intended model for future sessions.\n\nDo not count the following as sufficient verification by themselves:\n\n- Agent says it switched models.\n- UI displays a success message.\n- UI label appears to change without a backend/session status check.\n- The model claims to be a particular model in conversation.\n\n## Reusable Lessons\n\n- Verify model-switching results with an explicit session status or configuration command rather than relying only on the agent's self-report or UI success message.\n- The effective runtime model may differ from the reported or intended model even after a success message.\n- Avoid extra verification for low-risk exploratory interactions where exact model identity has no operational impact.\n\n## Agent Use\nUse this page when:\n- The agent or UI may report success even when the effective runtime model differs from the reported or intended model.\n\nApply it by:\n- Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session.\n\nVerify by:\n- Confirm that the status output shows the intended model for the current session and, if needed, the persistent default configuration.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json (sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5)\n",
   "source_refs": [
     "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json"
   ],
   "source_hashes": [
-    "sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520"
+    "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5"
   ],
   "source_count": 1,
   "evidence_ids": [
@@ -24,7 +24,7 @@
   "provenance": [
     {
       "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
-      "source_hash": "sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520",
+      "source_hash": "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5",
       "excerpt": "The agent or UI may report success even when the effective runtime model differs from the reported or intended model. Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session."
     }
   ],
@@ -32,8 +32,9 @@
     "why_review": "new_canonical_topic",
     "suggested_decision": "edit",
     "risk_notes": [
-      "The source evidence is a single team lesson, so the procedure is intentionally general rather than tied to a specific UI, CLI, or model provider.",
-      "Exact verification commands are environment-specific and must be obtained from the relevant platform documentation or tooling.",
+      "Specific verification commands are platform-dependent and must be selected from the relevant system documentation or available interface.",
+      "If no explicit status or configuration inspection is available, the active model cannot be conclusively verified from self-report alone.",
+      "Additional verification may be unnecessary for low-risk exploratory interactions where exact model identity has no operational impact.",
       "quality_human_required:team_or_global_scope"
     ]
   },
@@ -85,9 +86,9 @@
     }
   ],
   "lifecycle": "active",
-  "last_confirmed_at": "2026-06-16T04:46:58.958Z",
+  "last_confirmed_at": "2026-06-16T05:22:58.969Z",
   "supersedes": [],
   "superseded_by": null,
   "relationship_types": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }

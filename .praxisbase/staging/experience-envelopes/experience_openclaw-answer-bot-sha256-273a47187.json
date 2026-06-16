@@ -9,7 +9,7 @@
   "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
   "scope_hint": "team",
   "redacted_summary": "Documented standardized support guidance for answering questions about model pricing, capabilities, and model-switching behavior. The update clarifies when model selection persists versus when an agent-specific default may override a user-selected model, and it provides a consistent response for known context errors after switching models.",
-  "fetched_at": "2026-06-16T04:46:58.958Z",
+  "fetched_at": "2026-06-16T05:22:58.969Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

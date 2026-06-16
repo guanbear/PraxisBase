@@ -1,0 +1,33 @@
+{
+  "id": "source-summary_wiki-evidence-lesson-det-ack-before-slow-work-09823a8de90-sha256",
+  "type": "wiki_source_summary",
+  "source_id": "wiki-evidence-lesson_det-ack-before-slow-work-09823a8de90-sha256-6ea11af4425471e622e9d7d6a4541ec758e7",
+  "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json",
+  "source_hash": "sha256:8de5aa04feffc50c1ed37ed25263f5ba0f8cdffeafe2f2653c3916e35f7a2c81",
+  "source_kind": "distilled_experience",
+  "scope": "team",
+  "summary": "Slow tool, network, dispatch, or long-running work can leave users without timely feedback. Send a short acknowledgement first, then proceed with the slow operation.",
+  "entities": [
+    "delegation",
+    "lesson",
+    "portability",
+    "system"
+  ],
+  "topics": [
+    "lesson:sha256:6ea11af4425471e622e9d7d6a4541ec758e7b8dff26c08e9d2998fcd91069238",
+    "portability:universal",
+    "system:agent-runtime",
+    "system:dispatch",
+    "system:network",
+    "system:tooling"
+  ],
+  "observation_ids": [
+    "wiki-obs_wiki-evidence-lesson-det-ack-before-slow-work-09823a8de90-sha256"
+  ],
+  "topic_keys": [
+    "family-ack-timing::team"
+  ],
+  "privacy_verdict": "safe",
+  "contributed_to_pages": [],
+  "created_at": "2026-06-16T05:22:58.969Z"
+}

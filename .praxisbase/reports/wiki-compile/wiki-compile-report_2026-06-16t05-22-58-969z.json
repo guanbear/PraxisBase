@@ -1,0 +1,1039 @@
+{
+  "id": "wiki-compile-report_2026-06-16t05-22-58-969z",
+  "protocol_version": "0.1",
+  "type": "wiki_compile_report",
+  "mode": "review",
+  "sources_read": 57,
+  "changed_sources": 27,
+  "candidate_ids": [],
+  "source_analysis": [
+    {
+      "source_id": "capture:capture_openclaw-sha256-14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
+      "source_hash": "sha256:14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
+      "source_kind": "capture",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc1",
+        "text:capture-openclaw-sha256-14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e-initial"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd0"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/capture-openclaw-sha256-14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd0.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+      "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+      "source_kind": "capture",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933",
+        "text:capture-openclaw-sha256-19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0-user"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/pitfalls/capture-openclaw-sha256-19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+      "source_hash": "sha256:1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+      "source_kind": "capture",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c1",
+        "text:capture-openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6-user"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-capture-openclaw-sha256-1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+      "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+      "source_kind": "capture",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1d66c09",
+        "text:capture-openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb-documented"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-capture-openclaw-sha256-273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
+      "source_hash": "sha256:31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
+      "source_kind": "capture",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-31384b9548ae70385260538a5c6e1b90ce563958ebdda52a",
+        "text:capture-openclaw-sha256-31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8-chat"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0d"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-capture-openclaw-sha256-31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0d.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+      "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+      "source_kind": "capture",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-4b2bab82717d1c6a48b99900b0de37f55106bbf418441954",
+        "text:capture-openclaw-sha256-4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a-reusable"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/capture-openclaw-sha256-4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
+      "source_hash": "sha256:5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
+      "source_kind": "capture",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248c",
+        "text:capture-openclaw-sha256-5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20-updated"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/pitfalls/capture-openclaw-sha256-5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+      "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+      "source_kind": "capture",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030",
+        "text:capture-openclaw-sha256-64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4-scheduled"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-capture-openclaw-sha256-64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
+      "source_hash": "sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
+      "source_kind": "capture",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7e",
+        "text:capture-openclaw-sha256-745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6-model"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/capture-openclaw-sha256-745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "source_kind": "capture",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f",
+        "text:capture-openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e-updated"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac1"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/capture-openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac1.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+      "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+      "source_kind": "capture",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558c",
+        "text:capture-openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64-proposed"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/capture-openclaw-sha256-8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
+      "source_hash": "sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
+      "source_kind": "capture",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-92320b3890301078db779c62b37c753a6f89dadd23a5cae0",
+        "text:capture-openclaw-sha256-92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f-scheduled"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/known-fixes/capture-openclaw-sha256-92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+      "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+      "source_kind": "capture",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913",
+        "text:capture-openclaw-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20-support"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/capture-openclaw-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
+      "source_hash": "sha256:bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
+      "source_kind": "capture",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf3",
+        "text:capture-openclaw-sha256-bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd-team"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda23"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-capture-openclaw-sha256-bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda23.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
+      "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
+      "source_kind": "capture",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-c721715b094a3d1a2c35c64a3757c487a5474673ed91f220",
+        "text:capture-openclaw-sha256-c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd-team"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d1"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/capture-openclaw-sha256-c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d1.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+      "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+      "source_kind": "capture",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-cfcba53974d12423579c4defd306375a946e010657859732",
+        "text:capture-openclaw-sha256-cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231-team"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-cfcba53974d12423579c4defd306375a946e01065785973272a6176b"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-capture-openclaw-sha256-cfcba53974d12423579c4defd306375a946e01065785973272a6176b.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+      "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+      "source_kind": "capture",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc7",
+        "text:capture-openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f-documented"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/capture-openclaw-sha256-dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "source_kind": "capture",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a8",
+        "text:capture-openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f-request"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/capture-openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+      "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+      "source_kind": "capture",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e1240",
+        "text:capture-openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1-messaging"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e124070910056"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/pitfalls/capture-openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e124070910056.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+      "source_hash": "sha256:e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+      "source_kind": "capture",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb",
+        "text:capture-openclaw-sha256-e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168-team"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-capture-openclaw-sha256-e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+      "source_hash": "sha256:e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+      "source_kind": "capture",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-e437220d9dfb85bc70bf0da487784404d0706e205b80afd3",
+        "text:capture-openclaw-sha256-e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f-clarified"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/capture-openclaw-sha256-e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
+      "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
+      "source_kind": "capture",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c2",
+        "text:capture-openclaw-sha256-f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa-bot"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/capture-openclaw-sha256-f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8.md"
+    },
+    {
+      "source_id": "capture:capture_openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
+      "source_hash": "sha256:f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
+      "source_kind": "capture",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "capture:capture-capture-openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc4640b4181",
+        "text:capture-openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8-several"
+      ],
+      "aliases": [
+        "capture-openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/capture-openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-14edce26a",
+      "source_hash": "sha256:14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-14edce26a",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-14edce26a",
+        "raw-ref-openclaw-openclaw-episode-sha256-14edce26a"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-19c2eeefa",
+      "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-19c2eeefa",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-19c2eeefa",
+        "raw-ref-openclaw-openclaw-episode-sha256-19c2eeefa"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/pitfalls/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-1e5ae91e7",
+      "source_hash": "sha256:1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-1e5ae91e7",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-1e5ae91e7",
+        "raw-ref-openclaw-openclaw-episode-sha256-1e5ae91e7"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-273a47187",
+      "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-273a47187",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-273a47187",
+        "raw-ref-openclaw-openclaw-episode-sha256-273a47187"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-31384b954",
+      "source_hash": "sha256:31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-31384b954",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-31384b954",
+        "raw-ref-openclaw-openclaw-episode-sha256-31384b954"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-4b2bab827",
+      "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-4b2bab827",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-4b2bab827",
+        "raw-ref-openclaw-openclaw-episode-sha256-4b2bab827"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-5535ee36f",
+      "source_hash": "sha256:5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-5535ee36f",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-5535ee36f",
+        "raw-ref-openclaw-openclaw-episode-sha256-5535ee36f"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/pitfalls/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-64f06eeeb",
+      "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-64f06eeeb",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-64f06eeeb",
+        "raw-ref-openclaw-openclaw-episode-sha256-64f06eeeb"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-745fa543d",
+      "source_hash": "sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-745fa543d",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-745fa543d",
+        "raw-ref-openclaw-openclaw-episode-sha256-745fa543d"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-8107f53d4",
+      "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-8107f53d4",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-8107f53d4",
+        "raw-ref-openclaw-openclaw-episode-sha256-8107f53d4"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-8deb4f5e6",
+      "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-8deb4f5e6",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-8deb4f5e6",
+        "raw-ref-openclaw-openclaw-episode-sha256-8deb4f5e6"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-92320b389",
+      "source_hash": "sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-92320b389",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-92320b389",
+        "raw-ref-openclaw-openclaw-episode-sha256-92320b389"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/known-fixes/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-98477e0c8",
+      "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-98477e0c8",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-98477e0c8",
+        "raw-ref-openclaw-openclaw-episode-sha256-98477e0c8"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-bdd86a156",
+      "source_hash": "sha256:bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-bdd86a156",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-bdd86a156",
+        "raw-ref-openclaw-openclaw-episode-sha256-bdd86a156"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-c721715b0",
+      "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-c721715b0",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-c721715b0",
+        "raw-ref-openclaw-openclaw-episode-sha256-c721715b0"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-cfcba5397",
+      "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-cfcba5397",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-cfcba5397",
+        "raw-ref-openclaw-openclaw-episode-sha256-cfcba5397"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-dbfb119fc",
+      "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-dbfb119fc",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-dbfb119fc",
+        "raw-ref-openclaw-openclaw-episode-sha256-dbfb119fc"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-dd5113c71",
+      "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-dd5113c71",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-dd5113c71",
+        "raw-ref-openclaw-openclaw-episode-sha256-dd5113c71"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-e1db2413e",
+      "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-e1db2413e",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-e1db2413e",
+        "raw-ref-openclaw-openclaw-episode-sha256-e1db2413e"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/pitfalls/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-e3e17b88c",
+      "source_hash": "sha256:e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "note",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-e3e17b88c",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-e3e17b88c",
+        "raw-ref-openclaw-openclaw-episode-sha256-e3e17b88c"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/notes/wiki-raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-e437220d9",
+      "source_hash": "sha256:e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "decision",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-e437220d9",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-e437220d9",
+        "raw-ref-openclaw-openclaw-episode-sha256-e437220d9"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/decisions/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-f1d3f2e21",
+      "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-f1d3f2e21",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-f1d3f2e21",
+        "raw-ref-openclaw-openclaw-episode-sha256-f1d3f2e21"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "external_ref:raw_ref_openclaw-openclaw-episode-sha256-f7aee701a",
+      "source_hash": "sha256:f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
+      "source_kind": "external_ref",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "external_ref:external-ref-raw-ref-openclaw-openclaw-episode-sha256-f7aee701a",
+        "text:raw-ref-openclaw-openclaw-episode"
+      ],
+      "aliases": [
+        "praxisbase-raw-vault-refs-raw-ref-openclaw-openclaw-episode-sha256-f7aee701a",
+        "raw-ref-openclaw-openclaw-episode-sha256-f7aee701a"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/procedures/raw-ref-openclaw-openclaw-episode.md"
+    },
+    {
+      "source_id": "skill:skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md",
+      "source_hash": "sha256:f542be934e8bf474df3cbcf1f6fad52e421f7d8625c27f2dff8e790be0e50336",
+      "source_kind": "skill",
+      "suggested_page_kind": "skill_seed",
+      "signatures": [
+        "skill:skill-skills-openclaw-openclaw-dispatch-routing-failures-skill-md",
+        "text:openclaw-dispatch-routing-failures-openclaw"
+      ],
+      "aliases": [
+        "openclaw-dispatch-routing-failures",
+        "skills-openclaw-openclaw-dispatch-routing-failures-skill"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "skills/openclaw-dispatch-routing-failures-openclaw/SKILL.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md",
+      "source_hash": "sha256:642e7b61c3de34e024ad144aa03719fb48ecb3d26fde4e6bac7b70588d36ed5f",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md",
+        "text:ack-timing-long-running-agent"
+      ],
+      "aliases": [
+        "ack-timing-before-long-running-agent-work",
+        "kb-known-fixes-ack-timing-before-long-running-agent-work"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md",
+      "source_hash": "sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as",
+        "text:agents-can-mislead-users-failures"
+      ],
+      "aliases": [
+        "agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes",
+        "kb-known-fixes-agents-can-mislead-users-if-failures-are-reported-as-successful"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md",
+      "source_hash": "sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug",
+        "text:missing-replay-data-compromises-ability"
+      ],
+      "aliases": [
+        "kb-known-fixes-missing-replay-data-compromises-the-ability-to-debug-or-verify",
+        "missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope",
+        "repeated_failure"
+      ],
+      "candidate_path": "kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md",
+      "source_hash": "sha256:b6657ec798ebefe7645b79f6e63a468fadbc2a903d066d2adaceae312a18cb96",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md",
+        "text:openclaw-dispatch-routing-failures-openclaw"
+      ],
+      "aliases": [
+        "kb-known-fixes-openclaw-dispatch-routing-failures",
+        "openclaw-dispatch-routing-failures"
+      ],
+      "scope": "team",
+      "confidence": 0.8,
+      "risks": [],
+      "candidate_path": "kb/known-fixes/openclaw-dispatch-routing-failures.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md",
+      "source_hash": "sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability",
+        "text:openclaw-slack-replay-post-deploy"
+      ],
+      "aliases": [
+        "kb-known-fixes-openclaw-slack-replay-and-post-deploy-stability-failures",
+        "openclaw-slack-replay-and-post-deploy-stability-failures"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"
+    },
+    {
+      "source_id": "stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md",
+      "source_hash": "sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "known_fix",
+      "signatures": [
+        "stable_kb:stable-kb-kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw",
+        "text:post-deploy-stability-smoke-test"
+      ],
+      "aliases": [
+        "kb-known-fixes-post-deploy-stability-smoke-test-run-openclaw-resulted-in-an",
+        "post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"
+    },
+    {
+      "source_id": "stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md",
+      "source_hash": "sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "pitfall",
+      "signatures": [
+        "stable_kb:stable-kb-kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after",
+        "text:changes-can-introduce-regressions-not"
+      ],
+      "aliases": [
+        "changes-can-introduce-regressions-when-not-tested-after-modification",
+        "kb-pitfalls-changes-can-introduce-regressions-when-not-tested-after-modification"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"
+    },
+    {
+      "source_id": "stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md",
+      "source_hash": "sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause",
+        "text:actions-wrong-target-machine-host"
+      ],
+      "aliases": [
+        "actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes",
+        "kb-procedures-actions-on-the-wrong-target-machine-or-host-can-cause-unsafe"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"
+    },
+    {
+      "source_id": "stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md",
+      "source_hash": "sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-procedures-case-sensitive-database-comparisons-can-miss-logically",
+        "text:case-sensitive-database-comparisons-can"
+      ],
+      "aliases": [
+        "case-sensitive-database-comparisons-can-miss-logically-equivalent-values",
+        "kb-procedures-case-sensitive-database-comparisons-can-miss-logically"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"
+    },
+    {
+      "source_id": "stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md",
+      "source_hash": "sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d",
+      "source_kind": "stable_kb",
+      "suggested_page_kind": "procedure",
+      "signatures": [
+        "stable_kb:stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve",
+        "text:stale-caches-can-hide-current"
+      ],
+      "aliases": [
+        "kb-procedures-stale-caches-can-hide-current-behavior-or-serve-outdated-assets",
+        "stale-caches-can-hide-current-behavior-or-serve-outdated-assets"
+      ],
+      "scope": "personal",
+      "confidence": 0.65,
+      "risks": [
+        "personal_scope"
+      ],
+      "candidate_path": "kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"
+    }
+  ],
+  "exceptions": 3,
+  "skipped_sources": 24,
+  "changed_stable_knowledge": false,
+  "created_at": "2026-06-16T05:22:58.969Z"
+}

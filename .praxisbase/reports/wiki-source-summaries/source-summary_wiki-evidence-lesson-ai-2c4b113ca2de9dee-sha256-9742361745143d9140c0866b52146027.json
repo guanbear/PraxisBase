@@ -3,7 +3,7 @@
   "type": "wiki_source_summary",
   "source_id": "wiki-evidence-lesson_ai-2c4b113ca2de9dee-sha256-9742361745143d9140c0866b52146027420d4c7ddf90f94c6ef6a",
   "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json",
-  "source_hash": "sha256:20c0f511477343072606cda997e33ba031f0d206da3bab657e2a715c12408c50",
+  "source_hash": "sha256:5fe5ee0ea54132b2f728acdf2a410422bc3633673dd60c266436c1ca86feb75d",
   "source_kind": "distilled_experience",
   "scope": "team",
   "summary": "A generic request for human support lacks the information needed to assist, triage, or route the request, and failing to clarify the bot's role may create false expectations. Respond briefly: state that you are an AI assistant, acknowledge the request or any delay, and ask the user to provide details about the issue, including relevant context needed for routing or troubleshooting.",
@@ -23,5 +23,5 @@
   ],
   "privacy_verdict": "safe",
   "contributed_to_pages": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }

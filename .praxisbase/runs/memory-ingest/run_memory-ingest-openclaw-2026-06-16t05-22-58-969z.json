@@ -1,0 +1,16 @@
+{
+  "id": "run_memory-ingest-openclaw-2026-06-16t05-22-58-969z",
+  "protocol_version": "0.1",
+  "command": "memory-ingest",
+  "status": "completed",
+  "started_at": "2026-06-16T05:22:58.969Z",
+  "finished_at": "2026-06-16T05:22:58.969Z",
+  "counts": {
+    "scanned": 21,
+    "imported": 0,
+    "duplicates": 21,
+    "skipped": 0,
+    "unsafe": 0
+  },
+  "errors": []
+}

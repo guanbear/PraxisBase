@@ -3,7 +3,7 @@
   "type": "wiki_source_summary",
   "source_id": "wiki-evidence-lesson_ai-401023b4bca2e577-sha256-d505525c6a991bc2be507c133a27b8a10444ef1a4295ed4e56084",
   "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-5535ee36f.json",
-  "source_hash": "sha256:de1779d086a6ef7925f65d3ddb3e9247cd222a1d1659085a72bde4982db71d08",
+  "source_hash": "sha256:e327eadda42ede95ab8c32b08213ff3bbc477b3d6c6cce56d7a73f60d9c85011",
   "source_kind": "distilled_experience",
   "scope": "team",
   "summary": "Inferring authorization from names can expose sensitive access information, mislead users, or create unsafe support guidance. State that authorization cannot be determined from naming patterns alone; recommend checking approved access records or asking an authorized administrator.",
@@ -23,5 +23,5 @@
   ],
   "privacy_verdict": "safe",
   "contributed_to_pages": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }

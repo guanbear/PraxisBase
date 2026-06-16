@@ -3,7 +3,7 @@
   "type": "wiki_source_summary",
   "source_id": "wiki-evidence-lesson_ai-d6a21d3a21b52909-sha256-b568c26b6c6267b36df32da2105231832bca5f58013b98787d4ee",
   "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
-  "source_hash": "sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520",
+  "source_hash": "sha256:d6ebf90978f309affa2dcc4eca7ecaf324832502f29d86dce526603021d064b5",
   "source_kind": "distilled_experience",
   "scope": "team",
   "summary": "The agent or UI may report success even when the effective runtime model differs from the reported or intended model. Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session.",
@@ -23,5 +23,5 @@
   ],
   "privacy_verdict": "safe",
   "contributed_to_pages": [],
-  "created_at": "2026-06-16T04:46:58.958Z"
+  "created_at": "2026-06-16T05:22:58.969Z"
 }
