@@ -160,6 +160,72 @@ describe("OpenAI-compatible AI client", () => {
     assert.deepEqual(result, { ok: true, json: { ok: true } });
   });
 
+  it("extracts JSON content from markdown-wrapped provider messages", async () => {
+    const client = createOpenAiCompatibleJsonClient({
+      config: config("gpt-5.5"),
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      fetchImpl: async () => new Response(JSON.stringify({
+        choices: [{ message: { content: "```json\n{\"ok\":true}\n```" } }],
+      }), { status: 200, headers: { "content-type": "application/json" } }),
+    });
+
+    const result = await client.generateJson({
+      system: "Return JSON only.",
+      user: "Return ok.",
+      schemaName: "Probe",
+      maxOutputBytes: 256,
+    });
+
+    assert.deepEqual(result, { ok: true, json: { ok: true } });
+  });
+
+  it("extracts JSON content from embedded markdown fences", async () => {
+    const client = createOpenAiCompatibleJsonClient({
+      config: config("gpt-5.5"),
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      fetchImpl: async () => new Response(JSON.stringify({
+        choices: [{ message: { content: "Here is the decision:\n```json\n{\"ok\":true}\n```" } }],
+      }), { status: 200, headers: { "content-type": "application/json" } }),
+    });
+
+    const result = await client.generateJson({
+      system: "Return JSON only.",
+      user: "Return ok.",
+      schemaName: "Probe",
+      maxOutputBytes: 256,
+    });
+
+    assert.deepEqual(result, { ok: true, json: { ok: true } });
+  });
+
+  it("extracts the first balanced JSON object from provider prose", async () => {
+    const client = createOpenAiCompatibleJsonClient({
+      config: config("gpt-5.5"),
+      env: {
+        PRAXISBASE_LLM_API_KEY: "test-key",
+        PRAXISBASE_LLM_BASE_URL: "https://llm.example.test/v1",
+      },
+      fetchImpl: async () => new Response(JSON.stringify({
+        choices: [{ message: { content: "Sure. {\"ok\":true,\"note\":\"brace } inside string\"} Done." } }],
+      }), { status: 200, headers: { "content-type": "application/json" } }),
+    });
+
+    const result = await client.generateJson({
+      system: "Return JSON only.",
+      user: "Return ok.",
+      schemaName: "Probe",
+      maxOutputBytes: 256,
+    });
+
+    assert.deepEqual(result, { ok: true, json: { ok: true, note: "brace } inside string" } });
+  });
+
   it("aborts slow provider response bodies with the same timeout", async () => {
     const client = createOpenAiCompatibleJsonClient({
       config: { ...config("GLM-5.1"), ai_timeout_ms: 5 },

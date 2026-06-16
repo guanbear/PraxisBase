@@ -68,6 +68,51 @@ function parseOpenAiSseText(text: string): unknown | undefined {
   return { choices: [{ message: { content: chunks.join("") } }] };
 }
 
+function parseJsonContent(content: string): unknown | undefined {
+  const trimmed = content.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)?.[1]?.trim();
+  for (const candidate of [trimmed, fenced, extractBalancedJsonObject(trimmed)]) {
+    if (!candidate) continue;
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // Try the next tolerated provider shape.
+    }
+  }
+  return undefined;
+}
+
+function extractBalancedJsonObject(text: string): string | undefined {
+  const start = text.indexOf("{");
+  if (start === -1) return undefined;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = start; index < text.length; index++) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === "{") depth++;
+    if (char === "}") {
+      depth--;
+      if (depth === 0) return text.slice(start, index + 1);
+    }
+  }
+  return undefined;
+}
+
 function shouldDisableThinking(config: AiProviderConfig): boolean {
   return /^glm-(?:4\.7|5\.1)\b/i.test(config.model.trim());
 }
@@ -193,9 +238,11 @@ export function createOpenAiCompatibleJsonClient(options: OpenAiCompatibleJsonCl
         return { ok: false, error: `AI provider response did not include ${input.schemaName} JSON content` };
       }
 
-      try {
-        return { ok: true, json: JSON.parse(content) };
-      } catch {
+      const parsedContent = parseJsonContent(content);
+      if (parsedContent !== undefined) {
+        return { ok: true, json: parsedContent };
+      }
+      {
         return { ok: false, error: `AI provider returned invalid ${input.schemaName} JSON` };
       }
     },
