@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { mkdtemp } from "node:fs/promises";
 import type { AiJsonClient } from "../ai/client.js";
 import type { ProjectLanguage } from "../config/project.js";
+import type { EvidenceSpan } from "./lesson-model.js";
 import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
 import { abstractLessonPrivacy, redactEvidenceSpansForAi } from "./lesson-privacy.js";
 import {
@@ -49,10 +50,12 @@ export interface RunLessonPipelineInput {
   authorityMode?: "personal-local" | "team-git";
   now?: string;
   maxSpans?: number;
+  extraSpans?: EvidenceSpan[];
   aiClient?: AiJsonClient;
   aiCacheIdentity?: string;
   cacheRoot?: string;
   language?: ProjectLanguage;
+  profileInstruction?: string;
 }
 
 export interface LessonPipelineReport {
@@ -82,7 +85,8 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
     scope: input.scope,
     origin: input.origin ?? "local",
   });
-  const spans = planLessonSpans(inventory, { maxSpans: input.maxSpans ?? 50 });
+  const plannedSpans = planLessonSpans(inventory, { maxSpans: input.maxSpans ?? 50 });
+  const spans = [...plannedSpans, ...(input.extraSpans ?? [])];
   const warnings: string[] = [];
   const deterministicLessons = extractDeterministicLessons(spans, {
     now,
@@ -100,6 +104,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
       scope: input.scope,
       agent: input.agent,
       language: input.language,
+      profileInstruction: input.profileInstruction,
       onWarning: (warning) => warnings.push(warning),
       ...(input.aiCacheIdentity ? {
         cache: {
@@ -156,7 +161,7 @@ export async function runLessonPipeline(root: string, input: RunLessonPipelineIn
   const wikiEvidence = buildWikiEvidenceFromLessons(lessons, { authorityMode: mode }).length;
   const authorityContract = buildLessonAuthorityContract(lessons, wikiEvidence);
   return {
-    source_items: inventory.length,
+    source_items: inventory.length + new Set((input.extraSpans ?? []).map((span) => span.source_item_id)).size,
     selected_spans: spans.length,
     deterministic_lessons: deterministicLessons.length,
     ai_lessons: aiLessons.length,

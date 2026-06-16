@@ -8,7 +8,7 @@ import { redactSensitiveValues } from "../protocol/redact.js";
 import { readAiProviderConfig, type AiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient, type AiJsonClient } from "../ai/client.js";
 import { distillExperience, DistilledExperienceSchema, type DistilledExperience } from "../ai/distill.js";
-import { readProjectLanguageConfig } from "../config/project.js";
+import { knowledgeProfileInstruction, readProjectLanguageConfig } from "../config/project.js";
 import {
   DailyExperienceReportSchema,
   ContextJuiceReportSchema,
@@ -90,6 +90,7 @@ import {
   type PayloadPreSummaryResult,
 } from "./payload-presummary.js";
 import { buildLessonAuthorityContract, runLessonPipeline, type LessonPipelineReport } from "./lesson-pipeline.js";
+import type { EvidenceSpan } from "./lesson-model.js";
 import { dedupeLessons } from "./lesson-cache.js";
 import { buildWikiEvidenceFromLessons } from "../wiki/lesson-compiler.js";
 import { buildPersonalGaReport, type PersonalGaMode, type PersonalGaReport, type PersonalQueueReport } from "./personal-ga.js";
@@ -188,6 +189,26 @@ function coverageStatus(item: DailyExperienceCoverage["items"][number]): DailyEx
   return "raw_only";
 }
 
+function coverageReason(item: DailyExperienceCoverage["items"][number], lessonReport: DailyLessonReport | undefined): { reason_code?: string; reason?: string } {
+  if (item.status === "stable_kb") return { reason_code: "stable_kb", reason: "已进入稳定知识库。" };
+  if (item.status === "proposal") return { reason_code: "proposal_created", reason: "已生成待审核提案。" };
+  if (item.status === "wiki_evidence") return { reason_code: "wiki_evidence", reason: "已作为 wiki 编译证据。" };
+  if (item.status === "lesson_only") return { reason_code: "lesson_not_materialized", reason: "已形成 lesson，但本轮尚未生成独立提案。" };
+  if (item.status === "low_signal_rejected") return { reason_code: "low_signal", reason: "被判定为问候、闲聊或缺少修复信号。" };
+  if (item.status === "privacy_blocked") {
+    if (item.privacy_decision === "team_review_only") return { reason_code: "team_review_only", reason: "团队模式 review-first，需人工确认后才释放。" };
+    if (item.privacy_decision === "keep_human_required") return { reason_code: "human_required", reason: "隐私或脱敏风险仍需人工确认。" };
+    return { reason_code: "privacy_blocked", reason: "隐私策略阻断，未进入知识沉淀。" };
+  }
+  if (lessonReport?.warnings.includes("lesson_ai_skipped_by_finite_budget")) {
+    return { reason_code: "ai_budget_skipped", reason: "AI lesson 抽取曾因有限预算跳过。" };
+  }
+  if (item.privacy_decision === "auto_released") {
+    return { reason_code: "not_selected_for_curation", reason: "已安全释放，但未被 lesson/curation 选成独立知识。" };
+  }
+  return { reason_code: "raw_only", reason: "仅有原始材料，缺少可沉淀的动作或验证信号。" };
+}
+
 async function readLatestPrivacyTriageItems(root: string): Promise<Array<Record<string, unknown>>> {
   let files: string[];
   try {
@@ -276,11 +297,13 @@ async function buildExperienceCoverage(root: string, lessonReport: DailyLessonRe
       privacy_decision: typeof item.decision === "string" ? item.decision : undefined,
     });
   }
+  const hasPrivacySeed = items.size > 0;
 
   for (const lesson of lessonReport?.lessons ?? []) {
     for (const ref of lesson.source_refs) {
-      const sourceId = sourceIdFromSourceRef(ref) ?? ref;
-      const item = ensure(sourceId, { source_ref: ref, source_hash: lesson.source_hashes[0] });
+      const sourceHash = lesson.source_hashes[0];
+      const item = ensureByRefHash(ref, sourceHash, { source_ref: ref, source_hash: sourceHash }, { create: !hasPrivacySeed });
+      if (!item) continue;
       item.lesson_count += 1;
       item.lesson_states[lesson.state] = (item.lesson_states[lesson.state] ?? 0) + 1;
       if (lesson.state === "wiki_ready" || lesson.state === "skill_ready") item.wiki_evidence_count += 1;
@@ -331,12 +354,18 @@ async function buildExperienceCoverage(root: string, lessonReport: DailyLessonRe
     }
   }
 
-  const coverageItems = Array.from(items.values()).map((item) => ({
-    ...item,
-    proposal_titles: item.proposal_titles.slice(0, 8),
-    stable_kb_paths: item.stable_kb_paths.slice(0, 8),
-    status: coverageStatus(item),
-  })).sort((a, b) => a.source_id.localeCompare(b.source_id));
+  const coverageItems = Array.from(items.values()).map((item) => {
+    const withStatus = {
+      ...item,
+      proposal_titles: item.proposal_titles.slice(0, 8),
+      stable_kb_paths: item.stable_kb_paths.slice(0, 8),
+      status: coverageStatus(item),
+    };
+    return {
+      ...withStatus,
+      ...coverageReason(withStatus, lessonReport),
+    };
+  }).sort((a, b) => a.source_id.localeCompare(b.source_id));
   if (coverageItems.length === 0) return undefined;
   return {
     total_items: coverageItems.length,
@@ -373,6 +402,7 @@ interface DailyLessonSourceInput {
   source_agent: "codex" | "openclaw" | "claude-code" | "opencode" | "hermes" | "openhuman" | "generic";
   source_scope: "personal" | "project" | "team" | "global" | "org";
   origin: "local" | "trusted_personal_remote" | "team_git" | "external";
+  extra_spans?: EvidenceSpan[];
 }
 
 function lessonAgentFromSource(agent: string): DailyLessonSourceInput["source_agent"] {
@@ -1249,6 +1279,35 @@ function triageReleaseSummary(triage: Record<string, unknown>): string | undefin
   return autoReleasedEvidenceSummary(value);
 }
 
+function autoReleasedLessonSpansFromTriage(items: Array<Record<string, unknown>>): EvidenceSpan[] {
+  const spans: EvidenceSpan[] = [];
+  for (const item of items) {
+    if (stringValue(item.decision) !== "auto_released") continue;
+    const releaseSummary = triageReleaseSummary(item);
+    if (!releaseSummary) continue;
+    const sourceRef = stringValue(item.source_ref) ?? stringValue(item.exception_path) ?? stringValue(item.source_id);
+    const sourceHash = stringValue(item.source_hash) ?? computeHash(releaseSummary);
+    const sourceId = stringValue(item.source_id) ?? sourceIdFromSourceRef(sourceRef) ?? sourceHash.replace(/^sha256:/, "").slice(0, 16);
+    if (!sourceRef || !sourceHash || !sourceId) continue;
+    const spanId = `privacy_release_${sourceId.replace(/[^a-z0-9_.-]/gi, "_")}_${spans.length}`;
+    spans.push({
+      source_item_id: sourceId,
+      source_ref: sourceRef,
+      source_hash: sourceHash,
+      span_id: spanId,
+      line_start: 1,
+      line_end: 1,
+      byte_start: 0,
+      byte_end: Buffer.byteLength(releaseSummary, "utf8"),
+      heading_path: ["privacy_triage", "auto_released"],
+      excerpt: releaseSummary.length > 500 ? `${releaseSummary.slice(0, 500)}...` : releaseSummary,
+      excerpt_hash: computeHash(releaseSummary),
+      span_kind: "json_message",
+    });
+  }
+  return spans;
+}
+
 async function autoReleasedPrivacyEnvelope(root: string, envelope: ExperienceEnvelope): Promise<ExperienceEnvelope | undefined> {
   if (envelope.privacy.verdict !== "human_required") return undefined;
   let existing: unknown;
@@ -1493,6 +1552,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
   const stageStartedAtMs = new Map<DailyProgressStage, number>();
   const aiMode: DailyAiDistill["mode"] = input.noAi ? "disabled" : input.degraded ? "degraded" : "production";
   const languageConfig = await readProjectLanguageConfig(root, input.env);
+  const profileInstruction = knowledgeProfileInstruction(languageConfig.knowledge);
   const aiConfig = await readAiProviderConfig(root);
   const aiDistill: DailyAiDistill = {
     configured: Boolean(aiConfig || input.aiClient),
@@ -2201,18 +2261,29 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     source_scope: lessonScopeFromSource(source.scope_default),
     origin: "local",
   }));
-  const lessonPipelineSources = [...localFileSources, ...remoteLessonSources];
+  const autoReleasedSpans = languageConfig.knowledge.curationIncludeAutoReleased
+    ? autoReleasedLessonSpansFromTriage(await readLatestPrivacyTriageItems(root))
+    : [];
+  const autoReleaseLessonSources: DailyLessonSourceInput[] = autoReleasedSpans.length > 0 ? [{
+    source_name: `${languageConfig.knowledge.profile}-auto-released-triage`,
+    source_path: ".praxisbase/generated/auto-released-triage-spans.jsonl",
+    source_agent: languageConfig.knowledge.profile === "openclaw" ? "openclaw" : "generic",
+    source_scope: input.authorityMode === "team-git" ? "team" : "personal",
+    origin: input.authorityMode === "team-git" ? "team_git" : "local",
+    extra_spans: autoReleasedSpans,
+  }] : [];
+  const lessonPipelineSources = [...localFileSources, ...remoteLessonSources, ...autoReleaseLessonSources];
   if (lessonPipelineSources.length > 0) {
     const lessonReports: LessonPipelineReport[] = [];
     const lessonSourceReports: LessonSourceReport[] = [];
-    const lessonAiClient =
+    const defaultLessonAiClient =
       !input.aiClient &&
       aiMode === "production" &&
       aiClient &&
       !Number.isFinite(maxAiChunks)
         ? aiClient
         : undefined;
-    if (!lessonAiClient && !input.aiClient && aiMode === "production" && aiClient && Number.isFinite(maxAiChunks)) {
+    if (!defaultLessonAiClient && !input.aiClient && aiMode === "production" && aiClient && Number.isFinite(maxAiChunks) && autoReleasedSpans.length === 0) {
       const warning = "lesson_ai_skipped_by_finite_budget";
       warnings.push(warning);
       aiDistill.warnings.push(warning);
@@ -2222,6 +2293,9 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
       if (!sourcePath) continue;
       const sourceWarnings: string[] = [];
       try {
+        const sourceLessonAiClient = lessonSource.extra_spans && lessonSource.extra_spans.length > 0 && aiMode === "production"
+          ? aiClient
+          : defaultLessonAiClient;
         const sourceReport = await runLessonPipeline(root, {
           sourcePath,
           agent: lessonSource.source_agent,
@@ -2230,9 +2304,11 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
           authorityMode: input.authorityMode,
           now,
           maxSpans: 50,
-          aiClient: lessonAiClient,
+          extraSpans: lessonSource.extra_spans,
+          aiClient: sourceLessonAiClient,
           language: languageConfig.contentLanguage,
-          ...(lessonAiClient ? { aiCacheIdentity: `daily:${distillModelName}` } : {}),
+          profileInstruction,
+          ...(sourceLessonAiClient ? { aiCacheIdentity: `daily:${distillModelName}` } : {}),
         });
         sourceWarnings.push(...sourceReport.warnings);
         warnings.push(...sourceReport.warnings);
@@ -2392,6 +2468,7 @@ export async function runDailyExperience(root: string, input: RunDailyExperience
     fetchImpl: input.fetchImpl,
     aiTimeoutMs: input.aiTimeoutMs,
     language: languageConfig.contentLanguage,
+    profileInstruction,
     onProgress: mode === "write"
       ? async (progress) => {
         await publishProgress({

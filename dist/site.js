@@ -143,6 +143,32 @@
       });
     });
   });
+  document.querySelectorAll("[data-review-actions]").forEach((container) => {
+    const proposalId = container.getAttribute("data-proposal-id");
+    const status = container.querySelector("[data-review-status]");
+    container.querySelectorAll("[data-review-decision]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const decision = button.getAttribute("data-review-decision");
+        if (!proposalId || !decision) return;
+        const buttons = Array.from(container.querySelectorAll("button"));
+        buttons.forEach((item) => { item.disabled = true; });
+        if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
+        try {
+          const response = await fetch("http://127.0.0.1:4174/review", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ proposal_id: proposalId, decision }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+          if (status) { status.textContent = decision === "approve" ? "已批准，运行 promote 后会进入稳定知识库" : "已记录审核决定"; status.setAttribute("data-state", "ok"); }
+        } catch (error) {
+          buttons.forEach((item) => { item.disabled = false; });
+          if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+        }
+      });
+    });
+  });
   window.addEventListener("keydown", (event) => {
     if ((event.key === "/" && document.activeElement !== input) || ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k")) {
       event.preventDefault();

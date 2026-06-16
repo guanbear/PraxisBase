@@ -53,7 +53,7 @@ function normalizeRequiredLink(link: string | StructuredLink): StructuredLink {
   return { slug, label: slug, path: link, reason: "required_link" };
 }
 
-export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], context?: SynthesisContext, options: { language?: ProjectLanguage } = {}): { system: string; user: string } {
+export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: WikiEvidenceItem[], context?: SynthesisContext, options: { language?: ProjectLanguage; profileInstruction?: string } = {}): { system: string; user: string } {
   const language = options.language ?? "en";
   const systemLines = [
     "You are the PraxisBase wiki curator.",
@@ -64,8 +64,9 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
     "The ## Agent Use section must tell agents when to retrieve the page, how to apply it, how to verify it, and when not to use it.",
     "Avoid report-style narration, long machine signature lists, and source metadata as the primary guidance.",
     "When relationship links are supplied, include a ## Related Wiki Pages section using exact [[slug|label]] wiki links.",
+    options.profileInstruction ? `Knowledge-base profile: ${options.profileInstruction}` : undefined,
     languageInstruction(language),
-  ];
+  ].filter(Boolean) as string[];
 
   const userObj: Record<string, unknown> = {
     expected_schema: {
@@ -78,6 +79,7 @@ export function buildWikiCuratorPrompt(cluster: WikiEvidenceCluster, evidence: W
       risk_notes: ["string"],
     },
     output_language: language,
+    profile_instruction: options.profileInstruction,
     cluster,
     evidence: evidence.map((item) => ({
       id: item.id,

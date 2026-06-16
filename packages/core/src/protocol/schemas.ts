@@ -939,6 +939,8 @@ export const DailyExperienceReportSchema = z.object({
       proposal_titles: z.array(z.string().min(1)).default([]),
       stable_kb_paths: z.array(z.string().min(1)).default([]),
       status: z.enum(["raw_only", "privacy_blocked", "low_signal_rejected", "lesson_only", "wiki_evidence", "proposal", "stable_kb"]),
+      reason_code: z.string().min(1).optional(),
+      reason: z.string().min(1).optional(),
     })),
   }).optional(),
   lessons: z.object({

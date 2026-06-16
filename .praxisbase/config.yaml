@@ -4,3 +4,9 @@ default_scope: team
 language: zh-CN
 ui_language: zh-CN
 content_language: zh-CN
+knowledge_profile: openclaw
+curation_include_auto_released: true
+knowledge_filter_rules:
+  - keep_repair_actions
+  - keep_verification_or_escalation
+  - reject_greeting_only

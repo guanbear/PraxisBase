@@ -1,16 +1,18 @@
 import { mkdir, readdir, readFile, unlink } from "node:fs/promises";
+import { createServer } from "node:http";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import {
   ProposalSchema, PROTOCOL_VERSION, wikiCandidateToKnowledgeProposal,
-  CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal,
+  CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal, ReviewSchema, buildWikiSite,
   writeReviewPolicy, readReviewPolicy, decideAutoReview, recordWikiSourceSummaryContributions,
 } from "@praxisbase/core";
-import type { Proposal, ReviewPolicy, CuratedWikiProposal, AutoReviewDecision, ExceptionRecord, RunRecord } from "@praxisbase/core";
+import type { Proposal, ReviewPolicy, CuratedWikiProposal, AutoReviewDecision, ExceptionRecord, RunRecord, ReviewDecision } from "@praxisbase/core";
 import { reviewProposal } from "@praxisbase/core/review/reviewer.js";
 import { writeJson } from "@praxisbase/core/store/file-store.js";
 import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
+import { promoteAuto } from "./promote.js";
 
 export async function reviewAuto(root: string): Promise<void> {
   const startedAt = new Date().toISOString();
@@ -81,6 +83,92 @@ function parseReviewableProposal(value: unknown): Proposal {
   if (wikiCandidate) return wikiCandidate;
 
   return ProposalSchema.parse(value);
+}
+
+export async function writeManualReview(root: string, input: {
+  proposalId: string;
+  decision: Extract<ReviewDecision, "approve" | "reject" | "needs_human">;
+  note?: string;
+}): Promise<{ review_path: string; decision: string }> {
+  const now = new Date().toISOString();
+  const review = ReviewSchema.parse({
+    id: `review_manual_${randomUUID().slice(0, 8)}`,
+    protocol_version: PROTOCOL_VERSION,
+    proposal_id: input.proposalId,
+    reviewer_id: "praxisbase-local-review-ui",
+    reviewer_model: "human-local-ui",
+    prompt_version: "manual-review-v1",
+    decision: input.decision,
+    risk: input.decision === "approve" ? "low" : "medium",
+    confidence: input.decision === "approve" ? 0.9 : 0.75,
+    reasons: [input.note?.trim() || `manual_${input.decision}`],
+    required_checks: [],
+    created_at: now,
+  });
+  await mkdir(join(root, protocolPaths.inboxReviews), { recursive: true });
+  const reviewPath = `${protocolPaths.inboxReviews}/${review.id}.json`;
+  await writeJson(root, reviewPath, review);
+  return { review_path: reviewPath, decision: review.decision };
+}
+
+function readJsonBody(req: import("node:http").IncomingMessage): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    req.on("end", () => {
+      try {
+        const raw = Buffer.concat(chunks).toString("utf8").trim();
+        resolve(raw ? JSON.parse(raw) as Record<string, unknown> : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+export async function reviewServe(root: string, options: { port: number; host?: string }): Promise<void> {
+  const port = options.port;
+  const host = options.host ?? "127.0.0.1";
+  const server = createServer(async (req, res) => {
+    const send = (status: number, body: unknown) => {
+      res.writeHead(status, {
+        "content-type": "application/json; charset=utf-8",
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET,POST,OPTIONS",
+        "access-control-allow-headers": "content-type",
+      });
+      res.end(JSON.stringify(body));
+    };
+    try {
+      if (req.method === "OPTIONS") return send(204, {});
+      if (req.method === "GET" && req.url === "/health") return send(200, { ok: true });
+      if (req.method === "POST" && req.url === "/review") {
+        const body = await readJsonBody(req);
+        const proposalId = typeof body.proposal_id === "string" ? body.proposal_id : undefined;
+        const decision = body.decision === "approve" || body.decision === "reject" || body.decision === "needs_human" ? body.decision : undefined;
+        if (!proposalId || !decision) return send(400, { ok: false, error: "proposal_id and decision are required" });
+        const review = await writeManualReview(root, {
+          proposalId,
+          decision,
+          note: typeof body.note === "string" ? body.note : undefined,
+        });
+        const outputs = [review.review_path];
+        if (body.promote === true && decision === "approve") {
+          await promoteAuto(root);
+          const site = await buildWikiSite(root);
+          outputs.push(...site.outputs);
+        }
+        return send(200, { ok: true, ...review, outputs });
+      }
+      return send(404, { ok: false, error: "not_found" });
+    } catch (error) {
+      return send(500, { ok: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  await new Promise<void>((resolve) => server.listen(port, host, resolve));
+  console.log(`PraxisBase review server listening on http://${host}:${port}`);
 }
 
 export async function reviewPolicyInit(root: string, mode: "personal" | "team"): Promise<ReviewPolicy> {

@@ -760,6 +760,12 @@ function privacyDecisionLabel(decision: string | undefined, language: ProjectLan
   return labels[decision] ?? decision;
 }
 
+function coverageReasonLabel(item: { reason_code?: string; reason?: string }, language: ProjectLanguage): string {
+  if (item.reason && zh(language)) return item.reason;
+  if (item.reason && !zh(language)) return item.reason;
+  return item.reason_code ?? "-";
+}
+
 function recommendedCandidateCommand(item: ReviewQueueCandidate): string {
   const status = item.status;
   if (status === "promoted") return "praxisbase gbrain export --mode personal --write --json";
@@ -774,9 +780,16 @@ function renderCandidateCard(item: ReviewQueueCandidate, language: ProjectLangua
   const validationStatus = item.validation_status
     ? ` <span class="status-pill">${escapeHtml(item.validation_status)}</span>`
     : "";
+  const approvalControls = item.status === "pending" ? `<div class="approval-actions" data-review-actions data-proposal-id="${escapeHtml(item.id)}">
+      <button type="button" data-review-decision="approve">${useZh ? "批准" : "Approve"}</button>
+      <button type="button" data-review-decision="reject">${useZh ? "拒绝" : "Reject"}</button>
+      <button type="button" data-review-decision="needs_human">${useZh ? "人工跟进" : "Needs human"}</button>
+      <span class="approval-status" data-review-status>${useZh ? "需启动 praxisbase review serve" : "Start praxisbase review serve"}</span>
+    </div>` : "";
   return `<li id="${escapeHtml(item.anchor)}" class="review-card">
     <p><strong>${escapeHtml(item.title)}</strong> <span class="status-pill">${escapeHtml(candidateStatusLabel(item.status, language))}</span>${validationStatus}</p>
     <p>${escapeHtml(item.summary)}</p>
+    ${approvalControls}
     <dl>
       <dt>${useZh ? "目标" : "Target"}</dt><dd><code>${escapeHtml(item.patch_path)}</code></dd>
       <dt>${useZh ? "类型" : "Kind"}</dt><dd>${escapeHtml(item.kind)}</dd>
@@ -790,9 +803,14 @@ function renderCandidateCard(item: ReviewQueueCandidate, language: ProjectLangua
       ${item.guard_messages && item.guard_messages.length > 0 ? `<dt>${useZh ? "守卫失败" : "Guard failures"}</dt><dd>${escapeHtml(item.guard_messages.join("; "))}</dd>` : ""}
       ${item.validation_status ? `<dt>${useZh ? "验证" : "Validation"}</dt><dd>${escapeHtml(item.validation_status)}</dd>` : ""}
       <dt>${useZh ? "建议命令" : "Recommended"}</dt><dd><code>${escapeHtml(recommendedCandidateCommand(item))}</code></dd>
-      ${renderRelationshipDetails(item)}
-      ${item.review_hint && item.review_hint.risk_notes.length > 0 ? (() => { const sr = extractSemanticReviewFromRiskNotes(item.review_hint.risk_notes); return sr ? renderSemanticReviewHtml(sr) : ""; })() : ""}
     </dl>
+    <details class="advanced-panel">
+      <summary>${useZh ? "高级审核信息" : "Advanced review details"}</summary>
+      <dl>
+        ${renderRelationshipDetails(item)}
+        ${item.review_hint && item.review_hint.risk_notes.length > 0 ? (() => { const sr = extractSemanticReviewFromRiskNotes(item.review_hint.risk_notes); return sr ? renderSemanticReviewHtml(sr) : ""; })() : ""}
+      </dl>
+    </details>
     <details>
       <summary>${useZh ? "预览生成的 Markdown" : "Preview generated markdown"}</summary>
       <pre><code>${escapeHtml(item.patch_content)}</code></pre>
@@ -935,6 +953,7 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
     <td>${escapeHtml(String(item.wiki_evidence_count))}</td>
     <td>${escapeHtml(String(item.proposal_count))}</td>
     <td>${escapeHtml(coverageStatusLabel(item.status, language))}</td>
+    <td>${escapeHtml(coverageReasonLabel(item, language))}</td>
     <td>${item.proposal_titles.length > 0 ? escapeHtml(item.proposal_titles.join("; ")) : "-"}</td>
   </tr>`).join("\n");
   return `<section class="review-section" id="experience-coverage">
@@ -947,12 +966,15 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
       <article><span>${useZh ? "提案" : "Proposal"}</span><strong>${escapeHtml(String(coverage.with_proposals))}</strong></article>
       <article><span>${useZh ? "稳定知识" : "Stable KB"}</span><strong>${escapeHtml(String(coverage.stable_kb))}</strong></article>
     </div>
+    <details class="advanced-panel">
+      <summary>${useZh ? "展开来源明细" : "Show source details"}</summary>
     <div class="table-scroll">
       <table class="coverage-table">
-        <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "lessons" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan=\"7\">${useZh ? "没有覆盖记录。" : "No coverage records."}</td></tr>`}</tbody>
+        <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "lessons" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "原因" : "reason"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan=\"8\">${useZh ? "没有覆盖记录。" : "No coverage records."}</td></tr>`}</tbody>
       </table>
     </div>
+    </details>
   </section>`;
 }
 
@@ -1000,13 +1022,17 @@ function renderReviewPage(
     <a class="metric-link" href="#rejected"><span>${useZh ? "已拒绝" : "Rejected"}</span><strong>${escapeHtml(String(counts.rejected))}</strong></a>
     <a class="metric-link" href="#promoted-candidates"><span>${useZh ? "已沉淀" : "Promoted"}</span><strong>${escapeHtml(String(counts.promoted))}</strong></a>
   </section>
-  ${dailyReport?.personal_ga ? renderPersonalGaSection(dailyReport.personal_ga) : ""}
-  ${curationReport ? renderWikiCompilerSection(curationReport, language) : ""}
+  <details class="advanced-panel review-advanced">
+    <summary>${useZh ? "展开高级流水线状态" : "Show advanced pipeline status"}</summary>
+    ${dailyReport?.personal_ga ? renderPersonalGaSection(dailyReport.personal_ga) : ""}
+    ${curationReport ? renderWikiCompilerSection(curationReport, language) : ""}
+  </details>
   ${renderExperienceCoverage(dailyReport, language)}
   <section class="review-section" data-status="pending">
-    <h2>${useZh ? "在终端确认" : "Confirm from Terminal"}</h2>
-    <p>${useZh ? "这个静态页面不能直接执行本地命令。检查候选项后，在终端运行下面的命令。" : "This static site cannot execute local commands. Run these after inspecting candidates you want to accept."}</p>
+    <h2>${useZh ? "页面审批" : "Page approval"}</h2>
+    <p>${useZh ? "启动本地审批服务后，可直接在候选卡片上批准、拒绝或标记人工跟进。静态打开页面时仍可使用终端命令。" : "Start the local approval server to approve, reject, or mark candidates for human follow-up from this page. The terminal commands still work for static viewing."}</p>
     <div class="command-strip">
+      <code>praxisbase review serve --port 4174</code>
       <code>praxisbase review --auto</code>
       <code>praxisbase promote --auto</code>
       <code>praxisbase wiki build-site --json</code>
@@ -1068,9 +1094,12 @@ function renderDashboard(
     ${cards.map(renderMetricCard).join("\n")}
   </section>
   ${dailyReport ? renderDailyUpdateSection(dailyReport, language) : ""}
-  ${renderRuntimeContextSection(agentBundleReport, personalFacetCounts)}
-  ${curationReport ? renderWikiCompilerSection(curationReport, language) : ""}
-  ${renderPendingCandidates(pendingCandidates, language)}
+  <details class="advanced-panel dashboard-advanced">
+    <summary>${useZh ? "展开运行与候选详情" : "Show runtime and candidate details"}</summary>
+    ${renderRuntimeContextSection(agentBundleReport, personalFacetCounts)}
+    ${curationReport ? renderWikiCompilerSection(curationReport, language) : ""}
+    ${renderPendingCandidates(pendingCandidates, language)}
+  </details>
   <section class="dashboard-grid">
     <div id="knowledge-pages">
       <h2 data-i18n="dashboard.knowledgePages">${escapeHtml(useZh ? "知识页" : "Knowledge Pages")}</h2>
@@ -1402,6 +1431,8 @@ interface DailyReportSummary {
 	      proposal_titles: string[];
 	      stable_kb_paths: string[];
 	      status: string;
+        reason_code?: string;
+        reason?: string;
 	    }>;
 	  };
 	  lessons?: {
@@ -1777,6 +1808,8 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
 	          proposal_titles: Array.isArray(item.proposal_titles) ? item.proposal_titles.filter((title): title is string => typeof title === "string") : [],
 	          stable_kb_paths: Array.isArray(item.stable_kb_paths) ? item.stable_kb_paths.filter((path): path is string => typeof path === "string") : [],
 	          status: typeof item.status === "string" ? item.status : "raw_only",
+              reason_code: typeof item.reason_code === "string" ? item.reason_code : undefined,
+              reason: typeof item.reason === "string" ? item.reason : undefined,
 	        })),
 	      };
 	    })() : undefined,

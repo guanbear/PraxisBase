@@ -92,11 +92,11 @@
     {
       "id": "wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
       "slug": "pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
-      "title": "长耗时代理工作前的 ACK 时机",
+      "title": "长耗时 Agent 工作前先发送 ACK",
       "path": "kb/known-fixes/ack-timing-before-long-running-agent-work.md",
       "kind": "pending:pitfall",
       "href": "review.html#pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256",
-      "text": "长耗时代理工作前的 ACK 时机\n当代理即将执行工具调用、网络请求、任务分发或其他长耗时工作时，应先发送简短确认消息，再开始慢操作，以避免用户误以为系统无响应。\nkb/known-fixes/ack-timing-before-long-running-agent-work.md\nsource-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json"
+      "text": "长耗时 Agent 工作前先发送 ACK\n当 Agent 即将执行工具调用、网络请求、任务派发或其他长耗时操作时，必须先向用户发送简短确认，再开始慢操作。这样可避免用户误判为无响应，并降低静默等待、重复触发或超时风险。\nkb/known-fixes/ack-timing-before-long-running-agent-work.md\nopenclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319"
     }
   ]
 }

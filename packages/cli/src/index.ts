@@ -4,7 +4,7 @@ import { initializeWorkspace } from "./commands/init.js";
 import { repairContextCommand } from "./commands/repair-context.js";
 import { submitEpisode, syncOutbox } from "./commands/episode.js";
 import { submitProposal } from "./commands/propose.js";
-import { reviewAuto, reviewPolicyInit, reviewAutoWithPolicy } from "./commands/review.js";
+import { reviewAuto, reviewPolicyInit, reviewAutoWithPolicy, reviewServe } from "./commands/review.js";
 import { promoteAuto } from "./commands/promote.js";
 import { buildCommand } from "./commands/build.js";
 import { checkCommand } from "./commands/check.js";
@@ -136,6 +136,18 @@ program.command("review").option("--auto").action(async () => {
       } else {
         console.log(`Review auto complete: ${result.reviewed} reviewed, ${result.auto_promoted} promoted.`);
       }
+    });
+
+  reviewCmd
+    .command("serve")
+    .option("--port <port>", "local approval API port", "4174")
+    .option("--host <host>", "local approval API host", "127.0.0.1")
+    .action(async (options: { port: string; host?: string }) => {
+      const port = Number.parseInt(options.port, 10);
+      if (!Number.isFinite(port) || port <= 0) {
+        reviewCmd.error("--port must be a positive integer", { exitCode: 1 });
+      }
+      await reviewServe(process.cwd(), { port, host: options.host });
     });
 }
 

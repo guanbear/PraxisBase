@@ -6,7 +6,7 @@ import { protocolPaths } from "../protocol/paths.js";
 import { readAiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient } from "../ai/client.js";
 import type { AiJsonClient } from "../ai/client.js";
-import type { ProjectLanguage } from "../config/project.js";
+import { knowledgeProfileInstruction, readProjectLanguageConfig, type ProjectLanguage } from "../config/project.js";
 import { writeJson } from "../store/file-store.js";
 import { collectWikiSources } from "./collect.js";
 import { analyzeWikiSource } from "./analyze.js";
@@ -217,6 +217,7 @@ export interface CurateWikiOptions {
   fetchImpl?: typeof fetch;
   aiTimeoutMs?: number;
   language?: ProjectLanguage;
+  profileInstruction?: string;
   onProgress?: (progress: WikiCurationProgress) => void | Promise<void>;
 }
 
@@ -1250,14 +1251,14 @@ function proposalFromAiJson(cluster: WikiEvidenceCluster, evidence: WikiEvidence
 
 export async function synthesizeCuratedWikiProposal(
   cluster: WikiEvidenceCluster,
-  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient; synthesisContext?: SynthesisContext; planAction?: WikiPagePlanAction; language?: ProjectLanguage },
+  options: { evidence: WikiEvidenceItem[]; now?: string; client?: AiJsonClient; synthesisContext?: SynthesisContext; planAction?: WikiPagePlanAction; language?: ProjectLanguage; profileInstruction?: string },
 ): Promise<CuratedProposalResult> {
   const now = options.now ?? new Date().toISOString();
   const planAction = options.planAction ?? options.synthesisContext?.pagePlanAction;
   try {
     let proposal: CuratedWikiProposal;
     if (options.client) {
-      const prompt = buildWikiCuratorPrompt(cluster, options.evidence, options.synthesisContext, { language: options.language });
+      const prompt = buildWikiCuratorPrompt(cluster, options.evidence, options.synthesisContext, { language: options.language, profileInstruction: options.profileInstruction });
       const response = await options.client.generateJson({
         system: prompt.system,
         user: prompt.user,
@@ -1392,6 +1393,8 @@ async function removeStaleGeneratedWikiProposalFiles(root: string, proposals: Cu
 
 export async function curateWiki(root: string, options: CurateWikiOptions): Promise<WikiCurationReport> {
   const now = options.now ?? new Date().toISOString();
+  const projectConfig = await readProjectLanguageConfig(root, options.env);
+  const profileInstruction = options.profileInstruction ?? knowledgeProfileInstruction(projectConfig.knowledge);
   const aiConfig = await readAiProviderConfig(root);
   const degraded = Boolean(options.degraded);
   if (!degraded && !aiConfig && !options.aiClient) {
@@ -1567,6 +1570,7 @@ export async function curateWiki(root: string, options: CurateWikiOptions): Prom
       synthesisContext,
       planAction: plan.action,
       language: options.language,
+      profileInstruction,
     });
     if (result.ok) {
       const proposal = CuratedWikiProposalSchema.parse({

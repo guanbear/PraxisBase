@@ -15,6 +15,7 @@ export interface ExtractLessonsWithAiOptions {
   scope?: "personal" | "project" | "team" | "global" | "org";
   agent?: string;
   language?: ProjectLanguage;
+  profileInstruction?: string;
   onWarning?: (warning: string) => void;
   cache?: {
     root: string;
@@ -98,7 +99,7 @@ export async function extractLessonsWithAi(
   }
 
   const language = options.language ?? "en";
-  const first = await callExtractor(options.client, spans, buildSystemPrompt(language), buildUserPrompt(spans, language));
+  const first = await callExtractor(options.client, spans, buildSystemPrompt(language, options.profileInstruction), buildUserPrompt(spans, language, options.profileInstruction));
   if (!first.ok) {
     options.onWarning?.(`lesson_ai_error:${first.error}`);
     return [];
@@ -123,7 +124,7 @@ export async function extractLessonsWithAi(
   const retry = await callExtractor(
     options.client,
     spans,
-    buildRepairPrompt(spans, language),
+    buildRepairPrompt(spans, language, options.profileInstruction),
     JSON.stringify(first.json),
   );
   if (!retry.ok) {
@@ -167,6 +168,7 @@ function lessonExtractCachePath(spans: EvidenceSpan[], options: ExtractLessonsWi
     parserIdentity: options.cache?.parserIdentity ?? "unspecified-parser",
     reducerIdentity: options.cache?.reducerIdentity ?? "none",
     language: options.language ?? "en",
+    profileInstruction: options.profileInstruction ?? "default",
     agent: options.agent ?? "generic",
     scope: options.scope ?? "personal",
     spans: spanIdentity,
@@ -253,18 +255,19 @@ async function callExtractor(
   });
 }
 
-function buildSystemPrompt(language: ProjectLanguage): string {
+function buildSystemPrompt(language: ProjectLanguage, profileInstruction?: string): string {
   return [
     "You are an agent experience distiller.",
     "Extract reusable lessons, not summaries.",
     "Return JSON as {\"lessons\":[...]} only.",
     "Each lesson must include evidence_span_ids referencing the provided spans.",
     "Prefer fewer high-value lessons over padding weak or generic evidence.",
+    profileInstruction ? `Knowledge-base profile: ${profileInstruction}` : undefined,
     languageInstruction(language),
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
-function buildUserPrompt(spans: EvidenceSpan[], language: ProjectLanguage): string {
+function buildUserPrompt(spans: EvidenceSpan[], language: ProjectLanguage, profileInstruction?: string): string {
   const compact = spans.map((span) => ({
     span_id: span.span_id,
     excerpt: span.excerpt,
@@ -272,10 +275,10 @@ function buildUserPrompt(spans: EvidenceSpan[], language: ProjectLanguage): stri
     span_kind: span.span_kind,
     source_ref: span.source_ref,
   }));
-  return JSON.stringify({ output_language: language, spans: compact });
+  return JSON.stringify({ output_language: language, profile_instruction: profileInstruction, spans: compact });
 }
 
-function buildRepairPrompt(spans: EvidenceSpan[], language: ProjectLanguage): string {
+function buildRepairPrompt(spans: EvidenceSpan[], language: ProjectLanguage, profileInstruction?: string): string {
   const spanIds = spans.map((span) => span.span_id);
   return [
     "Your previous output failed validation.",
@@ -283,8 +286,9 @@ function buildRepairPrompt(spans: EvidenceSpan[], language: ProjectLanguage): st
     `evidence_span_ids must reference: ${JSON.stringify(spanIds)}.`,
     "portability must be one of: universal, agent_family, project, environment, private_instance.",
     "privacy_tier must be one of: safe, personal_only, team_allowed, human_required, reject.",
+    profileInstruction ? `Keep following the knowledge-base profile: ${profileInstruction}` : undefined,
     languageInstruction(language),
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 function parseLessonDrafts(

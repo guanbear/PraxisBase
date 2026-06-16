@@ -90,6 +90,16 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .review-card pre { max-height: 320px; overflow: auto; border-radius: 6px; background: #18231d; color: #f2f7f2; padding: .85rem; white-space: pre-wrap; }
 .review-card details { margin-top: .7rem; }
 .review-card summary { cursor: pointer; color: var(--accent); font-weight: 650; }
+.advanced-panel { margin: 1rem 0; }
+.advanced-panel > summary { cursor: pointer; color: var(--accent); font-weight: 700; padding: .55rem 0; }
+.dashboard-advanced, .review-advanced { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: .35rem 0; }
+.approval-actions { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; margin: .7rem 0; }
+.approval-actions button { border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); padding: .42rem .65rem; cursor: pointer; font: inherit; }
+.approval-actions button:first-child { background: var(--accent); border-color: var(--accent); color: white; }
+.approval-actions button:disabled { opacity: .55; cursor: wait; }
+.approval-status { color: var(--muted); font-size: .85rem; }
+.approval-status[data-state="ok"] { color: var(--accent); }
+.approval-status[data-state="error"] { color: #9a2f2f; }
 .page-shell { display: grid; grid-template-columns: 230px minmax(0, 760px) 260px; gap: 1.25rem; max-width: 1280px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
 .side-nav, .meta-rail { position: sticky; top: 68px; align-self: start; max-height: calc(100vh - 88px); overflow: auto; }
 .side-nav a { display: block; padding: .55rem .65rem; border-radius: 6px; color: var(--ink); }
@@ -252,6 +262,32 @@ export const SITE_JS = `(() => {
       const kind = button.getAttribute("data-kind-filter");
       document.querySelectorAll("[data-page-kind]").forEach((item) => {
         item.hidden = kind !== "all" && item.getAttribute("data-page-kind") !== kind;
+      });
+    });
+  });
+  document.querySelectorAll("[data-review-actions]").forEach((container) => {
+    const proposalId = container.getAttribute("data-proposal-id");
+    const status = container.querySelector("[data-review-status]");
+    container.querySelectorAll("[data-review-decision]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const decision = button.getAttribute("data-review-decision");
+        if (!proposalId || !decision) return;
+        const buttons = Array.from(container.querySelectorAll("button"));
+        buttons.forEach((item) => { item.disabled = true; });
+        if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
+        try {
+          const response = await fetch("http://127.0.0.1:4174/review", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ proposal_id: proposalId, decision }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+          if (status) { status.textContent = decision === "approve" ? "已批准，运行 promote 后会进入稳定知识库" : "已记录审核决定"; status.setAttribute("data-state", "ok"); }
+        } catch (error) {
+          buttons.forEach((item) => { item.disabled = false; });
+          if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+        }
       });
     });
   });

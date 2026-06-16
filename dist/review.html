@@ -48,65 +48,72 @@
     <a class="metric-link" href="#human-required"><span>本次隐私</span><strong>14</strong></a>
     <a class="metric-link" href="#human-required"><span>隐私积压</span><strong>38</strong></a>
 
-    <a class="metric-link" href="#rejected"><span>已拒绝</span><strong>2</strong></a>
+    <a class="metric-link" href="#rejected"><span>已拒绝</span><strong>4</strong></a>
     <a class="metric-link" href="#promoted-candidates"><span>已沉淀</span><strong>1</strong></a>
   </section>
+  <details class="advanced-panel review-advanced">
+    <summary>展开高级流水线状态</summary>
 
-  <section class="wiki-compiler-status">
+    <section class="wiki-compiler-status">
   <h2>Wiki 编译器</h2>
   <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>观察项</span><strong>7</strong></article>
-    <article><span>主题</span><strong>6</strong></article>
-    <article><span>计划 新建</span><strong>4</strong></article>
+    <article><span>观察项</span><strong>9</strong></article>
+    <article><span>主题</span><strong>8</strong></article>
+    <article><span>计划 新建</span><strong>5</strong></article>
 <article><span>计划 更新</span><strong>1</strong></article>
-<article><span>计划 合并</span><strong>1</strong></article>
+<article><span>计划 合并</span><strong>2</strong></article>
 <article><span>计划 替代</span><strong>0</strong></article>
 <article><span>计划 归档</span><strong>0</strong></article>
-    <article><span>重复 source-hash 分组</span><strong>1</strong></article>
-    <article><span>硬阻断</span><strong>2</strong></article>
+    <article><span>重复 source-hash 分组</span><strong>2</strong></article>
+    <article><span>硬阻断</span><strong>4</strong></article>
     <article><span>需质量审核</span><strong>1</strong></article>
     <article><span>已写入提案</span><strong>1</strong></article>
-    <article><span>提案上限</span><strong>30</strong></article>
+    <article><span>提案上限</span><strong>80</strong></article>
     <article><span>上限原因</span><strong>max_curation_proposals</strong></article>
 
     <article><span>必需链接</span><strong>0</strong></article>
 <article><span>建议链接</span><strong>4</strong></article>
-<article><span>合并计划</span><strong>1</strong></article>
+<article><span>合并计划</span><strong>2</strong></article>
 <article><span>歧义合并</span><strong>1</strong></article>
-<article><span>孤立主题</span><strong>4</strong></article>
-<article><span>孤儿风险</span><strong>4</strong></article>
+<article><span>孤立主题</span><strong>6</strong></article>
+<article><span>孤儿风险</span><strong>6</strong></article>
   </div>
 </section>
+  </details>
   <section class="review-section" id="experience-coverage">
     <h2>经验覆盖</h2>
     <div class="metrics">
       <article><span>原始项</span><strong>34</strong></article>
       <article><span>隐私结果</span><strong>34</strong></article>
-      <article><span>已成 lesson</span><strong>2</strong></article>
-      <article><span>Wiki 证据</span><strong>7</strong></article>
+      <article><span>已成 lesson</span><strong>9</strong></article>
+      <article><span>Wiki 证据</span><strong>8</strong></article>
       <article><span>提案</span><strong>1</strong></article>
       <article><span>稳定知识</span><strong>1</strong></article>
     </div>
+    <details class="advanced-panel">
+      <summary>展开来源明细</summary>
     <div class="table-scroll">
       <table class="coverage-table">
-        <thead><tr><th>来源</th><th>隐私</th><th>lessons</th><th>证据</th><th>提案</th><th>状态</th><th>标题</th></tr></thead>
+        <thead><tr><th>来源</th><th>隐私</th><th>lessons</th><th>证据</th><th>提案</th><th>状态</th><th>原因</th><th>标题</th></tr></thead>
         <tbody><tr>
     <td><code>experience_openclaw-answer-bot-sha256-14edce26a</code></td>
     <td>自动释放</td>
-    <td>1</td>
-    <td>2</td>
+    <td>3</td>
     <td>0</td>
-    <td>已有 Wiki 证据</td>
+    <td>0</td>
+    <td>已成 Lesson</td>
+    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-19c2eeefa</code></td>
     <td>自动释放</td>
+    <td>2</td>
     <td>0</td>
     <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
+    <td>已成 Lesson</td>
+    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -116,15 +123,17 @@
     <td>0</td>
     <td>0</td>
     <td>低信号已拒绝</td>
+    <td>被判定为问候、闲聊或缺少修复信号。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-273a47187</code></td>
     <td>自动释放</td>
+    <td>4</td>
+    <td>5</td>
     <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -134,6 +143,7 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -143,6 +153,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -152,6 +163,7 @@
     <td>1</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -161,15 +173,17 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-5535ee36f</code></td>
     <td>自动释放</td>
+    <td>2</td>
     <td>0</td>
     <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
+    <td>已成 Lesson</td>
+    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -179,6 +193,7 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -188,6 +203,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -197,6 +213,7 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -206,16 +223,18 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-8107f53d4</code></td>
     <td>自动释放</td>
-    <td>1</td>
     <td>4</td>
+    <td>5</td>
     <td>1</td>
     <td>已进稳定知识库</td>
-    <td>长耗时代理工作前的 ACK 时机</td>
+    <td>已进入稳定知识库。</td>
+    <td>长耗时 Agent 工作前先发送 ACK</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-85c6325c6</code></td>
@@ -224,6 +243,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -233,24 +253,27 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-92320b389</code></td>
     <td>自动释放</td>
+    <td>2</td>
     <td>0</td>
     <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
+    <td>已成 Lesson</td>
+    <td>已形成 lesson，但本轮尚未生成独立提案。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-98477e0c8</code></td>
     <td>自动释放</td>
-    <td>0</td>
+    <td>2</td>
     <td>1</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -260,6 +283,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -269,6 +293,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -278,6 +303,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -287,6 +313,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -296,6 +323,7 @@
     <td>0</td>
     <td>0</td>
     <td>低信号已拒绝</td>
+    <td>被判定为问候、闲聊或缺少修复信号。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -305,6 +333,7 @@
     <td>1</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -314,6 +343,7 @@
     <td>0</td>
     <td>0</td>
     <td>低信号已拒绝</td>
+    <td>被判定为问候、闲聊或缺少修复信号。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -323,15 +353,17 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-dd5113c71</code></td>
     <td>自动释放</td>
-    <td>0</td>
     <td>1</td>
+    <td>3</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -341,6 +373,7 @@
     <td>1</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -350,6 +383,7 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -359,6 +393,7 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -368,6 +403,7 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -377,15 +413,17 @@
     <td>0</td>
     <td>0</td>
     <td>仅原始数据</td>
+    <td>已安全释放，但未被 lesson/curation 选成独立知识。</td>
     <td>-</td>
   </tr>
 <tr>
     <td><code>experience_openclaw-answer-bot-sha256-f7aee701a</code></td>
     <td>自动释放</td>
+    <td>1</td>
+    <td>1</td>
     <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>仅原始数据</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
     <td>-</td>
   </tr>
 <tr>
@@ -395,15 +433,18 @@
     <td>0</td>
     <td>0</td>
     <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr></tbody>
       </table>
     </div>
+    </details>
   </section>
   <section class="review-section" data-status="pending">
-    <h2>在终端确认</h2>
-    <p>这个静态页面不能直接执行本地命令。检查候选项后，在终端运行下面的命令。</p>
+    <h2>页面审批</h2>
+    <p>启动本地审批服务后，可直接在候选卡片上批准、拒绝或标记人工跟进。静态打开页面时仍可使用终端命令。</p>
     <div class="command-strip">
+      <code>praxisbase review serve --port 4174</code>
       <code>praxisbase review --auto</code>
       <code>praxisbase promote --auto</code>
       <code>praxisbase wiki build-site --json</code>
@@ -466,7 +507,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-0d62ba5167311843.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / rejected_low_signal</dd>
@@ -485,7 +526,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-12c9caf5999d25cf.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -504,7 +545,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-1f7524e8ea7c5493.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / rejected_low_signal</dd>
@@ -523,7 +564,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-251024cf3fc2ffaf.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -542,7 +583,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-26e20af34a56d959.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -561,7 +602,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-355aea4949afabe8.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -580,7 +621,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5ca220d0a850d0ac.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -599,7 +640,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-79822ff24256f1ed.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -618,7 +659,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-89b1816966184deb.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -637,7 +678,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b70a35157d393839.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -656,7 +697,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c578b794158d6fe2.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -675,7 +716,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c68d16c6183965d2.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -694,7 +735,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -713,7 +754,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-de836b6f83806d74.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / rejected_low_signal</dd>
@@ -732,7 +773,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
       </dl>
@@ -746,7 +787,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
       </dl>
@@ -760,7 +801,7 @@
 
 
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+        <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
         <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
 
       </dl>
@@ -1167,15 +1208,15 @@
       <h2>已拒绝</h2>
       <p>低信号、重复、隐私或质量不达标的材料，不会进入 wiki。</p>
     </div>
-    <strong>2</strong>
+    <strong>4</strong>
   </div>
   <dl class="queue-summary">
     <dt>Daily 拒绝</dt><dd>0</dd>
     <dt>低信号</dt><dd>0</dd>
-    <dt>质量拒绝</dt><dd>2</dd>
-    <dt>重复分组</dt><dd>1</dd>
+    <dt>质量拒绝</dt><dd>4</dd>
+    <dt>重复分组</dt><dd>2</dd>
     <dt>Curation 拒绝</dt><dd>0</dd>
-    <dt>硬阻断</dt><dd>2</dd>
+    <dt>硬阻断</dt><dd>4</dd>
     <dt>建议命令</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
   </dl>
 </section>
@@ -1190,29 +1231,35 @@
   <div class="command-strip"><code>praxisbase gbrain export --mode personal --write --json</code>
 <code>praxisbase agentmemory export --mode personal --write --json</code></div>
   <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256" class="review-card">
-    <p><strong>长耗时代理工作前的 ACK 时机</strong> <span class="status-pill">已沉淀</span></p>
-    <p>当代理即将执行工具调用、网络请求、任务分发或其他长耗时工作时，应先发送简短确认消息，再开始慢操作，以避免用户误以为系统无响应。</p>
+    <p><strong>长耗时 Agent 工作前先发送 ACK</strong> <span class="status-pill">已沉淀</span></p>
+    <p>当 Agent 即将执行工具调用、网络请求、任务派发或其他长耗时操作时，必须先向用户发送简短确认，再开始慢操作。这样可避免用户误判为无响应，并降低静默等待、重复触发或超时风险。</p>
+
     <dl>
       <dt>目标</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
       <dt>类型</dt><dd>pitfall</dd>
       <dt>范围</dt><dd>team</dd>
-      <dt>来源</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json</code></dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
       <dt>来源数</dt><dd>1</dd>
       <dt>置信度</dt><dd>0.93</dd>
-      <dt>创建时间</dt><dd>2026-06-16T07:58:11.886Z</dd>
+      <dt>创建时间</dt><dd>2026-06-16T09:12:49.854Z</dd>
       <dt>审核原因</dt><dd>canonical_relationship</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>ACK 只确认请求已收到并开始处理，不应暗示任务已经成功完成。; 如果运行环境或协议要求先完成工具调用再输出用户可见文本，应优先遵守该更高优先级约束。; 避免为非常短、可立即完成的请求添加不必要 ACK，以免增加噪音。; quality_human_required:team_or_global_scope</dd>
+      <dt>风险提示</dt><dd>ACK 只能表示请求已收到或处理已开始，不能描述为操作已成功完成。; 若运行环境或协议不支持中间消息，需要遵循上层通信约束，不能强行发送 ACK。; 本页不解决工具、网络或 dispatch 本身的失败；后续失败仍需独立诊断并如实报告。; quality_human_required:team_or_global_scope</dd>
 
 
       <dt>建议命令</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
-      <dt>Suggested links</dt><dd><code>agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes</code> Agents can mislead users if failures are reported as successful outcomes. <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-slack-replay-and-post-deploy-stability-failures</code> OpenClaw Slack replay and post-deploy stability failures <small>entity_overlap</small></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+        <dt>Suggested links</dt><dd><code>agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes</code> Agents can mislead users if failures are reported as successful outcomes. <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-slack-replay-and-post-deploy-stability-failures</code> OpenClaw Slack replay and post-deploy stability failures <small>entity_overlap</small></dd>
 <dt>Merge candidates</dt><dd>ACK timing before long-running agent work <code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code> <small>same_title_or_slug, entity_overlap</small></dd>
 <dt>Relationship reasons</dt><dd>entity_overlap, same_title_or_slug</dd>
 
-    </dl>
+      </dl>
+    </details>
     <details>
       <summary>预览生成的 Markdown</summary>
-      <pre><code># 长耗时代理工作前的 ACK 时机
+      <pre><code># 长耗时 Agent 工作前先发送 ACK
 
 ## When to Use
 Use this when Slow tool, network, dispatch, or long-running work can leave users without timely feedback.
@@ -1257,7 +1304,7 @@ Do not use it when:
 - The current evidence does not match the symptoms, scope, or provenance on this page.
 
 ## Provenance
-- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json (sha256:04bc580e2ee15aa1cfd0285e3ea9be53ce6e1f097939d16e88820a634f324a0d)
+- openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319 (sha256:04bc580e2ee15aa1cfd0285e3ea9be53ce6e1f097939d16e88820a634f324a0d)
 
 ## Related Wiki Pages
 - [[agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes|Agents can mislead users if failures are reported as successful outcomes.]] - entity_overlap
