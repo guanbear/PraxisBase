@@ -38,7 +38,7 @@
       "release_summary": "A scheduled notification job sent a team chat reminder about private model security practices and an upcoming model routing change. The channel identifier and source details were redacted, and the event is suitable for reuse as a generic operational notification pattern.",
       "reusable_lesson": "When summarizing automated team notifications, keep only the notification purpose and delivery outcome while redacting channel IDs, source references, and sensitive operational details.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

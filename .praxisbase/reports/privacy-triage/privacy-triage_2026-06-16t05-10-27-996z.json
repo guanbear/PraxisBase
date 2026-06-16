@@ -1,0 +1,808 @@
+{
+  "id": "privacy-triage_2026-06-16t05-10-27-996z",
+  "protocol_version": "0.1",
+  "type": "privacy_triage_report",
+  "authority_mode": "team-git",
+  "mode": "write",
+  "ai": {
+    "configured": true,
+    "provider": "openai-compatible",
+    "model": "gpt-5.5"
+  },
+  "items": [
+    {
+      "exception_id": "exception_daily-experience-0c7144ea57b21569",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-0c7144ea57b21569.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-273a47187",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/484cde15e8baa9ab50030ad9353c818170a940a08bfeb16a30292e512ef2dad3",
+      "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.86,
+      "rationale": "The redacted content appears to be general project/support guidance about model commands and behavior, with no visible personal data, secrets, credentials, or raw private values. The human review trigger appears related to team-channel policy rather than sensitive material.",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Documented standardized support guidance for answering questions about model pricing, capabilities, and model-switching behavior. The update clarifies when model selection persists versus when an agent-specific default may override a user-selected model, and it provides a consistent response for known context errors after switching models."
+    },
+    {
+      "exception_id": "exception_daily-experience-0d62ba5167311843",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-0d62ba5167311843.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-1e5ae91e7",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/1520da92e14f0a437090e90129b764bc690ea051da2dcc0f7567eaf9600d96b3",
+      "source_hash": "sha256:1e5ae91e7fef2ea877195c1a04cdea1c1439bc093163f8c10c583903cc286ae6",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.92,
+      "rationale": "Redacted summary contains only generic greetings, a request for human support, and the agent's generic response; no identifiable private material or sensitive project details are present.",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A user sent brief greetings and follow-up prompts, then requested human support. The automated assistant acknowledged the delay, clarified it was an AI assistant, and asked the user to provide issue details so the request could be handled appropriately."
+    },
+    {
+      "exception_id": "exception_daily-experience-12c9caf5999d25cf",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-12c9caf5999d25cf.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-85c6325c6",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/df7653b970e08d09eae123803c83a3ce7e16cdc3228c97eb02113a4f7d65be45",
+      "source_hash": "sha256:85c6325c60942c2d6c8e54503253ba6c2ef13e2b469126910947842a24f501a9",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.78,
+      "rationale": "The summary redacts the Feishu ID and IP, but still contains sensitive operational context about temporary SSH access, internal Feishu bot logs, session/config details, timestamps, and source references from a team-scoped channel.",
+      "suggested_redactions": [
+        "Remove or generalize temporary SSH access details, including port, username, and validity window.",
+        "Generalize exact timestamps to coarse dates or relative timing.",
+        "Redact internal session identifiers and channel instance names.",
+        "Remove or generalize specific configuration keys unless necessary for the lesson.",
+        "Omit source_ref, source_hash, and internal storage paths from releasable text.",
+        "Summarize log evidence without quoting log-like strings or internal routing details."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-1f7524e8ea7c5493",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-1f7524e8ea7c5493.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-bdd86a156",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/a4ee36420500cc72c9c7960a056347306a3302f73506f01a06721591dc7129cf",
+      "source_hash": "sha256:bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.82,
+      "rationale": "The summary contains personal naming preferences/nicknames for specific team-channel users, even though platform IDs are redacted. These aliases may be personal identifiers or private preferences from a team context.",
+      "suggested_redactions": [
+        "Redact or generalize the nicknames/call-names.",
+        "Avoid linking personal preferences to specific users or groups, even with IDs redacted.",
+        "Generalize to: 'Some users shared preferred display names in a team chat.'"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-251024cf3fc2ffaf",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-251024cf3fc2ffaf.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-b2390ce0f",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8e67df0474158324d567a04e84259a42f270e98d526843e017885e03d2717604",
+      "source_hash": "sha256:b2390ce0fa0be3b8618eb20ef2a5810b64d260fd2001ed965b95988d6573a9ca",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.95,
+      "rationale": "The summary contains a real account identifier and describes a login flow for a third-party site in a team channel, with credential-related details only partially redacted.",
+      "suggested_redactions": [
+        "Redact the phone/account identifier",
+        "Redact or generalize the target login domain if not necessary",
+        "Remove credential modality details and any password/verification references",
+        "Remove internal/test environment hostnames and access requirements",
+        "Keep only a high-level note that a browser login task was completed"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-26e20af34a56d959",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-26e20af34a56d959.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-b3b1891ee",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/e0d8bd780bd4d7d0acc94dd3de06a1b295e0fdc6c94b65046de2633bcc0a8c53",
+      "source_hash": "sha256:b3b1891ee00104774570e3e1a1b84f3da47119d971cea424d87d231f3a4489a7",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.86,
+      "rationale": "The summary contains a private collaboration-document link, identifiable user/account references, internal process/context details, and project/tooling information from a team channel. It is not safe for auto-release without further sanitization.",
+      "suggested_redactions": [
+        "Redact the private Feishu/wiki URL",
+        "Redact identifiable user names or account handles",
+        "Redact internal process names or runtime identifiers",
+        "Redact workspace paths and host/package references that may identify infrastructure",
+        "Generalize internal skill/tool names if they are not public",
+        "Remove or generalize team-channel context and authorization workflow details"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-2bc11e5412f5ca23",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-2bc11e5412f5ca23.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-dd5113c71",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5",
+      "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "The summary describes agent workflow but still includes a specific private Feishu document URL and an account identifier; no document contents are exposed, so it appears redaction rather than exclusion is sufficient.",
+      "suggested_redactions": [
+        "Redact the Feishu document URL or replace it with a generic placeholder.",
+        "Redact the account/user identifier mentioned in the permission error.",
+        "Avoid exposing internal source references or hashes if they can identify private project artifacts."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization constraints. The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed."
+    },
+    {
+      "exception_id": "exception_daily-experience-355aea4949afabe8",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-355aea4949afabe8.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-6a00c70c9",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/0e92ce33a0e6f928264ccf3f028b41f1fa6b60260443a9c650956c393c679e09",
+      "source_hash": "sha256:6a00c70c9cf57a059e3dc45e8e73ff772b5b38b3090c9dddb690f033e9af6428",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.72,
+      "rationale": "The summary contains team-channel operational/project details and references to logs and infrastructure behavior. Although the explicit path is redacted, additional internal identifiers and implementation details may need review before release.",
+      "suggested_redactions": [
+        "Keep log locations and filesystem paths redacted",
+        "Redact internal source references, hashes, chunk IDs, and database names",
+        "Remove or generalize team-channel or Feishu group context if not necessary",
+        "Generalize internal framework bug details and workarounds if they reveal nonpublic implementation behavior"
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-4116addd68e32657",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-4116addd68e32657.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-8107f53d4",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319",
+      "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "The exception contains team-channel operational guidance with identifiable individual names and mention-routing instructions, even though IDs are redacted. It appears project-related rather than purely personal safe experience.",
+      "suggested_redactions": [
+        "Replace individual names with role-based labels or team aliases",
+        "Remove or keep redacted all Feishu user identifiers and mention targets",
+        "Generalize internal routing instructions to avoid naming specific people",
+        "Consider redacting source references, hashes, and internal channel metadata if released outside the team context"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration."
+    },
+    {
+      "exception_id": "exception_daily-experience-444ad40b7503112d",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-444ad40b7503112d.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-f7aee701a",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9",
+      "source_hash": "sha256:f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "Contains team-scope operational support experience with identifiable user/staff names, internal service domain, and potentially sensitive troubleshooting details. It is not obviously raw private material, but should not be auto-released without further redaction.",
+      "suggested_redactions": [
+        "Redact or generalize personal names of staff/users",
+        "Redact internal domain or replace with generic product console reference",
+        "Keep pairing codes as placeholders only and ensure no real codes appear",
+        "Generalize exact dates if not necessary",
+        "Remove or generalize internal implementation details that could aid abuse"
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Several operational fixes were consolidated for the bot platform: updating the messaging integration from the product console and restarting the instance can resolve plugin-related failures. For new or newly authorized users seeing an access-not-configured pairing prompt, first have the user restart the instance from the console; if the issue persists, an instance administrator should complete the pairing approval flow. If an instance is stopped or the bot stops replying despite normal billing and no intentional shutdown, check for exhausted temporary storage or disk space, clean up safely, and restart. A separate cron configuration pattern involving the main session target and system-event payloads is known to fail and should be avoided or tracked for a product fix."
+    },
+    {
+      "exception_id": "exception_daily-experience-5ca220d0a850d0ac",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-5ca220d0a850d0ac.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-3be56fa6f",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/1c1298ecee8a363877826c3bcccde76a51bece133987640fd85db86595b36eca",
+      "source_hash": "sha256:3be56fa6f21b34450a0ff865f070fe94f315badb484369503e8e0ed2e2aeb983",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.86,
+      "rationale": "The summary contains team chat context, internal project/work-item automation details, a project space reference, a user identifier/name, and authorization workflow details. Even with some redactions, it is not high-confidence safe personal experience.",
+      "suggested_redactions": [
+        "Remove or generalize internal project URLs and project keys",
+        "Remove user names, user IDs, and chat/channel identifiers",
+        "Remove token/authentication attempt details and any token-adjacent text",
+        "Generalize internal bug/task workflow details to a non-identifying description",
+        "Avoid exposing team chat source, scope, and collaboration platform metadata"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-5cb54c626295b4d9",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-5cb54c626295b4d9.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-19c2eeefa",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3",
+      "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "The summary contains team-channel operational guidance plus identifiable employee names and an internal dashboard URL/escalation path. IDs are redacted, but remaining names and internal routing details are not safe for auto-release.",
+      "suggested_redactions": [
+        "Redact or generalize employee names to role-based labels such as support owner or escalation contact.",
+        "Keep Feishu IDs redacted.",
+        "Consider redacting or generalizing the internal dashboard URL/domain if not intended for public release.",
+        "Generalize internal escalation instructions and exact fixed wording if it reveals private support process details."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "For user reports that an interactive environment or bot is down or unresponsive, direct them to use the product console's automatic repair option before escalating. Do not apply this guidance to billing, quota, or payment-related sleep issues. If the user has already tried both script-based repair and AI-based repair without success, route to the appropriate support escalation contact rather than repeating the repair instructions."
+    },
+    {
+      "exception_id": "exception_daily-experience-5fe8e5312427b66d",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-5fe8e5312427b66d.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-64f06eeeb",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/96275568696686fbae153debca63c95d2252a4a627c904a1157fff1e1ce884c2",
+      "source_hash": "sha256:64f06eeeb4e405a883f8b176865d9f7fc563cc04b82f9030e1646d4e34300ab4",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.84,
+      "rationale": "The summary describes a routine agent/cron notification to a team chat, with the Feishu chat identifier already redacted and no visible raw personal data, secrets, or private content values.",
+      "suggested_redactions": [
+        "Keep Feishu chat/channel identifiers redacted",
+        "Redact any underlying source references, database paths, or hashes if exposed outside the review system",
+        "Redact detailed internal security-notification content if it contains sensitive operational information"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A scheduled notification job sent a team chat reminder about private model security practices and an upcoming model routing change. The channel identifier and source details were redacted, and the event is suitable for reuse as a generic operational notification pattern."
+    },
+    {
+      "exception_id": "exception_daily-experience-70eadc18937b5291",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-70eadc18937b5291.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-31384b954",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/647b0b2aa4ef15d0d9fdfa4d631daf5c1f7d2e38f102647cb8ee1c0d4d5d6251",
+      "source_hash": "sha256:31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.9,
+      "rationale": "The redacted summary describes an agent workflow mistake and a generic Feishu thread-reply handling lesson without exposing personal data, secrets, customer content, or private project material.",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A chat reply was initially posted to the main group instead of continuing the existing discussion thread, causing the response to appear in the wrong place. The correction confirmed that thread replies in this environment require the parent message identifier, not only the thread identifier. Future replies should inspect the current reply context first and continue the thread when the user interaction is clearly part of an existing topic."
+    },
+    {
+      "exception_id": "exception_daily-experience-744f37e98e5b409e",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-744f37e98e5b409e.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-92320b389",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab",
+      "source_hash": "sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.82,
+      "rationale": "The content appears to be team-scope operational/project material from an internal chat channel and includes specific system details, log excerpts, job identifiers, and storage/source references. It is not safe personal experience as-is.",
+      "suggested_redactions": [
+        "Remove or generalize internal source references and storage paths.",
+        "Remove hashes, UUIDs, and job identifiers.",
+        "Redact detailed log excerpts and error codes that may encode private identifiers.",
+        "Generalize specific framework/session implementation details if externally released.",
+        "Remove team/channel-specific metadata before release."
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A scheduled-job failure was traced to a framework issue where jobs targeting the primary session with a system-event payload could not resolve the intended session and returned client errors. The reliable workaround was to recreate the jobs using isolated-session delivery with an agent-turn style payload and explicit delivery configuration. Verification signal: the failing jobs were removed and recreated in the working mode."
+    },
+    {
+      "exception_id": "exception_daily-experience-79822ff24256f1ed",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-79822ff24256f1ed.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-803b9fd01",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/bed5aceb1333da5f2cd30306923dd74c9879ab134792e0150c4ae198381c57bc",
+      "source_hash": "sha256:803b9fd01b10c489d9bab732b9897d9e763075d3a8e1b7f33fccb01a3ac69de8",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "The summary still contains team-scope project details, an internal project/space name, tenant-specific project URL/key, and operational integration guidance that may identify private material even though the token and user/channel ID are redacted.",
+      "suggested_redactions": [
+        "Redact the internal project/space name.",
+        "Redact or generalize the project URL, tenant/path components, and project_key.",
+        "Redact tenant-specific source references and hashes if they can link back to private records.",
+        "Keep Plugin Token and Feishu identifiers redacted.",
+        "Generalize operational recommendations tied to the specific team project or cron task."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-81e477a050db55f0",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-81e477a050db55f0.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-c721715b0",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/38a33db7f206104cd1c4c23e53c37fac6416afeca945f552ea941b8881896d4f",
+      "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "Team-channel operational guidance includes identifiable employee names, role-based routing/mention instructions, internal project/tool details, and an internal link; IDs are redacted but remaining details are still private team material.",
+      "suggested_redactions": [
+        "Redact or generalize all employee names to role/team placeholders.",
+        "Remove or generalize mention-routing instructions tied to specific people.",
+        "Redact internal URLs/domains and replace with a generic documentation reference.",
+        "Generalize project/tool-specific internal support policies where not intended for public release.",
+        "Remove source identifiers, hashes, and internal storage references if included in any released version."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Team support routing guidance was consolidated into generic escalation categories. Installation and document-integration issues, terminal session recovery issues, capacity/quota requests, bot visibility problems, and protocol-specific questions should each follow predefined ownership or self-service guidance rather than ad hoc troubleshooting. Verification signal: the sanitized guidance removes personal routing, internal links, and project-specific identifiers while preserving the operational decision pattern."
+    },
+    {
+      "exception_id": "exception_daily-experience-86b8adf55a71c900",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-86b8adf55a71c900.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-dbfb119fc",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417",
+      "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.87,
+      "rationale": "The redacted summary contains general operational guidance about agent/model behavior and status checks, with no apparent personal data, secrets, customer content, credentials, or raw private values. Team scope still implies review-only per policy, but the content itself appears safe.",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults."
+    },
+    {
+      "exception_id": "exception_daily-experience-89b1816966184deb",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-89b1816966184deb.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-54fe93b6d",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/affc243831d9884b3b1eb30194dd8941838d7bcbedeacd2d1121e0583a01e17a",
+      "source_hash": "sha256:54fe93b6dddf3463f41c43bce59270b43fd4ffb9d7414dadbf79db4088407f61",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.94,
+      "rationale": "The summary contains team-channel material, internal exam content, document links requiring authorization, and an identifiable user reference, so it cannot be treated as safe personal/project experience.",
+      "suggested_redactions": [
+        "Remove or generalize internal Feishu document URLs",
+        "Remove or generalize identifiable user names",
+        "Remove specific exam questions, answers, and option text",
+        "Remove internal process identifiers if not necessary",
+        "Generalize authorization and permission details"
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-9a6f3a1b71d5ea65",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-9a6f3a1b71d5ea65.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e1db2413e",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0",
+      "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "Team-channel operational guidance includes an identifiable individual and internal bot/group behavior instructions; IDs are partly redacted but remaining personal/team context should not auto-release as personal experience.",
+      "suggested_redactions": [
+        "Redact the named individual to a role or generic label.",
+        "Keep Feishu IDs fully redacted.",
+        "Generalize specific dates to approximate timeframes or remove them.",
+        "Remove or generalize internal source references, hashes, and channel/group identifiers.",
+        "Summarize bot behavior rules without exposing team-specific participation instructions."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies."
+    },
+    {
+      "exception_id": "exception_daily-experience-9fff94571a51c4aa",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-9fff94571a51c4aa.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e3e17b88c",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/50d29fba45c04a740ad1845f4780bfec697499a8eca9598bd18a5c5e098c965c",
+      "source_hash": "sha256:e3e17b88c6177cefa49dac9a44674bdafdec9fb37253b2bb2df3b07f25618168",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.82,
+      "rationale": "The summary is mostly operational agent experience with user IDs redacted, but it still includes team-scope chat context, an internal repository URL, local workspace paths, and configuration details for a provider setup that could reveal private project infrastructure.",
+      "suggested_redactions": [
+        "Redact or generalize the internal GitLab repository URL.",
+        "Redact or generalize the local workspace installation path.",
+        "Remove or generalize provider configuration details such as proxy/base URL and API key requirements.",
+        "Generalize team chat/channel context to avoid identifying the workspace or participants."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A team-scope support interaction clarified that access to private network services is not available by default unless the automation runtime has appropriate network reachability. The team reviewed available automation capabilities and confirmed that text-to-speech output is supported, while voice input depends on channel configuration. A voice-processing skill was installed successfully from an internal marketplace, with follow-up configuration still needed for the external multimodal provider and channel tooling."
+    },
+    {
+      "exception_id": "exception_daily-experience-a8d30ee6c5b41907",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-a8d30ee6c5b41907.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-8deb4f5e6",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2dbf07e37f67ccfc42d3b5801baae2f431e08ab6cfc440ecc9c21500354564ad",
+      "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.78,
+      "rationale": "The summary is from a team Feishu group chat and includes project/task context, user activity, and internal implementation/configuration details, though direct identifiers and secrets appear redacted.",
+      "suggested_redactions": [
+        "Remove or generalize team chat/channel references and group activity headings.",
+        "Keep Feishu/user identifiers redacted.",
+        "Generalize internal project names, source locations, and architecture details if not intended for release.",
+        "Omit configuration-related references such as provider setup, proxy base URL, API key, and gateway restart details unless fully generic."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A proposed voice transcription capability for chat audio was reviewed, using a multimodal model to process compressed audio messages. The implementation is not yet complete because the required model provider, media-audio tooling, and service restart steps still need to be configured. A separate architecture review compared two coding-agent designs at a high level and produced a reusable minimal-agent example, but the response was truncated before completion."
+    },
+    {
+      "exception_id": "exception_daily-experience-ad405f88f6d334a4",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-ad405f88f6d334a4.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-4b2bab827",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76",
+      "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.82,
+      "rationale": "The summary still contains internal repository/location details, workspace paths, product/document context, and operational cron/status information from a team channel. These are project/team-specific and not safe for auto-release without further minimization.",
+      "suggested_redactions": [
+        "Redact or generalize internal Git hosting domain, repository, branch, and package path",
+        "Redact or generalize local workspace and agent installation paths",
+        "Redact specific internal product/document request context",
+        "Redact operational cron task name, schedule, notification timestamps, and status flags",
+        "Remove source identifiers, hashes, and internal source references if present in released text"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization timed out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent."
+    },
+    {
+      "exception_id": "exception_daily-experience-b70a35157d393839",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-b70a35157d393839.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-fe8edde7b",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/d0b80916bc0fefe7568dbcec7e9065210660de2babfd3ac867421f41cf3d0fde",
+      "source_hash": "sha256:fe8edde7b6d2208fd20d6fdc2605c5850b9b3ce9124b3069d7d41395a5d2b00e",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.86,
+      "rationale": "The summary contains internal team operational guidance, company data-security handling instructions, model availability/status details, and identifiable employee names tied to support responsibilities, even though IDs are redacted.",
+      "suggested_redactions": [
+        "Redact employee names and any remaining contact-routing details",
+        "Generalize internal model names and version-specific availability/status",
+        "Remove or generalize company confidentiality/security process references",
+        "Remove dates tied to internal instructions or incidents",
+        "Avoid exposing team-channel-specific operational guidance"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-b7c16f24ab0be689",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-b7c16f24ab0be689.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-745fa543d",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/b9e879dee5e970e643cce67f6a587350eacae6a38c4a851400cb67d52f447384",
+      "source_hash": "sha256:745fa543d17ac84dbced48406cc3355edbc444c3f1e18f7ed5ef8ee3d08535c6",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.78,
+      "rationale": "The summary is mostly generic agent usage guidance, but it includes team-channel operational instructions, internal source identifiers, and future product/change-plan details that should not be auto-released as safe personal experience.",
+      "suggested_redactions": [
+        "Remove or generalize Feishu team/group-specific handling instructions.",
+        "Remove internal source references, hashes, exception IDs, and agent storage paths.",
+        "Generalize future product roadmap or planned improvement details.",
+        "Keep only generic guidance about session-scoped model changes and checking status."
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Model changes made with a session command should be treated as temporary unless verified otherwise. A success-style message may not mean the default was persistently changed, so use the status command as the verification signal. New conversations, restarts, or delegated worker sessions may revert to their own configured defaults, which can explain sudden style or behavior changes."
+    },
+    {
+      "exception_id": "exception_daily-experience-c578b794158d6fe2",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-c578b794158d6fe2.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-9fd2e910e",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/4a33f4cf966c017e78d0f5569184d5c180f44f5ac08e93dfa61ea6b40332e34e",
+      "source_hash": "sha256:9fd2e910e455e963c35f9f3e100fd9e0003c33d50aceb40b2315aedd2b5665ab",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.82,
+      "rationale": "The summary describes content from a team chat and screenshots of an internal-looking exam/training workflow, including specific question topics and answer keys. This is not clearly safe personal experience and may expose private organizational assessment or process material.",
+      "suggested_redactions": [
+        "Remove or generalize specific exam question topics and answer choices.",
+        "Remove answer keys and correctness explanations.",
+        "Keep team/channel identifiers redacted.",
+        "Generalize references to internal documents or login-gated resources.",
+        "Summarize only at a high level, e.g. 'answered internal incident/change-management training questions using general SRE knowledge.'"
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-c68d16c6183965d2",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-c68d16c6183965d2.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-b6f7162b2",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/bffaaa4ffa03556187d8952f2030cb47101788d96ea465164e3621fa61e116a0",
+      "source_hash": "sha256:b6f7162b264f865e42d5fa59a487ffdfaff9befe7eec5d690b6a2902da697db9",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.88,
+      "rationale": "Team Feishu context includes sensitive operational details about tokens, permissions, workspace paths, private group/task context, and exam/screenshot content, even though specific values are redacted.",
+      "suggested_redactions": [
+        "Remove or generalize all token/authentication references and permission status details.",
+        "Redact Feishu group/channel identifiers and any user-identifying context.",
+        "Generalize internal workspace paths and source references.",
+        "Remove exam/screenshot content details and private task descriptions.",
+        "Keep only high-level, non-identifying skill installation or troubleshooting summaries if needed."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-c7f8e014dbf89c90",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-c7f8e014dbf89c90.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e437220d9",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/cb0565346fdc853fc4f1db8e3568bf7c8ae2247cb009ed8b59691027b6d71f1a",
+      "source_hash": "sha256:e437220d9dfb85bc70bf0da487784404d0706e205b80afd330422e96c2ebae4f",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.86,
+      "rationale": "Redacted content describes agent behavior, model/status usage, and a project/team automation rule without exposing unredacted personal identifiers, secrets, credentials, or private message content.",
+      "suggested_redactions": [
+        "Keep the Feishu/group identifier redacted.",
+        "Consider redacting or generalizing internal service URLs if publishing outside the project context."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Clarified that response-style changes may occur when a sub-agent is handling work, because sub-agents can have independent default model settings. The reliable way to verify the active model for the current session is to use the status command rather than asking the agent in natural language. A team-channel automation rule was added to stay silent by default and only respond to clear service-failure reports with a standard repair suggestion."
+    },
+    {
+      "exception_id": "exception_daily-experience-caad32421e9bf573",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-caad32421e9bf573.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-5535ee36f",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/7d903ce59380e64c1fa8e0c3f29210272282aa4bc42e6b55307c09af1f2e51dc",
+      "source_hash": "sha256:5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.78,
+      "rationale": "The summary appears to contain team-internal operational guidance, platform-specific commands, internal model prefixes, and security/compliance escalation instructions. It does not expose obvious raw secrets, but it should not be auto-treated as safe personal experience without further redaction.",
+      "suggested_redactions": [
+        "Redact or generalize internal model prefixes such as specific named prefixes.",
+        "Redact or generalize platform-specific administrative commands and placeholders for pairing approval.",
+        "Redact or generalize references to internal security/confidentiality bots or official company channels.",
+        "Redact source identifiers, hashes, channel names, and team-scope metadata if included in any released text.",
+        "Generalize product-specific troubleshooting details to non-identifying operational guidance."
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Updated support guidance for access/pairing failures so responders explain that the issue is an authorization or pairing setup problem rather than a normal business error. For newly onboarded users, the recommended first step is to restart the affected service from the admin console; if that does not resolve the issue, escalate to an instance administrator for approval handling. Updated data-sensitivity guidance so responders do not infer authorization from model naming patterns and instead direct users to official security or confidentiality channels for authoritative policy decisions."
+    },
+    {
+      "exception_id": "exception_daily-experience-cb9a6cc24cd1f6dc",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-cb9a6cc24cd1f6dc.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-f1d3f2e21",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6d26893d8543d3c19d5418337825924ef91012347381c7ad28429e59fc1b0b99",
+      "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.86,
+      "rationale": "The summary describes routine project troubleshooting and configuration guidance without exposing user identities, secrets, raw logs, URLs, tokens, or private content. It is team-scope, so review-only policy still applies.",
+      "suggested_redactions": [
+        "Remove or generalize internal source references and hashes if included in any released text.",
+        "Avoid including raw logs, config values, model URLs, or channel/user identifiers."
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "A bot became unresponsive to reset-style commands, likely due to a hung or crashed gateway process caused by invalid backend configuration. The immediate remediation was to restart the gateway and review sanitized logs/configuration if the issue recurs. A related configuration note confirmed that MCP support depends on the selected CLI backend and must be explicitly enabled through the documented feature flag."
+    },
+    {
+      "exception_id": "exception_daily-experience-cf5dab7be3851c0b",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-cf5dab7be3851c0b.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-14edce26a",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/578c93fed49000856bedd6f4509320f98bfd5689fa2a77d8b6e288ff14dc4d94",
+      "source_hash": "sha256:14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.86,
+      "rationale": "The redacted summary contains general troubleshooting conclusions and operational cautions for a bot integration, with no visible secrets, personal data, credentials, raw logs, or sensitive customer content. It appears to be project/agent experience rather than real private material.",
+      "suggested_redactions": [
+        "Remove or generalize internal source references, hashes, and exception IDs before broader release.",
+        "Generalize specific internal project or agent names if publishing outside the team context.",
+        "Keep protected configuration file names generic if they could reveal internal structure."
+      ],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Initial diagnosis indicated the integration was not universally failing to receive messages; at least one observed case was consistent with a group-chat trigger condition not being met. If users report that the bot is not replying, triage should separately verify whether the issue is trigger eligibility, a stuck conversation, or lack of model output. Operational checks should combine process status, gateway health, and recent dispatch activity rather than relying on a single command-line probe."
+    },
+    {
+      "exception_id": "exception_daily-experience-d303f90af8f4af34",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-e9bac6dd0",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/b62c9fa15b3e0a157401ea147eb48780e09a4ee53a0eac41a75fef148e5aa3db",
+      "source_hash": "sha256:e9bac6dd0a2e114383858ac78fdda1f44c11486830bc69b33c30ec1dbfa1cb00",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "real_private_material",
+      "confidence": 0.88,
+      "rationale": "The summary contains team-scope chat memory with identifiable individuals, internal service/domain references, and operational incident details. It is not merely safe personal/project agent experience and would require review/redaction before release.",
+      "suggested_redactions": [
+        "Remove or generalize named individuals mentioned as confirming or validating fixes.",
+        "Redact internal service domains, instance names, and plugin/service identifiers if not public.",
+        "Generalize operational incident details, error strings, root causes, and remediation steps that reveal internal infrastructure.",
+        "Keep Feishu user identifiers redacted and avoid linking preferences to specific users."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    },
+    {
+      "exception_id": "exception_daily-experience-d53d6d7901e4eb74",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-d53d6d7901e4eb74.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-98477e0c8",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77",
+      "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "Contains team-channel operational guidance, employee names, support-routing instructions, and internal product/pricing details. No obvious secrets are present, but it is not safe for auto-release without further anonymization and review.",
+      "suggested_redactions": [
+        "Redact employee names and replace with generic roles such as product owner, support engineer, or reviewer.",
+        "Remove or generalize internal routing instructions that identify specific people to mention or transfer to.",
+        "Redact internal source references, hashes, channel identifiers, and exception/source IDs if exposed outside the review system.",
+        "Generalize internal pricing or billing policy details unless confirmed public.",
+        "Remove team-channel provenance details and keep only the reusable, non-identifying support guidance."
+      ],
+      "hard_block_reasons": [
+        "feishu_private_identifier_detected",
+        "remote_source_requires_review"
+      ],
+      "decision": "auto_released",
+      "release_summary": "Support guidance was sanitized to remove personal routing details, internal identifiers, and team-channel provenance. Verified reusable guidance includes: direct users to adjust bot visibility in the bot administration console when a bot cannot be found or added; avoid reusing the same chat bot across unrelated tools or agents because it can cause missing or duplicate replies; use the product console’s scheduled-task management area to review or cancel recurring tasks. For ordinary messages outside defined trigger scenarios, the bot should remain silent."
+    },
+    {
+      "exception_id": "exception_daily-experience-de836b6f83806d74",
+      "exception_path": ".praxisbase/exceptions/human-required/exception_daily-experience-de836b6f83806d74.json",
+      "source_id": "experience_openclaw-answer-bot-sha256-cfcba5397",
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2a4220e4ecc01009e3a73ac8aa34773399b262779c1c919e234e023e41bae846",
+      "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
+      "agent": "openclaw",
+      "scope": "team",
+      "classification": "safe_personal_experience",
+      "confidence": 0.95,
+      "rationale": "The redacted summary contains only a generic greeting interaction and no identifiable personal, project-sensitive, or private material. Team-channel scope may still require review per policy, but the content itself appears safe.",
+      "suggested_redactions": [],
+      "hard_block_reasons": [
+        "remote_source_requires_review"
+      ],
+      "decision": "team_review_only"
+    }
+  ],
+  "summary": {
+    "scanned": 34,
+    "skipped_already_triaged": 0,
+    "skipped_non_privacy": 4,
+    "auto_released": 21,
+    "keep_human_required": 0,
+    "team_review_only": 13
+  },
+  "changed_stable_knowledge": false,
+  "outputs": [
+    ".praxisbase/reports/privacy-triage/privacy-triage_2026-06-16t05-10-27-996z.json"
+  ],
+  "warnings": [
+    "privacy_triage_team_auto_review_low_signal:exception_daily-experience-1f7524e8ea7c5493",
+    "privacy_triage_team_auto_review_unsafe_summary:exception_daily-experience-12c9caf5999d25cf",
+    "privacy_triage_team_auto_review_unsafe_summary:exception_daily-experience-79822ff24256f1ed",
+    "privacy_triage_team_auto_review_low_signal:exception_daily-experience-de836b6f83806d74"
+  ],
+  "created_at": "2026-06-16T05:10:27.996Z"
+}

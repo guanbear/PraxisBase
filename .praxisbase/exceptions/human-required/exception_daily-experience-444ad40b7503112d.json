@@ -40,7 +40,7 @@
       "reusable_lesson": "For bot access or responsiveness failures, verify plugin version, user pairing state, instance restart, and storage exhaustion before escalating.",
       "residual_risk": "Cron failure pattern remains unresolved pending product fix or configuration workaround.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

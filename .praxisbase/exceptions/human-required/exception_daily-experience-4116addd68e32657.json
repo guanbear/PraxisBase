@@ -39,7 +39,7 @@
       "release_summary": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.",
       "reusable_lesson": "When a bot appears unresponsive, distinguish slow backend/model activity from connector disablement before escalating.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

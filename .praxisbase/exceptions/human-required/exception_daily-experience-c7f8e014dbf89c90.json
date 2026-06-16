@@ -38,7 +38,7 @@
       "reusable_lesson": "Use explicit status tooling to verify runtime state, and constrain team-channel bots to fixed trigger conditions plus approved response text.",
       "residual_risk": "Sub-agent model usage remains independently configured and may not be visible from the current session status.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

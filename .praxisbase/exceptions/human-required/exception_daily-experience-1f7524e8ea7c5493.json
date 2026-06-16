@@ -34,11 +34,8 @@
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "auto_released",
-      "release_summary": "A team-scope memory item contained user-specific preferred display names from a chat context and was classified as requiring redaction. The sanitized version removes individual aliases and avoids linking preferences to any specific user or group. Verification signal: the retained content is generalized to note only that some users shared preferred display names in a team chat.",
-      "reusable_lesson": "Do not store or reuse personal naming preferences from team chats unless they are generalized and detached from identifiable users or groups.",
-      "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "decision": "team_review_only",
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

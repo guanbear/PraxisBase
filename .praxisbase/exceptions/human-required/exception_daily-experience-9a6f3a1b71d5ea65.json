@@ -40,7 +40,7 @@
       "release_summary": "A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies.",
       "reusable_lesson": "Use dedicated bot identities/configurations per tool and enforce explicit invocation rules to prevent noisy or unreliable bot behavior.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

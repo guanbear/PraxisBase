@@ -42,7 +42,7 @@
       "reusable_lesson": "When plugin installation commands are unsupported, switch to the documented package-manager install flow and verify success via exit status plus runtime availability.",
       "residual_risk": "Authorization-dependent workflows may still fail if interactive login is not completed within the allowed window.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

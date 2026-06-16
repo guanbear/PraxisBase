@@ -40,7 +40,7 @@
       "reusable_lesson": "When a protected document cannot be accessed, stop retrying after standard permission checks and ask the requester to provide accessible content or grant the required read access.",
       "residual_risk": "Review quality remains blocked until the document content is provided or permissions are corrected.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

@@ -42,7 +42,7 @@
       "reusable_lesson": "When scheduled jobs fail due to primary-session resolution, switch to isolated delivery with an explicit agent-turn payload and recreate the jobs rather than retrying the same configuration.",
       "residual_risk": "Underlying framework bug may still affect primary-session scheduled jobs until fixed.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

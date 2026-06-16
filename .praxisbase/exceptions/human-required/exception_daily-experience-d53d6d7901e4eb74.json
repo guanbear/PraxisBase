@@ -41,7 +41,7 @@
       "reusable_lesson": "When documenting support playbooks, keep role-based escalation and user-action guidance while removing names, internal IDs, exact routes, and non-public policy details.",
       "residual_risk": "Internal billing and escalation details were generalized and should be confirmed against public-facing policy before reuse.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"

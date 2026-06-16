@@ -38,7 +38,7 @@
       "reusable_lesson": "Before changing protected bot or channel configuration, explain the change, confirm approval, back up the current state, and avoid unsolicited updates or restarts.",
       "residual_risk": "Further validation may be needed to distinguish trigger-condition issues from runtime or model-output failures.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T04:22:32.969Z"
+      "triaged_at": "2026-06-16T05:10:27.996Z"
     }
   },
   "created_at": "2026-06-16T04:04:23.647Z"
