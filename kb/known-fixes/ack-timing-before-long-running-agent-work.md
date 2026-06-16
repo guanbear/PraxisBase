@@ -79,5 +79,4 @@ Do not use it when:
 
 ## Related Wiki Pages
 * [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]]
-* [[openclaw-gateway-restart-after-configuration-changes|OpenClaw gateway restart after configuration changes]]
 * [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]

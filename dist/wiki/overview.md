@@ -2,4 +2,4 @@
 
 Compiled pages: 11.
 Graph links: 18.
-Broken links: 1.
+Broken links: 0.

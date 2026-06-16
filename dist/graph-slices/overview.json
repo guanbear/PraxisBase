@@ -112,7 +112,7 @@
       "scope": "personal",
       "maturity": "draft",
       "source_ids": [
-        "sha256:642e7b61c3de34e024ad144aa03719fb48ecb3d26fde4e6bac7b70588d36ed5f",
+        "sha256:3164c59926591e51e2b026dec1f81c38f68926a504b50825557ebc1721b119e9",
         "stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md"
       ]
     },
