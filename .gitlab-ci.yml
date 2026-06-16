@@ -1,5 +1,5 @@
 variables:
-  NODE_IMAGE: node:20-alpine
+  NODE_IMAGE: artifactory.ep.chehejia.com/docker-remote/library/node:20-alpine
   PRAXISBASE_TOOL_REPO: https://github.com/guanbear/PraxisBase.git
   PRAXISBASE_TOOL_REF: main
   PRAXISBASE_WRITEBACK: "false"
