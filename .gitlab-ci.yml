@@ -19,7 +19,14 @@ stages:
   before_script:
     - apk add --no-cache git
     - corepack enable
-    - git clone --depth 1 --branch "$PRAXISBASE_TOOL_REF" "$PRAXISBASE_TOOL_REPO" /tmp/PraxisBase
+    - |
+      PRAXISBASE_TOOL_CLONE_URL="$PRAXISBASE_TOOL_REPO"
+      if [ -n "${PRAXISBASE_PUSH_TOKEN:-}" ]; then
+        case "$PRAXISBASE_TOOL_REPO" in
+          https://*) PRAXISBASE_TOOL_CLONE_URL="https://oauth2:${PRAXISBASE_PUSH_TOKEN}@${PRAXISBASE_TOOL_REPO#https://}" ;;
+        esac
+      fi
+      git clone --depth 1 --branch "$PRAXISBASE_TOOL_REF" "$PRAXISBASE_TOOL_CLONE_URL" /tmp/PraxisBase
     - cd /tmp/PraxisBase && pnpm install --frozen-lockfile && pnpm --filter @praxisbase/cli build
     - cd "$CI_PROJECT_DIR"
 

@@ -79,7 +79,7 @@ The template clones the PraxisBase tool repo, builds the CLI, and executes it ag
 
 | Variable | Purpose |
 | --- | --- |
-| `PRAXISBASE_TOOL_REPO` | Toolchain repo URL. Defaults to `https://github.com/guanbear/PraxisBase.git`. |
+| `PRAXISBASE_TOOL_REPO` | Toolchain repo URL. Defaults to `https://github.com/guanbear/PraxisBase.git`; private HTTPS repos are cloned with `PRAXISBASE_PUSH_TOKEN` when present. |
 | `PRAXISBASE_TOOL_REF` | Branch or tag to build. Defaults to `main`. |
 | `PRAXISBASE_WRITEBACK` | Set to `true` to commit generated knowledge/artifacts back to the knowledge repo. |
 | `PRAXISBASE_PUSH_TOKEN` | Masked token used only when writeback is enabled. |
