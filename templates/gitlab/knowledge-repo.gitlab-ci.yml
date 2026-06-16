@@ -35,7 +35,7 @@ stages:
       if [ -n "${PRAXISBASE_PUSH_TOKEN:-}" ]; then
         git config --global url."https://oauth2:${PRAXISBASE_PUSH_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://${CI_SERVER_HOST}/"
       fi
-    - cd /tmp/PraxisBase && pnpm install --frozen-lockfile && pnpm --filter @praxisbase/cli build
+    - cd /tmp/PraxisBase && pnpm install --frozen-lockfile && pnpm --filter @praxisbase/core build && pnpm --filter @praxisbase/cli build
     - cd "$CI_PROJECT_DIR"
 
 .praxisbase-writeback:

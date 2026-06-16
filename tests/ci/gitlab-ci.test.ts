@@ -59,6 +59,7 @@ describe("split knowledge repo GitLab CI template", () => {
 
     assert.ok(ci.includes("PRAXISBASE_TOOL_REPO"));
     assert.ok(ci.includes("git clone --depth 1 --branch"));
+    assert.match(ci, /pnpm --filter @praxisbase\/core build[\s\S]*pnpm --filter @praxisbase\/cli build/);
     assert.ok(ci.includes("node /tmp/PraxisBase/packages/cli/dist/index.js"));
   });
 
