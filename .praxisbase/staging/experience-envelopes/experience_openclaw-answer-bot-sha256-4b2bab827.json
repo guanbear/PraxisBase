@@ -9,7 +9,7 @@
   "source_hash": "sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a",
   "scope_hint": "team",
   "redacted_summary": "A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization=[REDACTED] out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

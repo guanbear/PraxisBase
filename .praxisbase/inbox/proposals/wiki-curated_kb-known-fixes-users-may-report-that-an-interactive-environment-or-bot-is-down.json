@@ -1,0 +1,94 @@
+{
+  "id": "wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/known-fixes/users-may-report-that-an-interactive-environment-or-bot-is-down-sleeping-or.md",
+  "action": "create",
+  "page_kind": "known_fix",
+  "scope": "team",
+  "title": "Users may report that an interactive environment or bot is down, sleeping, or unresponsive",
+  "summary": "Use the product console’s automatic repair option as the first fix for down or unresponsive interactive environments or bots, except when the issue is caused by billing, quota, or payment-related sleep. If script-based and AI-based repair have both already failed, escalate instead of repeating the same repair steps.",
+  "body_markdown": "# Users may report that an interactive environment or bot is down, sleeping, or unresponsive\n\n## When to Use\n\nUse this known fix when a user reports that an interactive environment, hosted workspace, product sandbox, or bot is:\n\n- Down\n- Sleeping\n- Unresponsive\n- Not starting\n- Not reachable from the expected product UI\n- Stuck in a non-running state\n\nThis fix applies when the symptom appears to be an environment/runtime availability problem rather than an account, billing, quota, or payment issue.\n\n## Symptoms\n\nCommon user reports include:\n\n- “My bot is down.”\n- “The environment is sleeping and will not wake up.”\n- “The interactive environment is not responding.”\n- “The workspace will not start.”\n- “The bot looks unavailable.”\n\n## Fix\n\n1. First, determine whether the issue is likely caused by billing, quota, or payment-related sleep.\n   - If yes, do not use the automatic repair flow as the primary fix. Route the user toward the appropriate billing, quota, or payment support path.\n   - If no, continue with the automatic repair flow.\n\n2. Direct the user to the product console’s automatic repair option.\n   - Ask them to open the affected environment or bot in the product console.\n   - Have them use the console-provided automatic repair action before attempting deeper troubleshooting.\n\n3. Ask whether they have already tried available repair modes.\n   - If they have not tried repair, have them run the automatic repair option.\n   - If the product offers both script-based repair and AI-based repair, ask whether both have already been attempted.\n\n4. If both script-based and AI-based repair have already failed, do not keep repeating the same repair instructions.\n   - Escalate to the appropriate support contact or support queue.\n   - Include that both repair modes were attempted and did not resolve the issue.\n\n## Verify\n\nVerify the fix by confirming:\n\n- The issue is not billing-, quota-, or payment-related.\n- The user can access the product console for the affected environment or bot.\n- The user ran the automatic repair option.\n- If applicable, whether script-based repair and AI-based repair were both attempted.\n- The environment or bot is now awake, reachable, and responsive.\n\nIf the repair does not resolve the issue and both repair modes have already been tried, verification should shift from “try repair again” to “confirm escalation details are complete.”\n\n## Reusable Lessons\n\n- For down or unresponsive interactive environments or bots, suggest the product console’s automatic repair option before other troubleshooting.\n- Do not use this repair flow for billing, quota, or payment-related sleep issues.\n- Do not repeatedly provide the same repair instructions after both script-based and AI-based repair have already failed.\n- Escalate after confirmed repair failure rather than extending the troubleshooting loop unnecessarily.\n\n## Agent Use\nUse this page when:\n- Users may report that an interactive environment or bot is down, sleeping, or unresponsive.\n\nApply it by:\n- Direct the user to the product console’s automatic repair option. If they already tried both script-based and AI-based repair without success, escalate to the appropriate support contact rather than repeating the repair steps.\n\nVerify by:\n- Confirm whether the issue is unrelated to billing, quota, or payment; ask whether they have already tried script-based repair and AI-based repair; verify whether the automatic repair option resolved the problem.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json (sha256:7d301ac0785e384f8f0a239628dd009b3db100cd5e75caa190eca0ffb43ce616)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json"
+  ],
+  "source_hashes": [
+    "sha256:7d301ac0785e384f8f0a239628dd009b3db100cd5e75caa190eca0ffb43ce616"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-ec7f9b12ebc8526f-sha256-06a122d944e4d1fd3c50b5fc2167873cac11ec2d399504c15d761"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json",
+      "source_hash": "sha256:7d301ac0785e384f8f0a239628dd009b3db100cd5e75caa190eca0ffb43ce616",
+      "excerpt": "Users may report that an interactive environment or bot is down, sleeping, or unresponsive. Direct the user to the product console’s automatic repair option. If they already tried both script-based and AI-based repair without success, escalate to the appropriate support contact rather than repeating the repair steps."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "Evidence is based on a single operational lesson, though it is direct and internally consistent.",
+      "The article is product-agnostic; agents may need product-specific console navigation details from another source.",
+      "Automatic repair should not be used as the primary fix for billing, quota, or payment-related sleep states.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T04:46:58.958Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

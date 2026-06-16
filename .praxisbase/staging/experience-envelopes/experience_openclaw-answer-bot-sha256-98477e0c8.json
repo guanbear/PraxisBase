@@ -9,7 +9,7 @@
   "source_hash": "sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20",
   "scope_hint": "team",
   "redacted_summary": "Support guidance was sanitized to remove personal routing details, internal identifiers, and team-channel provenance. Verified reusable guidance includes: direct users to adjust bot visibility in the bot administration console when a bot cannot be found or added; avoid reusing the same chat bot across unrelated tools or agents because it can cause missing or duplicate replies; use the product console’s scheduled-task management area to review or cancel recurring tasks. For ordinary messages outside defined trigger scenarios, the bot should remain silent.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

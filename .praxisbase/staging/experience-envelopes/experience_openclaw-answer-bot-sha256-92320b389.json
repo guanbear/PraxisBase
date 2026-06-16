@@ -9,7 +9,7 @@
   "source_hash": "sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
   "scope_hint": "team",
   "redacted_summary": "A scheduled-job failure was traced to a framework issue where jobs targeting the primary session with a system-event payload could not resolve the intended session and returned client errors. The reliable workaround was to recreate the jobs using isolated-session delivery with an agent-turn style payload and explicit delivery configuration. Verification signal: the failing jobs were removed and recreated in the working mode.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

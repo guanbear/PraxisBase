@@ -9,7 +9,7 @@
   "source_hash": "sha256:31384b9548ae70385260538a5c6e1b90ce563958ebdda52a1be05c0db27742a8",
   "scope_hint": "team",
   "redacted_summary": "A chat reply was initially posted to the main group instead of continuing the existing discussion thread, causing the response to appear in the wrong place. The correction confirmed that thread replies in this environment require the parent message identifier, not only the thread identifier. Future replies should inspect the current reply context first and continue the thread when the user interaction is clearly part of an existing topic.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

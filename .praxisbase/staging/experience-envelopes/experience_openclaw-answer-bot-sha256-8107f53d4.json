@@ -9,7 +9,7 @@
   "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
   "scope_hint": "team",
   "redacted_summary": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

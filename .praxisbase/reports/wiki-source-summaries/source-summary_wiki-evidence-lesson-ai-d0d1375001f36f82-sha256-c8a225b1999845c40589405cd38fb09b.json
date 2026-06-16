@@ -1,0 +1,27 @@
+{
+  "id": "source-summary_wiki-evidence-lesson-ai-d0d1375001f36f82-sha256-c8a225b1999845c40589405cd38fb09b",
+  "type": "wiki_source_summary",
+  "source_id": "wiki-evidence-lesson_ai-d0d1375001f36f82-sha256-c8a225b1999845c40589405cd38fb09b71ea259937f9658dd7ca5",
+  "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e3e17b88c.json",
+  "source_hash": "sha256:63cac2b72cdc3234df97d142667ce279d79ffcdc8b2b47ea075b37a49c2ea481",
+  "source_kind": "distilled_experience",
+  "scope": "team",
+  "summary": "Assuming bidirectional voice support can lead to incorrect capability claims or incomplete implementation plans. Check text-to-speech/output support separately from speech-to-text/input support, and verify the exact channel configuration used by end users.",
+  "entities": [
+    "lesson",
+    "portability"
+  ],
+  "topics": [
+    "lesson:sha256:c8a225b1999845c40589405cd38fb09b71ea259937f9658dd7ca5d0aa44956f2",
+    "portability:universal"
+  ],
+  "observation_ids": [
+    "wiki-obs_wiki-evidence-lesson-ai-d0d1375001f36f82-sha256-c8a225b1999845c40589405cd38fb09b"
+  ],
+  "topic_keys": [
+    "lesson-sha256-c8a225b1999845c40589405cd38fb09b71ea259937f9658dd7ca5d0aa44956f2-portability-universal::unknown-action::lesson-portability::team"
+  ],
+  "privacy_verdict": "safe",
+  "contributed_to_pages": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "source-summary_wiki-evidence-lesson-ai-ec7f9b12ebc8526f-sha256-06a122d944e4d1fd3c50b5fc2167873c",
+  "type": "wiki_source_summary",
+  "source_id": "wiki-evidence-lesson_ai-ec7f9b12ebc8526f-sha256-06a122d944e4d1fd3c50b5fc2167873cac11ec2d399504c15d761",
+  "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json",
+  "source_hash": "sha256:7d301ac0785e384f8f0a239628dd009b3db100cd5e75caa190eca0ffb43ce616",
+  "source_kind": "distilled_experience",
+  "scope": "team",
+  "summary": "Users may report that an interactive environment or bot is down, sleeping, or unresponsive. Direct the user to the product console’s automatic repair option. If they already tried both script-based and AI-based repair without success, escalate to the appropriate support contact rather than repeating the repair steps.",
+  "entities": [
+    "lesson",
+    "portability"
+  ],
+  "topics": [
+    "lesson:sha256:06a122d944e4d1fd3c50b5fc2167873cac11ec2d399504c15d761120b1e58b00",
+    "portability:universal"
+  ],
+  "observation_ids": [
+    "wiki-obs_wiki-evidence-lesson-ai-ec7f9b12ebc8526f-sha256-06a122d944e4d1fd3c50b5fc2167873c"
+  ],
+  "topic_keys": [
+    "lesson-sha256-06a122d944e4d1fd3c50b5fc2167873cac11ec2d399504c15d761120b1e58b00-portability-universal::unknown-action::lesson-portability::team"
+  ],
+  "privacy_verdict": "safe",
+  "contributed_to_pages": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

@@ -9,7 +9,7 @@
   "source_hash": "sha256:bdd86a156e2a90b607e48a2f75cb84ce7213f4f1c6738cf34affda2319b7f2fd",
   "scope_hint": "team",
   "redacted_summary": "A team-scope memory item contained user-specific preferred display names from a chat context and was classified as requiring redaction. The sanitized version removes individual aliases and avoids linking preferences to any specific user or group. Verification signal: the retained content is generalized to note only that some users shared preferred display names in a team chat.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

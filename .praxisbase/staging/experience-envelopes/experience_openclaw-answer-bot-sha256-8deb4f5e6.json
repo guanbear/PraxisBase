@@ -9,7 +9,7 @@
   "source_hash": "sha256:8deb4f5e6709b2c8e40bdbfa0fa0f99e14ab0982d24e558ce3dee168d05bfd64",
   "scope_hint": "team",
   "redacted_summary": "A proposed voice transcription capability for chat audio was reviewed, using a multimodal model to process compressed audio messages. The implementation is not yet complete because the required model provider, media-audio tooling, and service restart steps still need to be configured. A separate architecture review compared two coding-agent designs at a high level and produced a reusable minimal-agent example, but the response was truncated before completion.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

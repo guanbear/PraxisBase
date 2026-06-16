@@ -1,0 +1,27 @@
+{
+  "id": "source-summary_wiki-evidence-lesson-ai-24811b94a6a205d2-sha256-226311f3fe5dc4ba2beff8243b19c21e",
+  "type": "wiki_source_summary",
+  "source_id": "wiki-evidence-lesson_ai-24811b94a6a205d2-sha256-226311f3fe5dc4ba2beff8243b19c21e8e3317b01c70992f6d8e9",
+  "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json",
+  "source_hash": "sha256:2e09a1829cfe9a3ad7f450a766bcb172fcf677c0d87b5b0c941de4f44871b91b",
+  "source_kind": "distilled_experience",
+  "scope": "team",
+  "summary": "If an agent relies only on a thread identifier, the reply can be posted to the main group or channel instead of the intended thread. Determine whether the current interaction is part of an existing thread; if so, include the platform-specific parent message identifier required to reply inside that thread.",
+  "entities": [
+    "lesson",
+    "portability"
+  ],
+  "topics": [
+    "lesson:sha256:226311f3fe5dc4ba2beff8243b19c21e8e3317b01c70992f6d8e9f37a6927d44",
+    "portability:universal"
+  ],
+  "observation_ids": [
+    "wiki-obs_wiki-evidence-lesson-ai-24811b94a6a205d2-sha256-226311f3fe5dc4ba2beff8243b19c21e"
+  ],
+  "topic_keys": [
+    "lesson-sha256-226311f3fe5dc4ba2beff8243b19c21e8e3317b01c70992f6d8e9f37a6927d44-portability-universal::unknown-action::lesson-portability::team"
+  ],
+  "privacy_verdict": "safe",
+  "contributed_to_pages": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

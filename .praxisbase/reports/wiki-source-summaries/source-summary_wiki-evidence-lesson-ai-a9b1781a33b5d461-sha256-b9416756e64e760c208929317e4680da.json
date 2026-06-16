@@ -1,0 +1,27 @@
+{
+  "id": "source-summary_wiki-evidence-lesson-ai-a9b1781a33b5d461-sha256-b9416756e64e760c208929317e4680da",
+  "type": "wiki_source_summary",
+  "source_id": "wiki-evidence-lesson_ai-a9b1781a33b5d461-sha256-b9416756e64e760c208929317e4680da9309cea01972e13f1f7a1",
+  "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dd5113c71.json",
+  "source_hash": "sha256:1219ce6ad3ca1e3c589107492812ca34b5825bb2ab3035e432b974f01358f8dd",
+  "source_kind": "distilled_experience",
+  "scope": "team",
+  "summary": "Attempting a substantive review without document access can lead to fabricated or incomplete feedback and wastes effort. Check access through approved channels first. If access fails, state that the document cannot be accessed and request pasted text, an uploaded file, or corrected sharing permissions.",
+  "entities": [
+    "lesson",
+    "portability"
+  ],
+  "topics": [
+    "lesson:sha256:b9416756e64e760c208929317e4680da9309cea01972e13f1f7a1dfc4b11081a",
+    "portability:universal"
+  ],
+  "observation_ids": [
+    "wiki-obs_wiki-evidence-lesson-ai-a9b1781a33b5d461-sha256-b9416756e64e760c208929317e4680da"
+  ],
+  "topic_keys": [
+    "lesson-sha256-b9416756e64e760c208929317e4680da9309cea01972e13f1f7a1dfc4b11081a-portability-universal::unknown-action::lesson-portability::team"
+  ],
+  "privacy_verdict": "safe",
+  "contributed_to_pages": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

@@ -9,7 +9,7 @@
   "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
   "scope_hint": "team",
   "redacted_summary": "A bot became unresponsive to reset-style commands, likely due to a hung or crashed gateway process caused by invalid backend configuration. The immediate remediation was to restart the gateway and review sanitized logs/configuration if the issue recurs. A related configuration note confirmed that MCP support depends on the selected CLI backend and must be explicitly enabled through the documented feature flag.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

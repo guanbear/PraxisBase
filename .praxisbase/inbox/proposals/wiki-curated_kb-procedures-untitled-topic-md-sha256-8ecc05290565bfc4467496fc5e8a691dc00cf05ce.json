@@ -1,0 +1,93 @@
+{
+  "id": "wiki-curated_kb-procedures-untitled-topic-md-sha256-8ecc05290565bfc4467496fc5e8a691dc00cf05ce",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/procedures/untitled-topic.md",
+  "action": "create",
+  "page_kind": "procedure",
+  "scope": "team",
+  "title": "Verify Session Configuration Changes Before Relying on Them",
+  "summary": "Treat session-level configuration or behavior changes as temporary until the active configuration is explicitly inspected in the current session or worker context.",
+  "body_markdown": "# Verify Session Configuration Changes Before Relying on Them\n\n## When to Use\n\nUse this procedure after requesting a session-level configuration or behavior change, such as changing an active model, runtime mode, tool behavior, default setting, or worker/session preference.\n\nUse it before depending on the requested change for subsequent work.\n\n## Context\n\nA success-style response or acknowledgement can be mistaken for proof that a configuration changed persistently. Later work may then proceed under the wrong assumption about the active model, behavior, or session state.\n\nSession-level changes should be treated as temporary and unproven unless the active configuration is explicitly verified in the current session or worker context.\n\n## Procedure\n\n1. Request the configuration or behavior change using the appropriate command, UI action, or API call.\n2. Do not treat the acknowledgement response as proof that the change is active or persistent.\n3. Run a status, inspection, or equivalent configuration-check command in the same session or worker context where the change is expected to apply.\n4. Compare the inspection output against the intended configuration.\n5. Proceed only if the active configuration shown by inspection matches the intended setting.\n6. If the inspection output does not match, reapply the change or escalate according to the system’s normal configuration procedure.\n\n## Verify\n\nConfirm that the inspection output shows the intended active configuration in the current session or worker context.\n\nThe verification should answer:\n\n- Is the intended model, mode, or behavior currently active?\n- Was the check performed in the same session, worker, shell, process, or context where subsequent work will run?\n- Is there any evidence that the setting is only temporary or scoped differently than expected?\n\n## Reusable Lessons\n\n- Treat session-level configuration or behavior changes as temporary unless the active configuration is explicitly verified.\n- Do not assume persistence solely because a prior request returned a success-style response or acknowledgement.\n- Verify configuration in the context that will actually perform the work.\n\n## Agent Use\nUse this page when:\n- A success-style response can be mistaken for proof that a default configuration changed persistently, causing later work to run under different assumptions.\n\nApply it by:\n- Use a status, inspection, or equivalent configuration-check command to confirm the active model and behavior before relying on the change.\n\nVerify by:\n- Confirm that the inspection output shows the intended active configuration in the current session or worker context.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json (sha256:8ecc05290565bfc4467496fc5e8a691dc00cf05ce8aa4574b7ec426d1713398a)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json"
+  ],
+  "source_hashes": [
+    "sha256:8ecc05290565bfc4467496fc5e8a691dc00cf05ce8aa4574b7ec426d1713398a"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-92e37ea868448ac0-sha256-3bfbafaa52416e9f28412ced77041f6162c278bd0d83e372490e9"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json",
+      "source_hash": "sha256:8ecc05290565bfc4467496fc5e8a691dc00cf05ce8aa4574b7ec426d1713398a",
+      "excerpt": "A success-style response can be mistaken for proof that a default configuration changed persistently, causing later work to run under different assumptions. Use a status, inspection, or equivalent configuration-check command to confirm the active model and behavior before relying on the change."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "Evidence comes from a single source, but the lesson is broadly applicable and low risk.",
+      "Procedure is intentionally generic because the evidence did not name a specific product, command, or configuration system.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T04:46:58.958Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

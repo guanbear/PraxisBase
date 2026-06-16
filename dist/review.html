@@ -29,39 +29,39 @@
     </div>
   </section>
   <section class="metrics">
-    <a class="metric-link" href="#pending-candidates"><span>Review required</span><strong>0</strong></a>
+    <a class="metric-link" href="#pending-candidates"><span>Review required</span><strong>6</strong></a>
     <a class="metric-link" href="#approved-candidates"><span>Approved</span><strong>0</strong></a>
     <a class="metric-link" href="#human-required"><span>Current privacy</span><strong>11</strong></a>
     <a class="metric-link" href="#human-required"><span>Privacy backlog</span><strong>38</strong></a>
     
     <a class="metric-link" href="#rejected"><span>Rejected</span><strong>0</strong></a>
-    <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>1</strong></a>
+    <a class="metric-link" href="#promoted-candidates"><span>Promoted</span><strong>2</strong></a>
   </section>
   
   <section class="wiki-compiler-status">
   <h2>Wiki Compiler</h2>
   <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>Observations</span><strong>1</strong></article>
-    <article><span>Topics</span><strong>1</strong></article>
-    <article><span>Plan Create</span><strong>0</strong></article>
+    <article><span>Observations</span><strong>15</strong></article>
+    <article><span>Topics</span><strong>14</strong></article>
+    <article><span>Plan Create</span><strong>11</strong></article>
 <article><span>Plan Update</span><strong>1</strong></article>
-<article><span>Plan Merge</span><strong>0</strong></article>
+<article><span>Plan Merge</span><strong>2</strong></article>
 <article><span>Plan Supersede</span><strong>0</strong></article>
 <article><span>Plan Archive</span><strong>0</strong></article>
-    <article><span>Dup source-hash groups</span><strong>0</strong></article>
+    <article><span>Dup source-hash groups</span><strong>2</strong></article>
     <article><span>Hard blocks</span><strong>0</strong></article>
-    <article><span>Quality review needed</span><strong>1</strong></article>
-    <article><span>Written proposals</span><strong>1</strong></article>
+    <article><span>Quality review needed</span><strong>8</strong></article>
+    <article><span>Written proposals</span><strong>8</strong></article>
     <article><span>Proposal limit</span><strong>8</strong></article>
     <article><span>Limit reason</span><strong>max_curation_proposals</strong></article>
     
     <article><span>Required links</span><strong>0</strong></article>
 <article><span>Suggested links</span><strong>4</strong></article>
-<article><span>Merge plans</span><strong>0</strong></article>
-<article><span>Ambiguous merges</span><strong>0</strong></article>
-<article><span>Isolated topics</span><strong>0</strong></article>
-<article><span>Orphan risk after plan</span><strong>0</strong></article>
+<article><span>Merge plans</span><strong>2</strong></article>
+<article><span>Ambiguous merges</span><strong>1</strong></article>
+<article><span>Isolated topics</span><strong>12</strong></article>
+<article><span>Orphan risk after plan</span><strong>12</strong></article>
   </div>
 </section>
   <section class="review-section" data-status="pending">
@@ -77,14 +77,555 @@
   <div class="section-heading">
     <div>
       <h2><span id="review-required"></span>Review Required</h2>
-      <p>No review-required candidates.</p>
+      <p>6 item(s)</p>
     </div>
-    <strong>0</strong>
+    <strong>6</strong>
   </div>
   <div class="command-strip"><code>praxisbase review --auto</code>
 <code>praxisbase promote --auto</code>
 <code>praxisbase wiki build-site --json</code></div>
-  
+  <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-users-may-report-that-an-interactive-environment-or-bot-is-down" class="review-card">
+    <p><strong>Users may report that an interactive environment or bot is down, sleeping, or unresponsive</strong> <span class="status-pill">Pending</span></p>
+    <p>Use the product console’s automatic repair option as the first fix for down or unresponsive interactive environments or bots, except when the issue is caused by billing, quota, or payment-related sleep. If script-based and AI-based repair have both already failed, escalate instead of repeating the same repair steps.</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/known-fixes/users-may-report-that-an-interactive-environment-or-bot-is-down-sleeping-or.md</code></dd>
+      <dt>Kind</dt><dd>known_fix</dd>
+      <dt>Scope</dt><dd>team</dd>
+      <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json</code></dd>
+      <dt>Sources</dt><dd>1</dd>
+      <dt>Confidence</dt><dd>0.93</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
+      <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
+      <dt>Risk notes</dt><dd>Evidence is based on a single operational lesson, though it is direct and internally consistent.; The article is product-agnostic; agents may need product-specific console navigation details from another source.; Automatic repair should not be used as the primary fix for billing, quota, or payment-related sleep states.; quality_human_required:team_or_global_scope</dd>
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase review --auto</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code># Users may report that an interactive environment or bot is down, sleeping, or unresponsive
+
+## When to Use
+
+Use this known fix when a user reports that an interactive environment, hosted workspace, product sandbox, or bot is:
+
+- Down
+- Sleeping
+- Unresponsive
+- Not starting
+- Not reachable from the expected product UI
+- Stuck in a non-running state
+
+This fix applies when the symptom appears to be an environment/runtime availability problem rather than an account, billing, quota, or payment issue.
+
+## Symptoms
+
+Common user reports include:
+
+- “My bot is down.”
+- “The environment is sleeping and will not wake up.”
+- “The interactive environment is not responding.”
+- “The workspace will not start.”
+- “The bot looks unavailable.”
+
+## Fix
+
+1. First, determine whether the issue is likely caused by billing, quota, or payment-related sleep.
+   - If yes, do not use the automatic repair flow as the primary fix. Route the user toward the appropriate billing, quota, or payment support path.
+   - If no, continue with the automatic repair flow.
+
+2. Direct the user to the product console’s automatic repair option.
+   - Ask them to open the affected environment or bot in the product console.
+   - Have them use the console-provided automatic repair action before attempting deeper troubleshooting.
+
+3. Ask whether they have already tried available repair modes.
+   - If they have not tried repair, have them run the automatic repair option.
+   - If the product offers both script-based repair and AI-based repair, ask whether both have already been attempted.
+
+4. If both script-based and AI-based repair have already failed, do not keep repeating the same repair instructions.
+   - Escalate to the appropriate support contact or support queue.
+   - Include that both repair modes were attempted and did not resolve the issue.
+
+## Verify
+
+Verify the fix by confirming:
+
+- The issue is not billing-, quota-, or payment-related.
+- The user can access the product console for the affected environment or bot.
+- The user ran the automatic repair option.
+- If applicable, whether script-based repair and AI-based repair were both attempted.
+- The environment or bot is now awake, reachable, and responsive.
+
+If the repair does not resolve the issue and both repair modes have already been tried, verification should shift from “try repair again” to “confirm escalation details are complete.”
+
+## Reusable Lessons
+
+- For down or unresponsive interactive environments or bots, suggest the product console’s automatic repair option before other troubleshooting.
+- Do not use this repair flow for billing, quota, or payment-related sleep issues.
+- Do not repeatedly provide the same repair instructions after both script-based and AI-based repair have already failed.
+- Escalate after confirmed repair failure rather than extending the troubleshooting loop unnecessarily.
+
+## Agent Use
+Use this page when:
+- Users may report that an interactive environment or bot is down, sleeping, or unresponsive.
+
+Apply it by:
+- Direct the user to the product console’s automatic repair option. If they already tried both script-based and AI-based repair without success, escalate to the appropriate support contact rather than repeating the repair steps.
+
+Verify by:
+- Confirm whether the issue is unrelated to billing, quota, or payment; ask whether they have already tried script-based repair and AI-based repair; verify whether the automatic repair option resolved the problem.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-19c2eeefa.json (sha256:7d301ac0785e384f8f0a239628dd009b3db100cd5e75caa190eca0ffb43ce616)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-pitfalls-retaining-benign-greeting-only-interactions-md-sha256" class="review-card">
+    <p><strong>Retaining Benign Greeting-Only Interactions</strong> <span class="status-pill">Pending</span></p>
+    <p>Guidance for preserving harmless greeting-only interactions in minimal form without over-redacting or inventing context.</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/pitfalls/retaining-benign-greeting-only-interactions.md</code></dd>
+      <dt>Kind</dt><dd>pitfall</dd>
+      <dt>Scope</dt><dd>team</dd>
+      <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json</code></dd>
+      <dt>Sources</dt><dd>1</dd>
+      <dt>Confidence</dt><dd>0.93</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
+      <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
+      <dt>Risk notes</dt><dd>Do not preserve raw transcripts if they contain personal, operational, sensitive, or identifying context.; A greeting that appears harmless in isolation may become sensitive when combined with surrounding metadata or conversation context.; Never retain credentials, tokens, cookies, authorization headers, private keys, or private identifiers as part of a greeting example.; quality_human_required:team_or_global_scope</dd>
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase review --auto</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code># Retaining Benign Greeting-Only Interactions
+
+## When to Use
+
+Use this guidance when deciding whether a greeting-only interaction is safe to keep as an example of basic conversational behavior.
+
+This applies only to generic greetings that contain no personal, operational, sensitive, or identifying information.
+
+## Context
+
+A common privacy pitfall is over-redacting or discarding harmless greeting-only interactions. Removing every benign greeting can eliminate useful evidence for simple conversation handling without improving privacy protection.
+
+The safe pattern is to retain only a minimal description of the interaction, not the raw exchange and not any inferred context.
+
+## Operating Rule
+
+Retain a greeting-only interaction only when it is genuinely generic and non-sensitive.
+
+Keep the record minimal:
+
+- Describe that the interaction was a benign greeting-handling example.
+- Avoid quoting raw transcript text unless necessary and clearly harmless.
+- Do not infer user identity, intent, project context, location, role, or organization.
+- Do not add operational meaning that was not present in the source.
+- Do not preserve unnecessary metadata or unique identifiers.
+
+Do not retain the interaction as safe if the greeting includes or is attached to:
+
+- Names or contact details
+- Account information
+- Customer, team, or project context
+- Private identifiers
+- Sensitive personal context
+- Credentials, tokens, cookies, authorization headers, or private keys
+- Operational instructions or system-specific details
+
+## Verify
+
+Before retaining the interaction, confirm that the source contains no:
+
+- Personal data
+- Credentials or secrets
+- Customer-specific or team-specific operational details
+- Sensitive topics
+- Unique identifiers beyond the generic greeting itself
+- Context that could make the greeting identifying or operationally meaningful
+
+If any of these are present, do not treat the interaction as a benign greeting-only example. Redact or discard according to the applicable privacy and security rules.
+
+## Reusable Lessons
+
+- Generic greetings without operational, personal, or sensitive content can be retained in minimal form as benign conversation-handling examples.
+- Over-redacting harmless greetings may reduce the quality of conversational behavior evidence without adding privacy protection.
+- The retention decision depends on the full surrounding context, not just the greeting text.
+- If a greeting is connected to names, accounts, projects, private identifiers, sensitive context, or operational instructions, it is no longer a generic benign greeting.
+
+## Agent Use
+
+Use this page when:
+
+- Reviewing whether a greeting-only interaction can be retained as safe evidence.
+- Curating examples of basic conversational handling.
+- Deciding whether minimal retention is preferable to full discard.
+
+Apply it by:
+
+- Checking the source for sensitive, personal, operational, or identifying context.
+- Keeping only a minimal description of the benign greeting-handling pattern.
+- Avoiding invented context, inferred user details, or unnecessary transcript preservation.
+
+Verify by:
+
+- Confirming that the retained record contains no personal data, secrets, customer details, team-specific details, sensitive topics, or unique identifiers.
+- Confirming that the source was greeting-only and did not include operational instructions.
+
+Do not use it when:
+
+- The interaction contains names, contact details, account references, customer context, internal project context, private identifiers, or sensitive personal information.
+- The interaction includes credentials, tokens, cookies, auth headers, private keys, or other secrets.
+- The interaction includes operational instructions or system-specific details.
+- The surrounding context makes the greeting identifiable or sensitive.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json (sha256:5205913357cd1f6a30a0141d44815c37df032ca5d1f8cbc45685f71a5274d5dc)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about" class="review-card">
+    <p><strong>Agents may provide unreliable or hallucinated answers about their own runtime model or configuration</strong> <span class="status-pill">Pending</span></p>
+    <p>Use an authoritative runtime/session status source, not a natural-language self-report from the agent, to verify the active model or runtime configuration.</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/procedures/agents-may-provide-unreliable-or-hallucinated-answers-about-their-own-runtime.md</code></dd>
+      <dt>Kind</dt><dd>procedure</dd>
+      <dt>Scope</dt><dd>team</dd>
+      <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json</code></dd>
+      <dt>Sources</dt><dd>1</dd>
+      <dt>Confidence</dt><dd>0.93</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
+      <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
+      <dt>Risk notes</dt><dd>The source evidence describes the general operational rule but does not specify a universal command name; different environments may expose runtime status through different mechanisms.; If no authoritative status mechanism is available, any claim about the active model or configuration remains uncertain.; quality_human_required:team_or_global_scope</dd>
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase review --auto</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code># Agents may provide unreliable or hallucinated answers about their own runtime model or configuration
+
+## When to Use
+
+Use this procedure when you need to verify an agent session&#39;s active model, runtime, routing, or configuration and the only available claim is a natural-language answer from the agent itself.
+
+Common cases include:
+
+- A user asks, &quot;What model are you?&quot;
+- An agent reports a model name, provider, tier, tool availability, or runtime configuration.
+- A workflow depends on knowing the exact active model or session routing.
+- There is a mismatch between expected session configuration and what the agent says about itself.
+
+## Context
+
+Agents can give unreliable or hallucinated answers about their own runtime environment. A natural-language self-report is not an authoritative source for active model identity, routing, permissions, tool configuration, or session state.
+
+Treat the agent&#39;s own statement as a clue only. Confirm through an available system/status command, runtime status endpoint, session metadata, orchestration logs, routing settings, or equivalent authoritative mechanism.
+
+## Procedure
+
+1. Do not rely on the agent&#39;s natural-language self-report as the final answer.
+2. Run the available `system/status` command, status endpoint, runtime inspection command, or equivalent authoritative session-status mechanism.
+3. Inspect the returned runtime/session metadata for the active model, routing, tool configuration, or other needed setting.
+4. Compare the authoritative output with the expected session configuration or routing settings.
+5. If the authoritative status confirms the needed value, use that value in your answer or downstream workflow.
+6. If no authoritative status source is available, state the uncertainty explicitly instead of claiming a specific model or configuration.
+
+## Operating Rule
+
+Use authoritative runtime/session status over agent self-report.
+
+If status cannot be checked, say that the active model or configuration cannot be verified from the available information.
+
+## Verify
+
+Verification is complete when:
+
+- The active model or configuration is obtained from an authoritative runtime/session status source.
+- The status output is compared with the expected session configuration or routing settings.
+- Any discrepancy between the agent&#39;s self-report and the authoritative source is resolved in favor of the authoritative source.
+
+If the status source is unavailable, verification is not complete; report uncertainty instead.
+
+## Reusable Lessons
+
+- To verify the active model in a session, use the available `system/status` command or equivalent runtime status mechanism instead of relying on a natural-language self-report from the agent.
+- Agents may hallucinate or provide stale information about their own runtime model or configuration.
+- If no status command or authoritative runtime source is available, state uncertainty rather than claiming a specific active model based only on the agent&#39;s self-report.
+
+## Agent Use
+Use this page when:
+- Agents may provide unreliable or hallucinated answers about their own runtime model or configuration.
+
+Apply it by:
+- Run the system/status command or inspect the authoritative runtime/session status source.
+
+Verify by:
+- Compare the command output with the expected session configuration or routing settings.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json (sha256:c6ed7403cee3a41d2bf489aebdd62935f4cbd52c8ac7b437a8d09dcbc0311f1f)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-procedures-replying-in-threaded-chat-conversations-md-sha256-a9fe478798cde964" class="review-card">
+    <p><strong>Replying in Threaded Chat Conversations</strong> <span class="status-pill">Pending</span></p>
+    <p>Procedure for ensuring chat replies land inside the intended existing thread by checking thread context and supplying the platform-required parent message identifier when needed.</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/procedures/replying-in-threaded-chat-conversations.md</code></dd>
+      <dt>Kind</dt><dd>procedure</dd>
+      <dt>Scope</dt><dd>team</dd>
+      <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json</code></dd>
+      <dt>Sources</dt><dd>1</dd>
+      <dt>Confidence</dt><dd>0.93</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
+      <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
+      <dt>Risk notes</dt><dd>Platform APIs differ: the required field name and identifier semantics must be confirmed against the specific chat platform before implementation.; Do not fabricate or reuse a parent message identifier when the interaction is not actually part of an existing thread.; quality_human_required:team_or_global_scope</dd>
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase review --auto</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code># Replying in Threaded Chat Conversations
+
+## When to Use
+
+Use this procedure before sending a reply through any chat, messaging, collaboration, or group-channel platform that supports threaded conversations.
+
+This applies when an agent or integration is about to post a response and the current interaction may belong to an existing thread.
+
+## Context
+
+Some chat platforms require more than a thread identifier to post inside an existing thread. If an agent relies on the wrong identifier, or only on a generic thread identifier, the message may appear in the main group or channel timeline instead of under the intended parent message.
+
+The safe operating rule is: first determine whether the current interaction is part of an existing thread; if it is, include the platform-specific parent message identifier required for an in-thread reply.
+
+## Procedure
+
+1. Before sending, inspect the conversation context.
+2. Decide whether the current interaction belongs to an existing thread.
+3. If it is part of an existing thread:
+   - Identify the platform-required parent message identifier for replying inside that thread.
+   - Include that parent message identifier in the send request according to the platform’s API or message format rules.
+4. If it is not part of an existing thread:
+   - Do not invent a parent message identifier.
+   - Do not attach an unrelated parent or thread reference.
+   - Send normally according to the platform’s non-threaded message rules.
+5. Avoid assuming that a thread identifier alone is sufficient unless the platform documentation or runtime contract confirms that it is the required field for in-thread replies.
+
+## Verify
+
+After sending, confirm that the message appears under the intended thread rather than in the main group or channel timeline.
+
+If the message appears in the main timeline unexpectedly, review whether the send request included the correct parent message identifier required by the platform.
+
+## Reusable Lessons
+
+- Before sending a reply in a threaded chat conversation, check whether the interaction belongs to an existing thread.
+- When replying inside an existing thread, use the platform-required parent message identifier.
+- If the conversation is not part of an existing thread, do not invent or attach a parent message identifier.
+- Verify the final placement of the message, not just the success response from the send API.
+
+## Agent Use
+Use this page when:
+- If an agent relies only on a thread identifier, the reply can be posted to the main group or channel instead of the intended thread.
+
+Apply it by:
+- Determine whether the current interaction is part of an existing thread; if so, include the platform-specific parent message identifier required to reply inside that thread.
+
+Verify by:
+- Confirm after sending that the message appears under the intended thread rather than in the main group or channel timeline.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json (sha256:2e09a1829cfe9a3ad7f450a766bcb172fcf677c0d87b5b0c941de4f44871b91b)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective" class="review-card">
+    <p><strong>Verify the Effective Runtime Model After a Model Switch</strong> <span class="status-pill">Pending</span></p>
+    <p>Agents and UIs can report that a model switch succeeded even when the active session is still using a different runtime model. For work where model identity matters, verify the effective current model with an explicit status, diagnostic, or configuration command.</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/procedures/the-agent-or-ui-may-report-success-even-when-the-effective-runtime-model.md</code></dd>
+      <dt>Kind</dt><dd>procedure</dd>
+      <dt>Scope</dt><dd>team</dd>
+      <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json</code></dd>
+      <dt>Sources</dt><dd>1</dd>
+      <dt>Confidence</dt><dd>0.93</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
+      <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
+      <dt>Risk notes</dt><dd>The source evidence is a single team lesson, so the procedure is intentionally general rather than tied to a specific UI, CLI, or model provider.; Exact verification commands are environment-specific and must be obtained from the relevant platform documentation or tooling.; quality_human_required:team_or_global_scope</dd>
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase review --auto</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code># Verify the Effective Runtime Model After a Model Switch
+
+## When to Use
+
+Use this procedure after changing or selecting an agent runtime model when the exact model affects the work, such as:
+
+- Production-impacting operations.
+- Cost-sensitive tasks.
+- Capability-sensitive tasks where reasoning depth, tool support, context length, or latency matters.
+- Reproducibility-sensitive debugging or evaluation.
+- Any workflow that depends on a specific configured default or active-session model.
+
+## Context
+
+A UI success message or an agent self-report may say that a model switch succeeded, but the effective runtime model for the active session may still differ from the intended or reported model.
+
+Treat model-selection confirmation as provisional until an explicit status, diagnostic, or configuration command reports the effective current model.
+
+## Procedure
+
+1. Request or run the environment’s explicit status, diagnostic, or configuration command that reports the model currently active for the session.
+2. Compare the reported effective runtime model with the intended model.
+3. If persistent defaults matter, also inspect the persistent/default configuration, not only the active session.
+4. If the effective model does not match the intended model:
+   - Re-apply the model-selection change using the supported configuration path.
+   - Re-run the explicit status or diagnostic command.
+   - Avoid proceeding with model-dependent work until the active model is confirmed.
+5. If the work is low-risk exploratory interaction where the exact model has no operational impact, do not add unnecessary verification overhead.
+
+## Verify
+
+Verification is successful when the explicit status, diagnostic, or configuration output shows:
+
+- The intended model is active for the current session.
+- If relevant, the persistent default configuration also points to the intended model.
+
+Do not rely solely on:
+
+- A UI toast or success banner.
+- The agent saying that it switched models.
+- A previous model-selection request without current-session confirmation.
+
+## Reusable Lessons
+
+- Verify model-switching results with an explicit session status or configuration command.
+- Treat UI success messages and agent self-reports as insufficient evidence when model identity matters.
+- Skip extra verification for low-risk exploratory interactions where exact model identity has no practical effect.
+
+## Agent Use
+Use this page when:
+- The agent or UI may report success even when the effective runtime model differs from the reported or intended model.
+
+Apply it by:
+- Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session.
+
+Verify by:
+- Confirm that the status output shows the intended model for the current session and, if needed, the persistent default configuration.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json (sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-procedures-untitled-topic-md-sha256-8ecc05290565bfc4467496fc5e8a691dc00cf05ce" class="review-card">
+    <p><strong>Verify Session Configuration Changes Before Relying on Them</strong> <span class="status-pill">Pending</span></p>
+    <p>Treat session-level configuration or behavior changes as temporary until the active configuration is explicitly inspected in the current session or worker context.</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/procedures/untitled-topic.md</code></dd>
+      <dt>Kind</dt><dd>procedure</dd>
+      <dt>Scope</dt><dd>team</dd>
+      <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json</code></dd>
+      <dt>Sources</dt><dd>1</dd>
+      <dt>Confidence</dt><dd>0.93</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
+      <dt>Why review</dt><dd>new_canonical_topic</dd><dt>Suggested</dt><dd>edit</dd>
+      <dt>Risk notes</dt><dd>Evidence comes from a single source, but the lesson is broadly applicable and low risk.; Procedure is intentionally generic because the evidence did not name a specific product, command, or configuration system.; quality_human_required:team_or_global_scope</dd>
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase review --auto</code></dd>
+      
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code># Verify Session Configuration Changes Before Relying on Them
+
+## When to Use
+
+Use this procedure after requesting a session-level configuration or behavior change, such as changing an active model, runtime mode, tool behavior, default setting, or worker/session preference.
+
+Use it before depending on the requested change for subsequent work.
+
+## Context
+
+A success-style response or acknowledgement can be mistaken for proof that a configuration changed persistently. Later work may then proceed under the wrong assumption about the active model, behavior, or session state.
+
+Session-level changes should be treated as temporary and unproven unless the active configuration is explicitly verified in the current session or worker context.
+
+## Procedure
+
+1. Request the configuration or behavior change using the appropriate command, UI action, or API call.
+2. Do not treat the acknowledgement response as proof that the change is active or persistent.
+3. Run a status, inspection, or equivalent configuration-check command in the same session or worker context where the change is expected to apply.
+4. Compare the inspection output against the intended configuration.
+5. Proceed only if the active configuration shown by inspection matches the intended setting.
+6. If the inspection output does not match, reapply the change or escalate according to the system’s normal configuration procedure.
+
+## Verify
+
+Confirm that the inspection output shows the intended active configuration in the current session or worker context.
+
+The verification should answer:
+
+- Is the intended model, mode, or behavior currently active?
+- Was the check performed in the same session, worker, shell, process, or context where subsequent work will run?
+- Is there any evidence that the setting is only temporary or scoped differently than expected?
+
+## Reusable Lessons
+
+- Treat session-level configuration or behavior changes as temporary unless the active configuration is explicitly verified.
+- Do not assume persistence solely because a prior request returned a success-style response or acknowledgement.
+- Verify configuration in the context that will actually perform the work.
+
+## Agent Use
+Use this page when:
+- A success-style response can be mistaken for proof that a default configuration changed persistently, causing later work to run under different assumptions.
+
+Apply it by:
+- Use a status, inspection, or equivalent configuration-check command to confirm the active model and behavior before relying on the change.
+
+Verify by:
+- Confirm that the inspection output shows the intended active configuration in the current session or worker context.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-745fa543d.json (sha256:8ecc05290565bfc4467496fc5e8a691dc00cf05ce8aa4574b7ec426d1713398a)
+</code></pre>
+    </details>
+  </li></ol>
 </section>
   <section id="approved-candidates" class="review-section" data-status="approved">
   <div class="section-heading">
@@ -130,7 +671,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-12c9caf5999d25cf.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -149,7 +690,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-251024cf3fc2ffaf.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -168,7 +709,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-26e20af34a56d959.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -187,7 +728,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-355aea4949afabe8.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -206,7 +747,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5ca220d0a850d0ac.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -225,7 +766,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-79822ff24256f1ed.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
@@ -244,7 +785,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-89b1816966184deb.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -263,7 +804,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b70a35157d393839.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -282,7 +823,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c578b794158d6fe2.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -301,7 +842,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c68d16c6183965d2.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -320,7 +861,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
@@ -339,7 +880,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
       </dl>
@@ -353,7 +894,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
       </dl>
@@ -367,7 +908,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
       </dl>
@@ -381,7 +922,7 @@
         
         
         <dt>File</dt><dd><code>.praxisbase/exceptions/human-required/wiki-human_required_broken-wikilink-kb-known-fixes-ack-timing-before-long-running-agent-work-md.json</code></dd>
-        <dt>Created</dt><dd>2026-06-16T04:04:24.595Z</dd>
+        <dt>Created</dt><dd>2026-06-16T04:32:48.293Z</dd>
         <dt>Recommended</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
         
       </dl>
@@ -837,7 +1378,7 @@
     <dt>Daily rejected</dt><dd>0</dd>
     <dt>Low signal</dt><dd>0</dd>
     <dt>Quality rejected</dt><dd>0</dd>
-    <dt>Duplicate groups</dt><dd>0</dd>
+    <dt>Duplicate groups</dt><dd>2</dd>
     <dt>Curation rejected</dt><dd>0</dd>
     <dt>Hard blocks</dt><dd>0</dd>
     <dt>Recommended</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
@@ -847,15 +1388,15 @@
   <div class="section-heading">
     <div>
       <h2>Promoted</h2>
-      <p>1 item(s)</p>
+      <p>2 item(s)</p>
     </div>
-    <strong>1</strong>
+    <strong>2</strong>
   </div>
   <div class="command-strip"><code>praxisbase gbrain export --mode personal --write --json</code>
 <code>praxisbase agentmemory export --mode personal --write --json</code></div>
   <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256" class="review-card">
     <p><strong>ACK timing before long-running agent work</strong> <span class="status-pill">Promoted</span></p>
-    <p>Send a short user-facing acknowledgement before starting slow work, tool use, network calls, or delegation dispatch so the user knows the request was received before the long-running operation begins.</p>
+    <p>Send a short user-facing acknowledgement before starting slow agent work such as tool use, network calls, or delegation dispatch, so the user receives timely confirmation before the long-running step begins.</p>
     <dl>
       <dt>Target</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
       <dt>Kind</dt><dd>pitfall</dd>
@@ -863,9 +1404,9 @@
       <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json</code></dd>
       <dt>Sources</dt><dd>1</dd>
       <dt>Confidence</dt><dd>0.93</dd>
-      <dt>Created</dt><dd>2026-06-16T04:32:22.081Z</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
       <dt>Why review</dt><dd>canonical_relationship</dd><dt>Suggested</dt><dd>edit</dd>
-      <dt>Risk notes</dt><dd>The core rule is strongly supported by the supplied evidence, but exact timing thresholds such as a specific number of seconds are operational guidance rather than directly evidenced.; Acknowledgements must not be worded as completion or success messages; final outcome reporting still needs to happen after the slow work completes.; quality_human_required:team_or_global_scope</dd>
+      <dt>Risk notes</dt><dd>The ACK must not be phrased as a completed result or success claim before the slow operation finishes.; Do not add acknowledgements to simple immediate answers where they would create unnecessary conversational overhead.; This guidance addresses interaction timing, not the correctness or reliability of the underlying tool, network, or dispatch operation.; quality_human_required:team_or_global_scope</dd>
       
       
       <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
@@ -879,84 +1420,80 @@
       <pre><code># ACK timing before long-running agent work
 
 ## When to Use
-Use this guidance when an agent is about to start work that may take more than a few seconds or depends on external execution, including:
+Use this guidance when an agent is about to begin work that may take more than a few seconds or depends on external execution, including:
 
-- Tool or plugin calls.
+- Tool or plugin execution.
 - Network requests or API calls.
-- Delegation to another agent, runner, or dispatch system.
-- Long-running analysis, diagnostics, or debugging.
-- Any workflow where the user may otherwise see no immediate response while the system begins work.
+- Delegation, subagent, or dispatch-runner work.
+- Long-running analysis where the user might otherwise see no immediate response.
+- Diagnostic or troubleshooting work that may involve waiting on systems outside the immediate chat turn.
 
 ## Symptoms or Context
-This pitfall appears when an agent receives a request and immediately begins slow or externally dispatched work without first responding to the user.
+This pitfall appears when an agent begins slow work silently. The user may not know whether the request was received, whether the system is hung, or whether the agent has started work at all.
 
-Common symptoms include:
+Common signs include:
 
-- The user experiences the agent as silent, stalled, or unresponsive.
-- A task is actually underway, but the user has no confirmation that the request was received.
-- Tooling, network, or dispatch latency creates a visible gap before the first user-facing message.
-- Users may retry, escalate, or assume the agent failed because no acknowledgement was emitted.
+- The user experiences the agent as unresponsive while tools, network calls, or dispatch work are running.
+- A long-running step begins before any user-facing confirmation is emitted.
+- Delegated or externally dispatched work creates a period of silence before results are available.
+- The user repeats the request or starts additional work because no acknowledgement was provided.
 
 ## Operating Rule
-Before starting slow work, send a short acknowledgement first. Then proceed with the long-running operation.
+Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first. Then proceed with the slow operation.
 
-The acknowledgement should be brief and should not claim the work is complete. It should only confirm receipt or indicate that processing is starting.
+The acknowledgement should be brief and should not claim success. It only confirms receipt and indicates that work is starting.
 
-Examples:
+Good examples:
 
 - &quot;Received — I’ll check that now.&quot;
 - &quot;On it.&quot;
-- &quot;I’m going to look into this.&quot;
-- &quot;Got it — starting the tool-based check now.&quot;
+- &quot;I’ll look into this and report back.&quot;
+- &quot;Got it — starting the investigation.&quot;
 
-Avoid silence while beginning slow work, network calls, tool calls, or delegation dispatch.
+Avoid acknowledgements that overpromise or report success before the work completes.
 
 ## Procedure
 1. Receive the user request.
-2. Determine whether the next step is slow, external, delegated, or tool-based.
+2. Decide whether the next step may be slow, external, delegated, or tool-driven.
 3. If yes, emit a short acknowledgement before starting that work.
-4. Start the tool, network, dispatch, or long-running operation.
-5. Return the final result when complete, including any useful status or failure information.
+4. Start the tool call, network call, dispatch, or long-running analysis.
+5. Return the result when complete, clearly distinguishing completed outcomes from failures or partial results.
 
 ## Verify
-Verify the behavior by checking that:
+Verify the fix by checking the ordering of events:
 
 - The acknowledgement is emitted before the long-running step begins.
-- Interaction logs show the ACK before tool calls, network calls, or delegation dispatch.
-- The ACK does not falsely imply success or completion.
-- The final response reports the actual outcome after the slow operation completes.
+- Tool calls, network calls, or dispatch activity happen after the acknowledgement.
+- The acknowledgement is short and does not present the final result prematurely.
+- The final response still reports the actual outcome after the slow work completes.
+
+A practical log check is: user request → ACK → slow operation → final result.
 
 ## Reusable Lessons
-- Slow tool, network, dispatch, or long-running work can leave users without timely feedback.
-- Send a short acknowledgement first, then proceed with the slow operation.
 - Do not stay silent while beginning slow or externally dispatched work.
-- An acknowledgement is not a success report; it only confirms that work is starting.
+- A timely acknowledgement improves perceived responsiveness without changing the underlying task duration.
+- An acknowledgement is not a success report; it should only confirm receipt and intent to proceed.
+- This rule is especially important before tool, network, dispatch, or delegation steps because those steps can introduce unpredictable delay.
 
 ## Agent Use
 Use this page when:
-
-- You are about to use tools, network calls, dispatch, subagents, or any slow workflow.
-- The user could otherwise wait without knowing whether the request was received.
-- You are designing or reviewing an agent interaction pattern involving delayed execution.
+- You are about to use tools, make network calls, dispatch to another worker, invoke subagents, or start analysis likely to take more than a few seconds.
+- The user may otherwise see no response while the slow step is running.
 
 Apply it by:
-
-- Sending a short acknowledgement before starting the slow step.
-- Keeping the ACK neutral: confirm receipt or start of work, not success.
-- Continuing with the requested operation after the ACK.
-- Reporting the actual result, error, or limitation after the operation completes.
+- Sending a concise acknowledgement before the slow operation begins.
+- Keeping the acknowledgement neutral: confirm receipt, not success.
+- Continuing with the requested operation after the acknowledgement.
+- Reporting the final outcome separately after the work completes.
 
 Verify by:
-
-- Confirming the ACK appears before the first slow/tool/network/dispatch action.
-- Checking that the ACK is visible to the user, not only recorded internally.
-- Ensuring the final answer is separate from the ACK and reflects the real outcome.
+- Confirming the acknowledgement appears before the tool, network, dispatch, or long-running analysis step.
+- Checking that the final answer reflects the actual outcome rather than relying on the initial ACK.
 
 Do not use it when:
-
-- The request can be answered immediately without tools, waiting, or delegation.
-- A platform or protocol forbids intermediate user-facing messages.
-- The ACK would be misleading because the agent has not actually accepted or cannot perform the task; in that case, respond directly with the limitation.
+- The request can be answered immediately without tools, waiting, external calls, or delegation.
+- Acknowledging would add unnecessary noise to a simple direct answer.
+- The system or product policy requires a different interaction protocol for the channel being used.
 
 ## Related Wiki Pages
 - [[agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes|Agents can mislead users if failures are reported as successful outcomes.]]
@@ -964,7 +1501,216 @@ Do not use it when:
 - [[openclaw-slack-replay-and-post-deploy-stability-failures|OpenClaw Slack replay and post-deploy stability failures]]
 
 ## Provenance
-- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json (sha256:908b4db1c375519e085fae77971b8fcbe7ff260f4351d0f08a0cede9d302dea2)
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-14edce26a.json (sha256:0a565d4a8e87b7e07f92991cf10d686aae1f654a30c809f2a8c837ee97f604ce)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-known-fixes-openclaw-dispatch-routing-failures-md-sha256-eec2baa68cf30e09" class="review-card">
+    <p><strong>OpenClaw dispatch routing failures</strong> <span class="status-pill">Promoted</span></p>
+    <p>Known pitfalls and operating rules for OpenClaw/OctoClaw dispatch failures, including technical route/spawn failures, missing user acknowledgments, vague human-support requests, and safe sanitization of routing documentation.</p>
+    <dl>
+      <dt>Target</dt><dd><code>kb/known-fixes/openclaw-dispatch-routing-failures.md</code></dd>
+      <dt>Kind</dt><dd>pitfall</dd>
+      <dt>Scope</dt><dd>team</dd>
+      <dt>Source</dt><dd><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json, source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json</code></dd>
+      <dt>Sources</dt><dd>2</dd>
+      <dt>Confidence</dt><dd>0.90</dd>
+      <dt>Created</dt><dd>2026-06-16T04:46:58.958Z</dd>
+      <dt>Why review</dt><dd>ambiguous_merge_target; multiple_canonical_targets</dd><dt>Suggested</dt><dd>edit</dd>
+      <dt>Risk notes</dt><dd>Existing technical dispatch content was preserved and reorganized, while new evidence primarily strengthens conversation-level routing and documentation-sanitization guidance.; No internal source URIs, personal routing details, credentials, tokens, cookies, authorization headers, or private keys are included.; No related wiki links were added because no required or suggested relationship links were supplied for this compilation.; quality_human_required:missing_wikilinks; quality_human_required:team_or_global_scope; quality_human_required:ambiguous_merge_target</dd>
+      
+      
+      <dt>Recommended</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
+      <dt>Merge candidates</dt><dd>OpenClaw dispatch routing failures <code>kb/known-fixes/openclaw-dispatch-routing-failures.md</code> <small>same_title_or_slug</small><br>OpenClaw dispatch routing failures <code>skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md</code> <small>same_title_or_slug</small></dd>
+<dt>Relationship reasons</dt><dd>same_title_or_slug</dd>
+      
+    </dl>
+    <details>
+      <summary>Preview generated markdown</summary>
+      <pre><code># OpenClaw dispatch routing failures
+
+## When to Use
+
+Use this guidance when OpenClaw or OctoClaw work appears to be routed incorrectly, not dispatched, or not actionable because the system or the user has not supplied enough routing context.
+
+Apply it when:
+
+- Dispatch or orchestration fails with runtime routing errors such as `stickyResult is not defined`.
+- Smoke tests or delivery lanes report structural route mismatches, such as expected `delegate` but got `reply`.
+- The task queue or status panel shows no active, queued, or recently completed tasks despite incoming work.
+- Sub-agent spawning fails because canonical hashes, task parameters, or spawn payload validation do not match.
+- Long-running agent work begins without an immediate user acknowledgment, creating a perceived timeout.
+- A user asks for “human support,” “an agent,” or escalation but gives no issue details needed for triage.
+- Internal support notes need to be converted into reusable routing documentation without leaking internal routing paths, personal names, private links, tenant identifiers, or project-specific labels.
+
+## Symptoms or Context
+
+### Technical dispatch symptoms
+
+- OpenClaw or OctoClaw runners fail repeatedly and stop processing tasks.
+- A delivery lane produces valid-looking message content but fails route, footer, transport, or delegation assertions.
+- Spawn attempts fail because the dispatch-phase canonical hash does not match the spawn-phase validation hash.
+- Status panels report `Runner: missing`, zero active tasks, or no recent task activity.
+- A task is mapped to a trivial system check instead of the intended execution unit.
+
+### Conversation-level routing symptoms
+
+- The user requests a person or human support but does not describe the problem.
+- The assistant responds as if a human has already taken over, creating false expectations.
+- The assistant promises escalation before collecting enough issue context to route the request.
+- The assistant closes with a vague offer to help instead of asking for actionable details.
+
+### Documentation hygiene symptoms
+
+- Internal routing guidance contains personal escalation paths, internal channels, private URLs, tenant identifiers, environment labels, or project-specific IDs.
+- Reusable docs copy operational notes too literally and risk exposing private routing details.
+- Sanitization removes too much and loses the decision logic agents need to route or troubleshoot correctly.
+
+## What To Do
+
+### 1. Acknowledge long-running dispatch work immediately
+
+Before starting tool use, internet access, sub-agent spawning, or dispatch work expected to take more than a few seconds:
+
+1. Send a short acknowledgment immediately.
+2. Keep the ACK brief and noncommittal.
+3. Do not imply success before dispatch has actually completed.
+4. Continue with the technical investigation after the ACK is visible to the user.
+
+Example pattern:
+
+&gt; I’m on it — I’ll check the dispatch/routing state and report back.
+
+### 2. Clarify vague human-support requests before routing
+
+When a user asks for human support without issue details:
+
+1. State transparently that you are an AI assistant.
+2. Acknowledge the request and any delay or inconvenience if relevant.
+3. Ask the user to describe the issue and provide the minimum context needed for triage.
+4. Do not claim that a human has joined.
+5. Do not promise immediate human escalation before the issue is understood.
+
+Safe response pattern:
+
+&gt; I’m an AI assistant, but I can help get this routed. Please describe the issue you need help with, including any error messages, affected workflow, urgency, and what you expected to happen.
+
+### 3. Diagnose the dispatch layer before debugging task content
+
+When the output looks wrong, missing, or too shallow, first determine whether the dispatch/orchestration layer is healthy.
+
+Check:
+
+1. Whether dispatch cycles are completing.
+2. Whether there are runtime routing errors such as undefined variables in the dispatch path.
+3. Whether route metadata is correct, especially `delegate` versus `reply` behavior.
+4. Whether footer, transport, session ID, and lane metadata pass structural validation.
+5. Whether the status panel shows active, queued, or recently completed tasks.
+6. Whether the intended task was dispatched, rather than replaced by a trivial version check or health check.
+
+### 4. Normalize spawn parameters and canonical hashes
+
+For sub-agent spawn failures:
+
+1. Inspect the dispatch payload and spawn payload.
+2. Verify that task fields are normalized consistently before hashing.
+3. Confirm the same canonicalization logic is used during dispatch and spawn validation.
+4. Check for parameter validation failures that indicate payload drift.
+5. Rule out gateway unavailability or excessive system load before changing task logic.
+
+### 5. Validate structural routing explicitly
+
+Do not rely only on message text. Structural metadata must be asserted directly.
+
+Validate:
+
+- Route type.
+- Transport mechanism.
+- Footer behavior.
+- Session IDs.
+- Spawn parameters.
+- Canonical hashes.
+- Queue state.
+- Runner availability.
+
+### 6. Sanitize internal routing documentation before reuse
+
+When converting support notes into reusable documentation:
+
+1. Extract the operational decision logic.
+2. Remove or generalize personal names and individual escalation paths.
+3. Remove private channels, internal links, and unpublished URLs.
+4. Remove tenant IDs, customer-specific identifiers, project IDs, environment labels, and instance-specific labels unless they are safe and necessary for the intended audience.
+5. Preserve safe public product names, generic feature names, public docs links, and necessary troubleshooting steps.
+6. Review the final page as if it may be shown outside the immediate incident team.
+
+## Verify
+
+### Technical verification
+
+- Dispatch cycles complete without runtime routing errors.
+- Smoke tests pass route, footer, transport, and delegation assertions.
+- Queue/status panels show active, queued, or recently completed work when requests are incoming.
+- Sub-agent spawn succeeds without parameter validation or canonical hash mismatch errors.
+- The dispatched plan payload represents the intended work, not a placeholder or unrelated system check.
+
+### Conversation verification
+
+- The assistant clearly identifies itself as AI when the user asks for human support without details.
+- The assistant does not claim a human has taken over.
+- The assistant asks for the issue details needed to route or troubleshoot.
+- The assistant does not promise escalation before collecting the minimum context.
+
+### Documentation verification
+
+- The rewritten documentation preserves the routing decision tree.
+- Internal links, personal routing, tenant identifiers, private channels, and project-specific labels are absent or generalized.
+- Necessary safe details remain, including generic product names and public operational concepts.
+
+## Reusable Lessons
+
+- Send an immediate ACK before long-running tool, internet, dispatch, or sub-agent work.
+- Debug dispatch/orchestration health before assuming the task logic is wrong.
+- Validate structural route metadata, not just message content.
+- Keep canonical hash generation deterministic across dispatch and spawn phases.
+- A vague request for human support is not enough to route; identify as AI and ask for issue details first.
+- Do not pretend a human support representative has joined unless that is actually true.
+- Reusable docs should preserve operational decision logic while removing private routing details and instance-specific identifiers.
+- Sanitization should not remove safe details that agents need to perform the workflow.
+
+## Agent Use
+
+Use this page when:
+
+- OpenClaw or OctoClaw dispatch fails, routes incorrectly, reports missing runners, or shows spawn/hash validation errors.
+- A user asks for human help but has not described the issue enough to route it.
+- You are transforming internal routing notes into reusable support documentation.
+
+Apply it by:
+
+- First acknowledge long-running work if investigation may take more than a few seconds.
+- Check dispatch/orchestration health before debugging content-level behavior.
+- Inspect route, transport, footer, session IDs, spawn payloads, and canonical hashes.
+- For vague human-support requests, identify as AI and ask for the issue details needed for triage.
+- For documentation, remove private routing details while preserving the decision logic.
+
+Verify by:
+
+- Confirm dispatch cycles complete and smoke tests pass structural assertions.
+- Confirm the queue reflects expected active, queued, or completed work.
+- Confirm sub-agent spawning succeeds without hash or parameter validation errors.
+- Confirm the user was asked for actionable issue details before escalation was implied.
+- Confirm sanitized documentation contains no private links, personal routing, or instance-specific identifiers.
+
+Do not use it when:
+
+- The only issue is missing replay data, stale gateway configuration, or a known infrastructure outage with a separate runbook.
+- The user has already provided complete issue details and the next step is a domain-specific support workflow.
+- The documentation is private incident material that should not be generalized or published.
+
+## Provenance
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-1e5ae91e7.json (sha256:20c0f511477343072606cda997e33ba031f0d206da3bab657e2a715c12408c50)
+- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-c721715b0.json (sha256:f1583cbdf2fe08e391d112ad249e3b93655b20838d85e5ba65442034e3edc76a)
 </code></pre>
     </details>
   </li></ol>

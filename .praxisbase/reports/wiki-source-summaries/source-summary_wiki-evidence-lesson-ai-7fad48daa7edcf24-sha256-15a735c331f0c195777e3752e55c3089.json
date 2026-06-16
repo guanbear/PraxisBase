@@ -1,0 +1,27 @@
+{
+  "id": "source-summary_wiki-evidence-lesson-ai-7fad48daa7edcf24-sha256-15a735c331f0c195777e3752e55c3089",
+  "type": "wiki_source_summary",
+  "source_id": "wiki-evidence-lesson_ai-7fad48daa7edcf24-sha256-15a735c331f0c195777e3752e55c3089f14a370ca1408275b8548",
+  "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json",
+  "source_hash": "sha256:5205913357cd1f6a30a0141d44815c37df032ca5d1f8cbc45685f71a5274d5dc",
+  "source_kind": "distilled_experience",
+  "scope": "team",
+  "summary": "Over-redacting or discarding harmless greeting-only interactions can remove useful evidence for basic conversational behavior without improving privacy protection. Retain only a minimal record describing the benign greeting-handling pattern; avoid adding inferred context or unnecessary details.",
+  "entities": [
+    "lesson",
+    "portability"
+  ],
+  "topics": [
+    "lesson:sha256:15a735c331f0c195777e3752e55c3089f14a370ca1408275b854807e53541342",
+    "portability:universal"
+  ],
+  "observation_ids": [
+    "wiki-obs_wiki-evidence-lesson-ai-7fad48daa7edcf24-sha256-15a735c331f0c195777e3752e55c3089"
+  ],
+  "topic_keys": [
+    "lesson-sha256-15a735c331f0c195777e3752e55c3089f14a370ca1408275b854807e53541342-portability-universal::unknown-action::lesson-portability::team"
+  ],
+  "privacy_verdict": "safe",
+  "contributed_to_pages": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

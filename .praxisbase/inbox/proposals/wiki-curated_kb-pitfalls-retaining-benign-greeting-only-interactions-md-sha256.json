@@ -1,0 +1,94 @@
+{
+  "id": "wiki-curated_kb-pitfalls-retaining-benign-greeting-only-interactions-md-sha256",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/pitfalls/retaining-benign-greeting-only-interactions.md",
+  "action": "create",
+  "page_kind": "pitfall",
+  "scope": "team",
+  "title": "Retaining Benign Greeting-Only Interactions",
+  "summary": "Guidance for preserving harmless greeting-only interactions in minimal form without over-redacting or inventing context.",
+  "body_markdown": "# Retaining Benign Greeting-Only Interactions\n\n## When to Use\n\nUse this guidance when deciding whether a greeting-only interaction is safe to keep as an example of basic conversational behavior.\n\nThis applies only to generic greetings that contain no personal, operational, sensitive, or identifying information.\n\n## Context\n\nA common privacy pitfall is over-redacting or discarding harmless greeting-only interactions. Removing every benign greeting can eliminate useful evidence for simple conversation handling without improving privacy protection.\n\nThe safe pattern is to retain only a minimal description of the interaction, not the raw exchange and not any inferred context.\n\n## Operating Rule\n\nRetain a greeting-only interaction only when it is genuinely generic and non-sensitive.\n\nKeep the record minimal:\n\n- Describe that the interaction was a benign greeting-handling example.\n- Avoid quoting raw transcript text unless necessary and clearly harmless.\n- Do not infer user identity, intent, project context, location, role, or organization.\n- Do not add operational meaning that was not present in the source.\n- Do not preserve unnecessary metadata or unique identifiers.\n\nDo not retain the interaction as safe if the greeting includes or is attached to:\n\n- Names or contact details\n- Account information\n- Customer, team, or project context\n- Private identifiers\n- Sensitive personal context\n- Credentials, tokens, cookies, authorization headers, or private keys\n- Operational instructions or system-specific details\n\n## Verify\n\nBefore retaining the interaction, confirm that the source contains no:\n\n- Personal data\n- Credentials or secrets\n- Customer-specific or team-specific operational details\n- Sensitive topics\n- Unique identifiers beyond the generic greeting itself\n- Context that could make the greeting identifying or operationally meaningful\n\nIf any of these are present, do not treat the interaction as a benign greeting-only example. Redact or discard according to the applicable privacy and security rules.\n\n## Reusable Lessons\n\n- Generic greetings without operational, personal, or sensitive content can be retained in minimal form as benign conversation-handling examples.\n- Over-redacting harmless greetings may reduce the quality of conversational behavior evidence without adding privacy protection.\n- The retention decision depends on the full surrounding context, not just the greeting text.\n- If a greeting is connected to names, accounts, projects, private identifiers, sensitive context, or operational instructions, it is no longer a generic benign greeting.\n\n## Agent Use\n\nUse this page when:\n\n- Reviewing whether a greeting-only interaction can be retained as safe evidence.\n- Curating examples of basic conversational handling.\n- Deciding whether minimal retention is preferable to full discard.\n\nApply it by:\n\n- Checking the source for sensitive, personal, operational, or identifying context.\n- Keeping only a minimal description of the benign greeting-handling pattern.\n- Avoiding invented context, inferred user details, or unnecessary transcript preservation.\n\nVerify by:\n\n- Confirming that the retained record contains no personal data, secrets, customer details, team-specific details, sensitive topics, or unique identifiers.\n- Confirming that the source was greeting-only and did not include operational instructions.\n\nDo not use it when:\n\n- The interaction contains names, contact details, account references, customer context, internal project context, private identifiers, or sensitive personal information.\n- The interaction includes credentials, tokens, cookies, auth headers, private keys, or other secrets.\n- The interaction includes operational instructions or system-specific details.\n- The surrounding context makes the greeting identifiable or sensitive.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json (sha256:5205913357cd1f6a30a0141d44815c37df032ca5d1f8cbc45685f71a5274d5dc)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json"
+  ],
+  "source_hashes": [
+    "sha256:5205913357cd1f6a30a0141d44815c37df032ca5d1f8cbc45685f71a5274d5dc"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-7fad48daa7edcf24-sha256-15a735c331f0c195777e3752e55c3089f14a370ca1408275b8548"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-cfcba5397.json",
+      "source_hash": "sha256:5205913357cd1f6a30a0141d44815c37df032ca5d1f8cbc45685f71a5274d5dc",
+      "excerpt": "Over-redacting or discarding harmless greeting-only interactions can remove useful evidence for basic conversational behavior without improving privacy protection. Retain only a minimal record describing the benign greeting-handling pattern; avoid adding inferred context or unnecessary details."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "Do not preserve raw transcripts if they contain personal, operational, sensitive, or identifying context.",
+      "A greeting that appears harmless in isolation may become sensitive when combined with surrounding metadata or conversation context.",
+      "Never retain credentials, tokens, cookies, authorization headers, private keys, or private identifiers as part of a greeting example.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T04:46:58.958Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

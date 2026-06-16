@@ -1,0 +1,27 @@
+{
+  "id": "source-summary_wiki-evidence-lesson-ai-b78f6acc7a94ce8b-sha256-bb5610e89214fd354f948b0859c48726",
+  "type": "wiki_source_summary",
+  "source_id": "wiki-evidence-lesson_ai-b78f6acc7a94ce8b-sha256-bb5610e89214fd354f948b0859c487263b9676b8e26f65e75bc06",
+  "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-bdd86a156.json",
+  "source_hash": "sha256:fabd331ec0839a3c34fcde0cef4678e2a99b48a50fef4def9ad04bd23685750a",
+  "source_kind": "distilled_experience",
+  "scope": "team",
+  "summary": "Retaining aliases or display-name preferences tied to identifiable people or groups can expose personal preferences beyond the appropriate scope. Do not save the person-to-alias mapping. If the information is useful, rewrite it as an aggregate, non-identifying note that some users have shared preferred display names.",
+  "entities": [
+    "lesson",
+    "portability"
+  ],
+  "topics": [
+    "lesson:sha256:bb5610e89214fd354f948b0859c487263b9676b8e26f65e75bc06090c3c169ae",
+    "portability:universal"
+  ],
+  "observation_ids": [
+    "wiki-obs_wiki-evidence-lesson-ai-b78f6acc7a94ce8b-sha256-bb5610e89214fd354f948b0859c48726"
+  ],
+  "topic_keys": [
+    "lesson-sha256-bb5610e89214fd354f948b0859c487263b9676b8e26f65e75bc06090c3c169ae-portability-universal::unknown-action::lesson-portability::team"
+  ],
+  "privacy_verdict": "team_allowed",
+  "contributed_to_pages": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

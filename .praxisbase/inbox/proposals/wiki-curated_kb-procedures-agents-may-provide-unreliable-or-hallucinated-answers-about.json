@@ -1,0 +1,93 @@
+{
+  "id": "wiki-curated_kb-procedures-agents-may-provide-unreliable-or-hallucinated-answers-about",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/procedures/agents-may-provide-unreliable-or-hallucinated-answers-about-their-own-runtime.md",
+  "action": "create",
+  "page_kind": "procedure",
+  "scope": "team",
+  "title": "Agents may provide unreliable or hallucinated answers about their own runtime model or configuration",
+  "summary": "Use an authoritative runtime/session status source, not a natural-language self-report from the agent, to verify the active model or runtime configuration.",
+  "body_markdown": "# Agents may provide unreliable or hallucinated answers about their own runtime model or configuration\n\n## When to Use\n\nUse this procedure when you need to verify an agent session's active model, runtime, routing, or configuration and the only available claim is a natural-language answer from the agent itself.\n\nCommon cases include:\n\n- A user asks, \"What model are you?\"\n- An agent reports a model name, provider, tier, tool availability, or runtime configuration.\n- A workflow depends on knowing the exact active model or session routing.\n- There is a mismatch between expected session configuration and what the agent says about itself.\n\n## Context\n\nAgents can give unreliable or hallucinated answers about their own runtime environment. A natural-language self-report is not an authoritative source for active model identity, routing, permissions, tool configuration, or session state.\n\nTreat the agent's own statement as a clue only. Confirm through an available system/status command, runtime status endpoint, session metadata, orchestration logs, routing settings, or equivalent authoritative mechanism.\n\n## Procedure\n\n1. Do not rely on the agent's natural-language self-report as the final answer.\n2. Run the available `system/status` command, status endpoint, runtime inspection command, or equivalent authoritative session-status mechanism.\n3. Inspect the returned runtime/session metadata for the active model, routing, tool configuration, or other needed setting.\n4. Compare the authoritative output with the expected session configuration or routing settings.\n5. If the authoritative status confirms the needed value, use that value in your answer or downstream workflow.\n6. If no authoritative status source is available, state the uncertainty explicitly instead of claiming a specific model or configuration.\n\n## Operating Rule\n\nUse authoritative runtime/session status over agent self-report.\n\nIf status cannot be checked, say that the active model or configuration cannot be verified from the available information.\n\n## Verify\n\nVerification is complete when:\n\n- The active model or configuration is obtained from an authoritative runtime/session status source.\n- The status output is compared with the expected session configuration or routing settings.\n- Any discrepancy between the agent's self-report and the authoritative source is resolved in favor of the authoritative source.\n\nIf the status source is unavailable, verification is not complete; report uncertainty instead.\n\n## Reusable Lessons\n\n- To verify the active model in a session, use the available `system/status` command or equivalent runtime status mechanism instead of relying on a natural-language self-report from the agent.\n- Agents may hallucinate or provide stale information about their own runtime model or configuration.\n- If no status command or authoritative runtime source is available, state uncertainty rather than claiming a specific active model based only on the agent's self-report.\n\n## Agent Use\nUse this page when:\n- Agents may provide unreliable or hallucinated answers about their own runtime model or configuration.\n\nApply it by:\n- Run the system/status command or inspect the authoritative runtime/session status source.\n\nVerify by:\n- Compare the command output with the expected session configuration or routing settings.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json (sha256:c6ed7403cee3a41d2bf489aebdd62935f4cbd52c8ac7b437a8d09dcbc0311f1f)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json"
+  ],
+  "source_hashes": [
+    "sha256:c6ed7403cee3a41d2bf489aebdd62935f4cbd52c8ac7b437a8d09dcbc0311f1f"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-d2cd6f88f485aa63-sha256-07b566b5a60a2fc32d617b3f5fb60f945dfc974f3e669f04d0d49"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-e437220d9.json",
+      "source_hash": "sha256:c6ed7403cee3a41d2bf489aebdd62935f4cbd52c8ac7b437a8d09dcbc0311f1f",
+      "excerpt": "Agents may provide unreliable or hallucinated answers about their own runtime model or configuration. Run the system/status command or inspect the authoritative runtime/session status source."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "The source evidence describes the general operational rule but does not specify a universal command name; different environments may expose runtime status through different mechanisms.",
+      "If no authoritative status mechanism is available, any claim about the active model or configuration remains uncertain.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T04:46:58.958Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

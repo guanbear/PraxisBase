@@ -9,7 +9,7 @@
   "source_hash": "sha256:cfcba53974d12423579c4defd306375a946e01065785973272a6176bc6e9c231",
   "scope_hint": "team",
   "redacted_summary": "A team-scope interaction was reviewed and found to contain only a generic greeting with no operational, personal, or sensitive details. The experience is safe to retain as a minimal record of benign conversational handling after team review.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

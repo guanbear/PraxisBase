@@ -1,0 +1,23 @@
+{
+  "id": "ai-distill_2026-06-16t04-46-58-958z",
+  "protocol_version": "0.1",
+  "type": "ai_distill_report",
+  "configured": true,
+  "mode": "production",
+  "production_ready": true,
+  "provider": "openai-compatible",
+  "model": "gpt-5.5",
+  "chunks": 0,
+  "distilled": 0,
+  "failed": 0,
+  "human_required": 0,
+  "privacy_required": 0,
+  "review_required": 0,
+  "rejected_low_signal": 0,
+  "rejected_quality": 0,
+  "cache_hits": 0,
+  "budget_used_uncached": 0,
+  "skipped_by_budget": 0,
+  "warnings": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

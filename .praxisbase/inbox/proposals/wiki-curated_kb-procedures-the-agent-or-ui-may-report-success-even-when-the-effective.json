@@ -1,0 +1,93 @@
+{
+  "id": "wiki-curated_kb-procedures-the-agent-or-ui-may-report-success-even-when-the-effective",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/procedures/the-agent-or-ui-may-report-success-even-when-the-effective-runtime-model.md",
+  "action": "create",
+  "page_kind": "procedure",
+  "scope": "team",
+  "title": "Verify the Effective Runtime Model After a Model Switch",
+  "summary": "Agents and UIs can report that a model switch succeeded even when the active session is still using a different runtime model. For work where model identity matters, verify the effective current model with an explicit status, diagnostic, or configuration command.",
+  "body_markdown": "# Verify the Effective Runtime Model After a Model Switch\n\n## When to Use\n\nUse this procedure after changing or selecting an agent runtime model when the exact model affects the work, such as:\n\n- Production-impacting operations.\n- Cost-sensitive tasks.\n- Capability-sensitive tasks where reasoning depth, tool support, context length, or latency matters.\n- Reproducibility-sensitive debugging or evaluation.\n- Any workflow that depends on a specific configured default or active-session model.\n\n## Context\n\nA UI success message or an agent self-report may say that a model switch succeeded, but the effective runtime model for the active session may still differ from the intended or reported model.\n\nTreat model-selection confirmation as provisional until an explicit status, diagnostic, or configuration command reports the effective current model.\n\n## Procedure\n\n1. Request or run the environment’s explicit status, diagnostic, or configuration command that reports the model currently active for the session.\n2. Compare the reported effective runtime model with the intended model.\n3. If persistent defaults matter, also inspect the persistent/default configuration, not only the active session.\n4. If the effective model does not match the intended model:\n   - Re-apply the model-selection change using the supported configuration path.\n   - Re-run the explicit status or diagnostic command.\n   - Avoid proceeding with model-dependent work until the active model is confirmed.\n5. If the work is low-risk exploratory interaction where the exact model has no operational impact, do not add unnecessary verification overhead.\n\n## Verify\n\nVerification is successful when the explicit status, diagnostic, or configuration output shows:\n\n- The intended model is active for the current session.\n- If relevant, the persistent default configuration also points to the intended model.\n\nDo not rely solely on:\n\n- A UI toast or success banner.\n- The agent saying that it switched models.\n- A previous model-selection request without current-session confirmation.\n\n## Reusable Lessons\n\n- Verify model-switching results with an explicit session status or configuration command.\n- Treat UI success messages and agent self-reports as insufficient evidence when model identity matters.\n- Skip extra verification for low-risk exploratory interactions where exact model identity has no practical effect.\n\n## Agent Use\nUse this page when:\n- The agent or UI may report success even when the effective runtime model differs from the reported or intended model.\n\nApply it by:\n- Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session.\n\nVerify by:\n- Confirm that the status output shows the intended model for the current session and, if needed, the persistent default configuration.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json (sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json"
+  ],
+  "source_hashes": [
+    "sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-d6a21d3a21b52909-sha256-b568c26b6c6267b36df32da2105231832bca5f58013b98787d4ee"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-dbfb119fc.json",
+      "source_hash": "sha256:056bc7cae4d2e0bb6edacd250408f8a52d1eb42ef2d98ae98339986307eb7520",
+      "excerpt": "The agent or UI may report success even when the effective runtime model differs from the reported or intended model. Run an explicit status, diagnostic, or configuration command that reports the effective current model for the active session."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "The source evidence is a single team lesson, so the procedure is intentionally general rather than tied to a specific UI, CLI, or model provider.",
+      "Exact verification commands are environment-specific and must be obtained from the relevant platform documentation or tooling.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T04:46:58.958Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

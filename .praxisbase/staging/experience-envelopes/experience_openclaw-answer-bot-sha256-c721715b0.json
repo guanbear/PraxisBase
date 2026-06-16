@@ -9,7 +9,7 @@
   "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
   "scope_hint": "team",
   "redacted_summary": "Team support routing guidance was consolidated into generic escalation categories. Installation and document-integration issues, terminal session recovery issues, capacity/quota requests, bot visibility problems, and protocol-specific questions should each follow predefined ownership or self-service guidance rather than ad hoc troubleshooting. Verification signal: the sanitized guidance removes personal routing, internal links, and project-specific identifiers while preserving the operational decision pattern.",
-  "fetched_at": "2026-06-16T04:32:22.081Z",
+  "fetched_at": "2026-06-16T04:46:58.958Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

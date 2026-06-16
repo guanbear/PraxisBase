@@ -1,0 +1,19 @@
+{
+  "id": "agent-memory-ingest_openclaw-2026-06-16t04-46-58-958z",
+  "protocol_version": "0.1",
+  "type": "agent_memory_ingest_report",
+  "agent": "openclaw",
+  "mode": "write",
+  "scanned": 23,
+  "imported": 0,
+  "duplicates": 23,
+  "skipped": 0,
+  "unsafe": 0,
+  "outputs": [
+    ".praxisbase/reports/memory-ingest/agent-memory-ingest_openclaw-2026-06-16t04-46-58-958z.json",
+    ".praxisbase/runs/memory-ingest/run_memory-ingest-openclaw-2026-06-16t04-46-58-958z.json"
+  ],
+  "warnings": [],
+  "changed_stable_knowledge": false,
+  "created_at": "2026-06-16T04:46:58.958Z"
+}

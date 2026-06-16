@@ -1,0 +1,93 @@
+{
+  "id": "wiki-curated_kb-procedures-replying-in-threaded-chat-conversations-md-sha256-a9fe478798cde964",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/procedures/replying-in-threaded-chat-conversations.md",
+  "action": "create",
+  "page_kind": "procedure",
+  "scope": "team",
+  "title": "Replying in Threaded Chat Conversations",
+  "summary": "Procedure for ensuring chat replies land inside the intended existing thread by checking thread context and supplying the platform-required parent message identifier when needed.",
+  "body_markdown": "# Replying in Threaded Chat Conversations\n\n## When to Use\n\nUse this procedure before sending a reply through any chat, messaging, collaboration, or group-channel platform that supports threaded conversations.\n\nThis applies when an agent or integration is about to post a response and the current interaction may belong to an existing thread.\n\n## Context\n\nSome chat platforms require more than a thread identifier to post inside an existing thread. If an agent relies on the wrong identifier, or only on a generic thread identifier, the message may appear in the main group or channel timeline instead of under the intended parent message.\n\nThe safe operating rule is: first determine whether the current interaction is part of an existing thread; if it is, include the platform-specific parent message identifier required for an in-thread reply.\n\n## Procedure\n\n1. Before sending, inspect the conversation context.\n2. Decide whether the current interaction belongs to an existing thread.\n3. If it is part of an existing thread:\n   - Identify the platform-required parent message identifier for replying inside that thread.\n   - Include that parent message identifier in the send request according to the platform’s API or message format rules.\n4. If it is not part of an existing thread:\n   - Do not invent a parent message identifier.\n   - Do not attach an unrelated parent or thread reference.\n   - Send normally according to the platform’s non-threaded message rules.\n5. Avoid assuming that a thread identifier alone is sufficient unless the platform documentation or runtime contract confirms that it is the required field for in-thread replies.\n\n## Verify\n\nAfter sending, confirm that the message appears under the intended thread rather than in the main group or channel timeline.\n\nIf the message appears in the main timeline unexpectedly, review whether the send request included the correct parent message identifier required by the platform.\n\n## Reusable Lessons\n\n- Before sending a reply in a threaded chat conversation, check whether the interaction belongs to an existing thread.\n- When replying inside an existing thread, use the platform-required parent message identifier.\n- If the conversation is not part of an existing thread, do not invent or attach a parent message identifier.\n- Verify the final placement of the message, not just the success response from the send API.\n\n## Agent Use\nUse this page when:\n- If an agent relies only on a thread identifier, the reply can be posted to the main group or channel instead of the intended thread.\n\nApply it by:\n- Determine whether the current interaction is part of an existing thread; if so, include the platform-specific parent message identifier required to reply inside that thread.\n\nVerify by:\n- Confirm after sending that the message appears under the intended thread rather than in the main group or channel timeline.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json (sha256:2e09a1829cfe9a3ad7f450a766bcb172fcf677c0d87b5b0c941de4f44871b91b)\n",
+  "source_refs": [
+    "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json"
+  ],
+  "source_hashes": [
+    "sha256:2e09a1829cfe9a3ad7f450a766bcb172fcf677c0d87b5b0c941de4f44871b91b"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "wiki-evidence-lesson_ai-24811b94a6a205d2-sha256-226311f3fe5dc4ba2beff8243b19c21e8e3317b01c70992f6d8e9"
+  ],
+  "confidence": 0.93,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-31384b954.json",
+      "source_hash": "sha256:2e09a1829cfe9a3ad7f450a766bcb172fcf677c0d87b5b0c941de4f44871b91b",
+      "excerpt": "If an agent relies only on a thread identifier, the reply can be posted to the main group or channel instead of the intended thread. Determine whether the current interaction is part of an existing thread; if so, include the platform-specific parent message identifier required to reply inside that thread."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "Platform APIs differ: the required field name and identifier semantics must be confirmed against the specific chat platform before implementation.",
+      "Do not fabricate or reuse a parent message identifier when the interaction is not actually part of an existing thread.",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-16T04:46:58.958Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-16T04:46:58.958Z"
+}
