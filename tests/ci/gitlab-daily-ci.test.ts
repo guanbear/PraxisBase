@@ -79,11 +79,16 @@ describe("GitLab daily harvest CI template", () => {
     const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
 
     const harvestStageIndex = ci.indexOf("stage: harvest");
+    const privacyStageIndex = ci.indexOf("stage: privacy");
     const reviewStageIndex = ci.indexOf("stage: review");
 
     assert.ok(
       harvestStageIndex !== -1,
       "missing 'stage: harvest' in template",
+    );
+    assert.ok(
+      privacyStageIndex !== -1,
+      "missing 'stage: privacy' in template",
     );
     assert.ok(
       reviewStageIndex !== -1,
@@ -93,9 +98,13 @@ describe("GitLab daily harvest CI template", () => {
       harvestStageIndex < reviewStageIndex,
       "harvest stage must appear before review stage",
     );
+    assert.ok(
+      privacyStageIndex < reviewStageIndex,
+      "privacy stage must appear before review stage",
+    );
   });
 
-  it("lists harvest before review in stages definition", async () => {
+  it("lists harvest and privacy before review in stages definition", async () => {
     const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
 
     const stagesMatch = ci.match(/stages:\s*\n([\s\S]*?)(?=\n[a-z]|\n\n|$)/);
@@ -103,14 +112,29 @@ describe("GitLab daily harvest CI template", () => {
 
     const stagesBlock = stagesMatch[1];
     const harvestIdx = stagesBlock.indexOf("harvest");
+    const privacyIdx = stagesBlock.indexOf("privacy");
     const reviewIdx = stagesBlock.indexOf("review");
 
     assert.ok(harvestIdx !== -1, "harvest not listed in stages");
+    assert.ok(privacyIdx !== -1, "privacy not listed in stages");
     assert.ok(reviewIdx !== -1, "review not listed in stages");
     assert.ok(
       harvestIdx < reviewIdx,
       "harvest must be listed before review in stages",
     );
+    assert.ok(
+      privacyIdx < reviewIdx,
+      "privacy must be listed before review in stages",
+    );
+  });
+
+  it("includes team-git privacy triage job", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+
+    assert.match(ci, /praxisbase:privacy-triage:[\s\S]*?resource_group:\s+praxisbase-write/);
+    assert.match(ci, /praxisbase:privacy-triage:[\s\S]*?CI_PIPELINE_SOURCE == "schedule"[\s\S]*?PRAXISBASE_TASK == "privacy-triage"/);
+    assert.match(ci, /privacy triage --mode team-git/);
+    assert.match(ci, /PRAXISBASE_PRIVACY_LIMIT/);
   });
 
   it("extends both .praxisbase-knowledge and .praxisbase-writeback", async () => {

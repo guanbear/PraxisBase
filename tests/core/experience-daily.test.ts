@@ -159,7 +159,64 @@ describe("runDailyExperience", () => {
     assert.equal(nextActions.counts.changed_stable_knowledge, true);
     assert.equal(nextActions.agentmemory_export_recommended, false);
     assert.ok(nextActions.commands.some((command) => command.includes("privacy triage")));
+    assert.ok(nextActions.commands.some((command) => command.includes("--mode personal --auto-release")));
     assert.ok(nextActions.messages.some((message) => message.includes("privacy")));
+  });
+
+  it("derives team-git privacy triage next actions without personal auto-release", () => {
+    const nextActions = deriveDailyNextActions({
+      id: "daily-experience_20260521_team",
+      protocol_version: PROTOCOL_VERSION,
+      type: "daily_experience_report",
+      authority_mode: "team-git",
+      mode: "write",
+      ai_distill: {
+        configured: true,
+        mode: "production",
+        production_ready: true,
+        provider: "openai-compatible",
+        model: "test-model",
+        chunks: 0,
+        distilled: 0,
+        failed: 0,
+        human_required: 0,
+        privacy_required: 0,
+        review_required: 0,
+        rejected_low_signal: 0,
+        rejected_quality: 0,
+        cache_hits: 0,
+        budget_used_uncached: 0,
+        skipped_by_budget: 0,
+        warnings: [],
+      },
+      sources: [{
+        name: "openclaw-answer-bot",
+        agent: "openclaw",
+        channel: "feishu",
+        source_type: "git",
+        status: "partial",
+        scanned: 34,
+        fetched: 34,
+        enveloped: 34,
+        imported: 0,
+        rejected: 0,
+        human_required: 34,
+        warnings: [],
+      }],
+      proposal_candidates: 0,
+      quality_findings: 0,
+      site_pages: 5,
+      changed_stable_knowledge: false,
+      semantic_review: { enabled: false, reviewed: 0, promote: 0, merge: 0, revise: 0, reject: 0, needs_human: 0, unavailable: 0 },
+      skill_synthesis: { enabled: false, signals: 0, rejected_signals: 0, clusters: 0, candidates: 0, reviewed: 0, approved: 0, rejected: 0, needs_human: 0, skipped: 0, promoted: 0 },
+      lessons: emptyLessonsSummary,
+      outputs: ["dist/index.html"],
+      warnings: [],
+      created_at: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(nextActions.status, "needs_privacy_triage");
+    assert.deepEqual(nextActions.commands, ["praxisbase privacy triage --mode team-git --json"]);
   });
 
   it("surfaces skill synthesis needs_human before wiki review in next actions", () => {

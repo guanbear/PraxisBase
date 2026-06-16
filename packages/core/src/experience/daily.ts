@@ -535,13 +535,16 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
   };
 
   if (privacyRequired > 0) {
+    const privacyCommand = report.authority_mode === "team-git"
+      ? "praxisbase privacy triage --mode team-git --json"
+      : "praxisbase privacy triage --mode personal --auto-release --json";
     return {
       status: "needs_privacy_triage",
       counts,
       agentmemory_export_recommended: false,
       gbrain_export_recommended: false,
       messages: [`${privacyRequired} item(s) need privacy triage before they can become wiki evidence.`],
-      commands: ["praxisbase privacy triage --mode personal --auto-release --json"],
+      commands: [privacyCommand],
     };
   }
 
