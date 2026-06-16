@@ -1,0 +1,53 @@
+{
+  "id": "wiki-curation-report_2026-06-16t02-42-23-364z",
+  "protocol_version": "0.1",
+  "type": "wiki_curation_report",
+  "created_at": "2026-06-16T02:42:23.364Z",
+  "mode": "review",
+  "ai": {
+    "configured": true,
+    "mode": "degraded",
+    "model": "gpt-5.5"
+  },
+  "input_counts": {
+    "evidence_items": 0,
+    "filtered_noise": 11,
+    "human_required": 0,
+    "rejected": 0,
+    "clusters": 0
+  },
+  "output_counts": {
+    "curated_proposals": 0,
+    "written_proposals": 0,
+    "conflicts": 0
+  },
+  "compiler_counts": {
+    "observations": 0,
+    "topics": 0,
+    "page_plans_by_action": {
+      "create": 0,
+      "update": 0,
+      "merge": 0,
+      "supersede": 0,
+      "archive": 0
+    },
+    "duplicate_source_hash_groups": 0,
+    "hard_blocks": 0,
+    "human_required_quality": 0,
+    "relationship_counts": {
+      "required_links": 0,
+      "suggested_links": 0,
+      "merge_plans": 0,
+      "ambiguous_merge_targets": 0,
+      "isolated_topics": 0,
+      "orphan_risk_after_plan": 0
+    }
+  },
+  "proposals": [],
+  "proposal_limit": 8,
+  "limit_reason": "max_curation_proposals",
+  "warnings": [
+    "AI curator degraded mode is not production-ready.",
+    "limit:8"
+  ]
+}

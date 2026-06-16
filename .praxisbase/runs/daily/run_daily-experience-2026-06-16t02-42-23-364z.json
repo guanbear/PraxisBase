@@ -1,0 +1,16 @@
+{
+  "id": "run_daily-experience-2026-06-16t02-42-23-364z",
+  "protocol_version": "0.1",
+  "command": "daily-experience",
+  "status": "partial",
+  "started_at": "2026-06-16T02:42:23.364Z",
+  "finished_at": "2026-06-16T02:42:23.364Z",
+  "counts": {
+    "sources": 1,
+    "enveloped": 34,
+    "imported": 0,
+    "rejected": 0,
+    "human_required": 34
+  },
+  "errors": []
+}
