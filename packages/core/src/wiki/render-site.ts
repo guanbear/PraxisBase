@@ -961,6 +961,7 @@ interface HumanRequiredRecord {
     rationale?: string;
     suggested_redactions: string[];
     release_summary?: string;
+    reviewer_id?: string;
   };
 }
 
@@ -1116,7 +1117,9 @@ function renderHumanRequired(
 ): string {
   const useZh = zh(language);
   const latestPrivacyRequired = dailyReport?.privacy_required ?? records.length;
-  const visibleRecords = records.slice(0, 50);
+  const actionableRecords = records.filter(isActionablePrivacyRecord);
+  const processedRecords = records.length - actionableRecords.length;
+  const visibleRecords = actionableRecords.slice(0, 50);
   const isTeamGit = dailyReport?.authority_mode === "team-git";
   const triageCommand = isTeamGit
     ? "praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json"
@@ -1154,7 +1157,8 @@ function renderHumanRequired(
     <dt>${useZh ? "跳过已处理" : "Skipped already triaged"}</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_already_triaged))}</dd>
     <dt>${useZh ? "跳过非隐私项" : "Skipped non-privacy"}</dt><dd>${escapeHtml(String(privacyTriageReport.skipped_non_privacy))}</dd>
   </dl>` : ""}
-  ${records.length > visibleRecords.length ? `<p class="muted">${useZh ? `仅展示最近 ${escapeHtml(String(visibleRecords.length))} 条隐私记录；更早的历史待处理项默认隐藏，以便聚焦当天结果。` : `Showing the latest ${escapeHtml(String(visibleRecords.length))} privacy records. Older backlog is intentionally hidden from the default page to keep current daily work readable.`}</p>` : ""}
+  ${processedRecords > 0 ? `<p class="muted">${useZh ? `已隐藏 ${escapeHtml(String(processedRecords))} 条已处理隐私记录（自动释放、低信号拒绝或人工已确认）。` : `${escapeHtml(String(processedRecords))} processed privacy record(s) are hidden from the action queue.`}</p>` : ""}
+  ${actionableRecords.length > visibleRecords.length ? `<p class="muted">${useZh ? `仅展示最近 ${escapeHtml(String(visibleRecords.length))} 条待处理隐私记录；更早的历史待处理项默认隐藏，以便聚焦当天结果。` : `Showing the latest ${escapeHtml(String(visibleRecords.length))} pending privacy records. Older backlog is intentionally hidden from the default page to keep current daily work readable.`}</p>` : ""}
   ${visibleRecords.length > 0 ? `<ol class="experience-list">
     ${visibleRecords.map((item) => {
       const detailsReleased = humanRequiredDetailsReleased(item);
@@ -1190,6 +1194,13 @@ function renderHumanRequired(
     }).join("\n")}
   </ol>` : `<p>${useZh ? "没有隐私待确认记录。" : "No privacy-required records."}</p>`}
 </section>`;
+}
+
+function isActionablePrivacyRecord(item: HumanRequiredRecord): boolean {
+  const decision = item.triage?.decision;
+  if (!decision) return true;
+  if (item.triage?.reviewer_id) return false;
+  return decision === "team_review_only" || decision === "keep_human_required";
 }
 
 function humanRequiredDetailsReleased(item: HumanRequiredRecord): boolean {
@@ -2816,6 +2827,7 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
           rationale: stringValue(triage.rationale),
           suggested_redactions: suggestedRedactions,
           release_summary: stringValue(triage.release_summary),
+          reviewer_id: stringValue(triage.reviewer_id),
         } : undefined,
       });
     } catch {

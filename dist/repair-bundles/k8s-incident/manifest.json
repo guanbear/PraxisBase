@@ -1,7 +1,7 @@
 {
   "protocol_version": "0.1",
   "bundle_id": "k8s-incident",
-  "generated_at": "2026-06-17T06:04:46.247Z",
+  "generated_at": "2026-06-17T06:53:51.978Z",
   "commit_sha": "",
   "compatible_cli": ">=0.1.0",
   "entries": []

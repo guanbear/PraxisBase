@@ -9,7 +9,7 @@
     .then((res) => res.ok ? res.json() : {})
     .then((config) => {
       if (typeof config.review_api_base === "string" && config.review_api_base.trim()) {
-        reviewApiBase = config.review_api_base.trim().replace(//+$/, "");
+        reviewApiBase = config.review_api_base.trim().replace(/\/+$/, "");
       }
       return config;
     })
@@ -17,6 +17,34 @@
   const reviewEndpoint = async (path) => {
     await reviewConfigPromise;
     return reviewApiBase + path;
+  };
+  const currentLanguage = () => {
+    const language = document.documentElement.lang || languageSelect?.value || "zh-CN";
+    return language === "en" ? "en" : "zh-CN";
+  };
+  const approvalStatusText = (key) => {
+    const useZh = currentLanguage() !== "en";
+    const dictionary = {
+      connected: useZh ? "审批服务已连接" : "Approval service connected",
+      disconnected: useZh ? "审批服务未连接：先启动 praxisbase review serve" : "Approval service is offline: start praxisbase review serve",
+    };
+    return dictionary[key] || dictionary.disconnected;
+  };
+  const syncReviewServiceHealth = async () => {
+    const statuses = Array.from(document.querySelectorAll("[data-review-status], [data-privacy-status]"));
+    if (statuses.length === 0) return;
+    let ok = false;
+    try {
+      const response = await fetch(await reviewEndpoint("/health"));
+      ok = response.ok;
+    } catch {
+      ok = false;
+    }
+    statuses.forEach((status) => {
+      if (status.getAttribute("data-state")) return;
+      status.textContent = approvalStatusText(ok ? "connected" : "disconnected");
+      status.setAttribute("data-state", ok ? "ok" : "error");
+    });
   };
   const labels = {
     en: {
@@ -248,7 +276,18 @@
           });
           const payload = await response.json().catch(() => ({}));
           if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
-          if (status) { status.textContent = decision === "auto_released" ? "已释放，重跑 daily 后会进入提炼链路" : "已记录隐私决定"; status.setAttribute("data-state", "ok"); }
+          if (status) {
+            status.textContent = decision === "auto_released"
+              ? "已释放，重跑 daily 后会进入提炼链路"
+              : decision === "rejected_low_signal"
+                ? "已按低信号拒绝，已从待处理队列隐藏"
+                : "已记录隐私决定";
+            status.setAttribute("data-state", "ok");
+          }
+          if (decision === "auto_released" || decision === "rejected_low_signal") {
+            const card = container.closest(".review-card");
+            if (card) card.hidden = true;
+          }
         } catch (error) {
           buttons.forEach((item) => { item.disabled = false; });
           if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
@@ -256,6 +295,7 @@
       });
     });
   });
+  syncReviewServiceHealth();
   window.addEventListener("keydown", (event) => {
     if ((event.key === "/" && document.activeElement !== input) || ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k")) {
       event.preventDefault();

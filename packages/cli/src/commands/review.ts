@@ -238,7 +238,8 @@ export async function reviewServe(root: string, options: { port: number; host?: 
           note: typeof body.note === "string" ? body.note : undefined,
           reviewerId: "praxisbase-local-review-ui",
         });
-        return send(200, { ok: true, ...result });
+        const site = await buildWikiSite(root);
+        return send(200, { ok: true, ...result, outputs: site.outputs });
       }
       return send(404, { ok: false, error: "not_found" });
     } catch (error) {

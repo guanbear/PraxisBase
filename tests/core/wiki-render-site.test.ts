@@ -78,6 +78,8 @@ Refresh login. <script>alert("x")</script>
 
     await assert.doesNotReject(stat(join(root, "dist/style.css")));
     await assert.doesNotReject(stat(join(root, "dist/site.js")));
+    const siteJs = await readFile(join(root, "dist/site.js"), "utf8");
+    assert.doesNotThrow(() => new Function(siteJs));
     const reviewConfig = JSON.parse(await readFile(join(root, "dist/review-config.json"), "utf8"));
     assert.equal(reviewConfig.review_api_base, "http://127.0.0.1:4174");
     assert.equal(reviewConfig.writeback, "local");
@@ -878,7 +880,7 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
           redacted_summary: "Refresh OpenClaw auth before retrying memory sync.",
           triage: {
             classification: "safe_personal_experience",
-            decision: "auto_released",
+            decision: "team_review_only",
             confidence: 0.91,
             rationale: "The item describes project workflow without credentials.",
             suggested_redactions: [],
@@ -893,9 +895,9 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
 
     const review = await readFile(join(root, "dist/review.html"), "utf8");
     assert.ok(review.includes("safe_personal_experience"));
-    assert.ok(review.includes("auto_released"));
+    assert.ok(review.includes("team_review_only"));
     assert.ok(review.includes("0.91"));
-    assert.ok(review.includes("The item describes project workflow without credentials."));
+    assert.ok(review.includes("Raw sensitive details stay hidden"));
     assert.ok(review.includes("Refresh OpenClaw auth before retrying memory sync."));
   });
 
@@ -927,6 +929,29 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
       details: { target: "old-openclaw-page" },
       created_at: "2026-06-17T00:01:00.000Z",
     }, null, 2), "utf8");
+    await writeFile(join(root, ".praxisbase/exceptions/human-required/processed-low-signal.json"), JSON.stringify({
+      id: "processed-low-signal",
+      protocol_version: "0.1",
+      type: "exception_record",
+      category: "human_required",
+      source_id: "experience_openclaw-answer-bot-sha256-greeting",
+      reason: "Experience privacy verdict human_required: feishu_channel_team_review_first",
+      details: {
+        agent: "openclaw",
+        source_ref: "openclaw://answer-bot/pm.sqlite/chunks/greeting",
+        source_hash: "sha256:greeting",
+        redacted_summary: "Greeting-only item already rejected as low signal.",
+        triage: {
+          classification: "safe_personal_experience",
+          decision: "rejected_low_signal",
+          reviewer_id: "praxisbase-local-review-ui",
+          confidence: 0.9,
+          rationale: "manual low-signal rejection",
+          suggested_redactions: [],
+        },
+      },
+      created_at: "2026-06-17T00:02:00.000Z",
+    }, null, 2), "utf8");
 
     await buildWikiSite(root);
 
@@ -934,6 +959,8 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("OpenClaw answer bot item needs privacy review."));
     assert.equal(review.includes("Wiki candidate body shrink exceeds safe threshold"), false);
     assert.equal(review.includes("stable_kb:kb/known-fixes/old-openclaw-page.md"), false);
+    assert.equal(review.includes("Greeting-only item already rejected as low signal."), false);
+    assert.ok(review.includes("1 processed privacy record(s) are hidden from the action queue."));
   });
 
   it("shows a sanitized review preview while hiding raw private human-required details", async () => {
@@ -1660,7 +1687,7 @@ Body.
     assert.ok(review.includes("Privacy backlog"));
     assert.match(review, /Privacy backlog[\s\S]*?<strong>55<\/strong>/);
     assert.ok(review.includes("Current run has 28 item(s); historical backlog has 55."));
-    assert.ok(review.includes("Showing the latest 50 privacy records."));
+    assert.ok(review.includes("Showing the latest 50 pending privacy records."));
     assert.ok(review.includes("Skipped already triaged"));
     assert.ok(review.includes("praxisbase privacy triage --mode personal --auto-release --progress --json"));
   });
