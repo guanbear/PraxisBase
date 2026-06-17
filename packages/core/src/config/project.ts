@@ -12,6 +12,9 @@ export interface ProjectLanguageConfig {
 export interface ProjectReviewUiConfig {
   reviewApiBase: string;
   writeback: "local" | "gitlab" | string;
+  gitlabApiBase?: string;
+  gitlabProjectId?: string;
+  gitlabBranch?: string;
 }
 
 export type KnowledgeProfile = "default" | "openclaw" | "container-repair" | "k8s" | string;
@@ -296,17 +299,37 @@ export async function readProjectReviewUiConfig(
 ): Promise<ProjectReviewUiConfig> {
   let fileReviewApiBase: string | undefined;
   let fileWriteback: string | undefined;
+  let fileGitlabApiBase: string | undefined;
+  let fileGitlabProjectId: string | undefined;
+  let fileGitlabBranch: string | undefined;
 
   try {
     const config = await readText(root, protocolPaths.config);
     fileReviewApiBase = yamlScalar(config, "review_api_base");
     fileWriteback = yamlScalar(config, "review_writeback");
+    fileGitlabApiBase = yamlScalar(config, "review_gitlab_api_base");
+    fileGitlabProjectId = yamlScalar(config, "review_gitlab_project_id") ?? yamlScalar(config, "review_gitlab_project");
+    fileGitlabBranch = yamlScalar(config, "review_gitlab_branch");
   } catch {
     // Missing project config is valid for tests and lightweight consumers.
   }
 
+  const gitlabApiBase = env.PRAXISBASE_REVIEW_GITLAB_API_BASE?.trim()
+    || env.CI_API_V4_URL?.trim()
+    || fileGitlabApiBase;
+  const gitlabProjectId = env.PRAXISBASE_REVIEW_GITLAB_PROJECT_ID?.trim()
+    || env.CI_PROJECT_ID?.trim()
+    || fileGitlabProjectId;
+  const gitlabBranch = env.PRAXISBASE_REVIEW_GITLAB_BRANCH?.trim()
+    || env.CI_COMMIT_BRANCH?.trim()
+    || env.CI_DEFAULT_BRANCH?.trim()
+    || fileGitlabBranch;
+
   return {
     reviewApiBase: env.PRAXISBASE_REVIEW_API_BASE?.trim() || fileReviewApiBase || "http://127.0.0.1:4174",
     writeback: env.PRAXISBASE_REVIEW_WRITEBACK?.trim() || fileWriteback || "local",
+    ...(gitlabApiBase ? { gitlabApiBase } : {}),
+    ...(gitlabProjectId ? { gitlabProjectId } : {}),
+    ...(gitlabBranch ? { gitlabBranch } : {}),
   };
 }

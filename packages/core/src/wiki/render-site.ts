@@ -1214,7 +1214,7 @@ function renderHumanRequired(
     ${visibleRecords.map((item) => {
       const detailsReleased = humanRequiredDetailsReleased(item);
       const reviewPreview = privacyReviewPreview(item);
-      const privacyActions = item.privacy_reviewable ? `<div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="${escapeHtml(item.id)}">
+      const privacyActions = item.privacy_reviewable ? `<div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="${escapeHtml(item.id)}" data-privacy-path="${escapeHtml(item.path)}" data-privacy-release-summary="${escapeHtml(reviewPreview ?? item.redacted_summary ?? item.reason)}">
         <button type="button" data-privacy-decision="auto_released">${useZh ? "释放为脱敏经验" : "Release sanitized"}</button>
         <button type="button" data-privacy-decision="rejected_low_signal">${useZh ? "低信号拒绝" : "Reject low signal"}</button>
         <button type="button" data-privacy-decision="team_review_only">${useZh ? "保持人工" : "Keep manual"}</button>
@@ -1257,6 +1257,35 @@ function isActionablePrivacyRecord(item: HumanRequiredRecord): boolean {
 function humanRequiredDetailsReleased(item: HumanRequiredRecord): boolean {
   if (!item.triage) return false;
   return item.triage.decision === "auto_released";
+}
+
+function renderGitlabWritebackPanel(config: ProjectReviewUiConfig, language: ProjectLanguage): string {
+  if (config.writeback !== "gitlab") return "";
+  const useZh = zh(language);
+  const apiBase = config.gitlabApiBase ?? "";
+  const projectId = config.gitlabProjectId ?? "";
+  const branch = config.gitlabBranch ?? "";
+  return `<section class="gitlab-writeback-panel" data-gitlab-writeback-panel>
+  <div>
+    <strong>${escapeHtml(useZh ? "GitLab 页面审批" : "GitLab Page Approval")}</strong>
+    <p>${escapeHtml(useZh ? "在 GitLab Pages 上粘贴具备 write_repository/API 权限的 token，审批按钮会把决定提交到仓库；后续 review/promote/build pipeline 会消费这些记录。token 只保存在当前浏览器。" : "Paste a token with write_repository/API permission on GitLab Pages. Approval buttons commit decisions to the repo; review/promote/build pipelines consume them. The token stays in this browser only.")}</p>
+  </div>
+  <dl>
+    <dt>${escapeHtml(useZh ? "API" : "API")}</dt><dd><code>${escapeHtml(apiBase || "not configured")}</code></dd>
+    <dt>${escapeHtml(useZh ? "项目" : "Project")}</dt><dd><code>${escapeHtml(projectId || "not configured")}</code></dd>
+    <dt>${escapeHtml(useZh ? "分支" : "Branch")}</dt><dd><code>${escapeHtml(branch || "not configured")}</code></dd>
+  </dl>
+  <label class="gitlab-token-field">
+    <span>${escapeHtml(useZh ? "GitLab Token" : "GitLab Token")}</span>
+    <input type="password" autocomplete="off" data-gitlab-token-input placeholder="${escapeHtml(useZh ? "粘贴后点保存" : "Paste and save")}">
+  </label>
+  <div class="approval-actions gitlab-token-actions">
+    <button type="button" data-gitlab-token-save>${escapeHtml(useZh ? "保存到浏览器" : "Save in browser")}</button>
+    <button type="button" data-gitlab-token-clear>${escapeHtml(useZh ? "清除" : "Clear")}</button>
+    <button type="button" data-gitlab-token-test>${escapeHtml(useZh ? "测试连接" : "Test connection")}</button>
+    <span class="approval-status" data-gitlab-token-status>${escapeHtml(useZh ? "未保存 token" : "No token saved")}</span>
+  </div>
+</section>`;
 }
 
 function escapeRegExp(value: string): string {
@@ -1418,7 +1447,9 @@ function renderReviewPage(
 ): string {
   const useZh = zh(language);
   const candidateHuman = queue.candidates.filter((item) => item.status === "needs_human").length;
-  const currentPrivacyRequired = dailyReport?.privacy_required ?? queue.human_required.length;
+  const currentPrivacyRequired = dailyReport?.experience_coverage?.privacy_blocked
+    ?? dailyReport?.privacy_required
+    ?? queue.human_required.length;
   const counts = {
     pending: queue.candidates.filter((item) => item.status === "pending").length,
     approved: queue.candidates.filter((item) => item.status === "approved").length,
@@ -1429,7 +1460,7 @@ function renderReviewPage(
     rejected: (dailyReport?.rejected ?? 0) + (curationReport?.input_rejected ?? 0) + (curationReport?.compiler_hard_blocks ?? 0),
   };
   const approvalMode = reviewUiConfig.writeback === "gitlab"
-    ? useZh ? "GitLab 回写已配置" : "GitLab writeback configured"
+    ? useZh ? "GitLab 页面回写已配置" : "GitLab Pages writeback configured"
     : useZh ? "当前仅本地审批，尚未接入 GitLab 页面回写" : "Local approval only; GitLab page writeback is not connected yet";
   const coveragePrivacy = dailyReport?.experience_coverage?.privacy_blocked ?? currentPrivacyRequired;
   const reviewNotes: CountNote[] = [
@@ -1442,7 +1473,7 @@ function renderReviewPage(
     {
       label: useZh ? "隐私待确认" : "Privacy review",
       value: String(counts.current_privacy),
-      text: useZh ? `这是审批队列存量；本次 OpenClaw 覆盖中隐私阻断是 ${coveragePrivacy}。批准会释放脱敏摘要，拒绝会保留阻断。` : `This is the approval backlog; current OpenClaw coverage has ${coveragePrivacy} privacy blockers. Approving releases sanitized summaries; rejecting keeps the block.`,
+      text: useZh ? `这是当前真正需要确认的隐私项；低信号已拒绝项会单独归到拒绝结果。批准会释放脱敏摘要，拒绝会保留阻断。` : `This is the current privacy queue; low-signal rejected items are counted separately as rejected outcomes. Approving releases sanitized summaries; rejecting keeps the block.`,
       href: "#human-required",
     },
     {
@@ -1487,9 +1518,10 @@ function renderReviewPage(
   <section class="status-strip">
     <strong>${useZh ? "审批服务" : "Approval service"}</strong>
     <span>${escapeHtml(approvalMode)}；API: </span>
-    <code>${escapeHtml(reviewUiConfig.reviewApiBase)}</code>
-    <code>praxisbase review serve --port 4174</code>
+    <code>${escapeHtml(reviewUiConfig.writeback === "gitlab" ? reviewUiConfig.gitlabApiBase ?? "not configured" : reviewUiConfig.reviewApiBase)}</code>
+    ${reviewUiConfig.writeback === "gitlab" ? `<code>${escapeHtml(reviewUiConfig.gitlabProjectId ?? "project missing")}</code><code>${escapeHtml(reviewUiConfig.gitlabBranch ?? "branch missing")}</code>` : `<code>praxisbase review serve --port 4174</code>`}
   </section>
+  ${renderGitlabWritebackPanel(reviewUiConfig, language)}
   ${renderCountNotes({ title: useZh ? "审批页数字怎么读" : "How to Read This Page", subtitle: useZh ? "这里的数字按“当前可操作队列”统计，所以会和首页全库总量不同。" : "These numbers describe the current action queue, so they differ from overview library totals.", notes: reviewNotes })}
   ${renderProcessMap({ title: useZh ? "审批闭环" : "Approval Loop", subtitle: useZh ? "页面只负责记录决定；真正写入知识库由下一次每日处理 / 提升入库完成。" : "This page records decisions; daily/promote applies them to the knowledge base.", steps: reviewSteps })}
   ${renderTerminologyPanel(language)}
@@ -1501,9 +1533,12 @@ function renderReviewPage(
   ${renderExperienceCoverage(dailyReport, language)}
   <section class="review-section" data-status="pending">
     <h2>${useZh ? "操作命令" : "Operational commands"}</h2>
-    <p>${useZh ? "页面按钮现在写入本地审批服务。GitLab 页面审批还没最终接好，需要部署 approval API，并把 review_writeback 切到 gitlab。" : "Page buttons currently write to the local approval service. GitLab page approval still needs the approval API deployment and review_writeback=gitlab."}</p>
+    <p>${reviewUiConfig.writeback === "gitlab"
+      ? escapeHtml(useZh ? "页面按钮会通过 GitLab API 写入审批记录。提交后等待下一次 review / promote / build pipeline 应用结果。" : "Page buttons write decisions through the GitLab API. After commit, wait for the next review / promote / build pipeline to apply them.")
+      : escapeHtml(useZh ? "页面按钮现在写入本地审批服务；把 review_writeback 切到 gitlab 后可在 GitLab Pages 上直接审批。" : "Page buttons write to the local approval service. Set review_writeback=gitlab to approve directly on GitLab Pages.")}</p>
     <div class="command-strip">
       <code>praxisbase review serve --port 4174</code>
+      <code>PRAXISBASE_REVIEW_WRITEBACK=gitlab praxisbase wiki build-site --json</code>
       <code>praxisbase review --auto</code>
       <code>praxisbase promote --auto</code>
       <code>praxisbase wiki build-site --json</code>
@@ -3016,6 +3051,9 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
     protocol_version: "0.1",
     review_api_base: reviewUiConfig.reviewApiBase,
     writeback: reviewUiConfig.writeback,
+    ...(reviewUiConfig.gitlabApiBase ? { gitlab_api_base: reviewUiConfig.gitlabApiBase } : {}),
+    ...(reviewUiConfig.gitlabProjectId ? { gitlab_project_id: reviewUiConfig.gitlabProjectId } : {}),
+    ...(reviewUiConfig.gitlabBranch ? { gitlab_branch: reviewUiConfig.gitlabBranch } : {}),
   });
   await writeJson(root, "dist/knowledge-config.json", {
     protocol_version: "0.1",

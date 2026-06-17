@@ -4,6 +4,10 @@ default_scope: team
 language: zh-CN
 ui_language: zh-CN
 content_language: zh-CN
+review_writeback: gitlab
+review_gitlab_api_base: https://gitlab.chehejia.com/api/v4
+review_gitlab_project_id: "51741"
+review_gitlab_branch: master
 knowledge_profile: openclaw
 knowledge_bases:
   - id: openclaw

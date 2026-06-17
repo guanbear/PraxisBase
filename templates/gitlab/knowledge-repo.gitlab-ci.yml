@@ -140,7 +140,8 @@ praxisbase:build:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PRAXISBASE_TASK == "build"
     - if: $CI_PIPELINE_SOURCE == "web" && $PRAXISBASE_TASK == "build"
     - if: $CI_PIPELINE_SOURCE == "api" && $PRAXISBASE_TASK == "build"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "master"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js build
   artifacts:
@@ -152,7 +153,8 @@ pages:
   extends: .praxisbase-knowledge
   stage: build
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $PRAXISBASE_PAGES == "true"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $PRAXISBASE_PAGES == "true"
+    - if: $CI_COMMIT_BRANCH == "master" && $PRAXISBASE_PAGES == "true"
   script:
     - node /tmp/PraxisBase/packages/cli/dist/index.js build
     - mkdir -p public

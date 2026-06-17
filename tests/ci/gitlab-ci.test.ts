@@ -79,7 +79,16 @@ describe("split knowledge repo GitLab CI template", () => {
     const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
 
     assert.ok(ci.includes("pages:"));
+    assert.match(ci, /CI_COMMIT_BRANCH\s*==\s*\$CI_DEFAULT_BRANCH[\s\S]*PRAXISBASE_PAGES\s*==\s*"true"/);
+    assert.match(ci, /CI_COMMIT_BRANCH\s*==\s*"master"[\s\S]*PRAXISBASE_PAGES\s*==\s*"true"/);
     assert.match(ci, /cp -r dist\/\* public\//);
     assert.match(ci, /paths:[\s\S]*?-\s+public/);
+  });
+
+  it("builds scheduled artifacts on the GitLab default branch instead of only main", async () => {
+    const ci = await readFile(KNOWLEDGE_CI_PATH, "utf8");
+
+    assert.match(ci, /praxisbase:build:[\s\S]*?CI_COMMIT_BRANCH\s*==\s*\$CI_DEFAULT_BRANCH/);
+    assert.match(ci, /praxisbase:build:[\s\S]*?CI_COMMIT_BRANCH\s*==\s*"master"/);
   });
 });

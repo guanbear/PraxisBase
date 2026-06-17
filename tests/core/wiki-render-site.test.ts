@@ -105,6 +105,77 @@ Refresh login. <script>alert("x")</script>
     assert.ok(siteJs.includes("reviewApiBase"));
   });
 
+  it("renders GitLab Pages approval writeback configuration and controls", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-gitlab-review-"));
+    await mkdir(join(root, ".praxisbase/inbox/proposals"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/config.yaml"), [
+      'protocol_version: "0.1"',
+      "review_writeback: gitlab",
+      "review_gitlab_api_base: https://gitlab.example.com/api/v4",
+      "review_gitlab_project_id: 51741",
+      "review_gitlab_branch: master",
+      "",
+    ].join("\n"), "utf8");
+    await writeFile(join(root, ".praxisbase/inbox/proposals/wiki-curated_gitlab.json"), JSON.stringify({
+      id: "wiki-curated_gitlab",
+      protocol_version: "0.1",
+      type: "wiki_curated_proposal",
+      target_path: "kb/known-fixes/gitlab.md",
+      action: "create",
+      page_kind: "known_fix",
+      scope: "team",
+      title: "GitLab approval candidate",
+      summary: "Approve this proposal from GitLab Pages.",
+      source_hashes: ["sha256:gitlab"],
+      source_refs: ["openclaw://answer-bot/gitlab"],
+      source_count: 1,
+      evidence_ids: ["source-openclaw"],
+      body_markdown: "# GitLab approval candidate\n\n## Problem\nApprove from GitLab Pages.",
+      confidence: 0.82,
+      maturity: "draft",
+      provenance: [{ source_ref: "openclaw://answer-bot/gitlab", source_hash: "sha256:gitlab" }],
+      created_at: "2026-06-17T00:00:00.000Z",
+      review_hint: { why_review: "manual approval", suggested_decision: "approve", risk_notes: [] },
+      guards: [{ id: "path", ok: true, message: "allowed" }],
+    }), "utf8");
+    await writeFile(join(root, ".praxisbase/exceptions/human-required/privacy.json"), JSON.stringify({
+      id: "privacy-gitlab",
+      protocol_version: "0.1",
+      type: "exception_record",
+      category: "human_required",
+      source_id: "experience-openclaw-private",
+      reason: "Experience privacy verdict human_required: private_material_detected",
+      details: {
+        agent: "openclaw",
+        scope_hint: "team",
+        redacted_summary: "OpenClaw answer bot repair lesson with sensitive details removed.",
+        privacy: { verdict: "human_required" },
+      },
+      created_at: "2026-06-17T00:00:00.000Z",
+    }), "utf8");
+
+    await buildWikiSite(root);
+
+    const config = JSON.parse(await readFile(join(root, "dist/review-config.json"), "utf8"));
+    assert.equal(config.writeback, "gitlab");
+    assert.equal(config.gitlab_api_base, "https://gitlab.example.com/api/v4");
+    assert.equal(config.gitlab_project_id, "51741");
+    assert.equal(config.gitlab_branch, "master");
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("data-gitlab-writeback-panel"));
+    assert.ok(review.includes("data-review-actions"));
+    assert.ok(review.includes("data-privacy-path=\".praxisbase/exceptions/human-required/privacy.json\""));
+    assert.ok(review.includes("data-privacy-release-summary"));
+
+    const siteJs = await readFile(join(root, "dist/site.js"), "utf8");
+    assert.ok(siteJs.includes("/repository/files/"));
+    assert.ok(siteJs.includes("PRIVATE-TOKEN"));
+    assert.ok(siteJs.includes("submitGitLabReview"));
+    assert.doesNotThrow(() => new Function(siteJs));
+  });
+
   it("shows revoke controls for active stable pages and hides archived pages from the site", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-revoke-"));
     await mkdir(join(root, "kb/known-fixes"), { recursive: true });

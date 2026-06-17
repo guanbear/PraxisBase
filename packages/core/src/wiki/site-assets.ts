@@ -72,6 +72,15 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .action-card[data-tone="info"] { border-top: 4px solid #5a6da8; }
 .status-strip { display: flex; gap: .55rem; flex-wrap: wrap; align-items: center; margin: 1rem 0; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--muted); }
 .status-strip strong { color: var(--ink); }
+.gitlab-writeback-panel { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(220px, .7fr) minmax(260px, .8fr); gap: .9rem; align-items: start; margin: 1rem 0 1.2rem; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; background: white; padding: .95rem; box-shadow: 0 10px 26px rgba(23, 33, 27, .045); }
+.gitlab-writeback-panel strong { display: block; margin-bottom: .25rem; font-size: 1.02rem; }
+.gitlab-writeback-panel p { margin: 0; color: var(--muted); }
+.gitlab-writeback-panel dl { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: .35rem .55rem; margin: 0; font-size: .86rem; }
+.gitlab-writeback-panel dt { color: var(--muted); }
+.gitlab-writeback-panel dd { margin: 0; overflow-wrap: anywhere; }
+.gitlab-token-field { display: grid; gap: .35rem; color: var(--muted); font-size: .84rem; }
+.gitlab-token-field input { height: 36px; border: 1px solid var(--line); border-radius: 6px; padding: 0 .65rem; color: var(--ink); background: var(--panel); }
+.gitlab-token-actions { margin: .55rem 0 0; grid-column: 3; }
 .compact-heading { margin-bottom: .85rem; }
 .process-map { margin: 1.15rem 0; }
 .process-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .65rem; }
@@ -224,7 +233,8 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .meta-rail dl { display: grid; grid-template-columns: 90px 1fr; gap: .35rem .6rem; margin: 0; }
 .meta-rail dt { color: var(--muted); }
 @media (max-width: 900px) {
-  .topbar, .metrics, .action-grid, .kb-card-grid, .rule-grid, .source-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid, .process-grid, .count-note-grid, .terminology-panel dl { grid-template-columns: 1fr; }
+  .topbar, .metrics, .action-grid, .gitlab-writeback-panel, .kb-card-grid, .rule-grid, .source-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid, .process-grid, .count-note-grid, .terminology-panel dl { grid-template-columns: 1fr; }
+  .gitlab-token-actions { grid-column: auto; }
   .coverage-flow article::after, .process-step::after { display: none; }
   .topnav { justify-content: flex-start; }
   .side-nav, .meta-rail { position: static; max-height: none; }
@@ -237,12 +247,22 @@ export const SITE_JS = `(() => {
   const languageButtons = Array.from(document.querySelectorAll("[data-language-option]"));
   const base = window.__WIKI_BASE__ || "";
   let reviewApiBase = "http://127.0.0.1:4174";
+  let reviewWriteback = "local";
+  let gitlabConfig = { apiBase: "", projectId: "", branch: "" };
   const reviewConfigPromise = fetch(base + "review-config.json")
     .then((res) => res.ok ? res.json() : {})
     .then((config) => {
       if (typeof config.review_api_base === "string" && config.review_api_base.trim()) {
         reviewApiBase = config.review_api_base.trim().replace(/\\/+$/, "");
       }
+      if (typeof config.writeback === "string" && config.writeback.trim()) {
+        reviewWriteback = config.writeback.trim();
+      }
+      gitlabConfig = {
+        apiBase: typeof config.gitlab_api_base === "string" ? config.gitlab_api_base.trim().replace(/\\/+$/, "") : "",
+        projectId: typeof config.gitlab_project_id === "string" || typeof config.gitlab_project_id === "number" ? String(config.gitlab_project_id).trim() : "",
+        branch: typeof config.gitlab_branch === "string" && config.gitlab_branch.trim() ? config.gitlab_branch.trim() : "master",
+      };
       return config;
     })
     .catch(() => ({}));
@@ -254,17 +274,162 @@ export const SITE_JS = `(() => {
     const language = document.documentElement.lang || languageSelect?.value || "zh-CN";
     return language === "en" ? "en" : "zh-CN";
   };
+  const gitlabTokenKey = "praxisbase.gitlab.token";
+  const gitlabToken = () => localStorage.getItem(gitlabTokenKey) || "";
+  const shortId = () => {
+    const random = new Uint32Array(1);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(random);
+    return Date.now().toString(36) + "_" + (random[0] || Math.floor(Math.random() * 1000000)).toString(36);
+  };
+  const gitlabConfigured = () => Boolean(gitlabConfig.apiBase && gitlabConfig.projectId && gitlabConfig.branch);
+  const gitlabHeaders = () => {
+    const token = gitlabToken();
+    if (!token) throw new Error("missing_gitlab_token");
+    return { "content-type": "application/json", "PRIVATE-TOKEN": token };
+  };
+  const gitlabProjectUrl = () => {
+    if (!gitlabConfigured()) throw new Error("gitlab_writeback_not_configured");
+    return gitlabConfig.apiBase + "/projects/" + encodeURIComponent(gitlabConfig.projectId);
+  };
+  const gitlabFileUrl = (path, raw) => {
+    const url = gitlabProjectUrl() + "/repository/files/" + encodeURIComponent(path);
+    return raw ? url + "/raw?ref=" + encodeURIComponent(gitlabConfig.branch) : url;
+  };
+  const gitlabJson = async (url, options) => {
+    const response = await fetch(url, options);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = typeof payload.message === "string" ? payload.message : response.statusText;
+      throw new Error(message || "gitlab_request_failed");
+    }
+    return payload;
+  };
+  const createGitlabFile = async (path, content, message) => gitlabJson(gitlabFileUrl(path, false), {
+    method: "POST",
+    headers: gitlabHeaders(),
+    body: JSON.stringify({ branch: gitlabConfig.branch, content, commit_message: message }),
+  });
+  const updateGitlabFile = async (path, content, message) => gitlabJson(gitlabFileUrl(path, false), {
+    method: "PUT",
+    headers: gitlabHeaders(),
+    body: JSON.stringify({ branch: gitlabConfig.branch, content, commit_message: message }),
+  });
+  const fetchGitlabFileJson = async (path) => {
+    const response = await fetch(gitlabFileUrl(path, true), { headers: { "PRIVATE-TOKEN": gitlabToken() } });
+    if (!response.ok) throw new Error(response.statusText || "gitlab_file_fetch_failed");
+    return response.json();
+  };
+  const fetchGitlabFileText = async (path) => {
+    const response = await fetch(gitlabFileUrl(path, true), { headers: { "PRIVATE-TOKEN": gitlabToken() } });
+    if (!response.ok) throw new Error(response.statusText || "gitlab_file_fetch_failed");
+    return response.text();
+  };
+  const safeReleaseSummary = (value) => {
+    const text = String(value || "").trim().slice(0, 1200);
+    if (text.length >= 20) return text;
+    return "已脱敏的隐私审批摘要：该条目保留为可复用经验，原始敏感内容未公开。";
+  };
+  const submitGitLabReview = async (proposalId, decision) => {
+    await reviewConfigPromise;
+    const now = new Date().toISOString();
+    const reviewId = "review_manual_" + shortId();
+    const review = {
+      id: reviewId,
+      protocol_version: "0.1",
+      proposal_id: proposalId,
+      reviewer_id: "praxisbase-gitlab-pages-ui",
+      reviewer_model: "human-gitlab-pages",
+      prompt_version: "manual-review-v1",
+      decision,
+      risk: decision === "approve" ? "low" : "medium",
+      confidence: decision === "approve" ? 0.9 : 0.75,
+      reasons: ["manual_" + decision],
+      required_checks: [],
+      created_at: now,
+    };
+    const path = ".praxisbase/inbox/reviews/" + reviewId + ".json";
+    await createGitlabFile(path, JSON.stringify(review, null, 2) + "\\n", "Record PraxisBase review decision: " + proposalId);
+    return { review_path: path, decision };
+  };
+  const submitGitLabPrivacy = async (container, decision) => {
+    await reviewConfigPromise;
+    const path = container.getAttribute("data-privacy-path");
+    const exceptionId = container.getAttribute("data-privacy-id") || "privacy-item";
+    if (!path) throw new Error("missing_privacy_path");
+    const exception = await fetchGitlabFileJson(path);
+    const details = exception.details && typeof exception.details === "object" ? exception.details : {};
+    const previous = details.triage && typeof details.triage === "object" ? details.triage : {};
+    const releaseSummary = safeReleaseSummary(container.getAttribute("data-privacy-release-summary") || details.redacted_summary || exception.reason);
+    const triage = {
+      ...previous,
+      classification: decision === "auto_released" ? "needs_redaction" : previous.classification || "unclear",
+      confidence: decision === "auto_released" ? 0.9 : (typeof previous.confidence === "number" ? previous.confidence : 0.75),
+      rationale: "manual_privacy_" + decision,
+      suggested_redactions: Array.isArray(previous.suggested_redactions) ? previous.suggested_redactions : [],
+      hard_block_reasons: Array.isArray(previous.hard_block_reasons) ? previous.hard_block_reasons : [],
+      decision,
+      reviewer_id: "praxisbase-gitlab-pages-ui",
+      triaged_at: new Date().toISOString(),
+    };
+    if (decision === "auto_released") {
+      triage.release_summary = releaseSummary;
+      triage.auto_review_policy = "human-privacy-release-v1";
+    }
+    const updated = { ...exception, details: { ...details, triage } };
+    await updateGitlabFile(path, JSON.stringify(updated, null, 2) + "\\n", "Record PraxisBase privacy decision: " + exceptionId);
+    return { exception_path: path, decision };
+  };
+  const archiveMarkdownFrontmatter = (raw) => {
+    const now = new Date().toISOString();
+    const upsert = (frontmatter, key, value) => {
+      const line = key + ": " + value;
+      const pattern = new RegExp("^" + key + "\\s*:.*$", "m");
+      return pattern.test(frontmatter) ? frontmatter.replace(pattern, line) : frontmatter.trimEnd() + "\\n" + line;
+    };
+    if (raw.startsWith("---\\n")) {
+      const end = raw.indexOf("\\n---", 4);
+      if (end > 0) {
+        let frontmatter = raw.slice(4, end);
+        frontmatter = upsert(frontmatter, "status", "archived");
+        frontmatter = upsert(frontmatter, "maturity", "archived");
+        frontmatter = upsert(frontmatter, "revoked_at", '"' + now + '"');
+        frontmatter = upsert(frontmatter, "revoked_by", "praxisbase-gitlab-pages-ui");
+        const rest = raw.slice(end + 5).replace(/^\\n/, "");
+        return "---\\n" + frontmatter.trimEnd() + "\\n---\\n" + rest;
+      }
+    }
+    return "---\\nstatus: archived\\nmaturity: archived\\nrevoked_at: \\\"" + now + "\\\"\\nrevoked_by: praxisbase-gitlab-pages-ui\\n---\\n" + raw;
+  };
+  const submitGitLabRevoke = async (path) => {
+    await reviewConfigPromise;
+    const raw = await fetchGitlabFileText(path);
+    await updateGitlabFile(path, archiveMarkdownFrontmatter(raw), "Revoke PraxisBase stable knowledge: " + path);
+    return { path };
+  };
   const approvalStatusText = (key) => {
     const useZh = currentLanguage() !== "en";
     const dictionary = {
       connected: useZh ? "审批服务已连接" : "Approval service connected",
       disconnected: useZh ? "审批服务未连接：先启动 praxisbase review serve" : "Approval service is offline: start praxisbase review serve",
+      gitlabReady: useZh ? "GitLab 回写已就绪" : "GitLab writeback ready",
+      gitlabMissingToken: useZh ? "GitLab 回写需要先保存 token" : "Save a GitLab token before approving",
+      gitlabMissingConfig: useZh ? "GitLab 回写配置不完整" : "GitLab writeback is not fully configured",
     };
     return dictionary[key] || dictionary.disconnected;
   };
   const syncReviewServiceHealth = async () => {
     const statuses = Array.from(document.querySelectorAll("[data-review-status], [data-privacy-status], [data-revoke-status]"));
     if (statuses.length === 0) return;
+    await reviewConfigPromise;
+    if (reviewWriteback === "gitlab") {
+      const key = !gitlabConfigured() ? "gitlabMissingConfig" : gitlabToken() ? "gitlabReady" : "gitlabMissingToken";
+      statuses.forEach((status) => {
+        if (status.getAttribute("data-state")) return;
+        status.textContent = approvalStatusText(key);
+        status.setAttribute("data-state", key === "gitlabReady" ? "ok" : "error");
+      });
+      return;
+    }
     let ok = false;
     try {
       const response = await fetch(await reviewEndpoint("/health"));
@@ -388,6 +553,64 @@ export const SITE_JS = `(() => {
       });
     });
   }
+  const setupGitlabTokenPanel = async () => {
+    await reviewConfigPromise;
+    if (reviewWriteback !== "gitlab") return;
+    const panel = document.querySelector("[data-gitlab-writeback-panel]");
+    if (!panel) return;
+    const inputNode = panel.querySelector("[data-gitlab-token-input]");
+    const status = panel.querySelector("[data-gitlab-token-status]");
+    const setStatus = (text, state) => {
+      if (!status) return;
+      status.textContent = text;
+      status.setAttribute("data-state", state);
+    };
+    const saved = gitlabToken();
+    if (inputNode && saved) inputNode.value = saved;
+    setStatus(gitlabConfigured()
+      ? (saved ? approvalStatusText("gitlabReady") : approvalStatusText("gitlabMissingToken"))
+      : approvalStatusText("gitlabMissingConfig"), saved && gitlabConfigured() ? "ok" : "error");
+    const save = panel.querySelector("[data-gitlab-token-save]");
+    const clear = panel.querySelector("[data-gitlab-token-clear]");
+    const test = panel.querySelector("[data-gitlab-token-test]");
+    if (save && inputNode) {
+      save.addEventListener("click", () => {
+        const token = String(inputNode.value || "").trim();
+        if (!token) {
+          localStorage.removeItem(gitlabTokenKey);
+          setStatus(approvalStatusText("gitlabMissingToken"), "error");
+        } else {
+          localStorage.setItem(gitlabTokenKey, token);
+          setStatus(gitlabConfigured() ? approvalStatusText("gitlabReady") : approvalStatusText("gitlabMissingConfig"), gitlabConfigured() ? "ok" : "error");
+        }
+        document.querySelectorAll("[data-review-status], [data-privacy-status], [data-revoke-status]").forEach((node) => node.removeAttribute("data-state"));
+        syncReviewServiceHealth();
+      });
+    }
+    if (clear && inputNode) {
+      clear.addEventListener("click", () => {
+        inputNode.value = "";
+        localStorage.removeItem(gitlabTokenKey);
+        setStatus(approvalStatusText("gitlabMissingToken"), "error");
+        document.querySelectorAll("[data-review-status], [data-privacy-status], [data-revoke-status]").forEach((node) => node.removeAttribute("data-state"));
+        syncReviewServiceHealth();
+      });
+    }
+    if (test) {
+      test.addEventListener("click", async () => {
+        try {
+          setStatus(currentLanguage() === "zh-CN" ? "测试中..." : "Testing...", "pending");
+          await reviewConfigPromise;
+          if (!gitlabConfigured()) throw new Error("gitlab_writeback_not_configured");
+          await gitlabJson(gitlabProjectUrl(), { method: "GET", headers: gitlabHeaders() });
+          setStatus(currentLanguage() === "zh-CN" ? "连接正常" : "Connection OK", "ok");
+        } catch (error) {
+          setStatus((currentLanguage() === "zh-CN" ? "连接失败：" : "Connection failed: ") + (error instanceof Error ? error.message : String(error)), "error");
+        }
+      });
+    }
+  };
+  setupGitlabTokenPanel();
   if (!input || !box) return;
   let docs = [];
   fetch(base + "search-index.json").then((res) => res.json()).then((data) => { docs = data.documents || []; }).catch(() => {});
@@ -475,17 +698,23 @@ export const SITE_JS = `(() => {
         buttons.forEach((item) => { item.disabled = true; });
         if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
         try {
-          const response = await fetch(await reviewEndpoint("/review"), {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ proposal_id: proposalId, decision }),
-          });
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
-          if (status) { status.textContent = decision === "approve" ? "已批准，运行 promote 后会进入稳定知识库" : "已记录审核决定"; status.setAttribute("data-state", "ok"); }
+          await reviewConfigPromise;
+          if (reviewWriteback === "gitlab") {
+            await submitGitLabReview(proposalId, decision);
+            if (status) { status.textContent = decision === "approve" ? "已提交到 GitLab，等待 promote/build 生效" : "已提交审核决定到 GitLab"; status.setAttribute("data-state", "ok"); }
+          } else {
+            const response = await fetch(await reviewEndpoint("/review"), {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ proposal_id: proposalId, decision }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+            if (status) { status.textContent = decision === "approve" ? "已批准，运行 promote 后会进入稳定知识库" : "已记录审核决定"; status.setAttribute("data-state", "ok"); }
+          }
         } catch (error) {
           buttons.forEach((item) => { item.disabled = false; });
-          if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+          if (status) { status.textContent = reviewWriteback === "gitlab" ? "GitLab 提交失败：" + (error instanceof Error ? error.message : String(error)) : "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
         }
       });
     });
@@ -501,19 +730,24 @@ export const SITE_JS = `(() => {
         buttons.forEach((item) => { item.disabled = true; });
         if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
         try {
-          const response = await fetch(await reviewEndpoint("/privacy-review"), {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ exception_id: exceptionId, decision }),
-          });
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+          await reviewConfigPromise;
+          if (reviewWriteback === "gitlab") {
+            await submitGitLabPrivacy(container, decision);
+          } else {
+            const response = await fetch(await reviewEndpoint("/privacy-review"), {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ exception_id: exceptionId, decision }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+          }
           if (status) {
             status.textContent = decision === "auto_released"
-              ? "已释放，重跑 daily 后会进入提炼链路"
+              ? (reviewWriteback === "gitlab" ? "已提交到 GitLab，重跑 daily 后进入提炼链路" : "已释放，重跑 daily 后会进入提炼链路")
               : decision === "rejected_low_signal"
-                ? "已按低信号拒绝，已从待处理队列隐藏"
-                : "已记录隐私决定";
+                ? (reviewWriteback === "gitlab" ? "已提交低信号拒绝到 GitLab" : "已按低信号拒绝，已从待处理队列隐藏")
+                : (reviewWriteback === "gitlab" ? "已提交隐私决定到 GitLab" : "已记录隐私决定");
             status.setAttribute("data-state", "ok");
           }
           if (decision === "auto_released" || decision === "rejected_low_signal") {
@@ -522,7 +756,7 @@ export const SITE_JS = `(() => {
           }
         } catch (error) {
           buttons.forEach((item) => { item.disabled = false; });
-          if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+          if (status) { status.textContent = reviewWriteback === "gitlab" ? "GitLab 提交失败：" + (error instanceof Error ? error.message : String(error)) : "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
         }
       });
     });
@@ -537,19 +771,25 @@ export const SITE_JS = `(() => {
         buttons.forEach((item) => { item.disabled = true; });
         if (status) { status.textContent = "撤回中..."; status.setAttribute("data-state", "pending"); }
         try {
-          const response = await fetch(await reviewEndpoint("/revoke"), {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ path }),
-          });
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
-          if (status) { status.textContent = "已撤回，刷新后会从稳定知识中消失"; status.setAttribute("data-state", "ok"); }
+          await reviewConfigPromise;
+          if (reviewWriteback === "gitlab") {
+            await submitGitLabRevoke(path);
+            if (status) { status.textContent = "已提交撤回到 GitLab，等待 build 后从页面消失"; status.setAttribute("data-state", "ok"); }
+          } else {
+            const response = await fetch(await reviewEndpoint("/revoke"), {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ path }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+            if (status) { status.textContent = "已撤回，刷新后会从稳定知识中消失"; status.setAttribute("data-state", "ok"); }
+          }
           const row = container.closest("li");
           if (row) row.hidden = true;
         } catch (error) {
           buttons.forEach((item) => { item.disabled = false; });
-          if (status) { status.textContent = "审批服务未启动或撤回失败"; status.setAttribute("data-state", "error"); }
+          if (status) { status.textContent = reviewWriteback === "gitlab" ? "GitLab 撤回失败：" + (error instanceof Error ? error.message : String(error)) : "审批服务未启动或撤回失败"; status.setAttribute("data-state", "error"); }
         }
       });
     });
