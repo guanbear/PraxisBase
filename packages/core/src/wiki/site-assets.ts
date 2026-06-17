@@ -71,6 +71,36 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .action-card[data-tone="info"] { border-top: 4px solid #5a6da8; }
 .status-strip { display: flex; gap: .55rem; flex-wrap: wrap; align-items: center; margin: 1rem 0; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--muted); }
 .status-strip strong { color: var(--ink); }
+.compact-heading { margin-bottom: .85rem; }
+.process-map { margin: 1.15rem 0; }
+.process-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .65rem; }
+.process-step { position: relative; display: flex; flex-direction: column; min-height: 132px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--ink); padding: .85rem; box-shadow: 0 8px 22px rgba(23, 33, 27, .035); }
+.process-step:hover { text-decoration: none; border-color: var(--accent); box-shadow: 0 12px 26px rgba(23, 33, 27, .075); }
+.process-step:not(:last-child)::after { content: ""; position: absolute; right: -.48rem; top: 50%; width: .36rem; height: .36rem; border-top: 2px solid var(--line); border-right: 2px solid var(--line); transform: translateY(-50%) rotate(45deg); background: var(--bg); }
+.process-index { display: inline-flex; align-items: center; justify-content: center; width: 1.45rem; height: 1.45rem; border-radius: 999px; margin-bottom: .65rem; background: #e8f2ed; color: var(--accent); font-weight: 800; font-size: .78rem; }
+.process-label { color: var(--muted); font-weight: 760; font-size: .82rem; }
+.process-step strong { display: block; margin: .25rem 0 .3rem; font-size: 1.65rem; line-height: 1.05; }
+.process-step small { color: var(--muted); line-height: 1.35; }
+.count-notes { margin: 1rem 0 1.25rem; }
+.count-note-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .7rem; }
+.count-note { display: block; min-height: 150px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); padding: .9rem; }
+.count-note:hover { text-decoration: none; border-color: var(--accent); box-shadow: 0 10px 24px rgba(23, 33, 27, .07); }
+.count-note span { display: block; color: var(--muted); font-weight: 760; font-size: .82rem; }
+.count-note strong { display: block; margin: .25rem 0 .45rem; font-size: 1.5rem; line-height: 1; }
+.count-note p { margin: 0; color: var(--muted); line-height: 1.45; }
+.terminology-panel { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .75rem .9rem; margin: 1rem 0; }
+.terminology-panel summary { cursor: pointer; color: var(--accent); font-weight: 760; }
+.terminology-panel dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: .5rem .9rem; margin: .85rem 0 0; }
+.terminology-panel dt { font-weight: 760; color: var(--ink); }
+.terminology-panel dd { margin: 0; color: var(--muted); }
+.kb-overview { margin: 1rem 0 1.25rem; }
+.kb-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-top: .8rem; }
+.kb-overview-card { display: block; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--ink); padding: .85rem; }
+.kb-overview-card:hover { text-decoration: none; border-color: var(--accent); }
+.kb-overview-card span { display: block; color: var(--muted); font-weight: 700; }
+.kb-overview-card strong { display: block; margin: .25rem 0; font-size: 1.55rem; line-height: 1; }
+.kb-overview-card small { color: var(--muted); }
+.kb-overview-card.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20, 108, 92, .12); }
 .flow-guide { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0; }
 .flow-guide article { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .85rem; }
 .flow-guide strong { display: block; font-size: 1rem; }
@@ -168,8 +198,8 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .meta-rail dl { display: grid; grid-template-columns: 90px 1fr; gap: .35rem .6rem; margin: 0; }
 .meta-rail dt { color: var(--muted); }
 @media (max-width: 900px) {
-  .topbar, .metrics, .action-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid { grid-template-columns: 1fr; }
-  .coverage-flow article::after { display: none; }
+  .topbar, .metrics, .action-grid, .kb-card-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid, .process-grid, .count-note-grid, .terminology-panel dl { grid-template-columns: 1fr; }
+  .coverage-flow article::after, .process-step::after { display: none; }
   .topnav { justify-content: flex-start; }
   .side-nav, .meta-rail { position: static; max-height: none; }
 }`;
@@ -205,9 +235,9 @@ export const SITE_JS = `(() => {
       "language.switch": "Switch language",
       "filters.knowledgeType": "Knowledge type filters",
       "filters.all": "All",
-      "dashboard.eyebrow": "Team repair knowledge hub",
-      "dashboard.title": "OpenClaw Experience Base",
-      "dashboard.lede": "Turns robot repair memory into reviewable, reusable, provenance-backed knowledge.",
+      "dashboard.eyebrow": "Team experience knowledge hub",
+      "dashboard.title": "Team Experience Base",
+      "dashboard.lede": "Track collection, privacy, review, and stable knowledge across multiple knowledge bases.",
       "dashboard.metric.sources": "Sources",
       "dashboard.metric.pages": "Pages",
       "dashboard.metric.brokenLinks": "Broken links",
@@ -241,9 +271,9 @@ export const SITE_JS = `(() => {
       "language.switch": "切换语言",
       "filters.knowledgeType": "知识类型筛选",
       "filters.all": "全部",
-      "dashboard.eyebrow": "团队修复知识中枢",
-      "dashboard.title": "OpenClaw 经验知识库",
-      "dashboard.lede": "把机器人修复记忆转成可审批、可沉淀、可复用的运维经验。",
+      "dashboard.eyebrow": "团队经验知识中枢",
+      "dashboard.title": "团队经验知识库",
+      "dashboard.lede": "统一查看多个知识库的采集、隐私、审批和沉淀状态。",
       "dashboard.metric.sources": "来源",
       "dashboard.metric.pages": "页面",
       "dashboard.metric.brokenLinks": "断链",
@@ -330,6 +360,17 @@ export const SITE_JS = `(() => {
       const kind = button.getAttribute("data-kind-filter");
       document.querySelectorAll("[data-page-kind]").forEach((item) => {
         item.hidden = kind !== "all" && item.getAttribute("data-page-kind") !== kind;
+      });
+    });
+  });
+  document.querySelectorAll("[data-kb-filter-link]").forEach((link) => {
+    link.addEventListener("click", () => {
+      const kb = link.getAttribute("data-kb-filter-link") || "all";
+      document.querySelectorAll("[data-kb-filter-link]").forEach((node) => {
+        node.classList.toggle("is-active", node.getAttribute("data-kb-filter-link") === kb);
+      });
+      document.querySelectorAll("[data-page-kb]").forEach((item) => {
+        item.hidden = kb !== "all" && item.getAttribute("data-page-kb") !== kb;
       });
     });
   });

@@ -5,6 +5,9 @@ language: zh-CN
 ui_language: zh-CN
 content_language: zh-CN
 knowledge_profile: openclaw
+knowledge_bases:
+  - openclaw
+  - k8s
 curation_include_auto_released: true
 knowledge_filter_rules:
   - keep_repair_actions

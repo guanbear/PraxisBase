@@ -4,7 +4,7 @@ import matter from "gray-matter";
 import { escapeHtml, escapeJsonForHtml } from "../build/html.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { readJson, readText, safePath, writeJson, writeText } from "../store/file-store.js";
-import { readProjectLanguageConfig, readProjectReviewUiConfig, type ProjectLanguage } from "../config/project.js";
+import { readProjectLanguageConfig, readProjectReviewUiConfig, type ProjectKnowledgeConfig, type ProjectLanguage, type ProjectReviewUiConfig } from "../config/project.js";
 import { collectWikiSources } from "./collect.js";
 import { inferWikiConfidence, inferWikiLifecycle, makeWikiSlug, type WikiSource } from "./model.js";
 import { runWikiLint } from "./lint.js";
@@ -20,6 +20,7 @@ import type { BuildWikiSiteResult, WikiSitePage } from "./site-model.js";
 interface SourceMetadata {
   id?: string;
   kind?: string;
+  knowledge_base?: string;
   scope?: string;
   maturity?: string;
   confidence?: number;
@@ -70,6 +71,7 @@ async function sourceMetadata(root: string, source: WikiSource): Promise<SourceM
     return {
       id: stringValue(data.id),
       kind: stringValue(data.knowledge_type) ?? stringValue(data.type),
+      knowledge_base: stringValue(data.knowledge_base) ?? stringValue(data.knowledge_source),
       scope: stringValue(data.scope),
       maturity: stringValue(data.maturity),
       confidence: numberValue(data.confidence),
@@ -121,6 +123,7 @@ export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
       slug: identity.slug,
       title,
       page_kind: pageKind(source, metadata),
+      knowledge_base: metadata.knowledge_base,
       scope: metadata.scope ?? source.scope,
       maturity: metadata.maturity ?? source.maturity ?? "draft",
       lifecycle: inferWikiLifecycle({
@@ -611,6 +614,177 @@ function renderActionCard(input: { href: string; label: string; value: string; d
   </a>`;
 }
 
+function normalizeKnowledgeBaseId(value: string | undefined): string {
+  return (value ?? "default").trim().toLowerCase().replace(/_/g, "-") || "default";
+}
+
+function fallbackKnowledgeBaseLabel(id: string): string {
+  if (id === "openclaw") return "OpenClaw";
+  if (id === "k8s") return "K8s";
+  if (id === "container-repair") return "容器修复";
+  if (id === "feishu") return "飞书";
+  if (id === "codex") return "Codex";
+  if (id === "default") return "默认";
+  return id.split("-").map((part) => part ? part[0]!.toUpperCase() + part.slice(1) : part).join(" ");
+}
+
+function knowledgeBaseLabel(id: string, config: ProjectKnowledgeConfig): string {
+  return config.bases.find((base) => normalizeKnowledgeBaseId(base.id) === id)?.label ?? fallbackKnowledgeBaseLabel(id);
+}
+
+function knowledgeBaseFromPage(page: WikiSitePage): string {
+  if (page.knowledge_base) return normalizeKnowledgeBaseId(page.knowledge_base);
+  const combined = [
+    page.path,
+    page.title,
+    ...page.signatures,
+    ...page.source_ids,
+    ...(page.provenance_refs ?? []).map((ref) => ref.uri),
+  ].filter(Boolean).join("\n").toLowerCase();
+  if (/\bk8s\b|kubernetes|oomkilled|pod/.test(combined)) return "k8s";
+  if (/openclaw|octoclaw|answer-bot/.test(combined)) return "openclaw";
+  if (/container|docker/.test(combined)) return "container-repair";
+  if (/feishu|lark/.test(combined)) return "feishu";
+  if (/codex/.test(combined)) return "codex";
+  return "default";
+}
+
+interface KnowledgeBaseOverviewItem {
+  id: string;
+  label: string;
+  stablePages: number;
+  sourceItems: number;
+  pendingCuration: number;
+  privacyBlocked: number;
+}
+
+function buildKnowledgeBaseOverview(
+  pages: WikiSitePage[],
+  dailyReport: DailyReportSummary | null,
+  config: ProjectKnowledgeConfig,
+): KnowledgeBaseOverviewItem[] {
+  const ids = new Set(config.bases.map((base) => normalizeKnowledgeBaseId(base.id)));
+  if (ids.size === 0) ids.add(normalizeKnowledgeBaseId(config.profile));
+
+  const counts = new Map<string, Omit<KnowledgeBaseOverviewItem, "id" | "label">>();
+  const ensure = (id: string) => {
+    const normalized = normalizeKnowledgeBaseId(id);
+    ids.add(normalized);
+    const current = counts.get(normalized) ?? { stablePages: 0, sourceItems: 0, pendingCuration: 0, privacyBlocked: 0 };
+    counts.set(normalized, current);
+    return current;
+  };
+
+  for (const page of pages) {
+    ensure(knowledgeBaseFromPage(page)).stablePages += 1;
+  }
+
+  for (const item of dailyReport?.experience_coverage?.items ?? []) {
+    const summary = ensure(knowledgeBaseFromCoverageItem(item));
+    summary.sourceItems += 1;
+    if (item.status === "privacy_blocked") summary.privacyBlocked += 1;
+    if (item.status === "needs_curation" || item.status === "proposal") summary.pendingCuration += 1;
+  }
+
+  return Array.from(ids).sort((left, right) => left.localeCompare(right)).map((id) => {
+    const item = counts.get(id) ?? { stablePages: 0, sourceItems: 0, pendingCuration: 0, privacyBlocked: 0 };
+    return { id, label: knowledgeBaseLabel(id, config), ...item };
+  });
+}
+
+function renderKnowledgeBaseOverview(items: KnowledgeBaseOverviewItem[], language: ProjectLanguage): string {
+  const useZh = zh(language);
+  return `<section class="kb-overview panel" id="knowledge-bases">
+  <h2>${useZh ? "知识库分布" : "Knowledge Bases"}</h2>
+  <p class="section-subtitle">${useZh ? "每个知识库独立统计来源、隐私阻断、待提炼和稳定知识页。K8s 等新知识库可以先配置为空，再逐步接入来源。" : "Each knowledge base tracks sources, privacy blockers, curation work, and stable pages separately. New bases can start empty before sources are connected."}</p>
+  <div class="kb-card-grid">
+    ${items.map((item) => `<a class="kb-overview-card" href="#knowledge-pages" data-kb-filter-link="${escapeHtml(item.id)}">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(String(item.stablePages))}</strong>
+      <small>${escapeHtml(useZh ? `稳定页 · 来源 ${item.sourceItems} · 待提炼 ${item.pendingCuration} · 隐私 ${item.privacyBlocked}` : `stable pages · sources ${item.sourceItems} · curation ${item.pendingCuration} · privacy ${item.privacyBlocked}`)}</small>
+    </a>`).join("\n")}
+  </div>
+</section>`;
+}
+
+interface ProcessStep {
+  label: string;
+  value: string;
+  note: string;
+  href?: string;
+}
+
+function renderProcessMap(input: { title: string; subtitle: string; steps: ProcessStep[]; id?: string }): string {
+  const renderStep = (step: ProcessStep, index: number) => {
+    const body = `<span class="process-index">${escapeHtml(String(index + 1))}</span>
+      <span class="process-label">${escapeHtml(step.label)}</span>
+      <strong>${escapeHtml(step.value)}</strong>
+      <small>${escapeHtml(step.note)}</small>`;
+    return step.href
+      ? `<a class="process-step" href="${escapeHtml(step.href)}">${body}</a>`
+      : `<article class="process-step">${body}</article>`;
+  };
+  return `<section class="process-map panel"${input.id ? ` id="${escapeHtml(input.id)}"` : ""}>
+  <div class="section-heading compact-heading">
+    <div>
+      <h2>${escapeHtml(input.title)}</h2>
+      <p>${escapeHtml(input.subtitle)}</p>
+    </div>
+  </div>
+  <div class="process-grid">
+    ${input.steps.map(renderStep).join("\n")}
+  </div>
+</section>`;
+}
+
+interface CountNote {
+  label: string;
+  value: string;
+  text: string;
+  href?: string;
+}
+
+function renderCountNotes(input: { title: string; subtitle: string; notes: CountNote[]; id?: string }): string {
+  const renderNote = (note: CountNote) => {
+    const body = `<span>${escapeHtml(note.label)}</span><strong>${escapeHtml(note.value)}</strong><p>${escapeHtml(note.text)}</p>`;
+    return note.href
+      ? `<a class="count-note" href="${escapeHtml(note.href)}">${body}</a>`
+      : `<article class="count-note">${body}</article>`;
+  };
+  return `<section class="count-notes"${input.id ? ` id="${escapeHtml(input.id)}"` : ""}>
+  <div class="section-heading compact-heading">
+    <div>
+      <h2>${escapeHtml(input.title)}</h2>
+      <p>${escapeHtml(input.subtitle)}</p>
+    </div>
+  </div>
+  <div class="count-note-grid">
+    ${input.notes.map(renderNote).join("\n")}
+  </div>
+</section>`;
+}
+
+function renderTerminologyPanel(language: ProjectLanguage = "en"): string {
+  const useZh = zh(language);
+  const terms = useZh ? [
+    ["来源条目", "OpenClaw 记忆或其他输入被切分后的处理单位；一个来源可能产生多个经验片段，也可能只作为证据。"],
+    ["经验片段", "从来源中抽出的可复用修复经验，还没有变成稳定知识。"],
+    ["提案", "AI 编译出的知识库改动草稿，审批通过并提升后才会写入 kb/ 或 skills/。"],
+    ["稳定知识", "已经在 kb/ 或 skills/ 中的页面，Agent 检索时可以直接使用。"],
+  ] : [
+    ["Source item", "A chunk imported from OpenClaw memory or another input source. One source can produce multiple lessons or only evidence."],
+    ["Lesson", "A reusable repair observation extracted from source material, before it becomes stable knowledge."],
+    ["Proposal", "An AI-generated draft change. It only writes to kb/ or skills/ after approval and promotion."],
+    ["Stable knowledge", "Pages already present in kb/ or skills/ and available to agents during retrieval."],
+  ];
+  return `<details class="terminology-panel">
+  <summary>${escapeHtml(useZh ? "术语速查" : "Terminology")}</summary>
+  <dl>
+    ${terms.map(([term, description]) => `<dt>${escapeHtml(term)}</dt><dd>${escapeHtml(description)}</dd>`).join("\n")}
+  </dl>
+</details>`;
+}
+
 function renderDailyOverviewSection(report: DailyReportSummary, language: ProjectLanguage = "en"): string {
   const useZh = zh(language);
   const label = (english: string, chinese: string) => useZh ? chinese : english;
@@ -621,7 +795,7 @@ function renderDailyOverviewSection(report: DailyReportSummary, language: Projec
     { label: label("Imported", "已导入"), value: String(report.imported) },
     { label: label("Privacy review", "隐私待确认"), value: String(report.privacy_required), href: "review.html#human-required" },
     { label: label("Proposals", "待审核提案"), value: String(report.proposal_candidates), href: "review.html#pending-candidates" },
-    { label: label("Stable pages", "稳定知识"), value: String(report.site_pages), href: "#knowledge-pages" },
+    { label: label("Current stable pages", "当前稳定知识页"), value: String(report.site_pages), href: "#knowledge-pages" },
   ];
   return `<section class="daily-update panel">
   <h2>${label("Today\'s Processing", "本次处理结果")}</h2>
@@ -1058,12 +1232,12 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
     {
       label: useZh ? "经验抽取" : "Lessons",
       value: coverage.total_lessons || coverage.with_lessons,
-      note: useZh ? `${coverage.with_lessons} 个来源产出 lesson` : `${coverage.with_lessons} sources produced lessons`,
+      note: useZh ? `${coverage.with_lessons} 个来源产出经验片段` : `${coverage.with_lessons} sources produced lessons`,
     },
     {
       label: useZh ? "知识编译" : "Curation",
       value: coverage.total_wiki_evidence || coverage.with_wiki_evidence,
-      note: useZh ? `${coverage.with_wiki_evidence} 个来源，${coverage.pending_curation} 个待提炼` : `${coverage.with_wiki_evidence} sources, ${coverage.pending_curation} queued`,
+      note: useZh ? `${coverage.with_wiki_evidence} 个来源形成证据，${coverage.pending_curation} 个待提炼` : `${coverage.with_wiki_evidence} sources, ${coverage.pending_curation} queued`,
     },
     {
       label: useZh ? "沉淀" : "Stable",
@@ -1105,8 +1279,8 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
     <div class="metrics">
       <a class="metric-link" href="#coverage-details" data-coverage-filter="all"><span>原始项</span><strong>${escapeHtml(String(coverage.total_items))}</strong></a>
       <a class="metric-link" href="#coverage-details" data-coverage-filter="privacy_blocked"><span>隐私待确认</span><strong>${escapeHtml(String(coverage.privacy_blocked))}</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="lesson_all"><span>${useZh ? "Lesson 总数" : "Total lessons"}</span><strong>${escapeHtml(String(coverage.total_lessons || coverage.with_lessons))}</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="wiki_evidence_all"><span>${useZh ? `Wiki 证据 ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} 个来源` : `Wiki evidence ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} sources`}</span><strong>${escapeHtml(String(coverage.total_wiki_evidence || coverage.with_wiki_evidence))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="lesson_all"><span>${useZh ? "经验片段总数" : "Total lessons"}</span><strong>${escapeHtml(String(coverage.total_lessons || coverage.with_lessons))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="wiki_evidence_all"><span>${useZh ? `知识证据 ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} 个来源` : `Wiki evidence ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} sources`}</span><strong>${escapeHtml(String(coverage.total_wiki_evidence || coverage.with_wiki_evidence))}</strong></a>
       <a class="metric-link" href="#coverage-details" data-coverage-filter="proposal"><span>${useZh ? "涉及提案来源" : "Sources with proposals"}</span><strong>${escapeHtml(String(coverage.with_proposals))}</strong></a>
       <a class="metric-link" href="#coverage-details" data-coverage-filter="stable_kb"><span>${useZh ? "稳定知识" : "Stable KB"}</span><strong>${escapeHtml(String(coverage.stable_kb))}</strong></a>
     </div>
@@ -1119,7 +1293,7 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
       <summary>${useZh ? "展开来源明细" : "Show source details"}</summary>
     <div class="table-scroll">
       <table class="coverage-table">
-        <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "知识库" : "KB"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "lessons" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "原因" : "reason"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
+        <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "知识库" : "KB"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "经验片段" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "原因" : "reason"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
         <tbody>${rows || `<tr><td colspan=\"9\">${useZh ? "没有覆盖记录。" : "No coverage records."}</td></tr>`}</tbody>
       </table>
     </div>
@@ -1134,6 +1308,7 @@ function renderReviewPage(
   curationReport: WikiCurationReportSummary | null,
   dailyReport: DailyReportSummary | null,
   privacyTriageReport: PrivacyTriageReportSummary | null,
+  reviewUiConfig: ProjectReviewUiConfig,
   language: ProjectLanguage = "en",
 ): string {
   const useZh = zh(language);
@@ -1148,6 +1323,42 @@ function renderReviewPage(
     candidate_human: candidateHuman,
     rejected: (dailyReport?.rejected ?? 0) + (curationReport?.input_rejected ?? 0) + (curationReport?.compiler_hard_blocks ?? 0),
   };
+  const approvalMode = reviewUiConfig.writeback === "gitlab"
+    ? useZh ? "GitLab 回写已配置" : "GitLab writeback configured"
+    : useZh ? "当前仅本地审批，尚未接入 GitLab 页面回写" : "Local approval only; GitLab page writeback is not connected yet";
+  const coveragePrivacy = dailyReport?.experience_coverage?.privacy_blocked ?? currentPrivacyRequired;
+  const reviewNotes: CountNote[] = [
+    {
+      label: useZh ? "待审核提案" : "Pending proposals",
+      value: String(counts.pending),
+      text: useZh ? "只统计当前需要人工点批准/拒绝的 proposal；已经匹配稳定页的候选不会再出现在这里。" : "Only proposals that need an approve/reject decision now; already-stable candidates are excluded.",
+      href: "#pending-candidates",
+    },
+    {
+      label: useZh ? "隐私待确认" : "Privacy review",
+      value: String(counts.current_privacy),
+      text: useZh ? `这是审批队列存量；本次 OpenClaw 覆盖中隐私阻断是 ${coveragePrivacy}。批准会释放脱敏摘要，拒绝会保留阻断。` : `This is the approval backlog; current OpenClaw coverage has ${coveragePrivacy} privacy blockers. Approving releases sanitized summaries; rejecting keeps the block.`,
+      href: "#human-required",
+    },
+    {
+      label: useZh ? "当前队列已入库" : "Queue already stable",
+      value: String(counts.promoted),
+      text: useZh ? "表示候选目标已经存在于 kb/ 或 skills/，不是全库稳定知识总数。" : "Candidate targets already exist in kb/ or skills/; this is not the stable total.",
+      href: "#promoted-candidates",
+    },
+    {
+      label: useZh ? "稳定知识总量" : "Stable total",
+      value: String(pages.length),
+      text: useZh ? "首页稳定知识页展示的是全库可检索页面总数；审批通过并提升后才会增加。" : "The overview stable pages count is the total retrievable library; approvals increase it only after promotion.",
+      href: "index.html#knowledge-pages",
+    },
+  ];
+  const reviewSteps: ProcessStep[] = [
+    { label: useZh ? "看队列" : "Scan", value: String(counts.current_privacy + counts.pending), note: useZh ? "先处理隐私和可审批提案" : "privacy plus actionable proposals", href: "#human-required" },
+    { label: useZh ? "点决定" : "Decide", value: useZh ? "批准/拒绝" : "Approve/reject", note: useZh ? "页面写入审批记录" : "page records the decision", href: "#pending-candidates" },
+    { label: useZh ? "重跑处理" : "Apply", value: useZh ? "每日处理 / 提升" : "daily / promote", note: useZh ? "消费审批记录并生成知识" : "consume decisions and write knowledge" },
+    { label: useZh ? "确认入库" : "Verify", value: String(pages.length), note: useZh ? "回首页看稳定知识总量" : "return to stable total", href: "index.html#knowledge-pages" },
+  ];
 
   return renderLayout({
     title: useZh ? "PraxisBase 审批中心" : "PraxisBase Approval Center",
@@ -1159,26 +1370,24 @@ function renderReviewPage(
     <div>
       <p class="eyebrow">${useZh ? "审批中心" : "Approval center"}</p>
       <h1>${useZh ? "经验入库审批" : "Experience Approval"}</h1>
-      <p class="lede">${useZh ? "先看本次需要处理什么，再逐条批准提案或隐私释放。审批只记录决定；重跑 daily / promote 后才会进入稳定知识库。" : "See what needs attention, then approve proposals or privacy releases. The page records decisions; daily/promote applies them to stable knowledge."}</p>
+      <p class="lede">${useZh ? "先看本次需要处理什么，再逐条批准提案或隐私释放。审批只记录决定；重跑每日处理 / 提升入库后才会进入稳定知识库。" : "See what needs attention, then approve proposals or privacy releases. The page records decisions; daily/promote applies them to stable knowledge."}</p>
     </div>
   </section>
   <section class="action-grid" aria-label="${escapeHtml(useZh ? "待处理事项" : "Review actions")}">
-    ${renderActionCard({ href: "#pending-candidates", label: useZh ? "待审核提案" : "Pending proposals", value: String(counts.pending), description: useZh ? "批准后可 promote 成稳定知识。" : "Approve before promotion into stable knowledge.", tone: counts.pending > 0 ? "warn" : "ok" })}
+    ${renderActionCard({ href: "#pending-candidates", label: useZh ? "待审核提案" : "Pending proposals", value: String(counts.pending), description: useZh ? "批准后可提升入库为稳定知识。" : "Approve before promotion into stable knowledge.", tone: counts.pending > 0 ? "warn" : "ok" })}
     ${renderActionCard({ href: "#human-required", label: useZh ? "隐私待确认" : "Current privacy", value: String(counts.current_privacy), description: useZh ? "查看可审摘要，释放脱敏经验或拒绝。" : "Inspect sanitized previews, release or reject.", tone: counts.current_privacy > 0 ? "danger" : "ok" })}
-    ${renderActionCard({ href: "#approved-candidates", label: useZh ? "已批准待提升" : "Approved waiting", value: String(counts.approved), description: useZh ? "下一步运行 promote 写入稳定知识。" : "Run promote to write stable pages.", tone: counts.approved > 0 ? "info" : "ok" })}
-    ${renderActionCard({ href: "#promoted-candidates", label: useZh ? "已沉淀" : "Promoted", value: String(counts.promoted), description: useZh ? "已经进入或等待导出给机器人使用。" : "Already promoted or ready for agent export.", tone: "ok" })}
+    ${renderActionCard({ href: "#approved-candidates", label: useZh ? "已批准待提升" : "Approved waiting", value: String(counts.approved), description: useZh ? "下一步运行提升入库写入稳定知识。" : "Run promote to write stable pages.", tone: counts.approved > 0 ? "info" : "ok" })}
+    ${renderActionCard({ href: "#promoted-candidates", label: useZh ? "当前队列已入库" : "Queue already stable", value: String(counts.promoted), description: useZh ? "候选目标已存在于 kb/ 或 skills/，不等于稳定知识总数。" : "Candidate targets already exist in kb/ or skills/; this is not the total stable count.", tone: "ok" })}
   </section>
   <section class="status-strip">
     <strong>${useZh ? "审批服务" : "Approval service"}</strong>
-    <span>${useZh ? "本地默认连接 review-config.json 中的 API；当前常用启动命令：" : "This page reads the API endpoint from review-config.json. Common local command:"}</span>
+    <span>${escapeHtml(approvalMode)}；API: </span>
+    <code>${escapeHtml(reviewUiConfig.reviewApiBase)}</code>
     <code>praxisbase review serve --port 4174</code>
   </section>
-  <section class="flow-guide" aria-label="${escapeHtml(useZh ? "审批流程" : "Approval flow")}">
-    <article><span>1</span><strong>${useZh ? "看总数" : "Scan"}</strong><p>${useZh ? "优先处理隐私待确认和待审核提案。" : "Start with privacy and pending proposals."}</p></article>
-    <article><span>2</span><strong>${useZh ? "逐条审批" : "Decide"}</strong><p>${useZh ? "卡片内直接批准、拒绝或保留人工。" : "Approve, reject, or keep manual from each card."}</p></article>
-    <article><span>3</span><strong>${useZh ? "重跑处理" : "Apply"}</strong><p>${useZh ? "daily / promote 会消费审批决定。" : "daily/promote consumes recorded decisions."}</p></article>
-    <article><span>4</span><strong>${useZh ? "查看沉淀" : "Verify"}</strong><p>${useZh ? "回首页或稳定知识页确认结果。" : "Return to overview or stable pages."}</p></article>
-  </section>
+  ${renderCountNotes({ title: useZh ? "审批页数字怎么读" : "How to Read This Page", subtitle: useZh ? "这里的数字按“当前可操作队列”统计，所以会和首页全库总量不同。" : "These numbers describe the current action queue, so they differ from overview library totals.", notes: reviewNotes })}
+  ${renderProcessMap({ title: useZh ? "审批闭环" : "Approval Loop", subtitle: useZh ? "页面只负责记录决定；真正写入知识库由下一次每日处理 / 提升入库完成。" : "This page records decisions; daily/promote applies them to the knowledge base.", steps: reviewSteps })}
+  ${renderTerminologyPanel(language)}
   <details class="advanced-panel review-advanced">
     <summary>${useZh ? "展开高级流水线状态" : "Show advanced pipeline status"}</summary>
     ${dailyReport?.personal_ga ? renderPersonalGaSection(dailyReport.personal_ga) : ""}
@@ -1187,7 +1396,7 @@ function renderReviewPage(
   ${renderExperienceCoverage(dailyReport, language)}
   <section class="review-section" data-status="pending">
     <h2>${useZh ? "操作命令" : "Operational commands"}</h2>
-    <p>${useZh ? "页面按钮适合人工审批；批量或自动化仍走命令。GitLab 页面化后会把同一套决定回写到仓库。" : "Use page buttons for human approval. Batch automation still uses commands; GitLab hosting can write the same decisions back to the repo."}</p>
+    <p>${useZh ? "页面按钮现在写入本地审批服务。GitLab 页面审批还没最终接好，需要部署 approval API，并把 review_writeback 切到 gitlab。" : "Page buttons currently write to the local approval service. GitLab page approval still needs the approval API deployment and review_writeback=gitlab."}</p>
     <div class="command-strip">
       <code>praxisbase review serve --port 4174</code>
       <code>praxisbase review --auto</code>
@@ -1199,7 +1408,7 @@ function renderReviewPage(
   ${renderCandidateSection({ id: "approved-candidates", title: useZh ? "已审核 / 已批准" : "Reviewed / Approved", status: "approved", candidates: queue.candidates, empty: useZh ? "没有等待提升的已批准候选项。" : "No approved candidates waiting for promotion.", commands: ["praxisbase promote --auto", "praxisbase wiki build-site --json"], language })}
   ${renderHumanRequired(queue.human_required, dailyReport, privacyTriageReport, language)}
   ${renderRejectedSection(dailyReport, curationReport, language)}
-  ${renderCandidateSection({ id: "promoted-candidates", title: useZh ? "已沉淀" : "Promoted", status: "promoted", candidates: queue.candidates, empty: useZh ? "当前 inbox 没有已沉淀候选项。" : "No promoted candidates from the current inbox.", commands: ["praxisbase gbrain export --mode personal --write --json", "praxisbase agentmemory export --mode personal --write --json"], language })}
+  ${renderCandidateSection({ id: "promoted-candidates", title: useZh ? "当前队列已入库" : "Queue Already Stable", status: "promoted", candidates: queue.candidates, empty: useZh ? "当前队列没有已入库候选项。" : "No already-stable candidates in the current queue.", commands: ["praxisbase gbrain export --mode personal --write --json", "praxisbase agentmemory export --mode personal --write --json"], language })}
 </main>`,
   });
 }
@@ -1215,17 +1424,94 @@ function renderDashboard(
   personalFacetCounts: PersonalFacetCounts,
   experienceSummaries: ExperienceSummary[],
   pendingCandidates: PendingWikiProposalCandidate[],
+  reviewQueue: ReviewQueue,
   curationReport: WikiCurationReportSummary | null,
+  knowledgeConfig: ProjectKnowledgeConfig,
   language: ProjectLanguage = "en",
 ): string {
   const useZh = zh(language);
   const signatures = pages.flatMap((page) => page.signatures).slice(0, 8);
-  const recent = [...pages]
+  const stablePages = [...pages]
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
-    .slice(0, 6);
-  const pendingReview = pendingCandidates.length || dailyReport?.proposal_candidates || 0;
-  const privacyReview = dailyReport?.privacy_required ?? dailyReport?.human_required ?? 0;
+    .map((page) => ({ page, kb: knowledgeBaseFromPage(page) }));
+  const pendingReview = reviewQueue.candidates.filter((item) => item.status === "pending").length;
+  const generatedProposals = dailyReport?.proposal_candidates ?? pendingCandidates.length;
+  const alreadyStableQueue = reviewQueue.candidates.filter((item) => item.status === "promoted").length;
+  const coverage = dailyReport?.experience_coverage;
+  const sourceItems = coverage?.total_items ?? dailyReport?.source_count ?? 0;
+  const currentSourcePrivacy = coverage?.privacy_blocked ?? dailyReport?.privacy_required ?? dailyReport?.human_required ?? 0;
+  const privacyQueue = reviewQueue.human_required.length;
+  const privacyReview = dailyReport?.privacy_required ?? dailyReport?.human_required ?? Math.max(privacyQueue, currentSourcePrivacy);
+  const curationBacklog = coverage?.pending_curation ?? 0;
+  const lessonCount = coverage?.total_lessons ?? coverage?.with_lessons ?? 0;
   const rejected = (dailyReport?.rejected ?? 0) + (curationReport?.input_rejected ?? 0) + (curationReport?.compiler_hard_blocks ?? 0);
+  const knowledgeBases = buildKnowledgeBaseOverview(pages, dailyReport, knowledgeConfig);
+  const activeKnowledgeLabels = knowledgeBases.map((item) => item.label).join(" / ");
+  const processSteps: ProcessStep[] = [
+    {
+      label: useZh ? "来源采集" : "Collect",
+      value: String(sourceItems),
+      note: useZh ? "原始记忆/输入单元" : "raw memory/input items",
+      href: "review.html#experience-coverage",
+    },
+    {
+      label: useZh ? "隐私筛选" : "Privacy",
+      value: String(currentSourcePrivacy),
+      note: useZh ? `本次阻断；队列存量 ${privacyReview}` : `blocked this run; queue ${privacyReview}`,
+      href: "review.html#human-required",
+    },
+    {
+      label: useZh ? "经验提炼" : "Extract",
+      value: String(lessonCount),
+      note: useZh ? `${curationBacklog} 个来源待二次提炼` : `${curationBacklog} sources need curation`,
+      href: "review.html#experience-coverage",
+    },
+    {
+      label: useZh ? "提案审批" : "Review",
+      value: String(pendingReview),
+      note: useZh ? `本次生成 ${generatedProposals}，已匹配入库 ${alreadyStableQueue}` : `${generatedProposals} generated, ${alreadyStableQueue} already stable`,
+      href: "review.html#pending-candidates",
+    },
+    {
+      label: useZh ? "稳定知识" : "Stable",
+      value: String(pages.length),
+      note: useZh ? "全库可检索总量" : "total retrievable pages",
+      href: "#knowledge-pages",
+    },
+  ];
+  const countNotes: CountNote[] = [
+    {
+      label: useZh ? "34 类数字" : "Source count",
+      value: String(sourceItems),
+      text: useZh ? "这是原始来源条目数量，不是经验数量；一个来源可以拆出多个经验，也可能只留下证据。" : "Raw source items, not lesson count; one item can produce multiple lessons or only evidence.",
+      href: "review.html#experience-coverage",
+    },
+    {
+      label: useZh ? "0 类数字" : "Action queue",
+      value: String(pendingReview),
+      text: useZh ? "这是当前马上能点批准/拒绝的提案数。本次生成 1 个提案，但它已命中已有稳定页，所以待审批为 0。" : "Actionable proposals now. One proposal was generated this run, but it already matches a stable page, so pending is 0.",
+      href: "review.html#pending-candidates",
+    },
+    {
+      label: useZh ? "11 类数字" : "Stable total",
+      value: String(pages.length),
+      text: useZh ? "这是 kb/ 与 skills/ 中可被 Agent 检索的稳定知识总量，和当前审批队列不是同一个口径。" : "Total stable kb/ and skills/ pages available to agents; this is separate from the review queue.",
+      href: "#knowledge-pages",
+    },
+    {
+      label: useZh ? "19 / 14 类数字" : "Privacy queue",
+      value: String(privacyReview),
+      text: useZh ? `本次 daily 判定需要隐私确认的是 ${privacyReview}；其中 OpenClaw 覆盖明细里的隐私阻断是 ${currentSourcePrivacy}。` : `The latest daily run requires ${privacyReview} privacy decisions; current OpenClaw coverage details show ${currentSourcePrivacy} privacy blockers.`,
+      href: "review.html#human-required",
+    },
+  ];
+  const dashboardConclusion = pendingReview > 0
+    ? useZh
+      ? `先处理 ${privacyReview} 条隐私审批和 ${pendingReview} 个可审批提案。稳定知识总量是 ${pages.length}，不是本次新增数。`
+      : `Handle ${privacyReview} privacy decisions and ${pendingReview} actionable proposals. Stable total is ${pages.length}, not new pages this run.`
+    : useZh
+      ? `先处理 ${privacyReview} 条隐私审批；当前没有可审批提案。稳定知识总量是 ${pages.length}，不是本次新增数。`
+      : `Handle ${privacyReview} privacy decisions first; no actionable proposal is waiting now. Stable total is ${pages.length}, not new pages this run.`;
   const cards = [
     { label: useZh ? "来源" : "Sources", value: String(new Set(pages.flatMap((page) => page.source_ids)).size), href: "#knowledge-pages", i18nKey: "dashboard.metric.sources" },
     { label: useZh ? "页面" : "Pages", value: String(pages.length), href: "#knowledge-pages", i18nKey: "dashboard.metric.pages" },
@@ -1238,24 +1524,32 @@ function renderDashboard(
   ];
 
   return renderLayout({
-    title: useZh ? "PraxisBase OpenClaw 经验知识库" : "PraxisBase OpenClaw Experience Base",
+    title: useZh ? "PraxisBase 团队经验知识库" : "PraxisBase Team Experience Base",
     pages,
     graph,
     language,
     body: `<main class="dashboard">
   <section class="hero">
     <div>
-      <p class="eyebrow" data-i18n="dashboard.eyebrow">${escapeHtml(useZh ? "团队修复知识中枢" : "Team repair knowledge hub")}</p>
-      <h1 data-i18n="dashboard.title">${escapeHtml(useZh ? "OpenClaw 经验知识库" : "OpenClaw Experience Base")}</h1>
-      <p class="lede" data-i18n="dashboard.lede">${escapeHtml(useZh ? "把机器人修复记忆转成可审批、可沉淀、可复用的运维经验。" : "Turns robot repair memory into reviewable, reusable, provenance-backed knowledge.")}</p>
+      <p class="eyebrow" data-i18n="dashboard.eyebrow">${escapeHtml(useZh ? "团队经验知识中枢" : "Team experience knowledge hub")}</p>
+      <h1 data-i18n="dashboard.title">${escapeHtml(useZh ? "团队经验知识库" : "Team Experience Base")}</h1>
+      <p class="lede">${escapeHtml(useZh ? `统一查看 ${activeKnowledgeLabels} 的采集、隐私、审批和沉淀状态。` : `Track collection, privacy, review, and stable knowledge across ${activeKnowledgeLabels}.`)}</p>
     </div>
   </section>
   <section class="action-grid" aria-label="${escapeHtml(useZh ? "下一步操作" : "Next actions")}">
-    ${renderActionCard({ href: "review.html#pending-candidates", label: useZh ? "待审批提案" : "Pending proposals", value: String(pendingReview), description: useZh ? "先处理能直接进入知识库的候选。" : "Review candidates that can become stable knowledge.", tone: pendingReview > 0 ? "warn" : "ok" })}
-    ${renderActionCard({ href: "review.html#human-required", label: useZh ? "隐私待确认" : "Privacy review", value: String(privacyReview), description: useZh ? "查看脱敏摘要，批准释放或拒绝。" : "Inspect sanitized previews and release or reject them.", tone: privacyReview > 0 ? "danger" : "ok" })}
-    ${renderActionCard({ href: "#knowledge-pages", label: useZh ? "已沉淀知识" : "Stable knowledge", value: String(pages.length), description: useZh ? "可被 Agent 检索和引用的稳定页面。" : "Stable pages available for agent retrieval.", tone: "ok" })}
-    ${renderActionCard({ href: "issues.html", label: useZh ? "质量检查" : "Quality checks", value: String(qualityFindings), description: useZh ? "处理断链、重复、过期和编译阻断。" : "Resolve broken links, duplicates, stale pages, and blockers.", tone: qualityFindings > 0 || rejected > 0 ? "info" : "ok" })}
+    ${renderActionCard({ href: "review.html#pending-candidates", label: useZh ? "可审批提案" : "Actionable proposals", value: String(pendingReview), description: useZh ? "当前能直接批准或拒绝的知识改动。" : "Knowledge changes ready to approve or reject.", tone: pendingReview > 0 ? "warn" : "ok" })}
+    ${renderActionCard({ href: "review.html#human-required", label: useZh ? "隐私审批队列" : "Privacy queue", value: String(privacyReview), description: useZh ? `含历史待确认；本次阻断 ${currentSourcePrivacy}。` : `Includes backlog; ${currentSourcePrivacy} blocked this run.`, tone: privacyReview > 0 ? "danger" : "ok" })}
+    ${renderActionCard({ href: "#knowledge-pages", label: useZh ? "稳定知识总量" : "Stable total", value: String(pages.length), description: useZh ? "kb/ 与 skills/ 中 Agent 可检索的全部页面。" : "All retrievable kb/ and skills/ pages.", tone: "ok" })}
+    ${renderActionCard({ href: "issues.html", label: useZh ? "质量阻断" : "Quality blockers", value: String(qualityFindings), description: useZh ? "断链、重复、过期和编译阻断统一在这里看。" : "Broken links, duplicates, stale pages, and compiler blockers.", tone: qualityFindings > 0 || rejected > 0 ? "info" : "ok" })}
   </section>
+  <section class="status-strip">
+    <strong>${useZh ? "当前结论" : "Current state"}</strong>
+    <span>${escapeHtml(dashboardConclusion)}</span>
+  </section>
+  ${renderProcessMap({ title: useZh ? "从来源到入库的处理链路" : "From Source to Stable Knowledge", subtitle: useZh ? "这些数字按阶段展示，不是简单相加。点击阶段可以跳到明细或审批入口。" : "Counts are stage-specific rather than additive. Click a stage to inspect details or act.", steps: processSteps })}
+  ${renderCountNotes({ title: useZh ? "数字口径说明" : "Why Counts Differ", subtitle: useZh ? "页面把常见混淆的几套数字放在一起解释，后续每个知识库都沿用同一套口径。" : "The page explains the commonly confused count scopes. Every knowledge base uses the same counting model.", notes: countNotes })}
+  ${renderKnowledgeBaseOverview(knowledgeBases, language)}
+  ${renderTerminologyPanel(language)}
   ${dailyReport ? renderDailyOverviewSection(dailyReport, language) : ""}
   <details class="advanced-panel dashboard-advanced">
     <summary>${useZh ? "展开运行、编译和候选详情" : "Show runtime, compiler, and candidate details"}</summary>
@@ -1269,9 +1563,9 @@ function renderDashboard(
   <section class="overview-grid">
     <div id="knowledge-pages" class="panel">
       <h2 data-i18n="dashboard.knowledgePages">${escapeHtml(useZh ? "稳定知识" : "Stable Knowledge")}</h2>
-      <p class="section-subtitle">${escapeHtml(useZh ? "最近更新的稳定知识。审批通过并 promote 后会出现在这里。" : "Recently updated stable knowledge. Approved and promoted items appear here.")}</p>
+      <p class="section-subtitle">${escapeHtml(useZh ? `共 ${pages.length} 条稳定知识，下面展示全部。审批通过并 promote 后会出现在这里。` : `${pages.length} stable page(s), all shown below. Approved and promoted items appear here.`)}</p>
       <ol class="link-list">
-        ${recent.map((page) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
+        ${stablePages.map(({ page, kb }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span></li>`).join("\n")}
       </ol>
     </div>
     <div class="panel">
@@ -1357,6 +1651,10 @@ function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph, language: Proj
     ${renderActionCard({ href: "issues.html", label: useZh ? "断链" : "Broken links", value: String(graph.broken_links.length), description: useZh ? "需要修复的无效引用。" : "Invalid references to fix.", tone: graph.broken_links.length > 0 ? "danger" : "ok" })}
     ${renderActionCard({ href: "issues.html", label: useZh ? "重复" : "Duplicates", value: String(graph.duplicates.length), description: useZh ? "可能需要合并的重复知识。" : "Potentially mergeable duplicated knowledge.", tone: graph.duplicates.length > 0 ? "warn" : "ok" })}
   </section>
+  <section class="status-strip">
+    <strong>${useZh ? "怎么用" : "How to use"}</strong>
+    <span>${escapeHtml(useZh ? "这里用于看知识之间的引用、重复和上下文邻居；审批请回到“审批”页，质量阻断请看“质检”页。" : "Use this page for references, duplicates, and retrieval neighbors; approvals live on the approval page and blockers on quality.")}</span>
+  </section>
   <section class="filters" aria-label="${escapeHtml(useZh ? "知识类型筛选" : "Knowledge type filters")}" data-i18n-aria-label="filters.knowledgeType">
     ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}"${kind === "all" ? " data-i18n=\"filters.all\"" : ""}>${escapeHtml(kind === "all" ? useZh ? "全部" : "All" : kind)}</button>`).join("\n")}
   </section>
@@ -1404,6 +1702,10 @@ function renderIssuesPage(
     ${renderActionCard({ href: "graph.html", label: useZh ? "断链" : "Broken links", value: String(graph.broken_links.length), description: useZh ? "来自关系图的无效链接。" : "Invalid links from the relationship graph.", tone: graph.broken_links.length > 0 ? "danger" : "ok" })}
     ${renderActionCard({ href: "graph.html", label: useZh ? "重复" : "Duplicates", value: String(graph.duplicates.length), description: useZh ? "需要合并或消重的页面。" : "Pages that may need merging or dedupe.", tone: graph.duplicates.length > 0 ? "warn" : "ok" })}
     ${renderActionCard({ href: "review.html#human-required", label: useZh ? "隐私阻断" : "Privacy blockers", value: String(dailyReport?.human_required ?? 0), description: useZh ? "Daily 中仍需人工判断的项。" : "Daily items still needing human decision.", tone: (dailyReport?.human_required ?? 0) > 0 ? "danger" : "ok" })}
+  </section>
+  <section class="status-strip">
+    <strong>${useZh ? "怎么用" : "How to use"}</strong>
+    <span>${escapeHtml(useZh ? "这里展示会影响入库或 Agent 使用可靠性的阻断项。没有发现时，代表当前静态知识站点没有阻塞性质量问题。" : "This page lists blockers that affect promotion or reliable agent use. No findings means the static knowledge site has no blocking quality issue.")}</span>
   </section>
   <section class="issues-panel" id="quality-findings">
     <ol class="issue-list">
@@ -2539,8 +2841,8 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
   outputs.push(`${protocolPaths.reportsWikiQuality}/${qualityReport.id}.json`);
   outputs.push(...rootArtifactOutputs);
 
-  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, agentBundleReport, personalFacetCounts, experienceSummaries, pendingCandidates, curationReport, uiLanguage));
-  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport, privacyTriageReport, uiLanguage));
+  await writeText(root, "dist/index.html", renderDashboard(pages, graph, bundleStatus, stalePages, qualityReport.summary.total, dailyReport, agentBundleReport, personalFacetCounts, experienceSummaries, pendingCandidates, reviewQueue, curationReport, languageConfig.knowledge, uiLanguage));
+  await writeText(root, "dist/review.html", renderReviewPage(pages, graph, reviewQueue, curationReport, dailyReport, privacyTriageReport, reviewUiConfig, uiLanguage));
   await writeJson(root, "dist/search-index.json", {
     protocol_version: "0.1",
     documents: [

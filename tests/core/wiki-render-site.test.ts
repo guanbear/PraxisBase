@@ -50,7 +50,7 @@ Refresh login. <script>alert("x")</script>
     assert.equal(result.health.quality_findings, 0);
 
     const index = await readFile(join(root, "dist/index.html"), "utf8");
-    assert.ok(index.includes("OpenClaw Experience Base"));
+    assert.ok(index.includes("Team Experience Base"));
     assert.ok(index.includes("searchInput"));
     assert.ok(index.includes("data-kind-filter"));
     assert.ok(index.includes("href=\"style.css\""));
@@ -533,7 +533,7 @@ Body.
     await buildWikiSite(root);
 
     const review = await readFile(join(root, "dist/review.html"), "utf8");
-    assert.ok(review.includes("Wiki 证据 4 / 1 个来源"));
+    assert.ok(review.includes("知识证据 4 / 1 个来源"));
     assert.ok(review.includes("data-coverage-filter=\"proposal\""));
     assert.ok(review.includes("涉及提案来源"));
     assert.ok(review.includes("待审核提案"));
@@ -749,7 +749,7 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("Review Required"));
     assert.ok(review.includes("Privacy Required"));
     assert.ok(review.includes("Rejected"));
-    assert.ok(review.includes("Promoted"));
+    assert.ok(review.includes("Queue Already Stable"));
     assert.ok(review.includes("OpenClaw Auth Refresh"));
     assert.ok(review.includes("kb/notes/wiki-openclaw-auth.md"));
     assert.ok(review.includes("praxisbase review --auto"));
@@ -772,6 +772,9 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
       "language: zh-CN",
       "ui_language: zh-CN",
       "content_language: zh-CN",
+      "knowledge_bases:",
+      "  - openclaw",
+      "  - k8s",
       "",
     ].join("\n"));
     await writeFile(join(root, ".praxisbase/reports/daily/daily_coverage.json"), JSON.stringify({
@@ -805,8 +808,10 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
 
     await buildWikiSite(root);
     const index = await readFile(join(root, "dist/index.html"), "utf8");
-    assert.ok(index.includes("OpenClaw 经验知识库"));
+    assert.ok(index.includes("团队经验知识库"));
     assert.ok(index.includes("稳定知识"));
+    assert.ok(index.includes("知识库分布"));
+    assert.ok(index.includes("K8s"));
     assert.ok(index.includes('data-i18n="dashboard.title"'));
     assert.ok(index.includes('href="index.html"'));
     const review = await readFile(join(root, "dist/review.html"), "utf8");
@@ -982,7 +987,7 @@ Body.
     const result = await buildWikiSite(root);
     assert.ok(result.outputs.includes("dist/index.html"));
     const index = await readFile(join(root, "dist/index.html"), "utf8");
-    assert.ok(index.includes("OpenClaw Experience Base"));
+    assert.ok(index.includes("Team Experience Base"));
     assert.equal(index.includes("Latest Daily Experience"), false);
     await assert.rejects(stat(join(root, "dist/experience.html")));
   });

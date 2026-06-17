@@ -18,9 +18,15 @@ export type KnowledgeProfile = "default" | "openclaw" | "container-repair" | "k8
 
 export interface ProjectKnowledgeConfig {
   profile: KnowledgeProfile;
+  bases: ProjectKnowledgeBaseConfig[];
   promptInstruction?: string;
   curationIncludeAutoReleased: boolean;
   filterRules: string[];
+}
+
+export interface ProjectKnowledgeBaseConfig {
+  id: string;
+  label?: string;
 }
 
 function normalizeLanguage(value: unknown): ProjectLanguage | undefined {
@@ -47,6 +53,38 @@ function yamlList(text: string, key: string): string[] {
     .filter((value): value is string => Boolean(value))
     .map((value) => value.replace(/^['\"]|['\"]$/g, "").trim())
     .filter(Boolean);
+}
+
+function splitList(value: string | undefined): string[] {
+  if (!value) return [];
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function normalizeKnowledgeBaseId(value: string): string {
+  return value.trim().toLowerCase().replace(/_/g, "-");
+}
+
+function knowledgeBaseLabel(id: string): string {
+  if (id === "openclaw") return "OpenClaw";
+  if (id === "k8s") return "K8s";
+  if (id === "container-repair") return "容器修复";
+  if (id === "feishu") return "飞书";
+  if (id === "codex") return "Codex";
+  if (id === "default") return "默认";
+  return id.split("-").map((part) => part ? part[0]!.toUpperCase() + part.slice(1) : part).join(" ");
+}
+
+function normalizeKnowledgeBases(values: string[], fallbackProfile: string): ProjectKnowledgeBaseConfig[] {
+  const ids = values.length > 0 ? values : [fallbackProfile];
+  const seen = new Set<string>();
+  const bases: ProjectKnowledgeBaseConfig[] = [];
+  for (const value of ids) {
+    const id = normalizeKnowledgeBaseId(value);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    bases.push({ id, label: knowledgeBaseLabel(id) });
+  }
+  return bases.length > 0 ? bases : [{ id: "default", label: knowledgeBaseLabel("default") }];
 }
 
 function normalizeBoolean(value: unknown): boolean | undefined {
@@ -94,6 +132,7 @@ export async function readProjectLanguageConfig(
   let fileUiLanguage: ProjectLanguage | undefined;
   let fileContentLanguage: ProjectLanguage | undefined;
   let fileKnowledgeProfile: string | undefined;
+  let fileKnowledgeBases: string[] = [];
   let fileKnowledgePrompt: string | undefined;
   let fileCurationIncludeAutoReleased: boolean | undefined;
   let fileFilterRules: string[] = [];
@@ -104,6 +143,7 @@ export async function readProjectLanguageConfig(
     fileUiLanguage = normalizeLanguage(yamlScalar(config, "ui_language"));
     fileContentLanguage = normalizeLanguage(yamlScalar(config, "content_language"));
     fileKnowledgeProfile = yamlScalar(config, "knowledge_profile") ?? yamlScalar(config, "knowledge_source");
+    fileKnowledgeBases = yamlList(config, "knowledge_bases");
     fileKnowledgePrompt = yamlScalar(config, "knowledge_prompt") ?? yamlScalar(config, "profile_prompt");
     fileCurationIncludeAutoReleased = normalizeBoolean(yamlScalar(config, "curation_include_auto_released"));
     fileFilterRules = yamlList(config, "knowledge_filter_rules");
@@ -113,13 +153,16 @@ export async function readProjectLanguageConfig(
 
   const base = envLanguage ?? fileLanguage ?? "en";
   const envProfile = env.PRAXISBASE_KNOWLEDGE_PROFILE?.trim();
+  const envKnowledgeBases = splitList(env.PRAXISBASE_KNOWLEDGE_BASES);
   const envPrompt = env.PRAXISBASE_PROFILE_PROMPT?.trim();
   const envIncludeAutoReleased = normalizeBoolean(env.PRAXISBASE_CURATION_INCLUDE_AUTO_RELEASED);
+  const profile = envProfile || fileKnowledgeProfile || "default";
   return {
     uiLanguage: envUiLanguage ?? fileUiLanguage ?? base,
     contentLanguage: envContentLanguage ?? fileContentLanguage ?? base,
     knowledge: {
-      profile: envProfile || fileKnowledgeProfile || "default",
+      profile,
+      bases: normalizeKnowledgeBases(envKnowledgeBases.length > 0 ? envKnowledgeBases : fileKnowledgeBases, profile),
       promptInstruction: envPrompt || fileKnowledgePrompt,
       curationIncludeAutoReleased: envIncludeAutoReleased ?? fileCurationIncludeAutoReleased ?? true,
       filterRules: fileFilterRules,

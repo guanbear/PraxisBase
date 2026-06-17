@@ -17,6 +17,7 @@ export interface BuildWikiSiteResult {
 
 export interface WikiSitePage extends WikiPage {
   path: string;
+  knowledge_base?: string;
   source_ids: string[];
   summary: string;
   body_text: string;
