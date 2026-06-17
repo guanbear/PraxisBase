@@ -1,0 +1,96 @@
+{
+  "id": "wiki-curated_kb-known-fixes-bot-nonresponse-connector-failure-escalation-md-sha256",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/known-fixes/bot-nonresponse-connector-failure-escalation.md",
+  "action": "create",
+  "page_kind": "known_fix",
+  "scope": "team",
+  "title": "机器人无响应、连接器失败或修复流程已耗尽时的处理规则",
+  "summary": "当 OpenClaw 机器人看似无响应、chat connector 失败，或自动脚本修复与 AI 修复均已失败时，先按可验证路径排查后台调用、模型与连接器配置；若修复路径已耗尽，应升级给对应平台支持角色，避免重复执行无效修复。",
+  "body_markdown": "# 机器人无响应、连接器失败或修复流程已耗尽时的处理规则\n\n## When to Use\n\n在以下场景使用本页：\n\n- 用户反馈机器人“无响应”“卡住”“没有回复”，但不确定是前端无响应还是后端工具调用仍在运行。\n- chat connector / chat integration 连接失败，疑似与插件启用、服务重启、身份解析、websocket readiness 或集成配置有关。\n- 自动脚本修复已经失败，AI 修复也已经失败，当前机器人仍不能恢复。\n- 需要判断是继续排查，还是升级给平台支持角色。\n\n## Context\n\n此类问题容易出现两个反模式：\n\n1. **把延迟误判为故障**：机器人表面无回复，但后端 tool call 可能仍在运行或排队延迟。\n2. **重复执行已失败的修复**：自动脚本修复和 AI 修复都失败后，继续反复执行同一类修复通常不会增加成功率，反而延误升级。\n\n## Symptoms\n\n可能出现的症状包括：\n\n- 机器人界面长时间没有新消息。\n- 用户认为 bot 未响应，但系统侧可能仍有后台调用未完成。\n- chat connector 无法连接或无法解析对应身份。\n- websocket 未就绪或连接不稳定。\n- 服务健康检查异常。\n- 集成配置变更后，chat 功能失效。\n- 自动化修复流程执行过，但问题未解除。\n\n## What To Do\n\n### 1. 先确认是否真的“无响应”\n\n不要只依据前端静止状态判断故障。先检查后端是否仍有工具调用在运行、排队或延迟返回。\n\n操作规则：\n\n- 查看对应会话、任务或请求的后台执行状态。\n- 确认是否存在仍在运行的 tool call。\n- 如果后端仍在运行，先等待合理时间或继续观察，不要立即重启或重复提交修复。\n- 如果后端调用已失败、超时或没有任何活动，再进入下一步。\n\n### 2. 必要时切换备用模型验证\n\n如果机器人表面无响应且后端调用没有正常推进，可尝试使用 alternate model 进行对照验证。\n\n适用方式：\n\n- 使用同一问题或同类请求，在备用模型上测试。\n- 如果备用模型正常，问题可能与当前模型、模型路由、模型负载或模型侧延迟有关。\n- 如果备用模型也失败，继续检查连接器、服务健康和集成配置。\n\n### 3. chat connector 失败时检查插件与服务状态\n\n对 chat connector / chat integration 失败，优先检查配置和运行状态，而不是直接重建集成。\n\n检查顺序：\n\n1. 确认 chat plugin 已启用。\n2. 如近期有配置变更或插件状态异常，重启相关服务。\n3. 验证 connector identity resolution 是否正常。\n4. 验证 websocket readiness 是否正常。\n5. 验证 service health 是否正常。\n6. 核对 integration configuration 是否正确、完整且与当前环境一致。\n\n### 4. 自动脚本修复和 AI 修复都失败后，不要重复修复\n\n如果已经满足以下条件：\n\n- automated script repair 已执行并失败；\n- AI repair 已执行并失败；\n- 基础诊断仍不能定位或恢复；\n\n则应停止重复执行同一类修复步骤，升级给合适的平台支持角色。\n\n升级时应提供：\n\n- 已执行的修复类型：script repair、AI repair。\n- 当前症状：无响应、connector failure、websocket 未就绪、身份解析失败等。\n- 已验证项：后台 tool call 状态、备用模型结果、plugin 启用状态、服务重启结果、health/readiness 结果、integration configuration 检查结果。\n- 最近一次可复现时间和影响范围。\n\n## Verify\n\n按场景选择验证方式：\n\n### 验证机器人无响应\n\n- 后端 tool call 状态清晰：仍在运行、已完成、已失败或已超时。\n- 如果切换 alternate model，记录备用模型是否能正常响应。\n- 如果原模型恢复，确认用户侧可以收到完整回复。\n\n### 验证 chat connector 修复\n\n确认以下结果：\n\n- chat plugin 已启用。\n- 相关服务已重启且无启动错误。\n- connector identity resolution 可正常解析。\n- websocket readiness 通过。\n- service health 正常。\n- integration configuration 与当前环境匹配。\n- 用户或测试会话可以通过 chat connector 正常收发消息。\n\n### 验证是否需要升级\n\n如果以下全部成立，应升级：\n\n- 自动脚本修复失败。\n- AI 修复失败。\n- 后台调用、备用模型、插件启用、服务重启、身份解析、websocket readiness、服务健康、集成配置等关键检查无法恢复问题。\n\n## Reusable Lessons\n\n- 机器人“看似无响应”不等于后端已经失败；必须先确认 tool call 是否仍在运行或延迟。\n- alternate model 是区分模型侧问题与平台/连接器问题的实用对照方法。\n- chat connector 故障应优先检查插件启用、服务重启、身份解析、websocket readiness、service health 和 integration configuration。\n- 当 automated script repair 与 AI repair 都失败后，应升级给平台支持角色，不要重复执行相同修复路径。\n- 升级前应收集已执行动作和验证结果，便于平台支持快速接手。\n\n## Agent Use\nUse this page when:\n- Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.\n\nApply it by:\n- Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.\n- Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed\n\nVerify by:\n- Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.\n- Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319 (sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e)\n",
+  "source_refs": [
+    "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319"
+  ],
+  "source_hashes": [
+    "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "capture:capture_openclaw-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e"
+  ],
+  "confidence": 0.68,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319",
+      "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
+      "excerpt": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "证据为单一来源，且未提供具体命令、日志样例或平台角色名称；页面保留为通用操作规则。",
+      "未包含凭据、token、cookie、auth header、私钥或原始聊天转录。",
+      "quality_human_required:generic_applicability",
+      "quality_human_required:non_specific_action",
+      "quality_human_required:low_confidence",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-17T05:48:44.098Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-17T05:48:44.098Z"
+}

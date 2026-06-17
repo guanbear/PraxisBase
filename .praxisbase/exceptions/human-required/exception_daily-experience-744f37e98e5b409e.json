@@ -25,25 +25,25 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.82,
-      "rationale": "The content appears to be team-scope operational/project material from an internal chat channel and includes specific system details, log excerpts, job identifiers, and storage/source references. It is not safe personal experience as-is.",
+      "confidence": 0.78,
+      "rationale": "The content is mostly technical troubleshooting experience, but it comes from a team channel and includes internal operational details such as job names, IDs, source references, hashes, and log excerpts. It should not be treated as safely releasable without further redaction/review.",
       "suggested_redactions": [
-        "Remove or generalize internal source references and storage paths.",
-        "Remove hashes, UUIDs, and job identifiers.",
-        "Redact detailed log excerpts and error codes that may encode private identifiers.",
-        "Generalize specific framework/session implementation details if externally released.",
-        "Remove team/channel-specific metadata before release."
+        "Redact or generalize cron job names",
+        "Redact UUIDs and internal job identifiers",
+        "Redact source_ref and source_hash values",
+        "Redact exact log excerpts and internal error metadata",
+        "Remove team/channel-specific metadata before release"
       ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "A scheduled-job failure was traced to a framework issue where jobs targeting the primary session with a system-event payload could not resolve the intended session and returned client errors. The reliable workaround was to recreate the jobs using isolated-session delivery with an agent-turn style payload and explicit delivery configuration. Verification signal: the failing jobs were removed and recreated in the working mode.",
-      "reusable_lesson": "When scheduled jobs fail due to primary-session resolution, switch to isolated delivery with an explicit agent-turn payload and recreate the jobs rather than retrying the same configuration.",
-      "residual_risk": "Underlying framework bug may still affect primary-session scheduled jobs until fixed.",
+      "release_summary": "A recurring job failure was traced to a framework issue where jobs targeting the main session with a system-event payload could not resolve the expected session key, resulting in rejected job creation or execution. The working mitigation was to recreate affected jobs using an isolated session target with an agent-turn payload and explicit delivery configuration. Verification signal: recreated jobs were accepted under the isolated-session configuration instead of failing with the prior session-key validation error.",
+      "reusable_lesson": "When scheduled automation fails due to main-session resolution, switch to an isolated-session job pattern with explicit delivery settings and verify acceptance before deleting the old job.",
+      "residual_risk": "Underlying framework behavior may still affect main-session scheduled jobs until fixed upstream.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

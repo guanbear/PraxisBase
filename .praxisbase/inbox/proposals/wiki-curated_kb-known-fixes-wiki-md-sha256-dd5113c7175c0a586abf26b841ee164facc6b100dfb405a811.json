@@ -1,0 +1,97 @@
+{
+  "id": "wiki-curated_kb-known-fixes-wiki-md-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/known-fixes/wiki.md",
+  "action": "create",
+  "page_kind": "known_fix",
+  "scope": "team",
+  "title": "无法访问需评审的团队文档时的处理规则",
+  "summary": "当用户要求评审链接文档，但机器人或可用服务账号没有读取权限时，不要尝试绕过鉴权；应告知权限问题，并要求用户粘贴内容或调整文档权限后再继续。",
+  "body_markdown": "# 无法访问需评审的团队文档时的处理规则\n\n## When to Use\n\n当 OpenClaw 问答或支持机器人收到“请评审/总结/修改某个团队文档”的请求，但只能拿到文档链接，且访问该链接需要认证或额外授权时使用本页。\n\n## Context\n\n典型场景：\n\n- 用户提供团队文档链接，要求机器人进行评审或处理。\n- 通过已批准的集成访问路径无法读取文档。\n- 通过浏览器式检索路径也无法读取文档。\n- 当前可用服务账号不具备该文档的读取权限。\n\n## Symptoms\n\n可复用的判断信号：\n\n- 文档链接打开失败，原因是需要登录、授权或访问被拒绝。\n- 服务账号或集成身份没有 read 权限。\n- 机器人无法看到文档正文，只能看到链接或权限错误。\n- 用户期望机器人评审内容，但机器人没有可审阅的实际文本。\n\n## Operating Rule\n\n不要尝试绕过权限、猜测文档内容或要求使用非批准账号访问。\n\n正确处理方式：\n\n1. 明确告知用户：当前机器人无法读取该文档，因为可用访问身份缺少读取权限。\n2. 请用户选择以下任一方式继续：\n   - 直接把需要评审的文档内容粘贴到对话中；或\n   - 将文档权限调整为机器人/服务账号/已批准集成可读；或\n   - 提供一个当前工作流允许访问的导出文本、截图文字转录或共享副本。\n3. 在获得实际内容前，不要开始内容评审、质量判断、合规结论或修改建议。\n4. 如果用户只要求排查“为什么访问不了”，则可说明这是权限/授权边界问题，而不是文档内容问题。\n\n## Verify\n\n继续处理前确认以下任一条件成立：\n\n- 用户已粘贴完整或足够的文档正文；或\n- 用户确认已调整权限，并且机器人重新访问后能读取正文；或\n- 用户提供了可访问的替代文本来源。\n\n验证失败时，应继续阻塞文档评审，并再次说明需要正文或读取权限。\n\n## Reusable Lessons\n\n- 链接存在不等于机器人有权读取内容。\n- 文档评审类任务必须基于可见正文，不应基于标题、URL、文件名或用户对内容的模糊描述编造结论。\n- 权限不足时，最佳下一步是让用户粘贴内容或调整权限，而不是反复尝试多个未授权访问路径。\n- 机器人应使用已批准的集成和访问身份；不要请求、保存或使用私人凭据。\n\n## Agent Use\nUse this page when:\n- A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization=[REDACTED] The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed.\n\nApply it by:\n- Match the current symptom to this page, then apply the documented procedure or fix.\n\nVerify by:\n- Confirm the original symptom no longer reproduces and record the verification result.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5 (sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f)\n",
+  "source_refs": [
+    "openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5"
+  ],
+  "source_hashes": [
+    "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "capture:capture_openclaw-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f"
+  ],
+  "confidence": 0.53,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5",
+      "source_hash": "sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f",
+      "excerpt": "A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization=[REDACTED] The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "证据仅来自一次案例，未提供具体文档平台或权限配置命令。",
+      "不得记录或请求用户凭据、认证令牌、Cookie、私钥或其他敏感访问材料。",
+      "本页只覆盖读取权限不足的处理规则，不覆盖文档解析失败或平台故障排查。",
+      "quality_human_required:generic_applicability",
+      "quality_human_required:non_specific_action",
+      "quality_human_required:low_confidence",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-17T05:48:44.098Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-17T05:48:44.098Z"
+}

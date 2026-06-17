@@ -23,18 +23,21 @@
     },
     "triage": {
       "classification": "safe_personal_experience",
-      "confidence": 0.92,
-      "rationale": "Redacted summary contains only generic greetings, a request for human support, and the agent's generic response; no identifiable private material or sensitive project details are present.",
-      "suggested_redactions": [],
+      "confidence": 0.93,
+      "rationale": "The summary contains only generic greetings, a punctuation prompt, and a request for human support, with no apparent identifiers, secrets, credentials, sensitive personal data, or substantive private project details.",
+      "suggested_redactions": [
+        "No additional content redactions needed for the summarized interaction.",
+        "If publishing beyond the review system, omit internal source references and hashes."
+      ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "auto_released",
-      "release_summary": "A user sent brief greetings and follow-up prompts, then requested human support. The automated assistant acknowledged the delay, clarified it was an AI assistant, and asked the user to provide issue details so the request could be handled appropriately.",
-      "reusable_lesson": "When a user asks for human support, acknowledge the request and collect the minimum issue context needed for escalation or follow-up.",
+      "decision": "rejected_low_signal",
+      "release_summary": "A user initiated contact with brief greetings and a punctuation-only follow-up, then requested human support. The assistant acknowledged the delay, clarified that it was an AI assistant, and asked the user to provide details so the issue could be routed or handled appropriately.",
+      "reusable_lesson": "When a user asks for human support without context, acknowledge the request and ask for the issue details needed to proceed or escalate.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

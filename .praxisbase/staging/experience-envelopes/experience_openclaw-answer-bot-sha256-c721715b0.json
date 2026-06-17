@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/38a33db7f206104cd1c4c23e53c37fac6416afeca945f552ea941b8881896d4f",
   "source_hash": "sha256:c721715b094a3d1a2c35c64a3757c487a5474673ed91f220b252c9d164b3bcfd",
   "scope_hint": "team",
-  "redacted_summary": "Team support routing guidance was consolidated into generic escalation categories. Installation and document-integration issues, terminal session recovery issues, capacity/quota requests, bot visibility problems, and protocol-specific questions should each follow predefined ownership or self-service guidance rather than ad hoc troubleshooting. Verification signal: the sanitized guidance removes personal routing, internal links, and project-specific identifiers while preserving the operational decision pattern.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "A team-scope support memory was sanitized by replacing person-specific escalation targets, dated attributions, and internal service references with role-based routing guidance. The reusable outcome is a generic triage pattern: route specialized installation, connectivity, bot-access, quota, and integration issues to the appropriate owner role, while using standardized user-facing guidance for known self-service cases. Verification signal: no personal names, internal links, exact dates, IDs, or team-private routing details remain.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

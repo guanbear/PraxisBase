@@ -23,25 +23,24 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.86,
-      "rationale": "Contains team-scope operational support experience with identifiable user/staff names, internal service domain, and potentially sensitive troubleshooting details. It is not obviously raw private material, but should not be auto-released without further redaction.",
+      "confidence": 0.88,
+      "rationale": "Team-scope Feishu experience contains identifiable personal names and internal operational details; no clear secrets are shown, but it should not be auto-released as safe personal experience without further redaction.",
       "suggested_redactions": [
-        "Redact or generalize personal names of staff/users",
-        "Redact internal domain or replace with generic product console reference",
-        "Keep pairing codes as placeholders only and ensure no real codes appear",
-        "Generalize exact dates if not necessary",
-        "Remove or generalize internal implementation details that could aid abuse"
+        "Redact or generalize personal names of confirmers and users",
+        "Redact or generalize internal domain names and console URLs",
+        "Keep pairing codes as placeholders only and ensure no real codes are included",
+        "Generalize internal source references, hashes, and storage paths if included in released text"
       ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "Several operational fixes were consolidated for the bot platform: updating the messaging integration from the product console and restarting the instance can resolve plugin-related failures. For new or newly authorized users seeing an access-not-configured pairing prompt, first have the user restart the instance from the console; if the issue persists, an instance administrator should complete the pairing approval flow. If an instance is stopped or the bot stops replying despite normal billing and no intentional shutdown, check for exhausted temporary storage or disk space, clean up safely, and restart. A separate cron configuration pattern involving the main session target and system-event payloads is known to fail and should be avoided or tracked for a product fix.",
-      "reusable_lesson": "For bot access or responsiveness failures, verify plugin version, user pairing state, instance restart, and storage exhaustion before escalating.",
-      "residual_risk": "Cron failure pattern remains unresolved pending product fix or configuration workaround.",
+      "release_summary": "Updated the relevant integration plugin and restarted the instance, which restored service for affected users. For pairing failures that show access is not configured, first have newly onboarded users restart the instance from the console; if the issue remains, an instance administrator should approve the pairing request. For instances that stop responding while billing and intentional stop states are ruled out, check for exhausted temporary or disk storage, clean up space, and restart. A separate scheduler issue was identified where jobs targeting the main session with system-event payloads can fail with a client error.",
+      "reusable_lesson": "When an integration bot stops responding or reports missing access, verify plugin freshness, restart the instance, then check authorization pairing and storage exhaustion before escalating.",
+      "residual_risk": "Scheduler failures for main-session system-event jobs may persist until fixed in a later release.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

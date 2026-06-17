@@ -1,0 +1,97 @@
+{
+  "id": "wiki-curated_kb-pitfalls-avoid-reusing-messaging-bot-identity-md-sha256-0a314c00a6f1bf3b",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/pitfalls/avoid-reusing-messaging-bot-identity.md",
+  "action": "create",
+  "page_kind": "pitfall",
+  "scope": "team",
+  "title": "避免在无关工具间复用同一消息平台 Bot 身份",
+  "summary": "消息平台 Bot 集成时，不要在无关工具或不同代理之间复用同一 Bot 身份或配置。复用可能导致漏回复、重复回复或 Bot 在非触发场景中过度参与。应为不同用途隔离 Bot 身份、触发条件和配置，并验证 Bot 只在被明确调用时响应。",
+  "body_markdown": "# 避免在无关工具间复用同一消息平台 Bot 身份\n\n## When to Use\n\n当排查 OpenClaw 相关问答机器人、维修机器人或其他自动化代理接入消息平台后的异常响应行为时使用本页，尤其是：\n\n- 同一消息平台 Bot 被多个无关工具、代理或集成同时使用。\n- Bot 偶发不回复、漏回复或重复回复。\n- Bot 在没有被明确触发时也参与对话。\n- 需要判断一个 Bot 集成是否应拆分为独立身份或独立配置。\n\n## Context\n\n消息平台 Bot 集成中，一个常见陷阱是：为了方便，把同一个 Bot 身份或同一套配置复用到多个无关工具、自动化代理或工作流中。\n\n这种复用会让不同系统共享同一入口、触发规则或响应上下文，容易造成行为不可靠：\n\n- 某些请求没有被目标代理处理，表现为漏回复。\n- 多个代理同时认为自己被触发，表现为重复回复。\n- Bot 在未被明确调用的频道、线程或消息中发言，表现为过度参与。\n\n期望行为是：Bot 在明确触发条件之外保持静默，只在被直接调用或满足约定触发条件时响应。\n\n## Operating Rule\n\n不要在无关工具、不同代理或不同用途的消息平台集成之间复用同一 Bot 身份或同一套配置。\n\n建议规则：\n\n1. **按用途隔离 Bot 身份**\n   - 一个 Bot 身份只服务一个明确用途、工具或代理职责。\n   - 无关的自动化机器人不要共用同一个 Bot 账号、应用身份或响应配置。\n\n2. **隔离触发条件**\n   - 每个 Bot 应有明确的触发条件，例如直接提及、指定命令、指定频道或指定线程。\n   - 不应让多个代理监听同一组宽泛触发条件，除非有明确仲裁机制。\n\n3. **避免共享模糊配置**\n   - 不要让多个无关代理共享同一 webhook、事件订阅、路由规则或响应开关。\n   - 如果必须共享底层入口，应增加清晰的路由层，确保每条消息只交给一个目标代理处理。\n\n4. **默认静默**\n   - Bot 在未满足显式触发条件时应保持沉默。\n   - 不要让 Bot 对所有频道消息、所有线程回复或所有相似关键词自动响应。\n\n## Symptoms\n\n优先检查是否存在 Bot 身份或配置复用，若出现以下现象：\n\n- Bot 有时不回应直接请求。\n- 同一问题收到多个相似或重复回复。\n- Bot 在没有被 @、没有命令、没有明确调用时主动回复。\n- 用户反馈机器人“抢答”“乱入”或“有时不工作”。\n- 不同工具或代理的回复风格、功能边界混在同一个 Bot 中。\n\n## Fix\n\n处理步骤：\n\n1. **盘点 Bot 归属**\n   - 确认当前消息平台 Bot 身份被哪些工具、代理、自动化流程使用。\n   - 标出哪些使用方是无关职责，例如维修问答、告警通知、任务派发、内部测试代理等。\n\n2. **拆分无关用途**\n   - 为无关工具或不同代理创建独立 Bot 身份或独立应用配置。\n   - 如果无法立即拆分身份，至少拆分触发规则和消息路由规则。\n\n3. **收紧触发条件**\n   - 限制 Bot 只响应明确调用，例如直接提及、指定命令或明确路由事件。\n   - 移除会导致泛监听的规则，例如默认监听所有频道消息后自动回复。\n\n4. **消除重复处理路径**\n   - 检查是否同一消息同时被多个代理或多个处理器消费。\n   - 确保每条用户消息只由预期的 Bot/代理处理一次。\n\n5. **记录边界**\n   - 在集成文档中写明：该 Bot 的用途、触发条件、不响应场景、维护负责人。\n   - 对 OpenClaw 维修和问答机器人，明确哪些消息属于机器人处理范围，哪些应保持静默或转人工。\n\n## Verify\n\n完成调整后，用行为验证而不是只看配置是否保存：\n\n- 在非触发场景发送普通消息，确认 Bot 保持静默。\n- 使用明确触发方式调用目标 Bot，确认只出现一次预期回复。\n- 在多个相关频道或线程中测试，确认没有其它代理抢答。\n- 重复发送几次相同触发请求，确认不再出现随机漏回复或重复回复。\n- 观察一段实际使用窗口，确认用户不再反馈“重复回复”“漏回复”或“未调用也回复”。\n\n可接受结果：\n\n- Bot 只在直接调用或明确触发条件满足时响应。\n- 非触发消息无回复。\n- 同一触发请求只产生一个目标回复。\n- 未观察到因身份或配置复用导致的漏回复、重复回复。\n\n## Reusable Lessons\n\n- 消息平台 Bot 的身份和配置是运行边界，不只是显示名称；无关系统复用会制造路由和响应冲突。\n- 机器人集成应遵循“默认静默、显式触发、单一路由”的原则。\n- 对 OpenClaw 维修和问答机器人，应优先保证可预测响应：该回答时只回答一次，不该回答时完全不参与。\n- 当出现漏回复或重复回复时，不要只检查模型或回答逻辑，也要检查 Bot 身份、事件订阅和触发规则是否被多个无关工具复用。\n\n## Agent Use\nUse this page when:\n- A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies.\n\nApply it by:\n- Match the current symptom to this page, then apply the documented procedure or fix.\n\nVerify by:\n- Confirm the original symptom no longer reproduces and record the verification result.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0 (sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1)\n",
+  "source_refs": [
+    "openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0"
+  ],
+  "source_hashes": [
+    "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "capture:capture_openclaw-sha256-e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1"
+  ],
+  "confidence": 0.63,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0",
+      "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
+      "excerpt": "A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "证据只有一条，且未包含具体平台名称、配置项名称或命令级验证方法；页面保留为通用操作规则。",
+      "未包含凭据、令牌、cookie、认证头或私钥。",
+      "不应将本页当作特定消息平台的完整配置手册；实际拆分 Bot 身份和事件订阅时仍需参考对应平台文档。",
+      "quality_human_required:generic_applicability",
+      "quality_human_required:non_specific_action",
+      "quality_human_required:low_confidence",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-17T05:48:44.098Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-17T05:48:44.098Z"
+}

@@ -101,6 +101,18 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .kb-overview-card strong { display: block; margin: .25rem 0; font-size: 1.55rem; line-height: 1; }
 .kb-overview-card small { color: var(--muted); }
 .kb-overview-card.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20, 108, 92, .12); }
+.data-sources { margin: 1.15rem 0; }
+.source-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+.source-card { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .95rem; box-shadow: 0 8px 22px rgba(23, 33, 27, .035); }
+.source-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
+.source-card-head strong { display: block; font-size: 1.02rem; }
+.source-card-head span:not(.status-pill) { display: block; color: var(--muted); font-size: .84rem; margin-top: .15rem; }
+.source-stats { display: flex; flex-wrap: wrap; gap: .45rem; margin: .85rem 0; }
+.source-stats span { border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted); padding: .22rem .5rem; font-size: .78rem; }
+.source-code-list { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: .35rem .65rem; margin: .2rem 0 0; font-size: .86rem; }
+.source-code-list dt { color: var(--muted); }
+.source-code-list dd { margin: 0; overflow-wrap: anywhere; }
+.source-warning { margin: .7rem 0 0; color: #8a4b00; font-size: .86rem; }
 .flow-guide { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0; }
 .flow-guide article { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .85rem; }
 .flow-guide strong { display: block; font-size: 1rem; }
@@ -198,7 +210,7 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .meta-rail dl { display: grid; grid-template-columns: 90px 1fr; gap: .35rem .6rem; margin: 0; }
 .meta-rail dt { color: var(--muted); }
 @media (max-width: 900px) {
-  .topbar, .metrics, .action-grid, .kb-card-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid, .process-grid, .count-note-grid, .terminology-panel dl { grid-template-columns: 1fr; }
+  .topbar, .metrics, .action-grid, .kb-card-grid, .source-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid, .process-grid, .count-note-grid, .terminology-panel dl { grid-template-columns: 1fr; }
   .coverage-flow article::after, .process-step::after { display: none; }
   .topnav { justify-content: flex-start; }
   .side-nav, .meta-rail { position: static; max-height: none; }

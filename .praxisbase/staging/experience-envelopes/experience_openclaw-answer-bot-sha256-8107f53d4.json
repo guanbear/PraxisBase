@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319",
   "source_hash": "sha256:8107f53d41b075081cde7779e95258bc63b62537ac21b39f669ceac182a04c6e",
   "scope_hint": "team",
-  "redacted_summary": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "When a user reports that both scripted repair and AI repair have already failed, avoid repeating the same automated guidance and escalate to the appropriate role-based maintainer. For bot non-response issues, distinguish UI inactivity from backend work by checking whether tool calls are occurring and consider model latency or switching models. For messaging-platform integrations, a disabled plugin can prevent websocket connection and message receipt; remediation is to enable the integration, restart the service, and verify identity resolution, websocket readiness, service health, and integration configuration.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417",
   "source_hash": "sha256:dbfb119fc2753e49c96890d31a250a916cd9eda8919d4cc789dde435b3ac5a5f",
   "scope_hint": "team",
-  "redacted_summary": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "Model-switching behavior depends on whether the active agent has its own configured default model. For agents without a separate default, a model switch may persist and affect other similarly configured agents; for agents with their own default, the switch is typically session-scoped even if the interface suggests otherwise. The reliable verification signal is the status command for the current session, not asking the agent to identify its model in natural language.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

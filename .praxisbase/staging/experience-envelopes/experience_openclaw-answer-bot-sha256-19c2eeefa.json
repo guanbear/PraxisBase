@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3",
   "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
   "scope_hint": "team",
-  "redacted_summary": "For user reports that an interactive environment or bot is down or unresponsive, direct them to use the product console's automatic repair option before escalating. Do not apply this guidance to billing, quota, or payment-related sleep issues. If the user has already tried both script-based repair and AI-based repair without success, route to the appropriate support escalation contact rather than repeating the repair instructions.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "For user reports that a sandbox, bot, or instance is down or unresponsive, first direct them to use the console’s instance auto-repair feature. Recommend trying script-based repair before AI-based repair, and avoid applying this flow to billing, quota, or post-payment sleep issues. If the user already confirms both repair methods failed, escalate to the appropriate on-call or service owner rather than repeating the same repair guidance.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

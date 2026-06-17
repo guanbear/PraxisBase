@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/6d26893d8543d3c19d5418337825924ef91012347381c7ad28429e59fc1b0b99",
   "source_hash": "sha256:f1d3f2e2158abc2ea02ee35ba07d30eb9eaea133451bb6c29da3b3f8b52150aa",
   "scope_hint": "team",
-  "redacted_summary": "A bot became unresponsive to reset-style commands, likely due to a hung or crashed gateway process caused by invalid backend configuration. The immediate remediation was to restart the gateway and review sanitized logs/configuration if the issue recurs. A related configuration note confirmed that MCP support depends on the selected CLI backend and must be explicitly enabled through the documented feature flag.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "A bot became unresponsive to session reset commands, likely due to a hung or crashed gateway caused by invalid model backend configuration. The operational fix was to restart the gateway and verify configuration and logs if the issue recurs. MCP support was confirmed to depend on using a compatible CLI backend and enabling its MCP configuration option.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

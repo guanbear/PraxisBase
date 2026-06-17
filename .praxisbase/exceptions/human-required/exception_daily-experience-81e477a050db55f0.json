@@ -24,25 +24,23 @@
     "triage": {
       "classification": "needs_redaction",
       "confidence": 0.86,
-      "rationale": "Team-channel operational guidance includes identifiable employee names, role-based routing/mention instructions, internal project/tool details, and an internal link; IDs are redacted but remaining details are still private team material.",
+      "rationale": "The summary contains team-channel operational routing instructions, identifiable employee names, dates tied to instructions, and an internal service URL/domain. IDs are redacted, but remaining details are still project/team-private and not safe for auto-release as personal experience.",
       "suggested_redactions": [
-        "Redact or generalize all employee names to role/team placeholders.",
-        "Remove or generalize mention-routing instructions tied to specific people.",
-        "Redact internal URLs/domains and replace with a generic documentation reference.",
-        "Generalize project/tool-specific internal support policies where not intended for public release.",
-        "Remove source identifiers, hashes, and internal storage references if included in any released version."
+        "Redact or generalize employee names to role-based placeholders such as [TEAM_MEMBER] or [OWNER_ROLE].",
+        "Redact Feishu/internal service URLs and domains to [INTERNAL_URL].",
+        "Generalize dated attribution such as specific instruction dates to [DATE] or remove them.",
+        "Remove or generalize internal bot/process routing rules that reveal team operations."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "Team support routing guidance was consolidated into generic escalation categories. Installation and document-integration issues, terminal session recovery issues, capacity/quota requests, bot visibility problems, and protocol-specific questions should each follow predefined ownership or self-service guidance rather than ad hoc troubleshooting. Verification signal: the sanitized guidance removes personal routing, internal links, and project-specific identifiers while preserving the operational decision pattern.",
-      "reusable_lesson": "Maintain a role-based support routing matrix with clear exceptions and approved self-service responses for common issue categories.",
-      "residual_risk": "Specific ownership mappings must be managed in a private internal runbook.",
+      "release_summary": "A team-scope support memory was sanitized by replacing person-specific escalation targets, dated attributions, and internal service references with role-based routing guidance. The reusable outcome is a generic triage pattern: route specialized installation, connectivity, bot-access, quota, and integration issues to the appropriate owner role, while using standardized user-facing guidance for known self-service cases. Verification signal: no personal names, internal links, exact dates, IDs, or team-private routing details remain.",
+      "reusable_lesson": "Store escalation memories as role-based issue categories with generic owner placeholders, not as named-person or internal-URL instructions.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

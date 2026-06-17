@@ -23,22 +23,22 @@
     },
     "triage": {
       "classification": "real_private_material",
-      "confidence": 0.82,
-      "rationale": "The summary describes content from a team chat and screenshots of an internal-looking exam/training workflow, including specific question topics and answer keys. This is not clearly safe personal experience and may expose private organizational assessment or process material.",
+      "confidence": 0.86,
+      "rationale": "The summary contains internal team-channel context and detailed contents/answers from a login-gated exam/training material, which is not safe personal experience and may expose private organizational assessment content.",
       "suggested_redactions": [
-        "Remove or generalize specific exam question topics and answer choices.",
-        "Remove answer keys and correctness explanations.",
-        "Keep team/channel identifiers redacted.",
-        "Generalize references to internal documents or login-gated resources.",
-        "Summarize only at a high level, e.g. 'answered internal incident/change-management training questions using general SRE knowledge.'"
+        "Remove or generalize all exam questions and answer keys.",
+        "Remove references to login-gated Feishu documents or internal documentation access status.",
+        "Keep Feishu group/channel identifiers redacted.",
+        "Remove or generalize internal operational policy details if they are not already public.",
+        "Avoid exposing source references or hashes that could identify internal records."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

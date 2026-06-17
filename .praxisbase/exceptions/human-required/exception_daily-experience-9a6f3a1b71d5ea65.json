@@ -24,24 +24,25 @@
     "triage": {
       "classification": "needs_redaction",
       "confidence": 0.86,
-      "rationale": "Team-channel operational guidance includes an identifiable individual and internal bot/group behavior instructions; IDs are partly redacted but remaining personal/team context should not auto-release as personal experience.",
+      "rationale": "The summary contains team-channel behavioral instructions and an identifiable person name, plus context about a specific Feishu group and bot usage. It is not clearly safe personal experience without further redaction.",
       "suggested_redactions": [
-        "Redact the named individual to a role or generic label.",
-        "Keep Feishu IDs fully redacted.",
-        "Generalize specific dates to approximate timeframes or remove them.",
-        "Remove or generalize internal source references, hashes, and channel/group identifiers.",
-        "Summarize bot behavior rules without exposing team-specific participation instructions."
+        "Redact identifiable person names",
+        "Redact Feishu group or channel-specific participation rules",
+        "Generalize dates tied to direct user instructions",
+        "Remove or generalize internal bot/tool configuration details",
+        "Keep Feishu IDs redacted"
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies.",
-      "reusable_lesson": "Use dedicated bot identities/configurations per tool and enforce explicit invocation rules to prevent noisy or unreliable bot behavior.",
+      "release_summary": "Team chat bots should be dedicated to a single integration or workflow and not reused across unrelated tools or local agents. Sharing one bot identity across multiple systems can cause missed replies, duplicate replies, or confusing behavior. The verified operational signal is that isolating bot configuration and responding only on explicit triggers reduces unintended participation.",
+      "reusable_lesson": "Use a separate bot identity per tool or workflow, and enforce explicit mention/trigger rules before replying.",
+      "residual_risk": "Behavior may still vary if multiple integrations share credentials or overlapping trigger rules.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

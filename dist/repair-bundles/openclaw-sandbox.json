@@ -1,0 +1,31 @@
+{
+  "protocol_version": "0.1",
+  "id": "openclaw-sandbox",
+  "scenario": "openclaw",
+  "generated_at": "2026-06-17T06:04:46.246Z",
+  "known_fixes": [],
+  "skills": [
+    "skills/openclaw/baseline-diagnostics/SKILL.md",
+    "skills/openclaw/auth-repair/SKILL.md"
+  ],
+  "forbidden_operations": [
+    "modify production systems",
+    "delete user workspace data",
+    "print secrets into chat"
+  ],
+  "diagnostic_commands": [
+    "openclaw status",
+    "claude --version"
+  ],
+  "verification_steps": [
+    "Run a minimal model call from the sandbox",
+    "Confirm OpenClaw session resumes"
+  ],
+  "rollback_steps": [
+    "Restore previous auth state snapshot if available"
+  ],
+  "escalation_conditions": [
+    "Auth refresh fails twice",
+    "Verification command cannot run"
+  ]
+}

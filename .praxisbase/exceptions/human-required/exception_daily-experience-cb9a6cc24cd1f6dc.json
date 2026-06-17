@@ -24,21 +24,21 @@
     "triage": {
       "classification": "safe_personal_experience",
       "confidence": 0.86,
-      "rationale": "The summary describes routine project troubleshooting and configuration guidance without exposing user identities, secrets, raw logs, URLs, tokens, or private content. It is team-scope, so review-only policy still applies.",
+      "rationale": "The summary describes general troubleshooting and configuration steps without exposing user identity, secrets, raw logs, private URLs, or sensitive channel content. Team scope still implies review-only handling under the stated policy.",
       "suggested_redactions": [
-        "Remove or generalize internal source references and hashes if included in any released text.",
-        "Avoid including raw logs, config values, model URLs, or channel/user identifiers."
+        "Omit internal source_ref and source_hash from any external publication.",
+        "Avoid publishing any future raw logs, concrete model URLs, tokens, or user identifiers if added."
       ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "A bot became unresponsive to reset-style commands, likely due to a hung or crashed gateway process caused by invalid backend configuration. The immediate remediation was to restart the gateway and review sanitized logs/configuration if the issue recurs. A related configuration note confirmed that MCP support depends on the selected CLI backend and must be explicitly enabled through the documented feature flag.",
-      "reusable_lesson": "When a bot stops responding, first restart the gateway, then validate backend configuration and feature flags before escalating.",
-      "residual_risk": "Recurrence is possible if invalid backend configuration remains undetected.",
+      "release_summary": "A bot became unresponsive to session reset commands, likely due to a hung or crashed gateway caused by invalid model backend configuration. The operational fix was to restart the gateway and verify configuration and logs if the issue recurs. MCP support was confirmed to depend on using a compatible CLI backend and enabling its MCP configuration option.",
+      "reusable_lesson": "When a bot stops responding, first restart the gateway, then validate backend configuration before escalating.",
+      "residual_risk": "Specific backend settings should be rechecked in current internal documentation before reuse.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

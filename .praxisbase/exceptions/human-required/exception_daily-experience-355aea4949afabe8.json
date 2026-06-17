@@ -25,19 +25,20 @@
     "triage": {
       "classification": "needs_redaction",
       "confidence": 0.72,
-      "rationale": "The summary contains team-channel operational/project details and references to logs and infrastructure behavior. Although the explicit path is redacted, additional internal identifiers and implementation details may need review before release.",
+      "rationale": "The content appears to be internal team/project operational knowledge from a team chat, including specific implementation behavior, workaround details, and incident handling guidance. Direct paths are redacted, but residual non-public project details remain.",
       "suggested_redactions": [
-        "Keep log locations and filesystem paths redacted",
-        "Redact internal source references, hashes, chunk IDs, and database names",
-        "Remove or generalize team-channel or Feishu group context if not necessary",
-        "Generalize internal framework bug details and workarounds if they reveal nonpublic implementation behavior"
+        "Generalize internal component/framework behavior and bug mechanics",
+        "Remove or generalize specific workaround configuration values",
+        "Keep log locations and file paths redacted",
+        "Generalize dates and incident-specific context",
+        "Avoid exposing team-channel conventions tied to a specific internal workflow"
       ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

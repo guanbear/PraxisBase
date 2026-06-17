@@ -22,22 +22,26 @@
       ]
     },
     "triage": {
-      "classification": "real_private_material",
-      "confidence": 0.88,
-      "rationale": "The summary contains team-scope chat memory with identifiable individuals, internal service/domain references, and operational incident details. It is not merely safe personal/project agent experience and would require review/redaction before release.",
+      "classification": "needs_redaction",
+      "confidence": 0.86,
+      "rationale": "The summary includes team-scope agent/project operational details plus unredacted individual names and an internal service URL/domain. It is not suitable as safe personal experience without further redaction.",
       "suggested_redactions": [
-        "Remove or generalize named individuals mentioned as confirming or validating fixes.",
-        "Redact internal service domains, instance names, and plugin/service identifiers if not public.",
-        "Generalize operational incident details, error strings, root causes, and remediation steps that reveal internal infrastructure.",
-        "Keep Feishu user identifiers redacted and avoid linking preferences to specific users."
+        "Redact unredacted personal names and replace with role-based placeholders.",
+        "Redact internal service URLs/domains and plugin/admin navigation details if not intended for release.",
+        "Generalize specific incident dates and operational component names where they could reveal internal infrastructure.",
+        "Keep Feishu/user identifiers redacted consistently throughout."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "decision": "auto_released",
+      "release_summary": "A bot response issue was observed where the web interface continued to work but chat-platform private and group messages did not receive replies. The reusable fix was to update the chat-platform integration plugin from the administration interface and restart the service instance. A user-side verification confirmed that replies resumed after the update and restart.",
+      "reusable_lesson": "When a bot works in the web UI but not in chat channels, update the relevant chat integration plugin and restart the instance before deeper debugging.",
+      "residual_risk": "Underlying plugin failure cause was not captured, so recurrence monitoring is still advised.",
+      "auto_review_policy": "team-ai-sanitized-v1",
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-16T09:43:47.454Z"
 }

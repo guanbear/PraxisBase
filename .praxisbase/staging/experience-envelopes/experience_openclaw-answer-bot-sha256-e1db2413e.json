@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0",
   "source_hash": "sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1",
   "scope_hint": "team",
-  "redacted_summary": "A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "Team chat bots should be dedicated to a single integration or workflow and not reused across unrelated tools or local agents. Sharing one bot identity across multiple systems can cause missed replies, duplicate replies, or confusing behavior. The verified operational signal is that isolating bot configuration and responding only on explicit triggers reduces unintended participation.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

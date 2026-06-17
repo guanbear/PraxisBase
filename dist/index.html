@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PraxisBase 知识库健康</title>
+  <title>PraxisBase 团队经验知识库</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,10 +14,10 @@
       <div id="searchResults" class="search-results" hidden></div>
     </div>
     <nav class="topnav" aria-label="知识库视图" data-i18n-aria-label="nav.aria">
-      <a href="index.html" data-i18n="nav.index">索引</a>
-      <a href="review.html" data-i18n="nav.review">审核</a>
-      <a href="graph.html" data-i18n="nav.graph">图谱</a>
-      <a href="issues.html" data-i18n="nav.issues">问题</a>
+      <a href="index.html" data-i18n="nav.index">总览</a>
+      <a href="review.html" data-i18n="nav.review">审批</a>
+      <a href="graph.html" data-i18n="nav.graph">关系</a>
+      <a href="issues.html" data-i18n="nav.issues">质检</a>
       <div class="language-switch" aria-label="切换语言" data-i18n-aria-label="language.switch">
         <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -37,31 +37,141 @@
   <main class="dashboard">
   <section class="hero">
     <div>
-      <p class="eyebrow" data-i18n="dashboard.eyebrow">面向 Agent 的知识库</p>
-      <h1 data-i18n="dashboard.title">知识库健康</h1>
-      <p class="lede" data-i18n="dashboard.lede">已审核的修复、技能、溯源和图谱上下文，服务机器人修复工作流。</p>
+      <p class="eyebrow" data-i18n="dashboard.eyebrow">团队经验知识中枢</p>
+      <h1 data-i18n="dashboard.title">团队经验知识库</h1>
+      <p class="lede">统一查看 K8s / OpenClaw 的采集、隐私、审批和沉淀状态。</p>
     </div>
   </section>
-  <section class="metrics">
-    <a class="metric-link" href="#knowledge-pages"><span data-i18n="dashboard.metric.sources">来源</span><strong>22</strong></a>
-<a class="metric-link" href="#knowledge-pages"><span data-i18n="dashboard.metric.pages">页面</span><strong>11</strong></a>
-<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.brokenLinks">断链</span><strong>0</strong></a>
-<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.duplicates">重复</span><strong>0</strong></a>
-<a class="metric-link" href="graph.html"><span data-i18n="dashboard.metric.orphans">孤立项</span><strong>0</strong></a>
-<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.stale">过期</span><strong>0</strong></a>
-<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.quality">质量问题</span><strong>0</strong></a>
-<article><span data-i18n="dashboard.metric.bundle">包状态</span><strong>not built</strong></article>
+  <section class="action-grid" aria-label="下一步操作">
+    <a class="action-card" href="review.html#pending-candidates" data-tone="warn">
+    <span>可审批提案</span>
+    <strong>4</strong>
+    <p>当前能直接批准或拒绝的知识改动。</p>
+  </a>
+    <a class="action-card" href="review.html#human-required" data-tone="danger">
+    <span>隐私审批队列</span>
+    <strong>19</strong>
+    <p>含历史待确认；本次阻断 14。</p>
+  </a>
+    <a class="action-card" href="#knowledge-pages" data-tone="ok">
+    <span>稳定页面</span>
+    <strong>0</strong>
+    <p>知识页 0 + 技能 0；同一主题会合并说明。</p>
+  </a>
+    <a class="action-card" href="issues.html" data-tone="info">
+    <span>质量阻断</span>
+    <strong>0</strong>
+    <p>断链、重复、过期和编译阻断统一在这里看。</p>
+  </a>
   </section>
-  <section class="daily-update">
+  <section class="status-strip">
+    <strong>当前结论</strong>
+    <span>先处理 19 条隐私审批和 4 个可审批提案。稳定知识总量是 0，不是本次新增数。</span>
+  </section>
+  <section class="data-sources panel" id="data-sources">
+  <div class="section-heading compact-heading">
+    <div>
+      <h2>当前数据源</h2>
+      <p>最新处理报告：2026-06-17 05:48:44 · team-git。这里只展示本次页面正在采用的来源。</p>
+    </div>
+  </div>
+  <div class="source-grid">
+    <article class="source-card">
+      <div class="source-card-head">
+        <div>
+          <strong>openclaw-answer-bot</strong>
+          <span>openclaw · feishu · git · openclaw-export</span>
+        </div>
+        <span class="status-pill">partial</span>
+      </div>
+      <div class="source-stats">
+        <span>扫描 34</span>
+        <span>获取 34</span>
+        <span>入信封 34</span>
+        <span>隐私 19</span>
+      </div>
+      <dl class="source-code-list"><dt>仓库</dt><dd><code>https://gitlab.chehejia.com/sre/praxisbase.git</code></dd><dt>分支</dt><dd><code>openclaw-ingest/answer-bot</code></dd><dt>路径</dt><dd><code>.praxisbase/sources/openclaw-answer-bot/pm-memory.jsonl</code></dd></dl>
+
+    </article>
+  </div>
+</section>
+  <section class="process-map panel">
+  <div class="section-heading compact-heading">
+    <div>
+      <h2>从来源到入库的处理链路</h2>
+      <p>这些数字按阶段展示，不是简单相加。点击阶段可以跳到明细或审批入口。</p>
+    </div>
+  </div>
+  <div class="process-grid">
+    <a class="process-step" href="#data-sources"><span class="process-index">1</span>
+      <span class="process-label">来源采集</span>
+      <strong>34</strong>
+      <small>来自 openclaw-answer-bot；这是原始条目，不是经验数量</small></a>
+<a class="process-step" href="review.html#human-required"><span class="process-index">2</span>
+      <span class="process-label">隐私筛选</span>
+      <strong>14</strong>
+      <small>本次阻断 14；审批队列 19</small></a>
+<a class="process-step" href="review.html#experience-coverage"><span class="process-index">3</span>
+      <span class="process-label">经验提炼</span>
+      <strong>2</strong>
+      <small>2 个经验片段；13 个来源待二次提炼</small></a>
+<a class="process-step" href="review.html#pending-candidates"><span class="process-index">4</span>
+      <span class="process-label">提案审批</span>
+      <strong>4</strong>
+      <small>当前可审批 4；本次生成 4</small></a>
+<a class="process-step" href="#knowledge-pages"><span class="process-index">5</span>
+      <span class="process-label">稳定知识</span>
+      <strong>0</strong>
+      <small>稳定页面：知识页 0 + 技能 0；主题 0</small></a>
+  </div>
+</section>
+  <section class="kb-overview panel" id="knowledge-bases">
+  <h2>知识库分布</h2>
+  <p class="section-subtitle">每个知识库独立统计来源、隐私阻断、待提炼和稳定知识页。K8s 等新知识库可以先配置为空，再逐步接入来源。</p>
+  <div class="kb-card-grid">
+    <a class="kb-overview-card" href="#knowledge-pages" data-kb-filter-link="k8s">
+      <span>K8s</span>
+      <strong>0</strong>
+      <small>稳定页 · 来源 0 · 待提炼 0 · 隐私 0</small>
+    </a>
+<a class="kb-overview-card" href="#knowledge-pages" data-kb-filter-link="openclaw">
+      <span>OpenClaw</span>
+      <strong>0</strong>
+      <small>稳定页 · 来源 34 · 待提炼 10 · 隐私 14</small>
+    </a>
+  </div>
+</section>
+  <details class="terminology-panel">
+  <summary>术语速查</summary>
+  <dl>
+    <dt>来源条目</dt><dd>OpenClaw 记忆或其他输入被切分后的处理单位；一个来源可能产生多个经验片段，也可能只作为证据。</dd>
+<dt>经验片段</dt><dd>从来源中抽出的可复用修复经验，还没有变成稳定知识。</dd>
+<dt>提案</dt><dd>AI 编译出的知识库改动草稿，审批通过并提升后才会写入 kb/ 或 skills/。</dd>
+<dt>稳定知识</dt><dd>已经在 kb/ 或 skills/ 中的页面，Agent 检索时可以直接使用。</dd>
+  </dl>
+</details>
+  <section class="daily-update panel">
+  <h2>本次处理结果</h2>
+  <p class="section-subtitle">2026-06-17 · team-git · 覆盖 34 条来源</p>
+  <div class="metrics">
+    <article><span>来源</span><strong>1</strong></article>
+<article><span>已导入</span><strong>0</strong></article>
+<a class="metric-link" href="review.html#human-required"><span>隐私待确认</span><strong>19</strong></a>
+<a class="metric-link" href="review.html#pending-candidates"><span>待审核提案</span><strong>4</strong></a>
+<a class="metric-link" href="#knowledge-pages"><span>当前稳定知识页</span><strong>0</strong></a>
+  </div>
+  <details class="advanced-panel dashboard-advanced">
+    <summary>展开详细流水线指标</summary>
+    <section class="daily-update">
   <h2>最新 Daily 经验</h2>
-  <p class="eyebrow">2026-06-16 &middot; team-git</p>
+  <p class="eyebrow">2026-06-17 &middot; team-git</p>
   <div class="metrics">
     <article><span>来源</span><strong>1</strong></article>
 <article><span>已导入</span><strong>0</strong></article>
 <article><span>已拒绝</span><strong>0</strong></article>
-<a class="metric-link" href="review.html#human-required"><span>需要人工</span><strong>14</strong></a>
-<a class="metric-link" href="review.html#pending-candidates"><span>提案</span><strong>6</strong></a>
-<article><span>站点页面</span><strong>11</strong></article>
+<a class="metric-link" href="review.html#human-required"><span>需要人工</span><strong>19</strong></a>
+<a class="metric-link" href="review.html#pending-candidates"><span>提案</span><strong>4</strong></a>
+<article><span>站点页面</span><strong>0</strong></article>
     <article><span>上下文瘦身</span><strong>开启</strong></article>
     <article><span>已压缩项</span><strong>0</strong></article>
     <article><span>节省字节</span><strong>0</strong></article>
@@ -71,22 +181,17 @@
     <article><span>预摘要</span><strong>0</strong></article>
 
 
-	    <article><span>生命周期提案</span><strong>1</strong></article>
-	      <article><span>生命周期提升</span><strong>1</strong></article>
 
 
-
-
-
-	    <article><span>M25 Lessons</span><strong>12 已提取</strong></article>
+	    <article><span>M25 Lessons</span><strong>2 已提取</strong></article>
 	    <article><span>个人活跃 Lesson</span><strong>0</strong></article>
-	    <article><span>Wiki 就绪 Lesson</span><strong>6</strong></article>
-	    <article><span>技能就绪 Lesson</span><strong>3</strong></article>
+	    <article><span>Wiki 就绪 Lesson</span><strong>0</strong></article>
+	    <article><span>技能就绪 Lesson</span><strong>1</strong></article>
 	    <article><span>Lesson 需人工</span><strong>0</strong></article>
 	    <article><span>Lesson 已拒绝</span><strong>0</strong></article>
-	    <article><span>Lesson Wiki 证据</span><strong>9</strong></article>
-	    <article><span>Lesson AI 缓存命中</span><strong>1</strong></article>
-	    <article><span>Lesson AI 缓存未命中</span><strong>0</strong></article>
+	    <article><span>Lesson Wiki 证据</span><strong>1</strong></article>
+	    <article><span>Lesson AI 缓存命中</span><strong>0</strong></article>
+	    <article><span>Lesson AI 缓存未命中</span><strong>1</strong></article>
 
 	  </div>
   <div class="review-section" id="lesson-candidates">
@@ -97,41 +202,6 @@
         <span>skill_ready / safe / agent-runtime, dispatch, network, tooling</span>
         <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
       </li>
-<li>
-        <strong>当用户反馈 bot、交互环境 down、停止回复或无响应，且不是明确计费/额度问题时，可按“控制台自动修复→验证→失败后升级”的路径处理。</strong>
-        <span>wiki_ready / safe</span>
-        <br><code>openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3#privacy_release_experience_openclaw-answer-bot-sha256-19c2eeefa_4 openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319#privacy_release_experience_openclaw-answer-bot-sha256-8107f53d4_2</code>
-      </li>
-<li>
-        <strong>当新用户或刚授权用户遇到 access-not-configured、pairing prompt 或权限配置异常时，应按授权/配对问题处理，而不是当作模型或业务逻辑失败。</strong>
-        <span>wiki_ready / safe</span>
-        <br><code>openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9#privacy_release_experience_openclaw-answer-bot-sha256-f7aee701a_3 openclaw://answer-bot/pm.sqlite/chunks/7d903ce59380e64c1fa8e0c3f29210272282aa4bc42e6b55307c09af1f2e51dc#privacy_release_experience_openclaw-answer-bot-sha256-5535ee36f_16</code>
-      </li>
-<li>
-        <strong>群聊中 bot 静默不一定表示集成没收到消息；应同时检查触发资格、会话状态、网关健康和最近分发活动。</strong>
-        <span>wiki_ready / safe</span>
-        <br><code>openclaw://answer-bot/pm.sqlite/chunks/578c93fed49000856bedd6f4509320f98bfd5689fa2a77d8b6e288ff14dc4d94#privacy_release_experience_openclaw-answer-bot-sha256-14edce26a_18 openclaw://answer-bot/pm.sqlite/chunks/6d26893d8543d3c19d5418337825924ef91012347381c7ad28429e59fc1b0b99#privacy_release_experience_openclaw-answer-bot-sha256-f1d3f2e21_17</code>
-      </li>
-<li>
-        <strong>当消息平台集成异常且实例不是因计费停机时，可用插件启用、集成更新和实例重启作为首轮修复步骤。</strong>
-        <span>wiki_ready / safe</span>
-        <br><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319#privacy_release_experience_openclaw-answer-bot-sha256-8107f53d4_2 openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9#privacy_release_experience_openclaw-answer-bot-sha256-f7aee701a_3</code>
-      </li>
-<li>
-        <strong>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</strong>
-        <span>skill_ready / safe</span>
-        <br><code>openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417#privacy_release_experience_openclaw-answer-bot-sha256-dbfb119fc_9 openclaw://answer-bot/pm.sqlite/chunks/b9e879dee5e970e643cce67f6a587350eacae6a38c4a851400cb67d52f447384#privacy_release_experience_openclaw-answer-bot-sha256-745fa543d_14</code>
-      </li>
-<li>
-        <strong>跨无关用途复用同一聊天机器人身份或配置，可能导致漏回复、重复回复或过度参与；应隔离 bot identity/configuration。</strong>
-        <span>wiki_ready / safe</span>
-        <br><code>openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0#privacy_release_experience_openclaw-answer-bot-sha256-e1db2413e_10 openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77#privacy_release_experience_openclaw-answer-bot-sha256-98477e0c8_19</code>
-      </li>
-<li>
-        <strong>定时任务返回 client errors 且目标 primary session 解析失败时，可靠绕过方式是删除失败任务并用 isolated-session delivery、agent-turn style payload 和 explicit delivery configuration 重建。</strong>
-        <span>wiki_ready / safe</span>
-        <br><code>openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab#privacy_release_experience_openclaw-answer-bot-sha256-92320b389_7 openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77#privacy_release_experience_openclaw-answer-bot-sha256-98477e0c8_19</code>
-      </li>
     </ol>
   </div>
 
@@ -139,33 +209,45 @@
 
 
 </section>
+  </details>
+</section>
   <details class="advanced-panel dashboard-advanced">
-    <summary>展开运行与候选详情</summary>
+    <summary>展开运行、编译和候选详情</summary>
+    <section class="metrics">
+      <a class="metric-link" href="#knowledge-pages"><span data-i18n="dashboard.metric.sources">来源</span><strong>0</strong></a>
+<a class="metric-link" href="#knowledge-pages"><span data-i18n="dashboard.metric.pages">页面</span><strong>0</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.brokenLinks">断链</span><strong>0</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.duplicates">重复</span><strong>0</strong></a>
+<a class="metric-link" href="graph.html"><span data-i18n="dashboard.metric.orphans">孤立项</span><strong>0</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.stale">过期</span><strong>0</strong></a>
+<a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.quality">质量问题</span><strong>0</strong></a>
+<article><span data-i18n="dashboard.metric.bundle">包状态</span><strong>ready</strong></article>
+    </section>
 
     <section class="wiki-compiler-status">
   <h2>Wiki 编译器</h2>
-  <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
+  <p class="eyebrow">2026-06-17 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>观察项</span><strong>15</strong></article>
-    <article><span>主题</span><strong>13</strong></article>
-    <article><span>计划 新建</span><strong>9</strong></article>
-<article><span>计划 更新</span><strong>1</strong></article>
-<article><span>计划 合并</span><strong>3</strong></article>
+    <article><span>观察项</span><strong>8</strong></article>
+    <article><span>主题</span><strong>7</strong></article>
+    <article><span>计划 新建</span><strong>7</strong></article>
+<article><span>计划 更新</span><strong>0</strong></article>
+<article><span>计划 合并</span><strong>0</strong></article>
 <article><span>计划 替代</span><strong>0</strong></article>
 <article><span>计划 归档</span><strong>0</strong></article>
-    <article><span>重复 source-hash 分组</span><strong>3</strong></article>
-    <article><span>硬阻断</span><strong>2</strong></article>
-    <article><span>需质量审核</span><strong>6</strong></article>
-    <article><span>已写入提案</span><strong>6</strong></article>
-    <article><span>提案上限</span><strong>80</strong></article>
+    <article><span>重复 source-hash 分组</span><strong>0</strong></article>
+    <article><span>硬阻断</span><strong>1</strong></article>
+    <article><span>需质量审核</span><strong>4</strong></article>
+    <article><span>已写入提案</span><strong>4</strong></article>
+    <article><span>提案上限</span><strong>30</strong></article>
     <article><span>上限原因</span><strong>max_curation_proposals</strong></article>
 
     <article><span>必需链接</span><strong>0</strong></article>
-<article><span>建议链接</span><strong>4</strong></article>
-<article><span>合并计划</span><strong>3</strong></article>
-<article><span>歧义合并</span><strong>1</strong></article>
-<article><span>孤立主题</span><strong>11</strong></article>
-<article><span>孤儿风险</span><strong>11</strong></article>
+<article><span>建议链接</span><strong>0</strong></article>
+<article><span>合并计划</span><strong>0</strong></article>
+<article><span>歧义合并</span><strong>0</strong></article>
+<article><span>孤立主题</span><strong>7</strong></article>
+<article><span>孤儿风险</span><strong>7</strong></article>
   </div>
 </section>
     <section class="pending-candidates">
@@ -174,108 +256,72 @@
       <h2><a href="review.html#pending-candidates" data-i18n="pending.title">待审核经验候选</a></h2>
       <p>AI 生成的 wiki 草稿正在等待审核。稳定的 <code>kb/</code> 文件在提升前不会改变。</p>
     </div>
-    <strong>6</strong>
+    <strong>4</strong>
   </div>
   <ol class="experience-list">
-    <li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256">
-      <p><strong>长耗时代理工作前先发送 ACK</strong></p>
-      <p>当 OpenClaw 代理即将执行工具调用、网络请求、任务派发或其他长耗时工作时，先发送简短确认 ACK，再开始慢操作，避免用户误以为系统无响应。</p>
+    <li id="pending-wiki-curated_kb-known-fixes-bot-nonresponse-connector-failure-escalation-md-sha256">
+      <p><strong>机器人无响应、连接器失败或修复流程已耗尽时的处理规则</strong></p>
+      <p>当 OpenClaw 机器人看似无响应、chat connector 失败，或自动脚本修复与 AI 修复均已失败时，先按可验证路径排查后台调用、模型与连接器配置；若修复路径已耗尽，应升级给对应平台支持角色，避免重复执行无效修复。</p>
       <dl>
-        <dt>目标</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
-        <dt>类型</dt><dd>pitfall</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
-        <dt>来源数</dt><dd>1</dd>
-        <dt>置信度</dt><dd>0.93</dd>
-        <dt>审核原因</dt><dd>canonical_relationship</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>该页面是操作时序规则，不证明任何具体工具、网络或 dispatch 故障根因。; ACK 只能表示请求已收到或正在处理，不能表示任务已成功完成。; 未包含凭证、令牌、cookie、认证头或私钥。; quality_human_required:team_or_global_scope</dd>
-
-        <dt>Suggested links</dt><dd><code>agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes</code> Agents can mislead users if failures are reported as successful outcomes. <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-slack-replay-and-post-deploy-stability-failures</code> OpenClaw Slack replay and post-deploy stability failures <small>entity_overlap</small></dd>
-<dt>Merge candidates</dt><dd>ACK timing before long-running agent work <code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code> <small>same_title_or_slug, entity_overlap</small></dd>
-<dt>Relationship reasons</dt><dd>entity_overlap, same_title_or_slug</dd>
-
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16">
-      <p><strong>机器人不回复或交互环境 down/unresponsive 的自动修复路径</strong></p>
-      <p>当用户反馈 OpenClaw bot、交互环境或实例停止回复，且没有明确 billing、quota、payment 原因时，按“控制台自动修复→原会话验证→失败后升级平台支持”处理；避免在已执行 script-based repair 和 AI-based repair 后反复要求用户重复修复。</p>
-      <dl>
-        <dt>目标</dt><dd><code>kb/known-fixes/down-unresponsive.md</code></dd>
+        <dt>目标</dt><dd><code>kb/known-fixes/bot-nonresponse-connector-failure-escalation.md</code></dd>
         <dt>类型</dt><dd>known_fix</dd>
         <dt>范围</dt><dd>team</dd>
         <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
-        <dt>来源数</dt><dd>1</dd>
-        <dt>置信度</dt><dd>0.93</dd>
-        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据来源只有一条，流程可信但覆盖面有限；遇到明确计费、额度或付款问题时不要套用。; 未提供具体控制台按钮名称或状态字段，执行时需按当前 OpenClaw 控制台界面适配。; 不要收集或记录用户凭据、token、cookie、auth header、私钥等敏感信息；升级时仅附实例标识、症状、已执行修复和验证结果。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
-
-
-
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256">
-      <p><strong>使用受支持的包管理流程安装可复用技能</strong></p>
-      <p>当可复用 review skill 通过 plugin 风格命令安装失败时，不要继续沿用不受支持的插件安装路径；应切换到受支持的 package-manager 工作流。验证以安装命令成功退出、技能在 agent runtime 中可用为准。交互式授权超时导致的文档生成失败不应误判为技能安装失败；恢复检查任务若已发送过通知，静默且幂等是可接受结果。</p>
-      <dl>
-        <dt>目标</dt><dd><code>kb/known-fixes/install-review-skill-via-package-manager.md</code></dd>
-        <dt>类型</dt><dd>known_fix</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76</code></dd>
         <dt>来源数</dt><dd>1</dd>
         <dt>置信度</dt><dd>0.68</dd>
         <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据未提供具体 package-manager 命令、路径或产品版本，因此正文避免编造命令。; 交互式授权细节已泛化处理，未包含任何令牌、凭据、cookie、auth header 或私钥。; 该页面适用于技能安装流程选择与验证，不应扩展为通用授权修复指南。; quality_human_required:generic_applicability; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
+        <dt>风险提示</dt><dd>证据为单一来源，且未提供具体命令、日志样例或平台角色名称；页面保留为通用操作规则。; 未包含凭据、token、cookie、auth header、私钥或原始聊天转录。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
 
 
 
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256">
-      <p><strong>scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery</strong></p>
-      <p>当 scheduled-job 返回 client errors、定时通知未发送，并伴随目标 primary session 解析失败时，优先删除失败任务，并用 isolated-session delivery、agent-turn style payload、explicit delivery configuration 重新创建任务。</p>
+<li id="pending-wiki-curated_kb-known-fixes-sandbox-bot-instance-unresponsive-auto-repair-md-sha256">
+      <p><strong>沙箱、Bot 或实例无响应时优先使用控制台自动修复</strong></p>
+      <p>当用户反馈 sandbox、bot 或实例宕机、卡住、不可访问或无响应时，先引导用户在控制台使用实例自动修复功能；优先尝试脚本修复，再尝试 AI 修复。若用户已确认两种修复都失败，应升级给对应 on-call 或服务负责人，不要重复相同修复话术。该流程不适用于计费、配额或付款后休眠类问题。</p>
       <dl>
-        <dt>目标</dt><dd><code>kb/known-fixes/scheduled-job-failure-client-errors-primary-session.md</code></dd>
+        <dt>目标</dt><dd><code>kb/known-fixes/sandbox-bot-instance-unresponsive-auto-repair.md</code></dd>
         <dt>类型</dt><dd>known_fix</dd>
         <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab</code></dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3</code></dd>
         <dt>来源数</dt><dd>1</dd>
-        <dt>置信度</dt><dd>0.93</dd>
+        <dt>置信度</dt><dd>0.63</dd>
         <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据来自单条成功经验，适用于 primary session 解析失败相关的 scheduled-job client errors；不应泛化到所有定时任务失败。; 未提供具体控制台路径或命令，执行时需使用当前环境支持的 scheduled job 管理工具完成删除与重建。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
+        <dt>风险提示</dt><dd>证据来源仅 1 条，未提供具体控制台路径或按钮名称；页面避免编造 UI 细节。; 未包含命令级验证方法；验证依赖用户确认实例是否恢复响应。; 需避免将该流程套用于计费、配额或付款后休眠问题。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
 
 
 
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66">
-      <p><strong>自动修复失败、机器人无响应与聊天连接器故障的处理规则</strong></p>
-      <p>当脚本修复和 AI 修复均已失败时，不要重复执行同类修复，应升级给对应平台支持角色。对机器人疑似无响应，先确认后端工具调用是否仍在运行或延迟，再必要时切换模型。对聊天连接器故障，检查聊天插件启用状态、重启服务，并验证连接器身份解析、WebSocket 就绪、服务健康和集成配置。</p>
+<li id="pending-wiki-curated_kb-known-fixes-wiki-md-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811">
+      <p><strong>无法访问需评审的团队文档时的处理规则</strong></p>
+      <p>当用户要求评审链接文档，但机器人或可用服务账号没有读取权限时，不要尝试绕过鉴权；应告知权限问题，并要求用户粘贴内容或调整文档权限后再继续。</p>
       <dl>
         <dt>目标</dt><dd><code>kb/known-fixes/wiki.md</code></dd>
         <dt>类型</dt><dd>known_fix</dd>
         <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5</code></dd>
         <dt>来源数</dt><dd>1</dd>
-        <dt>置信度</dt><dd>0.68</dd>
-        <dt>审核原因</dt><dd>new_canonical_topic; duplicate_source_hash</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据来自单一来源，未提供具体命令、日志样例或平台角色名称；执行时需结合本地运行手册确认健康检查入口和升级对象。; 不要将“切换模型”作为替代后端状态检查的第一步；否则可能造成重复请求或掩盖长耗时工具调用。; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
+        <dt>置信度</dt><dd>0.53</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据仅来自一次案例，未提供具体文档平台或权限配置命令。; 不得记录或请求用户凭据、认证令牌、Cookie、私钥或其他敏感访问材料。; 本页只覆盖读取权限不足的处理规则，不覆盖文档解析失败或平台故障排查。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
 
 
 
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913">
-      <p><strong>隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与</strong></p>
-      <p>跨无关工具或 agent 复用同一聊天机器人身份或配置，可能导致 bot 漏回复、重复回复、普通消息也被错误参与处理，或多个 agent 行为相互干扰。应为无关用途使用独立 bot identity/configuration，明确触发条件，并检查 bot visibility。</p>
+<li id="pending-wiki-curated_kb-pitfalls-avoid-reusing-messaging-bot-identity-md-sha256-0a314c00a6f1bf3b">
+      <p><strong>避免在无关工具间复用同一消息平台 Bot 身份</strong></p>
+      <p>消息平台 Bot 集成时，不要在无关工具或不同代理之间复用同一 Bot 身份或配置。复用可能导致漏回复、重复回复或 Bot 在非触发场景中过度参与。应为不同用途隔离 Bot 身份、触发条件和配置，并验证 Bot 只在被明确调用时响应。</p>
       <dl>
-        <dt>目标</dt><dd><code>kb/pitfalls/bot-agent.md</code></dd>
+        <dt>目标</dt><dd><code>kb/pitfalls/avoid-reusing-messaging-bot-identity.md</code></dd>
         <dt>类型</dt><dd>pitfall</dd>
         <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77</code></dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0</code></dd>
         <dt>来源数</dt><dd>1</dd>
-        <dt>置信度</dt><dd>0.93</dd>
+        <dt>置信度</dt><dd>0.63</dd>
         <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据来源为单条经验记录，适合作为操作性排障规则，但仍需结合实际 bot 平台配置验证。; 未包含具体平台的配置界面路径或命令；仅保留通用操作边界，避免编造实现细节。; 不适用于同一工具多会话的正常共享场景，也不替代认证、网络或服务宕机排查。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
+        <dt>风险提示</dt><dd>证据只有一条，且未包含具体平台名称、配置项名称或命令级验证方法；页面保留为通用操作规则。; 未包含凭据、令牌、cookie、认证头或私钥。; 不应将本页当作特定消息平台的完整配置手册；实际拆分 Bot 身份和事件订阅时仍需参考对应平台文档。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
 
 
 
@@ -289,36 +335,29 @@
   </div>
 </section>
   </details>
-  <section class="dashboard-grid">
-    <div id="knowledge-pages">
-      <h2 data-i18n="dashboard.knowledgePages">知识页</h2>
+  <section class="overview-grid">
+    <div id="knowledge-pages" class="panel">
+      <h2 data-i18n="dashboard.knowledgePages">稳定知识</h2>
+      <p class="section-subtitle">共 0 个稳定页面：0 个知识页 + 0 个技能页，约 0 个主题。审批通过并 promote 后会出现在这里。</p>
       <ol class="link-list">
-        <li data-page-kind="known_fix"><a href="pages/openclaw-dispatch-routing-failures.html">OpenClaw dispatch routing failures</a><span>known_fix</span></li>
-<li data-page-kind="pitfall"><a href="pages/ack-timing-before-long-running-agent-work.html">ACK timing before long-running agent work</a><span>pitfall</span></li>
-<li data-page-kind="known_fix"><a href="pages/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.html">Agents can mislead users if failures are reported as successful outcomes.</a><span>known_fix</span></li>
-<li data-page-kind="procedure"><a href="pages/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.html">Actions on the wrong target machine or host can cause unsafe operational changes.</a><span>procedure</span></li>
-<li data-page-kind="procedure"><a href="pages/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.html">Case-sensitive database comparisons can miss logically equivalent values.</a><span>procedure</span></li>
-<li data-page-kind="pitfall"><a href="pages/changes-can-introduce-regressions-when-not-tested-after-modification.html">Changes can introduce regressions when not tested after modification</a><span>pitfall</span></li>
+
       </ol>
     </div>
-    <div>
+    <div class="panel">
       <h2 data-i18n="dashboard.topSignatures">高频特征</h2>
+      <p class="section-subtitle">用于检索和匹配相似故障的关键词。</p>
       <ol class="link-list">
-        <li><code>openclaw:dispatch-routing-failure</code></li>
+        <li data-i18n="dashboard.noSignatures">暂无特征索引</li>
       </ol>
     </div>
   </section>
   <section class="filters" aria-label="知识类型筛选" data-i18n-aria-label="filters.knowledgeType">
     <button type="button" data-kind-filter="all" data-i18n="filters.all">全部</button>
-<button type="button" data-kind-filter="known_fix">known_fix</button>
-<button type="button" data-kind-filter="pitfall">pitfall</button>
-<button type="button" data-kind-filter="procedure">procedure</button>
-<button type="button" data-kind-filter="skill">skill</button>
   </section>
 </main>
   <script>window.__PRAXISBASE_LANGUAGE__="zh-CN";</script>
   <script>window.__WIKI_BASE__="";</script>
-  <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[{"id":"ack-timing-before-long-running-agent-work","slug":"ack-timing-before-long-running-agent-work","title":"ACK timing before long-running agent work","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:3164c59926591e51e2b026dec1f81c38f68926a504b50825557ebc1721b119e9","stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md"]},{"id":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","slug":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","title":"Actions on the wrong target machine or host can cause unsafe operational changes.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96","stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"]},{"id":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","slug":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","title":"Agents can mislead users if failures are reported as successful outcomes.","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195","stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"]},{"id":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","slug":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","title":"Case-sensitive database comparisons can miss logically equivalent values.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678","stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"]},{"id":"changes-can-introduce-regressions-when-not-tested-after-modification","slug":"changes-can-introduce-regressions-when-not-tested-after-modification","title":"Changes can introduce regressions when not tested after modification","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6","stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"]},{"id":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","slug":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","title":"Missing replay data compromises the ability to debug or verify past execution behaviors","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8","stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"]},{"id":"openclaw-dispatch-routing-failures","slug":"openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"known_fix","scope":"team","maturity":"verified","source_ids":["sha256:b6657ec798ebefe7645b79f6e63a468fadbc2a903d066d2adaceae312a18cb96","stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md"]},{"id":"openclaw-slack-replay-and-post-deploy-stability-failures","slug":"openclaw-slack-replay-and-post-deploy-stability-failures","title":"OpenClaw Slack replay and post-deploy stability failures","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d","stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"]},{"id":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","slug":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","title":"Post-deploy stability smoke test run 'openclaw' resulted in an overall failure","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa","stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"]},{"id":"skill-openclaw-openclaw-dispatch-routing-failures","slug":"skill-openclaw-openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"skill","scope":"personal","maturity":"draft","source_ids":["sha256:f542be934e8bf474df3cbcf1f6fad52e421f7d8625c27f2dff8e790be0e50336","skill:skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"]},{"id":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","slug":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","title":"Stale caches can hide current behavior or serve outdated assets","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d","stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"]}],"links":[{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","type":"related","weight":1,"confidence":0.8},{"from":"changes-can-introduce-regressions-when-not-tested-after-modification","to":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"skill-openclaw-openclaw-dispatch-routing-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8}],"backlinks":{"openclaw-dispatch-routing-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","skill-openclaw-openclaw-dispatch-routing-failures"],"openclaw-slack-replay-and-post-deploy-stability-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-dispatch-routing-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"changes-can-introduce-regressions-when-not-tested-after-modification":["actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","case-sensitive-database-comparisons-can-miss-logically-equivalent-values","stale-caches-can-hide-current-behavior-or-serve-outdated-assets"],"stale-caches-can-hide-current-behavior-or-serve-outdated-assets":["case-sensitive-database-comparisons-can-miss-logically-equivalent-values"],"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes":["changes-can-introduce-regressions-when-not-tested-after-modification"],"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution":["openclaw-dispatch-routing-failures","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"case-sensitive-database-comparisons-can-miss-logically-equivalent-values":["stale-caches-can-hide-current-behavior-or-serve-outdated-assets"]},"broken_links":[],"orphans":[],"duplicates":[]};</script>
+  <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[],"links":[],"backlinks":{},"broken_links":[],"orphans":[],"duplicates":[]};</script>
   <script src="site.js"></script>
 </body>
 </html>

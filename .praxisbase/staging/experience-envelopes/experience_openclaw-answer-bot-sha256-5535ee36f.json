@@ -9,7 +9,7 @@
   "source_hash": "sha256:5535ee36fdd9a1f36bf141e0a64c0daa849978e762aa248cf2f5fc98296cea20",
   "scope_hint": "team",
   "redacted_summary": "Updated support guidance for access/pairing failures so responders explain that the issue is an authorization or pairing setup problem rather than a normal business error. For newly onboarded users, the recommended first step is to restart the affected service from the admin console; if that does not resolve the issue, escalate to an instance administrator for approval handling. Updated data-sensitivity guidance so responders do not infer authorization=[REDACTED] model naming patterns and instead direct users to official security or confidentiality channels for authoritative policy decisions.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "fetched_at": "2026-06-16T09:43:47.454Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

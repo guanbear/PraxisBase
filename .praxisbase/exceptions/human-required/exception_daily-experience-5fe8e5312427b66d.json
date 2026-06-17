@@ -22,24 +22,21 @@
       ]
     },
     "triage": {
-      "classification": "safe_personal_experience",
-      "confidence": 0.84,
-      "rationale": "The summary describes a routine agent/cron notification to a team chat, with the Feishu chat identifier already redacted and no visible raw personal data, secrets, or private content values.",
+      "classification": "unclear",
+      "confidence": 0.72,
+      "rationale": "The summary is mostly redacted and does not expose obvious secrets, but it originates from a team Feishu channel and references internal operational notifications, so safety cannot be confirmed from the redacted excerpt alone.",
       "suggested_redactions": [
-        "Keep Feishu chat/channel identifiers redacted",
-        "Redact any underlying source references, database paths, or hashes if exposed outside the review system",
-        "Redact detailed internal security-notification content if it contains sensitive operational information"
+        "Keep Feishu chat/channel identifiers redacted.",
+        "Redact or generalize internal source references, chunk IDs, and hashes if released.",
+        "Generalize project/model switch details if they reveal non-public operational information."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "auto_released",
-      "release_summary": "A scheduled notification job sent a team chat reminder about private model security practices and an upcoming model routing change. The channel identifier and source details were redacted, and the event is suitable for reuse as a generic operational notification pattern.",
-      "reusable_lesson": "When summarizing automated team notifications, keep only the notification purpose and delivery outcome while redacting channel IDs, source references, and sensitive operational details.",
-      "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "decision": "team_review_only",
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

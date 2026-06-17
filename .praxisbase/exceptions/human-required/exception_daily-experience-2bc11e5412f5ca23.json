@@ -24,24 +24,26 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.86,
-      "rationale": "The summary describes agent workflow but still includes a specific private Feishu document URL and an account identifier; no document contents are exposed, so it appears redaction rather than exclusion is sufficient.",
+      "confidence": 0.82,
+      "rationale": "The summary appears to describe an agent interaction and access failure rather than exposing document contents, but it still contains a live collaboration document URL, an account identifier, internal tool/source references, and permission details tied to a team workspace. These should be redacted before treating it as safe experience.",
       "suggested_redactions": [
-        "Redact the Feishu document URL or replace it with a generic placeholder.",
-        "Redact the account/user identifier mentioned in the permission error.",
-        "Avoid exposing internal source references or hashes if they can identify private project artifacts."
+        "Redact the Feishu/wiki document URL and replace with a generic placeholder.",
+        "Redact named account or user identifiers.",
+        "Redact internal source references, database paths, chunk IDs, hashes, and agent-specific storage URIs if not needed.",
+        "Generalize tenant/app authorization and permission-scope details to non-identifying descriptions.",
+        "Keep the already-redacted group/channel identifier redacted."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization constraints. The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed.",
-      "reusable_lesson": "When a protected document cannot be accessed, stop retrying after standard permission checks and ask the requester to provide accessible content or grant the required read access.",
-      "residual_risk": "Review quality remains blocked until the document content is provided or permissions are corrected.",
+      "release_summary": "A team review request referenced a collaboration document that could not be accessed because the automated account lacked permission and the document required authenticated access. Additional authorization attempts were unsuccessful, so the bot did not inspect the document contents. The user was informed of the access limitation and asked to provide the content directly or adjust document permissions.",
+      "reusable_lesson": "When a protected document cannot be accessed, clearly report the permission limitation and request pasted content or corrected access before performing the review.",
+      "residual_risk": "Review quality depends on the user providing the actual document content or granting appropriate access.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

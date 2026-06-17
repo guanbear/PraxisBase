@@ -23,20 +23,22 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.82,
-      "rationale": "The summary contains personal naming preferences/nicknames for specific team-channel users, even though platform IDs are redacted. These aliases may be personal identifiers or private preferences from a team context.",
+      "confidence": 0.78,
+      "rationale": "manual_privacy_rejected_low_signal",
       "suggested_redactions": [
-        "Redact or generalize the nicknames/call-names.",
-        "Avoid linking personal preferences to specific users or groups, even with IDs redacted.",
-        "Generalize to: 'Some users shared preferred display names in a team chat.'"
+        "Redact user nicknames or requested forms of address.",
+        "Redact identity assertions linking a person to a name or alias.",
+        "Keep Feishu user and group identifiers redacted.",
+        "Generalize to non-identifying preference metadata if retention is necessary."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "decision": "rejected_low_signal",
+      "triaged_at": "2026-06-17T01:48:56.104Z",
+      "reviewer_id": "praxisbase-local-review-ui"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

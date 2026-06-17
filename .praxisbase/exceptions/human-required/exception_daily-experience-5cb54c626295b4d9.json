@@ -23,24 +23,25 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.86,
-      "rationale": "The summary contains team-channel operational guidance plus identifiable employee names and an internal dashboard URL/escalation path. IDs are redacted, but remaining names and internal routing details are not safe for auto-release.",
+      "confidence": 0.84,
+      "rationale": "The summary contains team-channel operational guidance and identifies specific individuals for follow-up, with only their Feishu IDs redacted. This is not clearly safe personal/project experience for auto-release.",
       "suggested_redactions": [
-        "Redact or generalize employee names to role-based labels such as support owner or escalation contact.",
-        "Keep Feishu IDs redacted.",
-        "Consider redacting or generalizing the internal dashboard URL/domain if not intended for public release.",
-        "Generalize internal escalation instructions and exact fixed wording if it reveals private support process details."
+        "Redact or generalize named individuals to role-based contacts",
+        "Keep Feishu IDs redacted",
+        "Consider redacting or generalizing the internal console URL/domain",
+        "Remove team-channel-specific escalation details unless explicitly approved"
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "For user reports that an interactive environment or bot is down or unresponsive, direct them to use the product console's automatic repair option before escalating. Do not apply this guidance to billing, quota, or payment-related sleep issues. If the user has already tried both script-based repair and AI-based repair without success, route to the appropriate support escalation contact rather than repeating the repair instructions.",
-      "reusable_lesson": "Separate outage-style repair guidance from billing/quota issues, and escalate only after both automated repair modes have been attempted.",
+      "release_summary": "For user reports that a sandbox, bot, or instance is down or unresponsive, first direct them to use the console’s instance auto-repair feature. Recommend trying script-based repair before AI-based repair, and avoid applying this flow to billing, quota, or post-payment sleep issues. If the user already confirms both repair methods failed, escalate to the appropriate on-call or service owner rather than repeating the same repair guidance.",
+      "reusable_lesson": "Route outage-style reports through standard auto-repair first, but exclude billing/quota cases and escalate only after both repair paths fail.",
+      "residual_risk": "Original guidance referenced specific internal contacts and console details; downstream copies should keep these generalized or role-based.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

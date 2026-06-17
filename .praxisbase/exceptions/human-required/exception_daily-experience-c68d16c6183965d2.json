@@ -24,22 +24,22 @@
     },
     "triage": {
       "classification": "real_private_material",
-      "confidence": 0.88,
-      "rationale": "Team Feishu context includes sensitive operational details about tokens, permissions, workspace paths, private group/task context, and exam/screenshot content, even though specific values are redacted.",
+      "confidence": 0.86,
+      "rationale": "The exception comes from a team Feishu channel and contains internal operational details, authentication/token status, workspace paths, project/skill names, and a redacted group identifier. Even with some values redacted, it reflects private team/project material rather than safe personal experience.",
       "suggested_redactions": [
-        "Remove or generalize all token/authentication references and permission status details.",
-        "Redact Feishu group/channel identifiers and any user-identifying context.",
-        "Generalize internal workspace paths and source references.",
-        "Remove exam/screenshot content details and private task descriptions.",
-        "Keep only high-level, non-identifying skill installation or troubleshooting summaries if needed."
+        "Remove or generalize all token references and token validity/permission status.",
+        "Remove Feishu group/channel/user identifiers, even if partially redacted.",
+        "Generalize internal workspace paths and agent/skill directory names.",
+        "Redact private project, tenant, wiki, and tool integration details.",
+        "Omit exam screenshot/task content and any user-provided private context."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

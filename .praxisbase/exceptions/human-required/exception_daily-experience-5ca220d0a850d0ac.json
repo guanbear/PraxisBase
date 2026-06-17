@@ -24,22 +24,22 @@
     },
     "triage": {
       "classification": "real_private_material",
-      "confidence": 0.86,
-      "rationale": "The summary contains team chat context, internal project/work-item automation details, a project space reference, a user identifier/name, and authorization workflow details. Even with some redactions, it is not high-confidence safe personal experience.",
+      "confidence": 0.92,
+      "rationale": "The summary still contains team-scope Feishu project details, an internal project URL/key, user-related identifiers, authorization workflow details, and planned automation for unresolved bugs, which are private project/work material rather than safe personal experience.",
       "suggested_redactions": [
-        "Remove or generalize internal project URLs and project keys",
-        "Remove user names, user IDs, and chat/channel identifiers",
-        "Remove token/authentication attempt details and any token-adjacent text",
-        "Generalize internal bug/task workflow details to a non-identifying description",
-        "Avoid exposing team chat source, scope, and collaboration platform metadata"
+        "Redact the Feishu project URL and project key/space name.",
+        "Redact any user names, handles, IDs, or account references.",
+        "Redact authorization/token flow details beyond a generic status.",
+        "Redact internal task details involving unresolved bugs or project work items.",
+        "Redact source references or hashes if they can be linked back to internal records."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

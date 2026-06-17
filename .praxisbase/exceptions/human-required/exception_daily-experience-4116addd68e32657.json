@@ -23,24 +23,25 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.86,
-      "rationale": "The exception contains team-channel operational guidance with identifiable individual names and mention-routing instructions, even though IDs are redacted. It appears project-related rather than purely personal safe experience.",
+      "confidence": 0.88,
+      "rationale": "The summary contains team-channel operational guidance with identifiable employee names and routing instructions, even though Feishu IDs are redacted. This is not high-confidence safe personal experience for auto-release without further anonymization.",
       "suggested_redactions": [
-        "Replace individual names with role-based labels or team aliases",
-        "Remove or keep redacted all Feishu user identifiers and mention targets",
-        "Generalize internal routing instructions to avoid naming specific people",
-        "Consider redacting source references, hashes, and internal channel metadata if released outside the team context"
+        "Replace named individuals with role-based labels such as primary maintainer, backup maintainer, or do-not-mention contact.",
+        "Keep all Feishu IDs and open_id values redacted.",
+        "Remove or generalize team-channel routing instructions that identify specific people.",
+        "Consider generalizing internal source references and hashes if released outside the review context."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "Updated the troubleshooting guidance for cases where automated script repair and AI repair have both already failed: escalate to the appropriate platform support role instead of repeating repair steps. Added a reusable diagnostic path for apparent bot non-response: first verify whether backend tool calls are still running or delayed, then try an alternate model if needed. Added a configuration-related check for chat-connector failures: ensure the chat plugin is enabled, restart the service, and verify connector identity resolution, websocket readiness, service health, and integration configuration.",
-      "reusable_lesson": "When a bot appears unresponsive, distinguish slow backend/model activity from connector disablement before escalating.",
+      "release_summary": "When a user reports that both scripted repair and AI repair have already failed, avoid repeating the same automated guidance and escalate to the appropriate role-based maintainer. For bot non-response issues, distinguish UI inactivity from backend work by checking whether tool calls are occurring and consider model latency or switching models. For messaging-platform integrations, a disabled plugin can prevent websocket connection and message receipt; remediation is to enable the integration, restart the service, and verify identity resolution, websocket readiness, service health, and integration configuration.",
+      "reusable_lesson": "Escalate after confirmed repair exhaustion, and verify integration enablement plus connection health before diagnosing a bot as non-responsive.",
+      "residual_risk": "Role ownership and escalation routing should be maintained in a private team registry rather than embedded in reusable guidance.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

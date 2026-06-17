@@ -24,23 +24,22 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.78,
-      "rationale": "The summary redacts the Feishu ID and IP, but still contains sensitive operational context about temporary SSH access, internal Feishu bot logs, session/config details, timestamps, and source references from a team-scoped channel.",
+      "confidence": 0.82,
+      "rationale": "The summary describes a team Feishu troubleshooting incident with operational access details, internal configuration/log behavior, session/channel identifiers, and protected-change instructions. Although key values are redacted, it is not clearly safe personal experience and should not be auto-released without further sanitization.",
       "suggested_redactions": [
-        "Remove or generalize temporary SSH access details, including port, username, and validity window.",
-        "Generalize exact timestamps to coarse dates or relative timing.",
-        "Redact internal session identifiers and channel instance names.",
-        "Remove or generalize specific configuration keys unless necessary for the lesson.",
-        "Omit source_ref, source_hash, and internal storage paths from releasable text.",
-        "Summarize log evidence without quoting log-like strings or internal routing details."
+        "Remove or generalize temporary SSH access details, including privileged username, port, duration, and connection behavior.",
+        "Remove or generalize internal Feishu/channel configuration names and trigger rules.",
+        "Remove precise timestamps and session/channel identifiers from log-derived statements.",
+        "Remove source references, hashes, internal database paths, and agent/session IDs.",
+        "Generalize project-specific tool names or protected configuration filenames if not necessary for the experience."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

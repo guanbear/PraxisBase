@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PraxisBase 审核队列</title>
+  <title>PraxisBase 审批中心</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,10 +14,10 @@
       <div id="searchResults" class="search-results" hidden></div>
     </div>
     <nav class="topnav" aria-label="知识库视图" data-i18n-aria-label="nav.aria">
-      <a href="index.html" data-i18n="nav.index">索引</a>
-      <a href="review.html" data-i18n="nav.review">审核</a>
-      <a href="graph.html" data-i18n="nav.graph">图谱</a>
-      <a href="issues.html" data-i18n="nav.issues">问题</a>
+      <a href="index.html" data-i18n="nav.index">总览</a>
+      <a href="review.html" data-i18n="nav.review">审批</a>
+      <a href="graph.html" data-i18n="nav.graph">关系</a>
+      <a href="issues.html" data-i18n="nav.issues">质检</a>
       <div class="language-switch" aria-label="切换语言" data-i18n-aria-label="language.switch">
         <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -37,47 +37,115 @@
   <main class="review-shell">
   <section class="hero">
     <div>
-      <p class="eyebrow">审核中心</p>
-      <h1>审核队列</h1>
-      <p class="lede">确认 AI 生成的知识候选项，检查被隐私策略阻断的记录，并查看哪些内容已经进入稳定知识库。</p>
+      <p class="eyebrow">审批中心</p>
+      <h1>经验入库审批</h1>
+      <p class="lede">先看本次需要处理什么，再逐条批准提案或隐私释放。审批只记录决定；重跑每日处理 / 提升入库后才会进入稳定知识库。</p>
     </div>
   </section>
-  <section class="metrics">
-    <a class="metric-link" href="#pending-candidates"><span>待审核</span><strong>5</strong></a>
-    <a class="metric-link" href="#approved-candidates"><span>已审核</span><strong>0</strong></a>
-    <a class="metric-link" href="#human-required"><span>本次隐私</span><strong>14</strong></a>
-    <a class="metric-link" href="#human-required"><span>隐私积压</span><strong>38</strong></a>
-
-    <a class="metric-link" href="#rejected"><span>已拒绝</span><strong>2</strong></a>
-    <a class="metric-link" href="#promoted-candidates"><span>已沉淀</span><strong>1</strong></a>
+  <section class="action-grid" aria-label="待处理事项">
+    <a class="action-card" href="#pending-candidates" data-tone="warn">
+    <span>待审核提案</span>
+    <strong>4</strong>
+    <p>批准后可提升入库为稳定知识。</p>
+  </a>
+    <a class="action-card" href="#human-required" data-tone="danger">
+    <span>隐私待确认</span>
+    <strong>19</strong>
+    <p>查看可审摘要，释放脱敏经验或拒绝。</p>
+  </a>
+    <a class="action-card" href="#approved-candidates" data-tone="ok">
+    <span>已批准待提升</span>
+    <strong>0</strong>
+    <p>下一步运行提升入库写入稳定知识。</p>
+  </a>
+    <a class="action-card" href="#promoted-candidates" data-tone="ok">
+    <span>当前队列已入库</span>
+    <strong>0</strong>
+    <p>候选目标已存在于 kb/ 或 skills/，不等于稳定知识总数。</p>
+  </a>
   </section>
+  <section class="status-strip">
+    <strong>审批服务</strong>
+    <span>当前仅本地审批，尚未接入 GitLab 页面回写；API: </span>
+    <code>http://127.0.0.1:4174</code>
+    <code>praxisbase review serve --port 4174</code>
+  </section>
+  <section class="count-notes">
+  <div class="section-heading compact-heading">
+    <div>
+      <h2>审批页数字怎么读</h2>
+      <p>这里的数字按“当前可操作队列”统计，所以会和首页全库总量不同。</p>
+    </div>
+  </div>
+  <div class="count-note-grid">
+    <a class="count-note" href="#pending-candidates"><span>待审核提案</span><strong>4</strong><p>只统计当前需要人工点批准/拒绝的 proposal；已经匹配稳定页的候选不会再出现在这里。</p></a>
+<a class="count-note" href="#human-required"><span>隐私待确认</span><strong>19</strong><p>这是审批队列存量；本次 OpenClaw 覆盖中隐私阻断是 14。批准会释放脱敏摘要，拒绝会保留阻断。</p></a>
+<a class="count-note" href="#promoted-candidates"><span>当前队列已入库</span><strong>0</strong><p>表示候选目标已经存在于 kb/ 或 skills/，不是全库稳定知识总数。</p></a>
+<a class="count-note" href="index.html#knowledge-pages"><span>稳定知识总量</span><strong>0</strong><p>首页稳定知识页展示的是全库可检索页面总数；审批通过并提升后才会增加。</p></a>
+  </div>
+</section>
+  <section class="process-map panel">
+  <div class="section-heading compact-heading">
+    <div>
+      <h2>审批闭环</h2>
+      <p>页面只负责记录决定；真正写入知识库由下一次每日处理 / 提升入库完成。</p>
+    </div>
+  </div>
+  <div class="process-grid">
+    <a class="process-step" href="#human-required"><span class="process-index">1</span>
+      <span class="process-label">看队列</span>
+      <strong>23</strong>
+      <small>先处理隐私和可审批提案</small></a>
+<a class="process-step" href="#pending-candidates"><span class="process-index">2</span>
+      <span class="process-label">点决定</span>
+      <strong>批准/拒绝</strong>
+      <small>页面写入审批记录</small></a>
+<article class="process-step"><span class="process-index">3</span>
+      <span class="process-label">重跑处理</span>
+      <strong>每日处理 / 提升</strong>
+      <small>消费审批记录并生成知识</small></article>
+<a class="process-step" href="index.html#knowledge-pages"><span class="process-index">4</span>
+      <span class="process-label">确认入库</span>
+      <strong>0</strong>
+      <small>回首页看稳定知识总量</small></a>
+  </div>
+</section>
+  <details class="terminology-panel">
+  <summary>术语速查</summary>
+  <dl>
+    <dt>来源条目</dt><dd>OpenClaw 记忆或其他输入被切分后的处理单位；一个来源可能产生多个经验片段，也可能只作为证据。</dd>
+<dt>经验片段</dt><dd>从来源中抽出的可复用修复经验，还没有变成稳定知识。</dd>
+<dt>提案</dt><dd>AI 编译出的知识库改动草稿，审批通过并提升后才会写入 kb/ 或 skills/。</dd>
+<dt>稳定知识</dt><dd>已经在 kb/ 或 skills/ 中的页面，Agent 检索时可以直接使用。</dd>
+  </dl>
+</details>
   <details class="advanced-panel review-advanced">
     <summary>展开高级流水线状态</summary>
 
     <section class="wiki-compiler-status">
   <h2>Wiki 编译器</h2>
-  <p class="eyebrow">2026-06-16 &middot; review &middot; AI production &middot; gpt-5.5</p>
+  <p class="eyebrow">2026-06-17 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>观察项</span><strong>15</strong></article>
-    <article><span>主题</span><strong>13</strong></article>
-    <article><span>计划 新建</span><strong>9</strong></article>
-<article><span>计划 更新</span><strong>1</strong></article>
-<article><span>计划 合并</span><strong>3</strong></article>
+    <article><span>观察项</span><strong>8</strong></article>
+    <article><span>主题</span><strong>7</strong></article>
+    <article><span>计划 新建</span><strong>7</strong></article>
+<article><span>计划 更新</span><strong>0</strong></article>
+<article><span>计划 合并</span><strong>0</strong></article>
 <article><span>计划 替代</span><strong>0</strong></article>
 <article><span>计划 归档</span><strong>0</strong></article>
-    <article><span>重复 source-hash 分组</span><strong>3</strong></article>
-    <article><span>硬阻断</span><strong>2</strong></article>
-    <article><span>需质量审核</span><strong>6</strong></article>
-    <article><span>已写入提案</span><strong>6</strong></article>
-    <article><span>提案上限</span><strong>80</strong></article>
+    <article><span>重复 source-hash 分组</span><strong>0</strong></article>
+    <article><span>硬阻断</span><strong>1</strong></article>
+    <article><span>需质量审核</span><strong>4</strong></article>
+    <article><span>已写入提案</span><strong>4</strong></article>
+    <article><span>提案上限</span><strong>30</strong></article>
     <article><span>上限原因</span><strong>max_curation_proposals</strong></article>
 
     <article><span>必需链接</span><strong>0</strong></article>
-<article><span>建议链接</span><strong>4</strong></article>
-<article><span>合并计划</span><strong>3</strong></article>
-<article><span>歧义合并</span><strong>1</strong></article>
-<article><span>孤立主题</span><strong>11</strong></article>
-<article><span>孤儿风险</span><strong>11</strong></article>
+<article><span>建议链接</span><strong>0</strong></article>
+<article><span>合并计划</span><strong>0</strong></article>
+<article><span>歧义合并</span><strong>0</strong></article>
+<article><span>孤立主题</span><strong>7</strong></article>
+<article><span>孤儿风险</span><strong>7</strong></article>
   </div>
 </section>
   </details>
@@ -91,52 +159,48 @@
       </article>
 <article>
         <span class="flow-index">2</span>
-        <div><span>隐私筛选</span><strong>20</strong><small>14 条被阻断/拒绝</small></div>
+        <div><span>隐私筛选</span><strong>15</strong><small>17 条被阻断/拒绝</small></div>
       </article>
 <article>
         <span class="flow-index">3</span>
-        <div><span>经验抽取</span><strong>19</strong><small>14 个来源产出 lesson</small></div>
+        <div><span>经验抽取</span><strong>2</strong><small>2 个来源产出经验片段</small></div>
       </article>
 <article>
         <span class="flow-index">4</span>
-        <div><span>知识编译</span><strong>34</strong><small>16 个来源，14 个待提炼</small></div>
+        <div><span>知识编译</span><strong>18</strong><small>11 个来源形成证据，13 个待提炼</small></div>
       </article>
 <article>
         <span class="flow-index">5</span>
-        <div><span>沉淀</span><strong>1</strong><small>已有提案：6 个来源</small></div>
+        <div><span>沉淀</span><strong>0</strong><small>涉及提案来源：4</small></div>
       </article>
     </div>
     <div class="metrics">
       <a class="metric-link" href="#coverage-details" data-coverage-filter="all"><span>原始项</span><strong>34</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="privacy_blocked"><span>隐私待确认</span><strong>11</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="lesson_all"><span>Lesson 总数</span><strong>19</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="wiki_evidence_all"><span>Wiki 证据 34 / 16 个来源</span><strong>34</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="proposal"><span>提案</span><strong>6</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="stable_kb"><span>稳定知识</span><strong>1</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="privacy_blocked"><span>隐私待确认</span><strong>14</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="lesson_all"><span>经验片段总数</span><strong>2</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="wiki_evidence_all"><span>知识证据 18 / 11 个来源</span><strong>18</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="proposal"><span>涉及提案来源</span><strong>4</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="stable_kb"><span>稳定知识</span><strong>0</strong></a>
     </div>
     <div class="kb-filter-bar">
       <button type="button" class="kb-chip is-active" data-coverage-kb-filter="all"><span>全部知识库</span><strong>34</strong></button>
       <button type="button" class="kb-chip" data-coverage-kb-filter="openclaw"><span>openclaw</span><strong>34</strong></button>
     </div>
-    <div class="coverage-status-grid"><a href="#coverage-details" class="coverage-status-card coverage-status-stable_kb" data-coverage-filter="stable_kb">
-      <span>已进稳定知识库</span>
-      <strong>1</strong>
-    </a>
-<a href="#coverage-details" class="coverage-status-card coverage-status-proposal" data-coverage-filter="proposal">
-      <span>已有提案</span>
-      <strong>5</strong>
+    <div class="coverage-status-grid"><a href="#coverage-details" class="coverage-status-card coverage-status-proposal" data-coverage-filter="proposal">
+      <span>待审核提案</span>
+      <strong>4</strong>
     </a>
 <a href="#coverage-details" class="coverage-status-card coverage-status-wiki_evidence" data-coverage-filter="wiki_evidence">
       <span>已有 Wiki 证据</span>
-      <strong>10</strong>
+      <strong>7</strong>
     </a>
 <a href="#coverage-details" class="coverage-status-card coverage-status-needs_curation" data-coverage-filter="needs_curation">
       <span>待二次提炼</span>
-      <strong>4</strong>
+      <strong>6</strong>
     </a>
 <a href="#coverage-details" class="coverage-status-card coverage-status-privacy_blocked" data-coverage-filter="privacy_blocked">
       <span>隐私待确认</span>
-      <strong>11</strong>
+      <strong>14</strong>
     </a>
 <a href="#coverage-details" class="coverage-status-card coverage-status-low_signal_rejected" data-coverage-filter="low_signal_rejected">
       <span>低信号已拒绝</span>
@@ -146,28 +210,28 @@
       <summary>展开来源明细</summary>
     <div class="table-scroll">
       <table class="coverage-table">
-        <thead><tr><th>来源</th><th>知识库</th><th>隐私</th><th>lessons</th><th>证据</th><th>提案</th><th>状态</th><th>原因</th><th>标题</th></tr></thead>
-        <tbody><tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
+        <thead><tr><th>来源</th><th>知识库</th><th>隐私</th><th>经验片段</th><th>证据</th><th>提案</th><th>状态</th><th>原因</th><th>标题</th></tr></thead>
+        <tbody><tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-14edce26a</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
-    <td>3</td>
-    <td>5</td>
     <td>1</td>
-    <td>已有提案</td>
-    <td>已生成待审核提案。</td>
-    <td>自动修复失败、机器人无响应与聊天连接器故障的处理规则</td>
+    <td>1</td>
+    <td>0</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td><ul class="compact-list"><li>Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first, then proceed with the slow operation.</li></ul></td>
   </tr>
 <tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-19c2eeefa</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
-    <td>1</td>
+    <td>0</td>
     <td>2</td>
     <td>1</td>
-    <td>已有提案</td>
+    <td>待审核提案</td>
     <td>已生成待审核提案。</td>
-    <td>机器人不回复或交互环境 down/unresponsive 的自动修复路径</td>
+    <td>沙箱、Bot 或实例无响应时优先使用控制台自动修复</td>
   </tr>
 <tr data-coverage-row data-coverage-status="low_signal_rejected" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-1e5ae91e7</code></td>
@@ -184,12 +248,12 @@
     <td><code>experience_openclaw-answer-bot-sha256-273a47187</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
+    <td>0</td>
     <td>1</td>
-    <td>2</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
     <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
+    <td>-</td>
   </tr>
 <tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-31384b954</code></td>
@@ -213,16 +277,16 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-4b2bab827</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
     <td>0</td>
     <td>1</td>
-    <td>1</td>
-    <td>已有提案</td>
-    <td>已生成待审核提案。</td>
-    <td>使用受支持的包管理流程安装可复用技能</td>
+    <td>0</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td>-</td>
   </tr>
 <tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-54fe93b6d</code></td>
@@ -238,23 +302,23 @@
 <tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-5535ee36f</code></td>
     <td>openclaw</td>
-    <td>自动释放</td>
+    <td>团队人工确认</td>
+    <td>0</td>
     <td>1</td>
-    <td>2</td>
     <td>0</td>
     <td>已有 Wiki 证据</td>
     <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>当新用户或刚授权用户遇到 access-not-configured、pairing prompt 或权限配置异常时，应按授权/配对问题处理，而不是当作模型或业务逻辑失败。</li></ul></td>
+    <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-64f06eeeb</code></td>
     <td>openclaw</td>
-    <td>自动释放</td>
+    <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
-    <td>待二次提炼</td>
-    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
 <tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
@@ -268,16 +332,16 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-745fa543d</code></td>
     <td>openclaw</td>
-    <td>自动释放</td>
-    <td>1</td>
-    <td>1</td>
+    <td>团队人工确认</td>
     <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
+    <td>0</td>
+    <td>0</td>
+    <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
+    <td>-</td>
   </tr>
 <tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-803b9fd01</code></td>
@@ -290,16 +354,16 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="stable_kb" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-8107f53d4</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
-    <td>2</td>
-    <td>4</td>
     <td>1</td>
-    <td>已进稳定知识库</td>
-    <td>已进入稳定知识库。</td>
-    <td>长耗时代理工作前先发送 ACK</td>
+    <td>5</td>
+    <td>1</td>
+    <td>待审核提案</td>
+    <td>已生成待审核提案。</td>
+    <td>机器人无响应、连接器失败或修复流程已耗尽时的处理规则</td>
   </tr>
 <tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-85c6325c6</code></td>
@@ -312,38 +376,38 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-8deb4f5e6</code></td>
     <td>openclaw</td>
-    <td>自动释放</td>
+    <td>团队人工确认</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
-    <td>待二次提炼</td>
-    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>隐私待确认</td>
+    <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-92320b389</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
+    <td>0</td>
     <td>1</td>
-    <td>2</td>
-    <td>1</td>
-    <td>已有提案</td>
-    <td>已生成待审核提案。</td>
-    <td>scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery</td>
+    <td>0</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-98477e0c8</code></td>
     <td>openclaw</td>
-    <td>自动释放</td>
+    <td>团队人工确认</td>
+    <td>0</td>
     <td>2</td>
-    <td>4</td>
-    <td>1</td>
-    <td>已有提案</td>
-    <td>已生成待审核提案。</td>
-    <td>隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与</td>
+    <td>0</td>
+    <td>已有 Wiki 证据</td>
+    <td>已作为 wiki 编译证据。</td>
+    <td>-</td>
   </tr>
 <tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-9fd2e910e</code></td>
@@ -422,41 +486,8 @@
     <td>被判定为问候、闲聊或缺少修复信号。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
-    <td><code>experience_openclaw-answer-bot-sha256-dbfb119fc</code></td>
-    <td>openclaw</td>
-    <td>自动释放</td>
-    <td>1</td>
-    <td>1</td>
-    <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
-  </tr>
-<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
-    <td><code>experience_openclaw-answer-bot-sha256-dd5113c71</code></td>
-    <td>openclaw</td>
-    <td>自动释放</td>
-    <td>1</td>
-    <td>3</td>
-    <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>当集成检索和浏览器检索都因 authorization 失败时，应明确是 approved integration/service account 缺少 read permissions。</li></ul></td>
-  </tr>
-<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
-    <td><code>experience_openclaw-answer-bot-sha256-e1db2413e</code></td>
-    <td>openclaw</td>
-    <td>自动释放</td>
-    <td>1</td>
-    <td>2</td>
-    <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>跨无关用途复用同一聊天机器人身份或配置，可能导致漏回复、重复回复或过度参与；应隔离 bot identity/configuration。</li></ul></td>
-  </tr>
 <tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
-    <td><code>experience_openclaw-answer-bot-sha256-e3e17b88c</code></td>
+    <td><code>experience_openclaw-answer-bot-sha256-dbfb119fc</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
     <td>0</td>
@@ -466,19 +497,30 @@
     <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
-    <td><code>experience_openclaw-answer-bot-sha256-e437220d9</code></td>
+<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-dd5113c71</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
-    <td>1</td>
-    <td>1</td>
     <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>模型切换成功提示不一定代表默认模型被持久更改；agent 默认模型和 sub-agent 默认模型可能覆盖会话级选择。</li></ul></td>
+    <td>2</td>
+    <td>1</td>
+    <td>待审核提案</td>
+    <td>已生成待审核提案。</td>
+    <td>无法访问需评审的团队文档时的处理规则</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="proposal" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-e1db2413e</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>0</td>
+    <td>1</td>
+    <td>1</td>
+    <td>待审核提案</td>
+    <td>已生成待审核提案。</td>
+    <td>避免在无关工具间复用同一消息平台 Bot 身份</td>
   </tr>
 <tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
-    <td><code>experience_openclaw-answer-bot-sha256-e9bac6dd0</code></td>
+    <td><code>experience_openclaw-answer-bot-sha256-e3e17b88c</code></td>
     <td>openclaw</td>
     <td>团队人工确认</td>
     <td>0</td>
@@ -488,27 +530,49 @@
     <td>团队模式 review-first，需人工确认后才释放。</td>
     <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-e437220d9</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>-</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
+    <td><code>experience_openclaw-answer-bot-sha256-e9bac6dd0</code></td>
+    <td>openclaw</td>
+    <td>自动释放</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>-</td>
+  </tr>
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-f1d3f2e21</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
-    <td>1</td>
-    <td>1</td>
     <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>群聊中 bot 静默不一定表示集成没收到消息；应同时检查触发资格、会话状态、网关健康和最近分发活动。</li></ul></td>
+    <td>0</td>
+    <td>0</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>-</td>
   </tr>
-<tr data-coverage-row data-coverage-status="wiki_evidence" data-coverage-kb="openclaw">
+<tr data-coverage-row data-coverage-status="needs_curation" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-f7aee701a</code></td>
     <td>openclaw</td>
     <td>自动释放</td>
-    <td>2</td>
-    <td>2</td>
     <td>0</td>
-    <td>已有 Wiki 证据</td>
-    <td>已作为 wiki 编译证据。</td>
-    <td><ul class="compact-list"><li>当新用户或刚授权用户遇到 access-not-configured、pairing prompt 或权限配置异常时，应按授权/配对问题处理，而不是当作模型或业务逻辑失败。</li><li>当消息平台集成异常且实例不是因计费停机时，可用插件启用、集成更新和实例重启作为首轮修复步骤。</li></ul></td>
+    <td>0</td>
+    <td>0</td>
+    <td>待二次提炼</td>
+    <td>已安全释放，待二次经验提炼或明确拒绝原因。</td>
+    <td>-</td>
   </tr>
 <tr data-coverage-row data-coverage-status="privacy_blocked" data-coverage-kb="openclaw">
     <td><code>experience_openclaw-answer-bot-sha256-fe8edde7b</code></td>
@@ -526,8 +590,8 @@
     </details>
   </section>
   <section class="review-section" data-status="pending">
-    <h2>页面审批</h2>
-    <p>启动本地审批服务后，可直接在候选卡片上批准、拒绝或标记人工跟进。静态打开页面时仍可使用终端命令。</p>
+    <h2>操作命令</h2>
+    <p>页面按钮现在写入本地审批服务。GitLab 页面审批还没最终接好，需要部署 approval API，并把 review_writeback 切到 gitlab。</p>
     <div class="command-strip">
       <code>praxisbase review serve --port 4174</code>
       <code>praxisbase review --auto</code>
@@ -539,158 +603,32 @@
   <div class="section-heading">
     <div>
       <h2><span id="review-required"></span>待审核</h2>
-      <p>5 条</p>
+      <p>4 条</p>
     </div>
-    <strong>5</strong>
+    <strong>4</strong>
   </div>
   <div class="command-strip"><code>praxisbase review --auto</code>
 <code>praxisbase promote --auto</code>
 <code>praxisbase wiki build-site --json</code></div>
-  <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16" class="review-card">
-    <p><strong>机器人不回复或交互环境 down/unresponsive 的自动修复路径</strong> <span class="status-pill">待审核</span></p>
-    <p>当用户反馈 OpenClaw bot、交互环境或实例停止回复，且没有明确 billing、quota、payment 原因时，按“控制台自动修复→原会话验证→失败后升级平台支持”处理；避免在已执行 script-based repair 和 AI-based repair 后反复要求用户重复修复。</p>
-    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-down-unresponsive-md-sha256-19c2eeefae289d8d97246f723cdf04f637a16">
+  <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-bot-nonresponse-connector-failure-escalation-md-sha256" class="review-card">
+    <p><strong>机器人无响应、连接器失败或修复流程已耗尽时的处理规则</strong> <span class="status-pill">待审核</span></p>
+    <p>当 OpenClaw 机器人看似无响应、chat connector 失败，或自动脚本修复与 AI 修复均已失败时，先按可验证路径排查后台调用、模型与连接器配置；若修复路径已耗尽，应升级给对应平台支持角色，避免重复执行无效修复。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-bot-nonresponse-connector-failure-escalation-md-sha256">
       <button type="button" data-review-decision="approve">批准</button>
       <button type="button" data-review-decision="reject">拒绝</button>
-      <button type="button" data-review-decision="needs_human">人工跟进</button>
+      <button type="button" data-review-decision="needs_human">标记需修改</button>
       <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
     </div>
     <dl>
-      <dt>目标</dt><dd><code>kb/known-fixes/down-unresponsive.md</code></dd>
+      <dt>目标</dt><dd><code>kb/known-fixes/bot-nonresponse-connector-failure-escalation.md</code></dd>
       <dt>类型</dt><dd>known_fix</dd>
       <dt>范围</dt><dd>team</dd>
       <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
       <dt>来源数</dt><dd>1</dd>
-      <dt>置信度</dt><dd>0.93</dd>
-      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>证据来源只有一条，流程可信但覆盖面有限；遇到明确计费、额度或付款问题时不要套用。; 未提供具体控制台按钮名称或状态字段，执行时需按当前 OpenClaw 控制台界面适配。; 不要收集或记录用户凭据、token、cookie、auth header、私钥等敏感信息；升级时仅附实例标识、症状、已执行修复和验证结果。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
-
-
-      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
-    </dl>
-    <details class="advanced-panel">
-      <summary>高级审核信息</summary>
-      <dl>
-
-
-      </dl>
-    </details>
-    <details>
-      <summary>预览生成的 Markdown</summary>
-      <pre><code># 机器人不回复或交互环境 down/unresponsive 的自动修复路径
-
-## When to Use
-
-在以下情况使用本页：
-
-- 用户反馈 bot 不回复、机器人没反应、停止回复。
-- 用户反馈交互环境 down、unresponsive、实例看似停止工作。
-- 没有明确证据表明问题由 billing、quota、payment、额度耗尽或付费状态导致。
-
-## Symptoms
-
-常见表现：
-
-- 用户发送消息后没有可见回复。
-- 交互环境显示 down、unresponsive 或类似不可用状态。
-- 实例看起来停止工作，但用户无法判断是前端卡住、后端仍在运行，还是实例故障。
-- 用户只描述“机器人没反应”，未提供计费或额度相关报错。
-
-## Procedure
-
-1. **先排除计费/额度路径**
-   - 如果用户明确提到 billing、quota、payment、额度耗尽、付款失败、订阅限制等，不使用本页流程。
-   - 这类问题应转入计费/额度处理路径。
-
-2. **引导用户执行控制台自动修复**
-   - 让用户进入产品控制台。
-   - 找到受影响的 bot、交互环境或实例。
-   - 对该实例执行自动修复。
-
-3. **如果只是“机器人没反应”，先判断是否仍在运行**
-   - 不要立即认定实例已坏。
-   - 先确认后端 tool calls 是否仍在运行、排队或延迟。
-   - 如果后端仍有调度活动，提示用户等待当前调用完成或观察是否有后续响应。
-   - 如确认不是实例故障且可切换模型，再考虑备用模型。
-
-4. **避免重复无效修复**
-   - 如果用户已经执行过 script-based repair 和 AI-based repair，且仍未恢复，不要继续让用户重复同一类修复。
-   - 此时应停止重复排查，转交平台支持处理。
-
-## Verify
-
-修复后让用户做一次可复现验证：
-
-1. 回到原会话或原交互环境。
-2. 重新触发一次明确请求，例如发送一条简单、可回答的指令。
-3. 检查以下任一恢复信号：
-   - 出现新的 bot 回复。
-   - 后端出现新的 tool call、调度活动或执行记录。
-   - 实例状态从 down/unresponsive 恢复为可用。
-
-如果验证仍失败，并且自动修复已执行过，进入升级路径。
-
-## Escalation
-
-升级到平台支持的条件：
-
-- 控制台自动修复后仍无响应。
-- 用户已尝试 script-based repair 和 AI-based repair，问题仍存在。
-- 后端没有新的响应、调度活动或实例恢复迹象。
-- 无明确 billing、quota、payment 原因可解释当前停机。
-
-升级时应附上：
-
-- 受影响实例或 bot 的标识信息。
-- 用户观察到的症状：不回复、down、unresponsive、停止工作等。
-- 已执行的修复方式：自动修复、script-based repair、AI-based repair。
-- 验证结果：原会话重试后是否有回复、是否有后端活动、实例状态是否恢复。
-
-## Reusable Lessons
-
-- 对非计费/额度导致的 bot 不回复或环境 down，优先使用“控制台自动修复→验证→失败后升级”的路径。
-- “机器人没反应”不一定等于实例故障；先确认后端 tool calls 是否仍在运行或延迟。
-- 已执行 script-based repair 和 AI-based repair 后仍失败时，不要反复给出相同修复建议，应转交平台支持。
-- billing、quota、payment 导致的休眠或停机不适用本页，应走计费/额度处理路径。
-
-## Agent Use
-Use this page when:
-- 机器人不回复、交互环境 down/unresponsive、实例看似停止工作.
-
-Apply it by:
-- 让用户进入产品控制台，对受影响实例执行自动修复；若已执行 script-based repair 和 AI-based repair 仍失败，停止重复修复指引并转交平台支持；若只是“机器人没反应”，先确认后端 tool calls 是否仍在运行或延迟，再考虑备用模型。
-
-Verify by:
-- 修复后让用户在原会话重新触发一次明确请求；检查是否出现新的后端响应、调度活动或实例恢复状态。
-
-Do not use it when:
-- The current evidence does not match the symptoms, scope, or provenance on this page.
-
-## Provenance
-- openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319 (sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0)
-</code></pre>
-    </details>
-  </li>
-<li id="pending-wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256" class="review-card">
-    <p><strong>使用受支持的包管理流程安装可复用技能</strong> <span class="status-pill">待审核</span></p>
-    <p>当可复用 review skill 通过 plugin 风格命令安装失败时，不要继续沿用不受支持的插件安装路径；应切换到受支持的 package-manager 工作流。验证以安装命令成功退出、技能在 agent runtime 中可用为准。交互式授权超时导致的文档生成失败不应误判为技能安装失败；恢复检查任务若已发送过通知，静默且幂等是可接受结果。</p>
-    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-install-review-skill-via-package-manager-md-sha256">
-      <button type="button" data-review-decision="approve">批准</button>
-      <button type="button" data-review-decision="reject">拒绝</button>
-      <button type="button" data-review-decision="needs_human">人工跟进</button>
-      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
-    </div>
-    <dl>
-      <dt>目标</dt><dd><code>kb/known-fixes/install-review-skill-via-package-manager.md</code></dd>
-      <dt>类型</dt><dd>known_fix</dd>
-      <dt>范围</dt><dd>team</dd>
-      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76</code></dd>
-      <dt>来源数</dt><dd>1</dd>
       <dt>置信度</dt><dd>0.68</dd>
-      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
+      <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
       <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>证据未提供具体 package-manager 命令、路径或产品版本，因此正文避免编造命令。; 交互式授权细节已泛化处理，未包含任何令牌、凭据、cookie、auth header 或私钥。; 该页面适用于技能安装流程选择与验证，不应扩展为通用授权修复指南。; quality_human_required:generic_applicability; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
+      <dt>风险提示</dt><dd>证据为单一来源，且未提供具体命令、日志样例或平台角色名称；页面保留为通用操作规则。; 未包含凭据、token、cookie、auth header、私钥或原始聊天转录。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
 
 
       <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
@@ -704,315 +642,126 @@ Do not use it when:
     </details>
     <details>
       <summary>预览生成的 Markdown</summary>
-      <pre><code># 使用受支持的包管理流程安装可复用技能
+      <pre><code># 机器人无响应、连接器失败或修复流程已耗尽时的处理规则
 
 ## When to Use
 
-当 OpenClaw 维修或问答机器人需要安装、恢复或排查可复用技能，且出现以下情况时使用本页：
+在以下场景使用本页：
 
-- 使用 plugin 风格命令安装技能失败。
-- 需要确认 review skill 或类似可复用技能是否已正确进入 agent runtime。
-- 安装流程中同时出现其他任务失败，需要区分是安装失败、授权超时，还是恢复检查的正常静默行为。
+- 用户反馈机器人“无响应”“卡住”“没有回复”，但不确定是前端无响应还是后端工具调用仍在运行。
+- chat connector / chat integration 连接失败，疑似与插件启用、服务重启、身份解析、websocket readiness 或集成配置有关。
+- 自动脚本修复已经失败，AI 修复也已经失败，当前机器人仍不能恢复。
+- 需要判断是继续排查，还是升级给平台支持角色。
 
 ## Context
 
-已观察到一次可复用 review skill 安装场景：不受支持的 plugin 风格命令失败后，改用受支持的 package-manager 工作流成功完成安装。可用验证信号包括：安装流程成功退出，以及该技能随后可被 agent runtime 使用。
+此类问题容易出现两个反模式：
 
-同一批操作中还观察到两类容易误判的情况：
-
-- 文档生成请求因交互式授权超时未完成；这不是技能安装成功与否的直接证据。
-- recurring recovery-check task 在先前已经发送过通知时保持静默；该静默行为可视为幂等恢复检查的正常结果，而不是必然故障。
-
-## Fix
-
-1. 如果 plugin 风格安装命令失败，不要重复尝试同一路径。
-2. 切换到受支持的 package-manager 工作流安装可复用技能。
-3. 安装结束后，检查安装进程或安装命令是否成功退出。
-4. 在 agent runtime 中确认目标 skill 已可用。
-5. 如果同时存在文档生成失败，先确认是否由交互式授权超时触发；不要把该失败直接归因于 skill 安装失败。
-6. 如果 recovery-check task 没有输出或没有再次通知，检查是否已有先前通知记录；若已有通知，静默可能是幂等行为。
-
-## Verify
-
-验证时优先使用以下信号：
-
-- package-manager 安装流程返回成功退出状态。
-- 目标 reusable skill 出现在 agent runtime 可调用或可加载的技能集合中。
-- 后续调用该 skill 时，agent runtime 能识别并使用该 skill。
-
-辅助判断：
-
-- 若 recurring recovery-check task 已经发送过通知，再次执行时无新通知、无额外输出，可作为幂等静默行为处理。
-- 若文档生成请求失败且原因是交互式授权超时，应单独处理授权问题，不作为 package-manager 安装失败证据。
-
-## Escalation Boundary
-
-升级给平台或工具链维护者的条件：
-
-- package-manager 工作流也失败，且没有明确的用户操作错误。
-- 安装流程显示成功，但 agent runtime 中仍无法发现或调用该 skill。
-- recovery-check task 静默，但无法确认此前是否已经发送过通知。
-- 交互式授权反复超时，阻塞必要的生成、安装或验证流程。
-
-不要升级的情况：
-
-- 仅 plugin 风格命令失败，但 package-manager 工作流可成功完成安装。
-- recovery-check task 在已有通知后静默，且没有其他故障信号。
-
-## Reusable Lessons
-
-- 对 reusable skill 安装，优先使用受支持的 package-manager 工作流。
-- plugin 风格命令失败后，重复执行同一失败路径通常不是有效修复。
-- 安装验证不能只看“没有报错”；应确认成功退出状态和 agent runtime 可用性。
-- 交互式授权超时会导致相关任务未完成，但应与 skill 安装状态分开判断。
-- 幂等 recovery-check task 可能在已通知后静默；静默本身不一定是异常。
-
-## Agent Use
-Use this page when:
-- A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization=[REDACTED] out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.
-
-Apply it by:
-- Match the current symptom to this page, then apply the documented procedure or fix.
-
-Verify by:
-- A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.
-
-Do not use it when:
-- The current evidence does not match the symptoms, scope, or provenance on this page.
-
-## Provenance
-- openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76 (sha256:4b2bab82717d1c6a48b99900b0de37f55106bbf418441954abeb24c6e3552c5a)
-</code></pre>
-    </details>
-  </li>
-<li id="pending-wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256" class="review-card">
-    <p><strong>scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery</strong> <span class="status-pill">待审核</span></p>
-    <p>当 scheduled-job 返回 client errors、定时通知未发送，并伴随目标 primary session 解析失败时，优先删除失败任务，并用 isolated-session delivery、agent-turn style payload、explicit delivery configuration 重新创建任务。</p>
-    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-scheduled-job-failure-client-errors-primary-session-md-sha256">
-      <button type="button" data-review-decision="approve">批准</button>
-      <button type="button" data-review-decision="reject">拒绝</button>
-      <button type="button" data-review-decision="needs_human">人工跟进</button>
-      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
-    </div>
-    <dl>
-      <dt>目标</dt><dd><code>kb/known-fixes/scheduled-job-failure-client-errors-primary-session.md</code></dd>
-      <dt>类型</dt><dd>known_fix</dd>
-      <dt>范围</dt><dd>team</dd>
-      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab</code></dd>
-      <dt>来源数</dt><dd>1</dd>
-      <dt>置信度</dt><dd>0.93</dd>
-      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>证据来自单条成功经验，适用于 primary session 解析失败相关的 scheduled-job client errors；不应泛化到所有定时任务失败。; 未提供具体控制台路径或命令，执行时需使用当前环境支持的 scheduled job 管理工具完成删除与重建。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
-
-
-      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
-    </dl>
-    <details class="advanced-panel">
-      <summary>高级审核信息</summary>
-      <dl>
-
-
-      </dl>
-    </details>
-    <details>
-      <summary>预览生成的 Markdown</summary>
-      <pre><code># scheduled-job 失败且 primary session 解析失败时重建为 isolated-session delivery
-
-## When to Use
-
-在以下条件同时出现时使用本页：
-
-- scheduled-job 执行失败；
-- 定时通知未按预期发送；
-- 任务返回 `client errors`；
-- 错误或诊断信息指向目标 `primary session` 解析失败。
+1. **把延迟误判为故障**：机器人表面无回复，但后端 tool call 可能仍在运行或排队延迟。
+2. **重复执行已失败的修复**：自动脚本修复和 AI 修复都失败后，继续反复执行同一类修复通常不会增加成功率，反而延误升级。
 
 ## Symptoms
 
-常见表现：
+可能出现的症状包括：
 
-- recurring / scheduled notification 到点后未投递；
-- scheduled job 状态显示失败；
-- 失败原因包含 `client errors`；
-- 任务无法解析或定位目标 `primary session`。
+- 机器人界面长时间没有新消息。
+- 用户认为 bot 未响应，但系统侧可能仍有后台调用未完成。
+- chat connector 无法连接或无法解析对应身份。
+- websocket 未就绪或连接不稳定。
+- 服务健康检查异常。
+- 集成配置变更后，chat 功能失效。
+- 自动化修复流程执行过，但问题未解除。
 
-## Fix
+## What To Do
 
-可靠绕过方式是不要继续修补原失败任务，而是重建为隔离会话投递模式：
+### 1. 先确认是否真的“无响应”
 
-1. 删除失败的 scheduled jobs。
-2. 按 `isolated-session delivery` 方式重新创建定时任务。
-3. 将 payload 调整为 `agent-turn style payload`。
-4. 补齐 `explicit delivery configuration`，避免依赖隐式 primary session 解析。
-5. 保存并启用新任务。
+不要只依据前端静止状态判断故障。先检查后端是否仍有工具调用在运行、排队或延迟返回。
+
+操作规则：
+
+- 查看对应会话、任务或请求的后台执行状态。
+- 确认是否存在仍在运行的 tool call。
+- 如果后端仍在运行，先等待合理时间或继续观察，不要立即重启或重复提交修复。
+- 如果后端调用已失败、超时或没有任何活动，再进入下一步。
+
+### 2. 必要时切换备用模型验证
+
+如果机器人表面无响应且后端调用没有正常推进，可尝试使用 alternate model 进行对照验证。
+
+适用方式：
+
+- 使用同一问题或同类请求，在备用模型上测试。
+- 如果备用模型正常，问题可能与当前模型、模型路由、模型负载或模型侧延迟有关。
+- 如果备用模型也失败，继续检查连接器、服务健康和集成配置。
+
+### 3. chat connector 失败时检查插件与服务状态
+
+对 chat connector / chat integration 失败，优先检查配置和运行状态，而不是直接重建集成。
+
+检查顺序：
+
+1. 确认 chat plugin 已启用。
+2. 如近期有配置变更或插件状态异常，重启相关服务。
+3. 验证 connector identity resolution 是否正常。
+4. 验证 websocket readiness 是否正常。
+5. 验证 service health 是否正常。
+6. 核对 integration configuration 是否正确、完整且与当前环境一致。
+
+### 4. 自动脚本修复和 AI 修复都失败后，不要重复修复
+
+如果已经满足以下条件：
+
+- automated script repair 已执行并失败；
+- AI repair 已执行并失败；
+- 基础诊断仍不能定位或恢复；
+
+则应停止重复执行同一类修复步骤，升级给合适的平台支持角色。
+
+升级时应提供：
+
+- 已执行的修复类型：script repair、AI repair。
+- 当前症状：无响应、connector failure、websocket 未就绪、身份解析失败等。
+- 已验证项：后台 tool call 状态、备用模型结果、plugin 启用状态、服务重启结果、health/readiness 结果、integration configuration 检查结果。
+- 最近一次可复现时间和影响范围。
 
 ## Verify
+
+按场景选择验证方式：
+
+### 验证机器人无响应
+
+- 后端 tool call 状态清晰：仍在运行、已完成、已失败或已超时。
+- 如果切换 alternate model，记录备用模型是否能正常响应。
+- 如果原模型恢复，确认用户侧可以收到完整回复。
+
+### 验证 chat connector 修复
 
 确认以下结果：
 
-- 原失败 scheduled jobs 已删除；
-- 新 scheduled job 已按 `isolated-session delivery` 模式创建；
-- payload 使用 `agent-turn style`；
-- delivery configuration 为显式配置；
-- 新任务到触发时间后能按预期投递通知；
-- 不再出现目标 `primary session` 解析失败导致的 `client errors`。
+- chat plugin 已启用。
+- 相关服务已重启且无启动错误。
+- connector identity resolution 可正常解析。
+- websocket readiness 通过。
+- service health 正常。
+- integration configuration 与当前环境匹配。
+- 用户或测试会话可以通过 chat connector 正常收发消息。
+
+### 验证是否需要升级
+
+如果以下全部成立，应升级：
+
+- 自动脚本修复失败。
+- AI 修复失败。
+- 后台调用、备用模型、插件启用、服务重启、身份解析、websocket readiness、服务健康、集成配置等关键检查无法恢复问题。
 
 ## Reusable Lessons
 
-- 当 scheduled-job 的失败点是目标 `primary session` 解析，而不是通知内容本身时，重建任务通常比修复原任务更可靠。
-- `isolated-session delivery` 可绕过对原 primary session 的脆弱依赖。
-- `agent-turn style payload` 与 `explicit delivery configuration` 应一起使用，避免投递上下文不完整。
-- 不要把此修复用于所有定时通知失败；只有在 `client errors` 与 primary session 解析失败相关时才复用。
-
-## Agent Use
-Use this page when:
-- scheduled-job failure、定时通知未发送、任务返回 client errors、目标 primary session 解析失败.
-
-Apply it by:
-- 删除失败的 scheduled jobs；按 isolated-session delivery 方式重新创建任务；payload 使用 agent-turn style；补齐 explicit delivery configuration。
-
-Verify by:
-- 失败任务已删除并以工作模式重建；新任务能按预期投递通知。
-
-Do not use it when:
-- The current evidence does not match the symptoms, scope, or provenance on this page.
-
-## Provenance
-- openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab (sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f)
-</code></pre>
-    </details>
-  </li>
-<li id="pending-wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66" class="review-card">
-    <p><strong>自动修复失败、机器人无响应与聊天连接器故障的处理规则</strong> <span class="status-pill">待审核</span></p>
-    <p>当脚本修复和 AI 修复均已失败时，不要重复执行同类修复，应升级给对应平台支持角色。对机器人疑似无响应，先确认后端工具调用是否仍在运行或延迟，再必要时切换模型。对聊天连接器故障，检查聊天插件启用状态、重启服务，并验证连接器身份解析、WebSocket 就绪、服务健康和集成配置。</p>
-    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-wiki-md-sha256-8107f53d41b075081cde7779e95258bc63b62537ac21b39f66">
-      <button type="button" data-review-decision="approve">批准</button>
-      <button type="button" data-review-decision="reject">拒绝</button>
-      <button type="button" data-review-decision="needs_human">人工跟进</button>
-      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
-    </div>
-    <dl>
-      <dt>目标</dt><dd><code>kb/known-fixes/wiki.md</code></dd>
-      <dt>类型</dt><dd>known_fix</dd>
-      <dt>范围</dt><dd>team</dd>
-      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
-      <dt>来源数</dt><dd>1</dd>
-      <dt>置信度</dt><dd>0.68</dd>
-      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-      <dt>审核原因</dt><dd>new_canonical_topic; duplicate_source_hash</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>证据来自单一来源，未提供具体命令、日志样例或平台角色名称；执行时需结合本地运行手册确认健康检查入口和升级对象。; 不要将“切换模型”作为替代后端状态检查的第一步；否则可能造成重复请求或掩盖长耗时工具调用。; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
-
-
-      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
-    </dl>
-    <details class="advanced-panel">
-      <summary>高级审核信息</summary>
-      <dl>
-
-
-      </dl>
-    </details>
-    <details>
-      <summary>预览生成的 Markdown</summary>
-      <pre><code># 自动修复失败、机器人无响应与聊天连接器故障的处理规则
-
-## When to Use
-
-在以下任一场景使用本页：
-
-- OpenClaw 自动化脚本修复已执行但未解决问题。
-- AI repair / AI 自动修复也已尝试且失败。
-- 用户反馈机器人“没有回复”“卡住”“一直等待”，但不确定后端是否仍在处理。
-- 聊天连接器失败、机器人无法接入聊天渠道、连接器身份或 WebSocket 状态异常。
-
-## Symptoms
-
-常见表现：
-
-- 自动脚本修复完成后，故障仍存在。
-- AI 修复给出方案或执行后，问题仍未恢复。
-- 前端看起来机器人无响应，但可能是后端 tool call 仍在运行、排队或延迟返回。
-- 聊天插件或聊天连接器相关功能不可用。
-- 连接器身份解析失败、WebSocket 未就绪、服务健康检查异常或集成配置不一致。
-
-## Operating Rule
-
-### 1. 脚本修复和 AI 修复都失败后：停止重复修复，升级处理
-
-如果已经确认：
-
-1. 自动化脚本修复已运行；并且
-2. AI repair / AI 自动修复也已尝试；并且
-3. 两者均未恢复服务或未定位可执行修复；
-
-则不要继续重复执行同类修复步骤。应将工单升级给对应的平台支持角色或平台维护人员。
-
-升级时至少附带：
-
-- 已执行的脚本修复名称或步骤。
-- AI 修复尝试的结论。
-- 当前仍存在的症状。
-- 可用的健康检查、连接器状态、后端调用状态或错误信息。
-
-### 2. 机器人疑似无响应：先查后端工具调用，再考虑切换模型
-
-不要仅凭前端“没有立即回复”判断机器人已失败。按顺序处理：
-
-1. 检查后端是否仍有 tool call、任务、队列或外部调用在运行。
-2. 判断是否为后端调用耗时、排队或延迟返回。
-3. 如果后端仍在执行，等待合理时间并继续观察，不要重复提交相同请求。
-4. 如果确认后端没有活动调用、请求已失败或模型长时间无有效输出，可尝试使用备用模型重新发起。
-5. 若备用模型也失败，并且没有新的可执行修复路径，按升级规则处理。
-
-### 3. 聊天连接器故障：检查插件启用、重启服务并验证连接链路
-
-对 chat connector / 聊天连接器异常，优先确认配置和运行状态：
-
-1. 确认 chat plugin / 聊天插件已启用。
-2. 若插件刚启用或配置刚变更，重启相关服务。
-3. 验证连接器身份解析是否正常。
-4. 验证 WebSocket readiness / WebSocket 就绪状态。
-5. 验证服务健康状态。
-6. 验证集成配置是否正确，例如连接器与目标聊天渠道、机器人身份、回调或集成项是否匹配。
-
-## Verify
-
-### 自动修复失败场景
-
-确认以下事实后才升级：
-
-- 脚本修复确实已执行，不是未运行或中途失败未确认。
-- AI repair 确实已尝试，且没有产生有效恢复。
-- 当前症状仍可复现。
-- 没有新的、明确的、低风险修复动作可执行。
-
-### 机器人无响应场景
-
-验证重点：
-
-- 后端是否仍有运行中的 tool call 或延迟中的请求。
-- 前端无响应是否只是等待后端返回。
-- 切换备用模型后是否恢复响应。
-- 若切换模型恢复，记录原模型、备用模型和触发条件。
-
-### 聊天连接器场景
-
-验证重点：
-
-- 聊天插件处于 enabled 状态。
-- 服务重启后配置已生效。
-- 连接器身份能够解析到预期机器人或集成身份。
-- WebSocket readiness 正常。
-- 服务健康检查正常。
-- 集成配置与目标聊天渠道一致。
-
-## Reusable Lessons
-
-- 脚本修复与 AI 修复都失败后，继续重复同类修复通常会浪费时间并增加风险，应升级到平台支持角色。
-- “机器人没回复”不等于机器人故障；先确认后端工具调用是否仍在运行或延迟。
-- 在模型疑似卡住时，备用模型是可复用的排查手段，但不应掩盖后端工具调用未完成的问题。
-- 聊天连接器故障常见根因包括插件未启用、服务未重启导致配置未生效、身份解析异常、WebSocket 未就绪、服务健康异常或集成配置错误。
+- 机器人“看似无响应”不等于后端已经失败；必须先确认 tool call 是否仍在运行或延迟。
+- alternate model 是区分模型侧问题与平台/连接器问题的实用对照方法。
+- chat connector 故障应优先检查插件启用、服务重启、身份解析、websocket readiness、service health 和 integration configuration。
+- 当 automated script repair 与 AI repair 都失败后，应升级给平台支持角色，不要重复执行相同修复路径。
+- 升级前应收集已执行动作和验证结果，便于平台支持快速接手。
 
 ## Agent Use
 Use this page when:
@@ -1034,25 +783,25 @@ Do not use it when:
 </code></pre>
     </details>
   </li>
-<li id="pending-wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913" class="review-card">
-    <p><strong>隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与</strong> <span class="status-pill">待审核</span></p>
-    <p>跨无关工具或 agent 复用同一聊天机器人身份或配置，可能导致 bot 漏回复、重复回复、普通消息也被错误参与处理，或多个 agent 行为相互干扰。应为无关用途使用独立 bot identity/configuration，明确触发条件，并检查 bot visibility。</p>
-    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-pitfalls-bot-agent-md-sha256-98477e0c83e3cf77dd2847d198b3a5a70e8fde0af4983913">
+<li id="pending-wiki-curated_kb-known-fixes-sandbox-bot-instance-unresponsive-auto-repair-md-sha256" class="review-card">
+    <p><strong>沙箱、Bot 或实例无响应时优先使用控制台自动修复</strong> <span class="status-pill">待审核</span></p>
+    <p>当用户反馈 sandbox、bot 或实例宕机、卡住、不可访问或无响应时，先引导用户在控制台使用实例自动修复功能；优先尝试脚本修复，再尝试 AI 修复。若用户已确认两种修复都失败，应升级给对应 on-call 或服务负责人，不要重复相同修复话术。该流程不适用于计费、配额或付款后休眠类问题。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-sandbox-bot-instance-unresponsive-auto-repair-md-sha256">
       <button type="button" data-review-decision="approve">批准</button>
       <button type="button" data-review-decision="reject">拒绝</button>
-      <button type="button" data-review-decision="needs_human">人工跟进</button>
+      <button type="button" data-review-decision="needs_human">标记需修改</button>
       <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
     </div>
     <dl>
-      <dt>目标</dt><dd><code>kb/pitfalls/bot-agent.md</code></dd>
-      <dt>类型</dt><dd>pitfall</dd>
+      <dt>目标</dt><dd><code>kb/known-fixes/sandbox-bot-instance-unresponsive-auto-repair.md</code></dd>
+      <dt>类型</dt><dd>known_fix</dd>
       <dt>范围</dt><dd>team</dd>
-      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77</code></dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3</code></dd>
       <dt>来源数</dt><dd>1</dd>
-      <dt>置信度</dt><dd>0.93</dd>
-      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
+      <dt>置信度</dt><dd>0.63</dd>
+      <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
       <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>证据来源为单条经验记录，适合作为操作性排障规则，但仍需结合实际 bot 平台配置验证。; 未包含具体平台的配置界面路径或命令；仅保留通用操作边界，避免编造实现细节。; 不适用于同一工具多会话的正常共享场景，也不替代认证、网络或服务宕机排查。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:team_or_global_scope</dd>
+      <dt>风险提示</dt><dd>证据来源仅 1 条，未提供具体控制台路径或按钮名称；页面避免编造 UI 细节。; 未包含命令级验证方法；验证依赖用户确认实例是否恢复响应。; 需避免将该流程套用于计费、配额或付款后休眠问题。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
 
 
       <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
@@ -1066,121 +815,339 @@ Do not use it when:
     </details>
     <details>
       <summary>预览生成的 Markdown</summary>
-      <pre><code># 隔离不同用途的 Bot 身份与配置，避免漏回复、重复回复或过度参与
+      <pre><code># 沙箱、Bot 或实例无响应时优先使用控制台自动修复
 
 ## When to Use
 
-当 OpenClaw 的聊天机器人、Q&amp;A bot、维修辅助 agent 或其他自动回复 agent 出现以下现象时使用本页：
+在用户报告以下情况时使用本页：
 
-- bot 漏回复：该响应时没有响应。
-- bot 重复回复：同一问题被多个 agent 或同一 bot 多次处理。
-- bot 过度参与：普通聊天、非服务请求、非直接调用消息也触发回复。
-- 多个无关 agent 行为相互干扰，难以判断哪个配置在生效。
-- 用户找不到 bot、无法添加 bot，怀疑是 bot visibility 配置问题。
+- sandbox、bot、instance 无响应、宕机、卡住或无法访问。
+- 用户描述实例“down”“not responding”“unresponsive”“打不开”“机器人不工作”等运行态异常。
+- 尚未确认用户已经完成控制台内的两种自动修复方式。
 
 ## Context
 
-该问题通常不是单次模型生成质量问题，而是 bot identity/configuration 被跨无关用途复用导致的运行边界混乱。
+此类问题的首选处理路径是让用户使用控制台的实例自动修复功能，而不是直接升级或反复要求用户重启。自动修复应按顺序尝试：
 
-常见高风险模式：
+1. 先尝试 script-based repair。
+2. 再尝试 AI-based repair。
+3. 若两者都失败，再升级给对应 on-call 或服务负责人。
 
-- 多个无关工具共用同一个 bot identity。
-- 多个 agent 共用同一套触发配置、权限或可见性设置。
-- bot 没有明确触发条件，导致普通消息也被当作任务请求。
-- 为了快速上线，把已有 bot 配置复制给新用途，但没有隔离身份、触发规则和可见性。
+## Procedure
 
-## 症状
-
-可观察到的症状包括：
-
-1. **漏回复**：用户直接调用 bot 或提交清晰服务故障报告，但 bot 没有稳定响应。
-2. **重复回复**：同一消息被两个以上 agent 同时响应，或同一 bot 以不同配置路径重复处理。
-3. **不该回复也回复**：普通群聊、旁路讨论、非维修请求触发 bot 回答。
-4. **行为相互污染**：一个用途的提示词、路由规则、权限或上下文影响另一个无关用途。
-5. **可见性异常**：用户找不到 bot、无法添加 bot，或只有部分用户能看到。
-
-## Operating Rule
-
-不要让无关工具或无关 agent 复用同一个 bot identity/configuration。
-
-推荐规则：
-
-- 一个明确用途对应一个独立 bot identity/configuration。
-- 无关用途必须隔离身份、触发条件、权限、可见性和路由规则。
-- bot 默认保持静默，只在满足明确触发条件时回复。
-- 触发条件应优先限定为：
-  - 用户直接调用 bot；或
-  - 用户提交清晰的服务故障报告、维修请求、Q&amp;A 请求。
-- 普通聊天、无明确请求的上下文、非服务故障报告不应触发 bot 回复。
-- 如果用户找不到或无法添加 bot，应检查 bot visibility，而不是只排查模型或网络问题。
-
-## Fix
-
-按以下步骤处理：
-
-1. **确认是否存在跨用途复用**
-   - 检查当前异常 bot 是否被多个无关工具、频道、agent 或自动化流程共用。
-   - 检查是否共用同一 bot identity、同一套触发规则、同一权限或同一 visibility 配置。
-
-2. **拆分无关用途**
-   - 为无关工具或 agent 创建独立的 `bot identity/configuration`。
-   - 不要把维修问答、普通客服、告警处理、测试 agent 等无关职责混在同一个 bot 身份下。
-
-3. **收紧触发条件**
-   - 明确配置 bot 何时可以回复。
-   - 默认静默。
-   - 仅在直接调用、明确 mention、命令式请求，或清晰服务故障报告场景下回复。
-   - 对普通消息、闲聊、旁路讨论设置为不响应。
-
-4. **检查可见性**
-   - 如果用户反馈找不到 bot 或无法添加 bot，进入 `bot administration console`。
-   - 检查并调整 `bot visibility`。
-   - 确认目标用户、团队、频道或工作区对该 bot 可见。
-
-5. **避免误用同一工具多会话场景**
-   - 如果只是同一工具的多个正常会话共享同一 bot，并且没有跨无关工具或 agent 的身份/配置复用，不要套用本规则强制拆分。
-   - 本页适用于“跨无关用途复用”造成的边界混乱。
+1. 确认问题类型是实例运行态异常：sandbox、bot 或 instance 无响应、宕机或不可用。
+2. 引导用户进入控制台，找到该实例的 auto-repair / instance auto-repair 功能。
+3. 要求用户先执行 script-based repair。
+4. 若 script-based repair 未恢复，再要求用户执行 AI-based repair。
+5. 如果用户明确表示 script-based repair 和 AI-based repair 都已经尝试且失败：
+   - 不要继续重复“请尝试自动修复”的指导。
+   - 收集必要上下文后升级给对应 on-call 或服务 owner。
 
 ## Verify
 
-修复后按以下结果验证：
+让用户确认以下结果：
 
-- 隔离后的 bot 不再对同一消息重复回复。
-- 直接调用 bot 时能稳定回复。
-- 清晰服务故障报告能触发正确 agent 响应。
-- 普通聊天、无明确请求的消息保持静默。
-- 不同 agent 的回复行为不再互相影响。
-- 用户此前找不到或无法添加 bot 的场景，在调整 `bot visibility` 后恢复正常。
+- script-based repair 是否已执行。
+- AI-based repair 是否已执行。
+- 执行后 sandbox、bot 或 instance 是否恢复响应。
+- 若未恢复，确认用户已完成两种修复方式后再升级。
 
-如果仍然异常，继续检查：
+可接受的验证结论：
 
-- 是否还有隐藏的共享配置或旧 webhook/route 未清理。
-- 是否有多个 agent 订阅同一触发事件。
-- 是否触发规则过宽，例如所有频道消息都进入自动回复链路。
+- 已恢复：关闭该运行态故障处理流程。
+- 未恢复且只尝试了一种修复：继续引导尝试另一种修复。
+- 未恢复且两种修复都失败：升级到对应 on-call 或服务负责人。
+
+## Escalation Boundary
+
+立即升级而不是重复修复指导的条件：
+
+- 用户已明确确认 script-based repair 失败。
+- 用户已明确确认 AI-based repair 失败。
+- 问题仍然表现为 sandbox、bot 或 instance 无响应或不可用。
+
+升级时应说明：用户已尝试控制台实例自动修复中的 script-based repair 和 AI-based repair，均未解决。
 
 ## Reusable Lessons
 
-- 跨无关用途复用同一聊天机器人身份或配置，会增加漏回复、重复回复和过度参与的风险。
-- bot 应默认静默，仅在直接调用或清晰服务故障报告等明确场景下响应。
-- 多个 agent 行为相互干扰时，优先检查身份、配置、触发规则和可见性是否被复用。
-- 用户找不到或无法添加 bot 时，应检查 `bot visibility`，必要时到 `bot administration console` 调整。
-- 不要把本经验用于同一工具的多会话正常共享；问题必须体现跨无关工具或 agent 的身份/配置复用风险。
+- 对 sandbox、bot 或 instance 无响应类问题，优先使用控制台 instance auto-repair。
+- 自动修复顺序应为：先 script-based repair，后 AI-based repair。
+- 用户已确认两种修复都失败时，应升级给 on-call 或服务 owner，不要重复同一修复建议。
+- 不要把该流程误用于计费、配额或付款后休眠问题。
 
 ## Agent Use
 Use this page when:
-- bot 漏回复、重复回复、不该回复的普通消息也参与、多个 agent 行为相互干扰.
+- For user reports that a sandbox, bot, or instance is down or unresponsive, first direct them to use the console’s instance auto-repair feature. Recommend trying script-based repair before AI-based repair, and avoid applying this flow to billing, quota, or post-payment sleep issues. If the user already confirms both repair methods failed, escalate to the appropriate on-call or service owner rather than repeating the same repair guidance.
 
 Apply it by:
-- 为无关工具或 agent 使用独立 bot identity/configuration；明确配置触发条件，默认保持静默，仅在直接调用或清晰服务故障报告时回复；检查 bot visibility，若用户找不到或无法添加 bot，到 bot administration console 调整可见性。
+- Match the current symptom to this page, then apply the documented procedure or fix.
 
 Verify by:
-- 隔离后 bot 不再重复或漏回复；非触发普通消息保持静默；直接调用时能稳定回复。
+- Confirm the original symptom no longer reproduces and record the verification result.
 
 Do not use it when:
 - The current evidence does not match the symptoms, scope, or provenance on this page.
 
 ## Provenance
-- openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77 (sha256:98477e0c83e3cf77dd2847d198b3a5a70e8fde0af498391389971b86c1b05e20)
+- openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3 (sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-known-fixes-wiki-md-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811" class="review-card">
+    <p><strong>无法访问需评审的团队文档时的处理规则</strong> <span class="status-pill">待审核</span></p>
+    <p>当用户要求评审链接文档，但机器人或可用服务账号没有读取权限时，不要尝试绕过鉴权；应告知权限问题，并要求用户粘贴内容或调整文档权限后再继续。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-known-fixes-wiki-md-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811">
+      <button type="button" data-review-decision="approve">批准</button>
+      <button type="button" data-review-decision="reject">拒绝</button>
+      <button type="button" data-review-decision="needs_human">标记需修改</button>
+      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
+    </div>
+    <dl>
+      <dt>目标</dt><dd><code>kb/known-fixes/wiki.md</code></dd>
+      <dt>类型</dt><dd>known_fix</dd>
+      <dt>范围</dt><dd>team</dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5</code></dd>
+      <dt>来源数</dt><dd>1</dd>
+      <dt>置信度</dt><dd>0.53</dd>
+      <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+      <dt>风险提示</dt><dd>证据仅来自一次案例，未提供具体文档平台或权限配置命令。; 不得记录或请求用户凭据、认证令牌、Cookie、私钥或其他敏感访问材料。; 本页只覆盖读取权限不足的处理规则，不覆盖文档解析失败或平台故障排查。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
+
+
+      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+
+
+      </dl>
+    </details>
+    <details>
+      <summary>预览生成的 Markdown</summary>
+      <pre><code># 无法访问需评审的团队文档时的处理规则
+
+## When to Use
+
+当 OpenClaw 问答或支持机器人收到“请评审/总结/修改某个团队文档”的请求，但只能拿到文档链接，且访问该链接需要认证或额外授权时使用本页。
+
+## Context
+
+典型场景：
+
+- 用户提供团队文档链接，要求机器人进行评审或处理。
+- 通过已批准的集成访问路径无法读取文档。
+- 通过浏览器式检索路径也无法读取文档。
+- 当前可用服务账号不具备该文档的读取权限。
+
+## Symptoms
+
+可复用的判断信号：
+
+- 文档链接打开失败，原因是需要登录、授权或访问被拒绝。
+- 服务账号或集成身份没有 read 权限。
+- 机器人无法看到文档正文，只能看到链接或权限错误。
+- 用户期望机器人评审内容，但机器人没有可审阅的实际文本。
+
+## Operating Rule
+
+不要尝试绕过权限、猜测文档内容或要求使用非批准账号访问。
+
+正确处理方式：
+
+1. 明确告知用户：当前机器人无法读取该文档，因为可用访问身份缺少读取权限。
+2. 请用户选择以下任一方式继续：
+   - 直接把需要评审的文档内容粘贴到对话中；或
+   - 将文档权限调整为机器人/服务账号/已批准集成可读；或
+   - 提供一个当前工作流允许访问的导出文本、截图文字转录或共享副本。
+3. 在获得实际内容前，不要开始内容评审、质量判断、合规结论或修改建议。
+4. 如果用户只要求排查“为什么访问不了”，则可说明这是权限/授权边界问题，而不是文档内容问题。
+
+## Verify
+
+继续处理前确认以下任一条件成立：
+
+- 用户已粘贴完整或足够的文档正文；或
+- 用户确认已调整权限，并且机器人重新访问后能读取正文；或
+- 用户提供了可访问的替代文本来源。
+
+验证失败时，应继续阻塞文档评审，并再次说明需要正文或读取权限。
+
+## Reusable Lessons
+
+- 链接存在不等于机器人有权读取内容。
+- 文档评审类任务必须基于可见正文，不应基于标题、URL、文件名或用户对内容的模糊描述编造结论。
+- 权限不足时，最佳下一步是让用户粘贴内容或调整权限，而不是反复尝试多个未授权访问路径。
+- 机器人应使用已批准的集成和访问身份；不要请求、保存或使用私人凭据。
+
+## Agent Use
+Use this page when:
+- A request to review a team document could not be completed because the linked document required authentication and the available service accounts lacked the necessary read permissions. Attempts to access through approved integration and browser-based retrieval paths all failed due to authorization=[REDACTED] The responder informed the requester of the access issue and asked them to either paste the document contents or adjust document permissions before review could proceed.
+
+Apply it by:
+- Match the current symptom to this page, then apply the documented procedure or fix.
+
+Verify by:
+- Confirm the original symptom no longer reproduces and record the verification result.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5 (sha256:dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811eb4ae5cf97de3f)
+</code></pre>
+    </details>
+  </li>
+<li id="pending-wiki-curated_kb-pitfalls-avoid-reusing-messaging-bot-identity-md-sha256-0a314c00a6f1bf3b" class="review-card">
+    <p><strong>避免在无关工具间复用同一消息平台 Bot 身份</strong> <span class="status-pill">待审核</span></p>
+    <p>消息平台 Bot 集成时，不要在无关工具或不同代理之间复用同一 Bot 身份或配置。复用可能导致漏回复、重复回复或 Bot 在非触发场景中过度参与。应为不同用途隔离 Bot 身份、触发条件和配置，并验证 Bot 只在被明确调用时响应。</p>
+    <div class="approval-actions" data-review-actions data-proposal-id="wiki-curated_kb-pitfalls-avoid-reusing-messaging-bot-identity-md-sha256-0a314c00a6f1bf3b">
+      <button type="button" data-review-decision="approve">批准</button>
+      <button type="button" data-review-decision="reject">拒绝</button>
+      <button type="button" data-review-decision="needs_human">标记需修改</button>
+      <span class="approval-status" data-review-status>需启动 praxisbase review serve</span>
+    </div>
+    <dl>
+      <dt>目标</dt><dd><code>kb/pitfalls/avoid-reusing-messaging-bot-identity.md</code></dd>
+      <dt>类型</dt><dd>pitfall</dd>
+      <dt>范围</dt><dd>team</dd>
+      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0</code></dd>
+      <dt>来源数</dt><dd>1</dd>
+      <dt>置信度</dt><dd>0.63</dd>
+      <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+      <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+      <dt>风险提示</dt><dd>证据只有一条，且未包含具体平台名称、配置项名称或命令级验证方法；页面保留为通用操作规则。; 未包含凭据、令牌、cookie、认证头或私钥。; 不应将本页当作特定消息平台的完整配置手册；实际拆分 Bot 身份和事件订阅时仍需参考对应平台文档。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
+
+
+      <dt>建议命令</dt><dd><code>praxisbase review --auto</code></dd>
+    </dl>
+    <details class="advanced-panel">
+      <summary>高级审核信息</summary>
+      <dl>
+
+
+      </dl>
+    </details>
+    <details>
+      <summary>预览生成的 Markdown</summary>
+      <pre><code># 避免在无关工具间复用同一消息平台 Bot 身份
+
+## When to Use
+
+当排查 OpenClaw 相关问答机器人、维修机器人或其他自动化代理接入消息平台后的异常响应行为时使用本页，尤其是：
+
+- 同一消息平台 Bot 被多个无关工具、代理或集成同时使用。
+- Bot 偶发不回复、漏回复或重复回复。
+- Bot 在没有被明确触发时也参与对话。
+- 需要判断一个 Bot 集成是否应拆分为独立身份或独立配置。
+
+## Context
+
+消息平台 Bot 集成中，一个常见陷阱是：为了方便，把同一个 Bot 身份或同一套配置复用到多个无关工具、自动化代理或工作流中。
+
+这种复用会让不同系统共享同一入口、触发规则或响应上下文，容易造成行为不可靠：
+
+- 某些请求没有被目标代理处理，表现为漏回复。
+- 多个代理同时认为自己被触发，表现为重复回复。
+- Bot 在未被明确调用的频道、线程或消息中发言，表现为过度参与。
+
+期望行为是：Bot 在明确触发条件之外保持静默，只在被直接调用或满足约定触发条件时响应。
+
+## Operating Rule
+
+不要在无关工具、不同代理或不同用途的消息平台集成之间复用同一 Bot 身份或同一套配置。
+
+建议规则：
+
+1. **按用途隔离 Bot 身份**
+   - 一个 Bot 身份只服务一个明确用途、工具或代理职责。
+   - 无关的自动化机器人不要共用同一个 Bot 账号、应用身份或响应配置。
+
+2. **隔离触发条件**
+   - 每个 Bot 应有明确的触发条件，例如直接提及、指定命令、指定频道或指定线程。
+   - 不应让多个代理监听同一组宽泛触发条件，除非有明确仲裁机制。
+
+3. **避免共享模糊配置**
+   - 不要让多个无关代理共享同一 webhook、事件订阅、路由规则或响应开关。
+   - 如果必须共享底层入口，应增加清晰的路由层，确保每条消息只交给一个目标代理处理。
+
+4. **默认静默**
+   - Bot 在未满足显式触发条件时应保持沉默。
+   - 不要让 Bot 对所有频道消息、所有线程回复或所有相似关键词自动响应。
+
+## Symptoms
+
+优先检查是否存在 Bot 身份或配置复用，若出现以下现象：
+
+- Bot 有时不回应直接请求。
+- 同一问题收到多个相似或重复回复。
+- Bot 在没有被 @、没有命令、没有明确调用时主动回复。
+- 用户反馈机器人“抢答”“乱入”或“有时不工作”。
+- 不同工具或代理的回复风格、功能边界混在同一个 Bot 中。
+
+## Fix
+
+处理步骤：
+
+1. **盘点 Bot 归属**
+   - 确认当前消息平台 Bot 身份被哪些工具、代理、自动化流程使用。
+   - 标出哪些使用方是无关职责，例如维修问答、告警通知、任务派发、内部测试代理等。
+
+2. **拆分无关用途**
+   - 为无关工具或不同代理创建独立 Bot 身份或独立应用配置。
+   - 如果无法立即拆分身份，至少拆分触发规则和消息路由规则。
+
+3. **收紧触发条件**
+   - 限制 Bot 只响应明确调用，例如直接提及、指定命令或明确路由事件。
+   - 移除会导致泛监听的规则，例如默认监听所有频道消息后自动回复。
+
+4. **消除重复处理路径**
+   - 检查是否同一消息同时被多个代理或多个处理器消费。
+   - 确保每条用户消息只由预期的 Bot/代理处理一次。
+
+5. **记录边界**
+   - 在集成文档中写明：该 Bot 的用途、触发条件、不响应场景、维护负责人。
+   - 对 OpenClaw 维修和问答机器人，明确哪些消息属于机器人处理范围，哪些应保持静默或转人工。
+
+## Verify
+
+完成调整后，用行为验证而不是只看配置是否保存：
+
+- 在非触发场景发送普通消息，确认 Bot 保持静默。
+- 使用明确触发方式调用目标 Bot，确认只出现一次预期回复。
+- 在多个相关频道或线程中测试，确认没有其它代理抢答。
+- 重复发送几次相同触发请求，确认不再出现随机漏回复或重复回复。
+- 观察一段实际使用窗口，确认用户不再反馈“重复回复”“漏回复”或“未调用也回复”。
+
+可接受结果：
+
+- Bot 只在直接调用或明确触发条件满足时响应。
+- 非触发消息无回复。
+- 同一触发请求只产生一个目标回复。
+- 未观察到因身份或配置复用导致的漏回复、重复回复。
+
+## Reusable Lessons
+
+- 消息平台 Bot 的身份和配置是运行边界，不只是显示名称；无关系统复用会制造路由和响应冲突。
+- 机器人集成应遵循“默认静默、显式触发、单一路由”的原则。
+- 对 OpenClaw 维修和问答机器人，应优先保证可预测响应：该回答时只回答一次，不该回答时完全不参与。
+- 当出现漏回复或重复回复时，不要只检查模型或回答逻辑，也要检查 Bot 身份、事件订阅和触发规则是否被多个无关工具复用。
+
+## Agent Use
+Use this page when:
+- A messaging-platform bot integration was clarified to avoid reusing the same bot identity or configuration across unrelated tools and agents. Reuse can cause unreliable behavior such as missed responses or duplicate replies. The expected bot behavior is to stay silent outside explicit trigger conditions and respond only when directly invoked, with verification based on the bot no longer over-participating or producing duplicate/missing replies.
+
+Apply it by:
+- Match the current symptom to this page, then apply the documented procedure or fix.
+
+Verify by:
+- Confirm the original symptom no longer reproduces and record the verification result.
+
+Do not use it when:
+- The current evidence does not match the symptoms, scope, or provenance on this page.
+
+## Provenance
+- openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0 (sha256:e1db2413e8b62d54183c9d6ec82b8a0492a0c0b57e2e12407091005631d645e1)
 </code></pre>
     </details>
   </li></ol>
@@ -1201,21 +1168,28 @@ Do not use it when:
   <div class="section-heading">
     <div>
       <h2><span id="privacy-required"></span>隐私待确认</h2>
-      <p>最新 daily 阻塞 14 条；历史待处理 38 条。</p>
+      <p>本次待确认 19 条，历史积压 34 条。每条只展示脱敏后的可审摘要。</p>
     </div>
-    <strong>14</strong>
+    <strong>19</strong>
   </div>
-  <div class="command-strip">
-    <code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code>
-    <code>praxisbase review serve --port 4174</code>
-    <code>praxisbase wiki build-site --json</code>
+  <div class="metrics">
+    <article><span>本次隐私</span><strong>19</strong></article>
+    <article><span>隐私积压</span><strong>34</strong></article>
   </div>
+  <details class="advanced-panel">
+    <summary>展开隐私处理命令</summary>
+    <div class="command-strip">
+      <code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code>
+      <code>praxisbase review serve --port 4174</code>
+      <code>praxisbase wiki build-site --json</code>
+    </div>
+  </details>
   <dl class="queue-summary">
-    <dt>最近 triage</dt><dd>2026-06-16T09:43:07.121Z</dd>
+    <dt>最近 triage</dt><dd>2026-06-17T01:11:17.189Z</dd>
     <dt>已扫描</dt><dd>34</dd>
-    <dt>自动释放</dt><dd>20</dd>
+    <dt>自动释放</dt><dd>15</dd>
     <dt>保持人工确认</dt><dd>0</dd>
-    <dt>团队人工确认</dt><dd>11</dd>
+    <dt>团队人工确认</dt><dd>16</dd>
     <dt>跳过已处理</dt><dd>0</dd>
     <dt>跳过非隐私项</dt><dd>4</dd>
   </dl>
@@ -1229,13 +1203,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd>A user initiated contact with brief greetings and a punctuation-only follow-up, then requested human support. The assistant acknowledged the delay, clarified that it was an AI assistant, and asked the user to provide details so the issue could be routed or handled appropriately.</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-0d62ba5167311843.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / rejected_low_signal</dd>
-        <dt>置信度</dt><dd>0.92</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.93</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>2 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1254,13 +1230,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd># 2026-05-11 Daily Notes ## 飞书机器人诊断（ou_17a0ae2d4c87a64e75294ea441084740） - 用户提供临时 SSH：`[REDACTED_IP]:443`，用户名 `root`，有效期 3 小时。 - 从当前环境尝试 SSH 连接时，在握手阶段被对端主动断开：`kex_exchange_identification: Connection closed by remote host`，尚未进入密码认证；更像来源限制/临时通道策略/网络入口问题，而非密码错误。 - 本地 OpenClaw 诊断结果：Feishu 通道已启用，`openclaw status` 显示 Channel=Feishu ON/OK。 - `openclaw logs` 证据表明 Feishu 入站正常：当前私聊消息于 `2026-05-11 11:08:40 +08:00` 被 `feishu[default]` 接收，并 `dispatching to agent (session=agent:pm:main)`。 - 配置检查：`channels.feishu.requireMention = true`，因此群聊里**未 @ 机器人**的消息会被明确忽略；日志中多次出现 `message in group ... did not mention bot`。 - 初步结论：当前不是“Feishu 完全收不到消息”，而是至少存在群聊未满足 @ 触发条件的问题；若用户感知为“机器人不回复”，还需继续区分是否有会话卡住/模型无产出。 - ironclaw templates 记录到的环境背景： - 受保护配置（如 `openclaw.json`、channel config）修改前要先说明、确认、备份； - 不要擅自 `openclaw update`</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-12c9caf5999d25cf.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
-        <dt>置信度</dt><dd>0.78</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.82</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1279,13 +1257,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd># 2026-02-14 ## Preferences - User `ou_2a32896e8b25ebf7588d8d91dbaa6f4d` (in group `oc_97951f2a5226dafe0decf5592d4e2726`) requested to be called &quot;小帅&quot;. - User `ou_31dd9694b0a4fa16c1da8c0c6db759e7` (in group `oc_97951f2a5226dafe0decf5592d4e2726`) is &quot;小美&quot;.</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-1f7524e8ea7c5493.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / rejected_low_signal</dd>
-        <dt>置信度</dt><dd>0.82</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>4 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1304,13 +1284,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd># 2026-02-28 ## Browser Login Task - User (ou_a690691bd462030c16e4b4c60ae99e2a) in group oc_3bd0b31badd33f2174384dcc4b6ad7d8 requested browser login to lixiang.com - First attempted www-ontest.lixiang.com — got 403 Forbidden (test env, needs VPN/internal network) - Then attempted www.lixiang.com — successfully logged in via password=[REDACTED] tab - Login URL: `https://www.lixiang.com/login.html?originalUrl=https%3A%2F%2Fwww.lixiang.com%2F%3FregisterAction%3D107%23li` - Account: 18501113247, password=[REDACTED] - Key finding: lixiang.com login page has two tabs: &quot;验证码登录&quot; (default) and &quot;密码登录&quot; — need to switch tab for password=[REDACTED] - Agreement checkbox (用户协议) must be clicked before login button works - Model was switched to vendor-claude-google/google-claude-opus-4-6 during session ## Notes - The open</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-251024cf3fc2ffaf.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
-        <dt>置信度</dt><dd>0.95</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.93</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1329,13 +1311,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd>- https://li.feishu.cn/wiki/JbdfwFdgliUeDAksQv2ceFcXnne - 已尝试用缺省应用 Tenant Token 读取 wiki → 权限不足（需要 wiki:wiki:readonly） - 已发送用户授权登录卡片（进程 kind-shore 等待中），等待用户点击授权 - 进程 kind-shore 仍在运行，等待 gaomingda 完成飞书登录授权 ## 群聊支持问答（oc_8a7339d738dfbe70306fcd643041c1f3） ### 常见问题回答 - **机器人实例自动 Stopped**：常见原因有资源限制、健康检查失败、空闲超时（Scale to Zero）、节点驱逐、进程 OOM。排查方式：kubectl describe pod + kubectl logs --previous - **upstream connect error / Connection refused**：后端服务未运行或端口未监听，需检查 Pod 状态和日志 - **斜杠命令无法执行**：飞书群聊斜杠命令需在开放平台后台注册；建议在单聊中使用或改用 @Bot + 自然语言 - **扩容/申请时间**：未知，建议联系平台管理员 ### Skill 相关 - find-skills 已通过 `npx [REDACTED_USER_HOST] install find-skills` 安装到 `/workspace/skills/find-skills` - 当前自定义 Skill 列表（共11个）：dify-dsl-generator, excel-report-generator, github-readme-generator, github-trending, jimeng_mcp_skill, seedance-video-cre</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-26e20af34a56d959.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
-        <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
+        <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
         <dt>置信度</dt><dd>0.86</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1354,13 +1338,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd>- **根因示例**：确认是空间/内存占满（用户反馈为“内存满了”），清理 `/tmp` 后重启恢复。 - **处理**：若费用正常且不是休眠/手动停止，检查磁盘/`/tmp` 空间；清理后重启实例。 ### Cron `sessionTarget: &quot;main&quot;` Bug (2026-02-27) - All cron jobs with `sessionTarget: &quot;main&quot;` + `payload.kind: &quot;systemEvent&quot;` fail with 400 error - Root cause: Framework doesn&#39;t save actual main session key, stores literal &quot;main&quot; string - Workaround: Use `sessionTarget: &quot;isolated&quot;` + `payload.kind: &quot;agentTurn&quot;` + `delivery` config - Log location: `[REDACTED_PATH] ## Feishu Group Reply Convention - In Feishu topic/thread-style group conversations, reply under the user&#39;s topic/message instead of sending a separate standalone group message. - When context is clearly a reply chain, prefer `replyTo` / thread-aware replies to keep the conversation attached to the original</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-355aea4949afabe8.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
         <dt>置信度</dt><dd>0.72</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1379,17 +1365,46 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd># 2026-03-04 Daily Notes ## Group Chat: oc_a7e01d69fa0233d9baee814022112057 ### Skills安装问题 - 用户 ou_c1aad6b8e27a0de6df116884b899f255 询问如何安装skills - 回复了两种方式：ClaWHub在线安装 + 手动安装到 skills/ 目录 ### 每日Bug提醒任务（未完成） - 用户需求：每日早9点，查询飞书项目 https://project.feishu.cn/yhsy_pmp/story/homepage 中本周进行中的项目，找到本人未解决的Bug，以表格形式发消息给用户自己 - 技术方案：使用飞书项目 Open API + cron job - 项目空间：yhsy_pmp - API路径：`/open_api/:project_key/work_item/filter`（过滤缺陷类型工作项） - 发送目标：发给用户本人（私信） - 授权状态：**未完成** - 尝试获取用户Token=[REDACTED] gaomingda，但用户175秒内未完成授权，超时 - 下一步：等待用户重新点击授权，或确认是否收到授权卡片 ### feishu-almighty skill 版本 - 当前版本：1.7.5 - 最新版本：1.7.7 - 用户未确认是否升级 ## 技术备注 - 飞书项目（project.feishu.cn）API属于业务协作类，应使用**用户应用**（不带--default-app）获取User Token - 飞书项目API文档页面是JS渲染，web_fetch无法直接抓取内容 - API端点：`POST https://project.feishu.cn/open_api/{project_key}/work_item/filt</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5ca220d0a850d0ac.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.92</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-5ca220d0a850d0ac">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
+    </li>
+<li id="exception_daily-experience-5fe8e5312427b66d" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
+      <dl>
+        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-64f06eeeb</code></dd>
+        <dt>代理</dt><dd>openclaw</dd>
+        <dt>范围</dt><dd>team</dd>
+
+
+        <dt>可审摘要</dt><dd>- 00:03 cron：按原文向飞书群 chat:oc_8a7339d738dfbe70306fcd643041c1f3 发送了私有化模型安全提醒与 qwen3_6 切换通知。</dd>
+        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5fe8e5312427b66d.json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
+
+        <dt>Triage</dt><dd>unclear / team_review_only</dd>
+        <dt>置信度</dt><dd>0.72</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>3 条脱敏建议已隐藏原文。</dd>
+
+
+      </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-5fe8e5312427b66d">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -1404,13 +1419,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd>- 所有触发均以 NO_REPLY 静默处理，无用户可见输出 - 该 cron 任务可考虑禁用或删除（已完成使命，持续运行浪费资源） ## 飞书项目 Open API 调查（下午） - 群 `oc_a7e01d69fa0233d9baee814022112057` 用户询问能否获取「NEW企业系统项目管理」空间的需求信息 - 空间地址：`https://project.feishu.cn/yhsy_pmp/setting/integrationManagement`，project_key = `yhsy_pmp` - 飞书项目（project.feishu.cn）的 Open API **独立于飞书开放平台**，使用 `X-PLUGIN-TOKEN` 认证 - 关键接口：`POST https://project.feishu.cn/open_api/{project_key}/work_item/filter` - 需要用户在飞书项目集成管理中创建 Plugin 并提供 Plugin Token=[REDACTED] - feishu-almighty 技能有新版本 1.7.8（本地 1.7.5），提示用户可升级，待确认</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-79822ff24256f1ed.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
         <dt>置信度</dt><dd>0.86</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1429,17 +1446,73 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd># 2026-03-02 Daily Notes ## 企业智能稳定性考试协助任务 - 用户发来截图（企业智能稳定性考试，总分100分，通过分数100分，共10题） - 考试内容包含：单选题2道（共20分）、多选题8道（共80分） - 截图可见题目： - 单选题1：触犯&quot;故障发现&quot;维度的故障红线 → 已选D（新增功能上线未加任何对应的监控告警，导致故障长时间未发现） - 单选题2：故障【根因追查】以及【待办跟进】的注意事项，不包括 - 选项A: 目的是确保相同故障不会重复发生 - 选项B: 故障已止损，暂时不看急查根因 - 选项C: 长线问题需要跟进到底 - 选项D: 临时止损不是最终目的 - 多选题1：变更通知中需要包含哪些内容（10分，漏选不得分） - 选项: A.影响范围 B.变更操作人员 C.变更开始时间 D.变更内容 - 需要读取飞书文档： - https://li.feishu.cn/wiki/VJ1Uw86MdinSvPklyIacCDolnKe - https://li.feishu.cn/wiki/JbdfwFdgliUeDAksQv2ceFcXnne - 已尝试用缺省应用 Tenant Token 读取 wiki → 权限不足（需要 wiki:wiki:readonly） - 已发送用户授权登录卡片（进程 kind-shore 等待中），等待用户点击授权 - 进程 kind-shore 仍在运行，等待 gaomingda 完成飞书登录授权</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-89b1816966184deb.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
-        <dt>置信度</dt><dd>0.94</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.93</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-89b1816966184deb">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
+    </li>
+<li id="exception_daily-experience-9fff94571a51c4aa" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
+      <dl>
+        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-e3e17b88c</code></dd>
+        <dt>代理</dt><dd>openclaw</dd>
+        <dt>范围</dt><dd>team</dd>
+
+
+        <dt>可审摘要</dt><dd># 2026-03-03 Daily Notes ## Group Chat Activity (oc_8a7339d738dfbe70306fcd643041c1f3) ### 内网访问咨询 - 用户 ou_63ddd14ba366119196504e7bd8681a30 询问是否可以访问内网服务 - 回答：默认不能访问纯内网（10.x/192.168.x），除非有公网地址或 OpenClaw 部署在内网机器上 ### Skill 列表查询 - 用户 ou_78d417ab04a629e296c7c8bdc3ea917c 询问当前有哪些 skill - 已列出所有已安装 skills（系统工具、飞书集成、内容创作、数据报告、信息获取、开发工具） ### 语音识别功能咨询 - 用户 ou_c33181bcdf3f146a19cfac54e7b2460e 询问是否支持语音识别 + 语音回复 - 回答：TTS 输出支持；语音输入取决于飞书渠道配置 ### feishu-voice Skill 安装 - 用户 ou_c33181bcdf3f146a19cfac54e7b2460e 要求安装 feishu-voice skill - 来源：https://gitlab.chehejia.com/ai-market/lixiang-skills-marketplace/-/tree/master/packages/feishu-voice - 安装成功，路径：/workspace/agents/pm/.agents/skills/feishu-voice/ - 原理：通过 Gemini 多模态实现飞书语音 STT（.ogg/opus 格式） - **待完成**：需要配置 `google` provider（Gemini proxy baseUrl + apiKey）和 `tools.</dd>
+        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-9fff94571a51c4aa.json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
+
+        <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
+
+
+      </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-9fff94571a51c4aa">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
+    </li>
+<li id="exception_daily-experience-a8d30ee6c5b41907" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
+      <dl>
+        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-8deb4f5e6</code></dd>
+        <dt>代理</dt><dd>openclaw</dd>
+        <dt>范围</dt><dd>team</dd>
+
+
+        <dt>可审摘要</dt><dd>- 原理：通过 Gemini 多模态实现飞书语音 STT（.ogg/opus 格式） - **待完成**：需要配置 `google` provider（Gemini proxy baseUrl + apiKey）和 `tools.media.audio` 并重启 Gateway - 用户尚未提供 Gemini proxy 配置，等待跟进 ## Group Chat Activity (oc_d5a8a8cafe0a986305f7a0782b5b886b) ### 今日热点整理 - 用户 ou_0ab9a80cf7489440f3f045ce1f19f461 请求整理当日热点 - 整理并发送了 2026-03-03 热点：两会开幕、反腐动态、元宵月全食、中东局势、AI产业进展 ### Claude Code vs OpenClaw 源码分析 - 用户请求对比分析两者架构，从功能反推源码实现 - 完成了详细技术分析报告，内容包括： - Agentic Loop 核心流程对比（均为 LLM + Tool Call 循环） - Claude Code 四大工具实现（bash/read/write/edit）+ Steering 机制 - OpenClaw 三层架构（Channel → Gateway → Agent）+ WebSocket 协议 - Cron 调度系统、Compaction、会话持久化、沙盒权限模型 - 提供了 Python 最小 Coding Agent 实现示例（~100行） - 响应被截断（compaction 触发前）</dd>
+        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-a8d30ee6c5b41907.json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
+
+        <dt>Triage</dt><dd>safe_personal_experience / team_review_only</dd>
+        <dt>置信度</dt><dd>0.86</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>3 条脱敏建议已隐藏原文。</dd>
+
+
+      </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-a8d30ee6c5b41907">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -1454,17 +1527,46 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd>- Trigger scenario 4: if users ask whether `lixiang-*` / `kivy-*` models can process confidential, L2, or sensitive company data, do NOT assert L2 is allowed by default. Emphasize that they should prioritize contacting the company confidentiality/security bot（公司保密机器人）or official data-security channel for the authoritative answer. Mention that model prefix alone is insufficient proof of authorization; use official policy, data classification, and minimization/desensitization. - Kimi 模型问题临时处理（2026-05-22）：新版 OpenClaw 中 `kimi-2.5` 已下线；`kimi-2.6` 暂时有问题。已收到反馈：不要在群里额外提示 Kimi 相关内容；除非用户明确追问 Kimi，否则不主动展开 Kimi 说明。 - Skills 安装等问题统一 mention/转给 周明珠（ou_a84b40e89669d1597e6e674d74ae95f3）处理；例外：openviking 相关问题都联系/mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4）处理（高明达 2026-06-10 指示）。 - TUI 连接/会话/退出后无法恢复等问题，优先</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b70a35157d393839.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
         <dt>置信度</dt><dd>0.86</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-b70a35157d393839">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
+    </li>
+<li id="exception_daily-experience-b7c16f24ab0be689" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
+      <dl>
+        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-745fa543d</code></dd>
+        <dt>代理</dt><dd>openclaw</dd>
+        <dt>范围</dt><dd>team</dd>
+
+
+        <dt>可审摘要</dt><dd>- `/model` 只对当前会话临时生效。 - 即使提示“已更新默认模型”，也可能并未真正持久生效；应以 `/status` 为准。 - 开新对话、agent 重启、或派子 agent 干活后，会回到该 agent 自己配置的默认模型。 - 当前没有持久化办法，只能每次新对话重新 `/model`，直到后续产品改进上线。 - 通用补充： - 风格突然变化，常见原因是子 agent 在工作；子 agent 独立，可能使用自己的默认模型。 - 确认当前真实模型应使用 `/status`，不要靠自然语言直接问 agent “你是什么模型”。 - `/status` 只能看当前会话，不能看到刚才某个子 agent 用了什么模型。 - 改进方向：未来计划将 `/model` 改为直接、持久修改“当前这个 agent”的默认模型；但子 agent 使用独立默认模型的问题不在这次改进范围内。 - Temporarily do not answer questions/errors about inability to read Feishu documents in this group unless directly instructed otherwise. - Trigger scenario 3: if a user posts a screenshot or asks &quot;这个是怎么回事&quot; and the content/context indicates Feishu `access not configured` / pairing code. - When scenario 3 is triggered, answer using this guidance: - 先说明这是访问授权/配对未完成，不是普通业务报错。</dd>
+        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b7c16f24ab0be689.json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
+
+        <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
+        <dt>置信度</dt><dd>0.72</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>4 条脱敏建议已隐藏原文。</dd>
+
+
+      </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-b7c16f24ab0be689">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -1479,13 +1581,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd>- 用户发来两张截图，内容为故障处理与变更管理考试 - 考试题目（共10题，单选1道+多选9道，总分100分）： - **单选题1**：故障【根因追查】以及【待办跟进】的注意事项，不包括 → 答案：**B** - **多选题1**：关于红线制度，说法正确的是 → 答案：**ABCD**（全选） - **多选题2**：故障处理中，正确的做法 → 答案：**ABD**（C选项-线上重现故障是错误做法） - **多选题3**：做好故障通告应包含哪些信息 → 答案：**ABCDE**（全选） - **多选题4**：关于变更说法正确的是 → 答案：**CD** - **多选题5**：关于故障待办项，说法正确的是 → 答案：**ABC**（D-随意拖延是错误的） - **多选题6**：故障应对处理及复盘原则 → 答案：**ABCD**（全选） - **多选题7**：哪个时间段不适合进行变更操作 → 答案：**ABCD**（全选） - **多选题8**：高质量复盘报告需要记录哪些内容 → 答案：**ABCDEF**（全选） - **多选题9**：变更通知中需要包含哪些内容 → 答案：**ABCD**（全选） - 飞书文档需要登录才能访问，未能读取 - 最终基于云平台/SRE行业通用规范给出了答案（有不确定性，提示用户对照文档验证） ## 需求文档审查请求（群 oc_c3a41eeb30a7f36f8d0517a883bb8adc）</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c578b794158d6fe2.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
-        <dt>置信度</dt><dd>0.82</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.86</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1504,13 +1608,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd>- find-skills 已通过 `npx [REDACTED_USER_HOST] install find-skills` 安装到 `/workspace/skills/find-skills` - 当前自定义 Skill 列表（共11个）：dify-dsl-generator, excel-report-generator, github-readme-generator, github-trending, jimeng_mcp_skill, seedance-video-creator, siliconflow-api-skills, unnamed-skill, wechat-article-aggregator, wechat-article-fetcher, xiaohuihui-dify-tech-article - jimeng_mcp_skill 路径：`/workspace/agents/pm/skills/jimeng_mcp_skill/` - jimeng-free-api-all Docker 容器未运行，视频生成功能不可用 ### 微信文章抓取 - 微信文章防爬机制导致直接抓取超时，搜索引擎也无法索引，建议用户直接在微信中阅读或粘贴文字 ## 技术状态 - feishu-almighty skill 路径：/workspace/openclaw/skills/feishu-almighty - get-user-token=[REDACTED] 已确认可用 - Tenant Token=[REDACTED] wiki 权限不足 - 需要用户授权后继续 ## 第二次考试协助任务（同日，不同群） - 群：oc_d5a8a8cafe0a986305f7a0782b5b886b - 用户发来两张截图，内容为故障处理与变更管理考试 - 考试题目（共10题，单选1道+多选9道</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c68d16c6183965d2.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
-        <dt>置信度</dt><dd>0.88</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.86</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>5 条脱敏建议已隐藏原文。</dd>
 
 
       </dl>
@@ -1521,25 +1627,54 @@ Do not use it when:
         <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
       </div>
     </li>
-<li id="exception_daily-experience-d303f90af8f4af34" class="review-card">
+<li id="exception_daily-experience-caad32421e9bf573" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
       <dl>
-        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-e9bac6dd0</code></dd>
+        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-5535ee36f</code></dd>
         <dt>代理</dt><dd>openclaw</dd>
         <dt>范围</dt><dd>team</dd>
 
 
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>可审摘要</dt><dd>- Trigger scenario 3: if a user posts a screenshot or asks &quot;这个是怎么回事&quot; and the content/context indicates Feishu `access not configured` / pairing code. - When scenario 3 is triggered, answer using this guidance: - 先说明这是访问授权/配对未完成，不是普通业务报错。 - 如果对方是刚申请/刚接入的新用户：优先建议去控制台点一次重启，通常即可恢复。 - 说明这是已知问题，后续新版本会修复。 - 如果重启后仍不行，再让实例管理员执行 `openclaw pairing approve feishu &lt;code&gt;`。 - Trigger scenario 4: if users ask whether `lixiang-*` / `kivy-*` models can process confidential, L2, or sensitive company data, do NOT assert L2 is allowed by default. Emphasize that they should prioritize contacting the company confidentiality/security bot（公司保密机器人）or official data-security channel for the authoritative answer. Mention that model prefix alone is insufficient proof of authorization; use official policy, data classif</dd>
+        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-caad32421e9bf573.json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
-        <dt>Triage</dt><dd>real_private_material / team_review_only</dd>
-        <dt>置信度</dt><dd>0.88</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>Triage</dt><dd>safe_personal_experience / team_review_only</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+
 
 
       </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-d303f90af8f4af34">
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-caad32421e9bf573">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
+    </li>
+<li id="exception_daily-experience-d53d6d7901e4eb74" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
+      <dl>
+        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-98477e0c8</code></dd>
+        <dt>代理</dt><dd>openclaw</dd>
+        <dt>范围</dt><dd>team</dd>
+
+
+        <dt>可审摘要</dt><dd>- 机器人搜不到/无法加入群聊：不要转田雨；直接提示用户让飞书后台机器人的版本管理员修改机器人可见范围即可（高明达 2026-06-10 指示）。 - A2A 相关问题：转给/mention 刘刚（ou_78d417ab04a629e296c7c8bdc3ea917c）解答（高明达 2026-06-09 指示）。 - LiClaw 休眠计费口径（田雨 2026-06-01 确认）：休眠期间不是完全不计费，按 0.1 元/天计费；后续用户问「休眠期间是否还计费/云电脑费用」时按此回答。 - 定时任务/龙虾定时器相关问题：提示用户可在控制台 WebUI 操作，路径：控制台 → WebUI → 左侧「定时任务」，可查看/删除等；当机器人口头说取消但实际未取消、人工触发后重复发送时，优先建议去这里处理。 - 云端 LiClaw/OpenClaw 申请的飞书机器人不要混用（高明达 2026-06-09 校正口径）。核心思想：飞书机器人不要与其他程序/工具复用；包括 Claude Code 调用飞书 CLI 配置飞书信息、本地搭建其他 agent 工具等；混用会导致机器人不回复、重复回复等棘手问题。对外表达要先讲核心结论，避免绕。 - For ordinary chat or messages outside the defined trigger scenarios, stay silent.</dd>
+        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d53d6d7901e4eb74.json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
+
+        <dt>Triage</dt><dd>needs_redaction / team_review_only</dd>
+        <dt>置信度</dt><dd>0.82</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+        <dt>脱敏提示</dt><dd>6 条脱敏建议已隐藏原文。</dd>
+
+
+      </dl>
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-d53d6d7901e4eb74">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -1554,13 +1689,15 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
 
 
+        <dt>可审摘要</dt><dd># 2026-02-26 - User greeted me.</dd>
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-de836b6f83806d74.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>创建时间</dt><dd>2026-06-17T05:48:44.098Z</dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / rejected_low_signal</dd>
-        <dt>置信度</dt><dd>0.95</dd>
-        <dt>详情</dt><dd>敏感详情会在隐私 triage 释放后展示。</dd>
+        <dt>置信度</dt><dd>0.9</dd>
+        <dt>详情</dt><dd>原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。</dd>
+
 
 
       </dl>
@@ -1571,50 +1708,32 @@ Do not use it when:
         <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
       </div>
     </li>
-<li id="wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md" class="review-card">
-      <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">隐私待确认</span></p>
+<li id="exception_daily-experience-d303f90af8f4af34" class="review-card">
+      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
       <dl>
-        <dt>来源</dt><dd><code>stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
-        <dt>代理</dt><dd>unknown</dd>
-        <dt>范围</dt><dd>unknown</dd>
+        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-e9bac6dd0</code></dd>
+        <dt>代理</dt><dd>openclaw</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/b62c9fa15b3e0a157401ea147eb48780e09a4ee53a0eac41a75fef148e5aa3db</code></dd>
+        <dt>摘要</dt><dd># MEMORY.md - User: ou_4d6506f2fc5e4f989e0672a33d7cc24e - First interaction: 2026-02-26 - User: ou_d8d4047e9083cc44527a2429b4f757a4 - First interaction: 2026-02-27 - 喜欢绿色 - User: ou_2375a992dea28a92946c5e897e37151b - First interaction: 2026-02-27 - User: ou_a690691bd462030c16e4b4c60ae99e2a - First interaction: 2026-02-28 ## 海报设计偏好 (ou_720d005e222d05c44b44dee631ae4dc0) - 风格：清晰明亮，橙色系为主色 - 布局：一页展示完全，不截断 - 不要侧边和底部装饰线条 - 字体字号：标题和内容都要大，由 AI 自主调整 - 要有 emoji / 卡通元素，不要太单调 - 要有设计感和审美，不要死板 ## Technical Issues ### Monitor logs 打开失败 (2026-03-05) - **现象**：`upstream connect error / Connection refused` - **根因**：crabwalk 进程异常退出 - **解决**：检查并重启 crabwalk 进程 ### 飞书机器人不回复，WebUI正常 (2026-04-16) - **现象**：WebUI 后台能正常对话，但飞书私聊/群聊机器人不回复 - **解决**：去 openclaw.chj.cloud → Skills 页面 → 更新飞书插件，然后重启实例 - **来源**：高明达确认，用户李熠柃验证修复</dd>
 
-
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-ack-timing-before-long-running-agent-work-md.json</code></dd>
+        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d303f90af8f4af34.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
+
+        <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
+        <dt>置信度</dt><dd>0.86</dd>
+        <dt>理由</dt><dd>The summary includes team-scope agent/project operational details plus unredacted individual names and an internal service URL/domain. It is not suitable as safe personal experience without further redaction.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact unredacted personal names and replace with role-based placeholders., Redact internal service URLs/domains and plugin/admin navigation details if not intended for release., Generalize specific incident dates and operational component names where they could reveal internal infrastructure., Keep Feishu/user identifiers redacted consistently throughout.</dd>
 
       </dl>
-
-    </li>
-<li id="wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md" class="review-card">
-      <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md</code></dd>
-        <dt>代理</dt><dd>unknown</dd>
-        <dt>范围</dt><dd>unknown</dd>
-
-
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-known-fixes-openclaw-dispatch-routing-failures-md.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-      </dl>
-
-    </li>
-<li id="wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve" class="review-card">
-      <p><strong>Wiki candidate body shrink exceeds safe threshold</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md</code></dd>
-        <dt>代理</dt><dd>unknown</dd>
-        <dt>范围</dt><dd>unknown</dd>
-
-
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-exception_stable-kb-kb-procedures-stale-caches-can-hide-current-behavior-or-serve.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-      </dl>
-
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-d303f90af8f4af34">
+        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
+        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
+        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
+        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
+      </div>
     </li>
 <li id="exception_daily-experience-0c7144ea57b21569" class="review-card">
       <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
@@ -1624,14 +1743,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/484cde15e8baa9ab50030ad9353c818170a940a08bfeb16a30292e512ef2dad3</code></dd>
         <dt>摘要</dt><dd>- If users ask how to query model pricing/cost and capabilities,统一简短回答：`/models`。 - Trigger scenario 2: if a user asks why `/model` switched back, why the model seems to change automatically, why a new conversation is using a different model, or similar questions about model switching/persistence. - Also if the screenshot/error indicates model-service failure or context error after switching models, use the fixed guidance: remind the user to switch models; the cause is known — context errors caused by switching between different models; admins will fix this in the next version. - When scenario 2 is triggered, answer using this guidance: - `/model` behavior depends on whether the current agent has its own explicitly configured default model. - A类：agent 没被单独设过模型 - `/model` 切换通常会持久生效；新对话、重启后一</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-0c7144ea57b21569.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
-        <dt>Triage</dt><dd>safe_personal_experience / auto_released</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>The redacted content appears to be general project/support guidance about model commands and behavior, with no visible personal data, secrets, credentials, or raw private values. The human review trigger appears related to team-channel policy rather than sensitive material.</dd>
+        <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>理由</dt><dd>Team-channel operational guidance includes internal bot behavior, support instructions, and release/administrator notes; it is not clearly safe personal experience and should remain review-only unless generalized.</dd>
 
+        <dt>建议脱敏</dt><dd>Remove or generalize internal source identifiers, hashes, database paths, and channel references., Generalize implementation-specific model switching behavior and agent configuration details., Remove references to administrator plans or future-version fixes., Avoid including screenshots, error specifics, or user/team context if present in the original material.</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-0c7144ea57b21569">
@@ -1649,14 +1770,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5</code></dd>
         <dt>摘要</dt><dd>- **多选题9**：变更通知中需要包含哪些内容 → 答案：**ABCD**（全选） - 飞书文档需要登录才能访问，未能读取 - 最终基于云平台/SRE行业通用规范给出了答案（有不确定性，提示用户对照文档验证） ## 需求文档审查请求（群 oc_c3a41eeb30a7f36f8d0517a883bb8adc） - 用户发来需求文档链接：https://li.feishu.cn/wiki/POAQwkbPoixdijkKWvVcoQW4nWe - 请求：需求文档审查 - 尝试读取文档：cfe-feishu-server 代理返回 403（账号 gaomingda 无权限） - 尝试 feishu-almighty 缺省应用 Tenant Token 读取 wiki → 权限不足（99991672，需要 wiki:wiki:readonly） - 尝试触发用户授权登录流程 → 已终止（等待时间过长） - 直接 web_fetch 飞书文档 → 需要登录，跳转到登录页 - 已回复用户说明权限问题，请用户粘贴文档内容或确认文档权限</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-2bc11e5412f5ca23.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>The summary describes agent workflow but still includes a specific private Feishu document URL and an account identifier; no document contents are exposed, so it appears redaction rather than exclusion is sufficient.</dd>
-        <dt>建议脱敏</dt><dd>Redact the Feishu document URL or replace it with a generic placeholder., Redact the account/user identifier mentioned in the permission error., Avoid exposing internal source references or hashes if they can identify private project artifacts.</dd>
+        <dt>置信度</dt><dd>0.82</dd>
+        <dt>理由</dt><dd>The summary appears to describe an agent interaction and access failure rather than exposing document contents, but it still contains a live collaboration document URL, an account identifier, internal tool/source references, and permission details tied to a team workspace. These should be redacted before treating it as safe experience.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact the Feishu/wiki document URL and replace with a generic placeholder., Redact named account or user identifiers., Redact internal source references, database paths, chunk IDs, hashes, and agent-specific storage URIs if not needed., Generalize tenant/app authorization and permission-scope details to non-identifying descriptions., Keep the already-redacted group/channel identifier redacted.</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-2bc11e5412f5ca23">
@@ -1674,14 +1797,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
         <dt>摘要</dt><dd>- If the user already explicitly says both script repair and AI repair were tried and still failed, directly mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4） and 管志成（ou_17a0ae2d4c87a64e75294ea441084740） for follow-up instead of repeating the auto-repair guidance. 注意：不要误 @ 张瑞奇（ou_4514aa6582f32fd92d9c001fa3349f27）。 - Bot 经常“不响应”补充排查口径（管志成 2026-06-09）：openclaw-tui 不是 openclaw gateway；没响应时先看 WebUI 是否有工具调用，也可以换模型试试，很多时候是后台在干活或模型响应慢。 - Bot 不响应排查新增案例（管志成 2026-06-09）：Feishu 插件被禁用（`plugins.entries.feishu.enabled=false`）会导致 Feishu WebSocket 连接未建立、飞书消息无法收到；处理是 `openclaw plugins enable feishu` 并重启 Gateway，确认 bot open_id 解析成功、ws client ready、Gateway health OK 且 Feishu configured。 - Exception: for Feishu-specific read/write/document/tool permission issues after script + AI repair fail, mention/route to</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-4116addd68e32657.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>The exception contains team-channel operational guidance with identifiable individual names and mention-routing instructions, even though IDs are redacted. It appears project-related rather than purely personal safe experience.</dd>
-        <dt>建议脱敏</dt><dd>Replace individual names with role-based labels or team aliases, Remove or keep redacted all Feishu user identifiers and mention targets, Generalize internal routing instructions to avoid naming specific people, Consider redacting source references, hashes, and internal channel metadata if released outside the team context</dd>
+        <dt>置信度</dt><dd>0.88</dd>
+        <dt>理由</dt><dd>The summary contains team-channel operational guidance with identifiable employee names and routing instructions, even though Feishu IDs are redacted. This is not high-confidence safe personal experience for auto-release without further anonymization.</dd>
+
+        <dt>建议脱敏</dt><dd>Replace named individuals with role-based labels such as primary maintainer, backup maintainer, or do-not-mention contact., Keep all Feishu IDs and open_id values redacted., Remove or generalize team-channel routing instructions that identify specific people., Consider generalizing internal source references and hashes if released outside the review context.</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-4116addd68e32657">
@@ -1699,14 +1824,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9</code></dd>
         <dt>摘要</dt><dd>- **解决**：去 openclaw.chj.cloud → Skills 页面 → 更新飞书插件，然后重启实例 - **来源**：高明达确认，用户李熠柃验证修复成功 ### Feishu pairing `access not configured` (2026-05-19) - **现象**：飞书里出现 `OpenClaw: access not configured`，并展示 pairing code，要求执行 `openclaw pairing approve feishu &lt;code&gt;` - **解释**：当前用户/会话尚未完成访问授权配对 - **处理**： - 常规处理：由实例管理员执行 `openclaw pairing approve feishu &lt;code&gt;` 完成授权 - 补充经验：如果是新用户，先重启一下实例，通常也能解决 - 更准确口径：如果是刚申请/刚接入的新用户，优先让用户去控制台点一次重启；这是已知问题，后续版本会修复；若重启后仍不行，再走 approve 授权流程 ### 实例 Stopped / 机器人不回复：`/tmp` 或磁盘空间满 (2026-05-25) - **现象**：机器人下午开始不回复，控制台实例状态 stopped。 - **根因示例**：确认是空间/内存占满（用户反馈为“内存满了”），清理 `/tmp` 后重启恢复。 - **处理**：若费用正常且不是休眠/手动停止，检查磁盘/`/tmp` 空间；清理后重启实例。 ### Cron `sessionTarget: &quot;main&quot;` Bug (2026-02-27) - All cron jobs with `sessionTarget: &quot;main&quot;` + `payload.kind: &quot;systemEvent&quot;` fail with 400 error</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-444ad40b7503112d.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>Contains team-scope operational support experience with identifiable user/staff names, internal service domain, and potentially sensitive troubleshooting details. It is not obviously raw private material, but should not be auto-released without further redaction.</dd>
-        <dt>建议脱敏</dt><dd>Redact or generalize personal names of staff/users, Redact internal domain or replace with generic product console reference, Keep pairing codes as placeholders only and ensure no real codes appear, Generalize exact dates if not necessary, Remove or generalize internal implementation details that could aid abuse</dd>
+        <dt>置信度</dt><dd>0.88</dd>
+        <dt>理由</dt><dd>Team-scope Feishu experience contains identifiable personal names and internal operational details; no clear secrets are shown, but it should not be auto-released as safe personal experience without further redaction.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact or generalize personal names of confirmers and users, Redact or generalize internal domain names and console URLs, Keep pairing codes as placeholders only and ensure no real codes are included, Generalize internal source references, hashes, and storage paths if included in released text</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-444ad40b7503112d">
@@ -1724,42 +1851,19 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3</code></dd>
         <dt>摘要</dt><dd>- Trigger scenario 1: if a user says the sandbox is down, the bot is not working, the bot is not responding, the instance is down, or uses similar failure wording. - Do NOT use the auto-repair guidance for billing/quota/sleep-after-payment problems; fee/quota issues are not suitable for automatic repair. - When scenario 1 is triggered, use the following fixed wording and do not freely rewrite it: `可以尝试在控制台https://openclaw.chj.cloud/dashboard 实例列的自动修复按钮。可以优先尝试脚本修复，如果脚本修复失败了，使用AI修复。据统计通常可以解决99.99%的问题。` - If the user already explicitly says both script repair and AI repair were tried and still failed, directly mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4） and 管志成（ou_17a0ae2d4c87a64e75294ea441084740） for follow-up instead of repeating the auto-repair guidance. 注意：不要误 @ 张瑞奇（ou_4514aa6582f32f</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5cb54c626295b4d9.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>The summary contains team-channel operational guidance plus identifiable employee names and an internal dashboard URL/escalation path. IDs are redacted, but remaining names and internal routing details are not safe for auto-release.</dd>
-        <dt>建议脱敏</dt><dd>Redact or generalize employee names to role-based labels such as support owner or escalation contact., Keep Feishu IDs redacted., Consider redacting or generalizing the internal dashboard URL/domain if not intended for public release., Generalize internal escalation instructions and exact fixed wording if it reveals private support process details.</dd>
+        <dt>置信度</dt><dd>0.84</dd>
+        <dt>理由</dt><dd>The summary contains team-channel operational guidance and identifies specific individuals for follow-up, with only their Feishu IDs redacted. This is not clearly safe personal/project experience for auto-release.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact or generalize named individuals to role-based contacts, Keep Feishu IDs redacted, Consider redacting or generalizing the internal console URL/domain, Remove team-channel-specific escalation details unless explicitly approved</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-5cb54c626295b4d9">
-        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
-        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
-        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
-        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
-      </div>
-    </li>
-<li id="exception_daily-experience-5fe8e5312427b66d" class="review-card">
-      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-64f06eeeb</code></dd>
-        <dt>代理</dt><dd>openclaw</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/96275568696686fbae153debca63c95d2252a4a627c904a1157fff1e1ce884c2</code></dd>
-        <dt>摘要</dt><dd>- 00:03 cron：按原文向飞书群 chat:oc_8a7339d738dfbe70306fcd643041c1f3 发送了私有化模型安全提醒与 qwen3_6 切换通知。</dd>
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-5fe8e5312427b66d.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-        <dt>Triage</dt><dd>safe_personal_experience / auto_released</dd>
-        <dt>置信度</dt><dd>0.84</dd>
-        <dt>理由</dt><dd>The summary describes a routine agent/cron notification to a team chat, with the Feishu chat identifier already redacted and no visible raw personal data, secrets, or private content values.</dd>
-        <dt>建议脱敏</dt><dd>Keep Feishu chat/channel identifiers redacted, Redact any underlying source references, database paths, or hashes if exposed outside the review system, Redact detailed internal security-notification content if it contains sensitive operational information</dd>
-
-      </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-5fe8e5312427b66d">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -1774,14 +1878,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/647b0b2aa4ef15d0d9fdfa4d631daf5c1f7d2e38f102647cb8ee1c0d4d5d6251</code></dd>
         <dt>摘要</dt><dd># 2026-05-09 Daily Notes ## Feishu 群聊话题回复失误 - 在 Feishu 群聊里，本应沿着已有话题串继续回复，却先直接发到了主群，导致回复位置不对。 - 后续修正时确认：`message(action=&quot;thread-reply&quot;)` 在当前环境下需要显式传 `messageId`，只传 `threadId` 会报错：`Feishu thread-reply requires messageId.` - 经验规则：当用户是在回复某条消息、且上下文明显属于话题延续时，优先使用话题回复，不要散回主群。 - 后续默认做法：优先读取当前消息的 reply 上下文，能挂在线程里就挂在线程里。</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-70eadc18937b5291.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / auto_released</dd>
-        <dt>置信度</dt><dd>0.9</dd>
-        <dt>理由</dt><dd>The redacted summary describes an agent workflow mistake and a generic Feishu thread-reply handling lesson without exposing personal data, secrets, customer content, or private project material.</dd>
+        <dt>置信度</dt><dd>0.92</dd>
+        <dt>理由</dt><dd>The redacted summary describes a general agent workflow mistake and corrective rule for threaded replies, without exposing personal data, customer content, secrets, or sensitive project details.</dd>
 
+        <dt>建议脱敏</dt><dd>Omit internal source_ref and source_hash from any released version if not needed., Keep message identifiers, channel names, and raw chat content excluded.</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-70eadc18937b5291">
@@ -1799,14 +1905,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab</code></dd>
         <dt>摘要</dt><dd># 2026-02-27 Memory Log ## Session Summary ### Cron Bug Investigation - **Issue**: All cron jobs using `sessionTarget: &quot;main&quot;` + `payload.kind: &quot;systemEvent&quot;` fail with HTTP 400 error - **Root Cause**: Framework bug - system cannot find sessionKey &quot;main&quot; because it&#39;s stored as literal string instead of actual main session key - **Evidence from logs**: - `⇄ res ✗ cron.add 4ms errorCode=[REDACTED_SLACK_UID] errorMessage=Error: main cron jobs require payload.kind=&quot;systemEvent&quot;` - `[tools] session_status failed: Unknown sessionKey: main` - **Workaround**: Use `sessionTarget: &quot;isolated&quot;` + `payload.kind: &quot;agentTurn&quot;` + `delivery` config instead ### Cron Jobs Recreated Old failing jobs deleted and recreated with working isolated mode: 1. **claude-failure-notice-10min** (ID: `d0d8c3f1-6ba3-45e2-b3f4-8d927</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-744f37e98e5b409e.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.82</dd>
-        <dt>理由</dt><dd>The content appears to be team-scope operational/project material from an internal chat channel and includes specific system details, log excerpts, job identifiers, and storage/source references. It is not safe personal experience as-is.</dd>
-        <dt>建议脱敏</dt><dd>Remove or generalize internal source references and storage paths., Remove hashes, UUIDs, and job identifiers., Redact detailed log excerpts and error codes that may encode private identifiers., Generalize specific framework/session implementation details if externally released., Remove team/channel-specific metadata before release.</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>理由</dt><dd>The content is mostly technical troubleshooting experience, but it comes from a team channel and includes internal operational details such as job names, IDs, source references, hashes, and log excerpts. It should not be treated as safely releasable without further redaction/review.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact or generalize cron job names, Redact UUIDs and internal job identifiers, Redact source_ref and source_hash values, Redact exact log excerpts and internal error metadata, Remove team/channel-specific metadata before release</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-744f37e98e5b409e">
@@ -1824,14 +1932,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/38a33db7f206104cd1c4c23e53c37fac6416afeca945f552ea941b8881896d4f</code></dd>
         <dt>摘要</dt><dd>- Skills 安装等问题统一 mention/转给 周明珠（ou_a84b40e89669d1597e6e674d74ae95f3）处理；例外：openviking 相关问题都联系/mention 高明达（ou_d8d4047e9083cc44527a2429b4f757a4）处理（高明达 2026-06-10 指示）。 - TUI 连接/会话/退出后无法恢复等问题，优先分发/mention 周磊（ou_3d70f70c760d8bc7f73348bb92a3030d）处理（高明达 2026-06-04 指示）。 - Claude Code 相关问题一律不需要回答（高明达 2026-06-05 指示）。 - 飞书文档类问题统一回答：`https://openclaw.chj.cloud/skills 可以在这里看下有哪些飞书相关的skill，只留一个，推荐用 openclaw-lark。如果安装了还不行需要周明珠介入排查。` - 增加 bot / 主机申请 / 运行中实例限制 / 管理员配额类问题：不要自行展开解释，直接转给/mention 田雨（ou_295d2dd9402ec0ccbcbe4495bb8a18f2）解决。 - 机器人搜不到/无法加入群聊：不要转田雨；直接提示用户让飞书后台机器人的版本管理员修改机器人可见范围即可（高明达 2026-06-10 指示）。 - A2A 相关问题：转给/mention 刘刚（ou_78d417ab04a629e296c7c8bdc3ea917c）解答（高明达 2026-06-09 指示）。</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-81e477a050db55f0.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
         <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>Team-channel operational guidance includes identifiable employee names, role-based routing/mention instructions, internal project/tool details, and an internal link; IDs are redacted but remaining details are still private team material.</dd>
-        <dt>建议脱敏</dt><dd>Redact or generalize all employee names to role/team placeholders., Remove or generalize mention-routing instructions tied to specific people., Redact internal URLs/domains and replace with a generic documentation reference., Generalize project/tool-specific internal support policies where not intended for public release., Remove source identifiers, hashes, and internal storage references if included in any released version.</dd>
+        <dt>理由</dt><dd>The summary contains team-channel operational routing instructions, identifiable employee names, dates tied to instructions, and an internal service URL/domain. IDs are redacted, but remaining details are still project/team-private and not safe for auto-release as personal experience.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact or generalize employee names to role-based placeholders such as [TEAM_MEMBER] or [OWNER_ROLE]., Redact Feishu/internal service URLs and domains to [INTERNAL_URL]., Generalize dated attribution such as specific instruction dates to [DATE] or remove them., Remove or generalize internal bot/process routing rules that reveal team operations.</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-81e477a050db55f0">
@@ -1849,14 +1959,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417</code></dd>
         <dt>摘要</dt><dd># 2026-05-19 ## /model 行为结论（用户要求后续按此口径回答） - /model 的效果取决于当前 agent 是否被单独设置过默认模型。 - A 类：agent 未被单独设过模型 - /model 切换通常会持久生效，新对话/重启后仍保持。 - 实际上相当于改了公共默认，会影响其他同样未单独设模型的 agent。 - 未单独设模型的子 agent 会跟着变；单独设过的不会。 - B 类：agent 被单独设过默认模型（pm/coder/designer 等命名 agent 多半属于此类） - /model 只对当前会话临时生效。 - 即使提示“已更新默认模型”也可能无效；应以 /status 为准。 - 开新对话、agent 重启、或派子 agent 干活后，会回到该 agent 自己配置的默认模型。 - 当前没有持久化办法，只能每次新对话重新 /model，直到后续产品改进上线。 - 两类通用补充 - 回复风格突然变化，常见原因是子 agent 在工作；子 agent 独立且可能使用自己的默认模型。 - 确认当前真实模型应使用 /status，不要靠自然语言问 agent “你是什么模型”。 - /status 只能看当前会话，不能看到刚才某个子 agent 用了什么模型。 - 已规划改进方向</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-86b8adf55a71c900.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / auto_released</dd>
-        <dt>置信度</dt><dd>0.87</dd>
-        <dt>理由</dt><dd>The redacted summary contains general operational guidance about agent/model behavior and status checks, with no apparent personal data, secrets, customer content, credentials, or raw private values. Team scope still implies review-only per policy, but the content itself appears safe.</dd>
+        <dt>置信度</dt><dd>0.88</dd>
+        <dt>理由</dt><dd>The redacted summary contains general operational notes about agent model-switching behavior and planned improvements, without user secrets, credentials, personal data, or sensitive business content. Team-channel origin still implies review-only release policy.</dd>
 
+        <dt>建议脱敏</dt><dd>Remove or generalize source identifiers, hashes, and internal URI references before sharing beyond review context., Avoid naming specific team channels or workspace-specific agent identifiers if externally released.</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-86b8adf55a71c900">
@@ -1874,67 +1986,19 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0</code></dd>
         <dt>摘要</dt><dd>- 云端 LiClaw/OpenClaw 申请的飞书机器人不要混用（高明达 2026-06-09 校正口径）。核心思想：飞书机器人不要与其他程序/工具复用；包括 Claude Code 调用飞书 CLI 配置飞书信息、本地搭建其他 agent 工具等；混用会导致机器人不回复、重复回复等棘手问题。对外表达要先讲核心结论，避免绕。 - For ordinary chat or messages outside the defined trigger scenarios, stay silent. - If 高明达 / ou_d8d4047e9083cc44527a2429b4f757a4 is already participating in a topic, do not intervene in that topic unless directly asked/mentioned. ## Group Behavior Rule: oc_97951f2a5226dafe0decf5592d4e2726 - In this Feishu group, do not join the conversation unless explicitly @mentioned. - If not @mentioned, reply exactly `NO_REPLY`, even if the topic is related to cars, OpenClaw, or something the assistant could comment on. - This was a direct user instruction on 2026-05-20 after the assistant over-participated.</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-9a6f3a1b71d5ea65.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
         <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>Team-channel operational guidance includes an identifiable individual and internal bot/group behavior instructions; IDs are partly redacted but remaining personal/team context should not auto-release as personal experience.</dd>
-        <dt>建议脱敏</dt><dd>Redact the named individual to a role or generic label., Keep Feishu IDs fully redacted., Generalize specific dates to approximate timeframes or remove them., Remove or generalize internal source references, hashes, and channel/group identifiers., Summarize bot behavior rules without exposing team-specific participation instructions.</dd>
+        <dt>理由</dt><dd>The summary contains team-channel behavioral instructions and an identifiable person name, plus context about a specific Feishu group and bot usage. It is not clearly safe personal experience without further redaction.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact identifiable person names, Redact Feishu group or channel-specific participation rules, Generalize dates tied to direct user instructions, Remove or generalize internal bot/tool configuration details, Keep Feishu IDs redacted</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-9a6f3a1b71d5ea65">
-        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
-        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
-        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
-        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
-      </div>
-    </li>
-<li id="exception_daily-experience-9fff94571a51c4aa" class="review-card">
-      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-e3e17b88c</code></dd>
-        <dt>代理</dt><dd>openclaw</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/50d29fba45c04a740ad1845f4780bfec697499a8eca9598bd18a5c5e098c965c</code></dd>
-        <dt>摘要</dt><dd># 2026-03-03 Daily Notes ## Group Chat Activity (oc_8a7339d738dfbe70306fcd643041c1f3) ### 内网访问咨询 - 用户 ou_63ddd14ba366119196504e7bd8681a30 询问是否可以访问内网服务 - 回答：默认不能访问纯内网（10.x/192.168.x），除非有公网地址或 OpenClaw 部署在内网机器上 ### Skill 列表查询 - 用户 ou_78d417ab04a629e296c7c8bdc3ea917c 询问当前有哪些 skill - 已列出所有已安装 skills（系统工具、飞书集成、内容创作、数据报告、信息获取、开发工具） ### 语音识别功能咨询 - 用户 ou_c33181bcdf3f146a19cfac54e7b2460e 询问是否支持语音识别 + 语音回复 - 回答：TTS 输出支持；语音输入取决于飞书渠道配置 ### feishu-voice Skill 安装 - 用户 ou_c33181bcdf3f146a19cfac54e7b2460e 要求安装 feishu-voice skill - 来源：https://gitlab.chehejia.com/ai-market/lixiang-skills-marketplace/-/tree/master/packages/feishu-voice - 安装成功，路径：/workspace/agents/pm/.agents/skills/feishu-voice/ - 原理：通过 Gemini 多模态实现飞书语音 STT（.ogg/opus 格式） - **待完成**：需要配置 `google` provider（Gemini proxy baseUrl + apiKey）和 `tools.</dd>
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-9fff94571a51c4aa.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-        <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.82</dd>
-        <dt>理由</dt><dd>The summary is mostly operational agent experience with user IDs redacted, but it still includes team-scope chat context, an internal repository URL, local workspace paths, and configuration details for a provider setup that could reveal private project infrastructure.</dd>
-        <dt>建议脱敏</dt><dd>Redact or generalize the internal GitLab repository URL., Redact or generalize the local workspace installation path., Remove or generalize provider configuration details such as proxy/base URL and API key requirements., Generalize team chat/channel context to avoid identifying the workspace or participants.</dd>
-
-      </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-9fff94571a51c4aa">
-        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
-        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
-        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
-        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
-      </div>
-    </li>
-<li id="exception_daily-experience-a8d30ee6c5b41907" class="review-card">
-      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-8deb4f5e6</code></dd>
-        <dt>代理</dt><dd>openclaw</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/2dbf07e37f67ccfc42d3b5801baae2f431e08ab6cfc440ecc9c21500354564ad</code></dd>
-        <dt>摘要</dt><dd>- 原理：通过 Gemini 多模态实现飞书语音 STT（.ogg/opus 格式） - **待完成**：需要配置 `google` provider（Gemini proxy baseUrl + apiKey）和 `tools.media.audio` 并重启 Gateway - 用户尚未提供 Gemini proxy 配置，等待跟进 ## Group Chat Activity (oc_d5a8a8cafe0a986305f7a0782b5b886b) ### 今日热点整理 - 用户 ou_0ab9a80cf7489440f3f045ce1f19f461 请求整理当日热点 - 整理并发送了 2026-03-03 热点：两会开幕、反腐动态、元宵月全食、中东局势、AI产业进展 ### Claude Code vs OpenClaw 源码分析 - 用户请求对比分析两者架构，从功能反推源码实现 - 完成了详细技术分析报告，内容包括： - Agentic Loop 核心流程对比（均为 LLM + Tool Call 循环） - Claude Code 四大工具实现（bash/read/write/edit）+ Steering 机制 - OpenClaw 三层架构（Channel → Gateway → Agent）+ WebSocket 协议 - Cron 调度系统、Compaction、会话持久化、沙盒权限模型 - 提供了 Python 最小 Coding Agent 实现示例（~100行） - 响应被截断（compaction 触发前）</dd>
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-a8d30ee6c5b41907.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-        <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.78</dd>
-        <dt>理由</dt><dd>The summary is from a team Feishu group chat and includes project/task context, user activity, and internal implementation/configuration details, though direct identifiers and secrets appear redacted.</dd>
-        <dt>建议脱敏</dt><dd>Remove or generalize team chat/channel references and group activity headings., Keep Feishu/user identifiers redacted., Generalize internal project names, source locations, and architecture details if not intended for release., Omit configuration-related references such as provider setup, proxy base URL, API key, and gateway restart details unless fully generic.</dd>
-
-      </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-a8d30ee6c5b41907">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -1949,42 +2013,19 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76</code></dd>
         <dt>摘要</dt><dd># 2026-03-05 Daily Notes ## prd-clarify 技能安装 - 用户通过命令 `npx skills add https://gitlab.chehejia.com/ai-market/lixiang-skills-marketplace/-/tree/master/packages/prd-clarify` 安装了 `prd-clarify` 技能 - 安装路径：`/workspace/agents/pm/.agents/skills/prd-clarify`（symlink → OpenClaw） - 技能来源：GitLab `gitlab.chehejia.com/ai-market/lixiang-skills-marketplace`，分支 `master`，路径 `packages/prd-clarify` - 安装成功，code 0 - 技能功能：多级别(L0-L2)深度审查PRD，生成P0/P1/P2分级报告 ## 其他事项 - 有用户在群 `oc_a7e01d69fa0233d9baee814022112057` 请求写飞书文档关于&quot;理想期车&quot;，但登录授权超时未完成（等待175秒后失败） - 用户尝试了 `/plugin install [REDACTED_USER_HOST]`（不支持的命令），后改用 npx 方式成功安装 ## claude-recovery-check Cron 状态（全天） - 该 cron 任务每 30 分钟运行一次，全天检查均显示 `claudeRecoveredNotified: true` - Claude 模型恢复通知已于 2026-02-28 18:21 发送过，无需重复操作 - 所有触发均以 NO_REPLY 静默处理，无用户可见输出 - 该 cron</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-ad405f88f6d334a4.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
         <dt>置信度</dt><dd>0.82</dd>
-        <dt>理由</dt><dd>The summary still contains internal repository/location details, workspace paths, product/document context, and operational cron/status information from a team channel. These are project/team-specific and not safe for auto-release without further minimization.</dd>
-        <dt>建议脱敏</dt><dd>Redact or generalize internal Git hosting domain, repository, branch, and package path, Redact or generalize local workspace and agent installation paths, Redact specific internal product/document request context, Redact operational cron task name, schedule, notification timestamps, and status flags, Remove source identifiers, hashes, and internal source references if present in released text</dd>
+        <dt>理由</dt><dd>The summary is mostly agent/project activity, but it still exposes internal repository/domain details, workspace paths, team-channel context, product/document topic, and operational cron/status information.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact internal GitLab domain, repository, branch, and package paths, Redact local workspace and agent installation paths, Redact product or document topic names from team chat requests, Redact Feishu/team-channel identifiers and any remaining user or host references, Redact operational cron job names, exact timestamps, and internal status flags, Redact source_ref and source_hash values if included in releasable material</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-ad405f88f6d334a4">
-        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
-        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
-        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
-        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
-      </div>
-    </li>
-<li id="exception_daily-experience-b7c16f24ab0be689" class="review-card">
-      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-745fa543d</code></dd>
-        <dt>代理</dt><dd>openclaw</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/b9e879dee5e970e643cce67f6a587350eacae6a38c4a851400cb67d52f447384</code></dd>
-        <dt>摘要</dt><dd>- `/model` 只对当前会话临时生效。 - 即使提示“已更新默认模型”，也可能并未真正持久生效；应以 `/status` 为准。 - 开新对话、agent 重启、或派子 agent 干活后，会回到该 agent 自己配置的默认模型。 - 当前没有持久化办法，只能每次新对话重新 `/model`，直到后续产品改进上线。 - 通用补充： - 风格突然变化，常见原因是子 agent 在工作；子 agent 独立，可能使用自己的默认模型。 - 确认当前真实模型应使用 `/status`，不要靠自然语言直接问 agent “你是什么模型”。 - `/status` 只能看当前会话，不能看到刚才某个子 agent 用了什么模型。 - 改进方向：未来计划将 `/model` 改为直接、持久修改“当前这个 agent”的默认模型；但子 agent 使用独立默认模型的问题不在这次改进范围内。 - Temporarily do not answer questions/errors about inability to read Feishu documents in this group unless directly instructed otherwise. - Trigger scenario 3: if a user posts a screenshot or asks &quot;这个是怎么回事&quot; and the content/context indicates Feishu `access not configured` / pairing code. - When scenario 3 is triggered, answer using this guidance: - 先说明这是访问授权/配对未完成，不是普通业务报错。</dd>
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-b7c16f24ab0be689.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-        <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.78</dd>
-        <dt>理由</dt><dd>The summary is mostly generic agent usage guidance, but it includes team-channel operational instructions, internal source identifiers, and future product/change-plan details that should not be auto-released as safe personal experience.</dd>
-        <dt>建议脱敏</dt><dd>Remove or generalize Feishu team/group-specific handling instructions., Remove internal source references, hashes, exception IDs, and agent storage paths., Generalize future product roadmap or planned improvement details., Keep only generic guidance about session-scoped model changes and checking status.</dd>
-
-      </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-b7c16f24ab0be689">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -1999,42 +2040,19 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/cb0565346fdc853fc4f1db8e3568bf7c8ae2247cb009ed8b59691027b6d71f1a</code></dd>
         <dt>摘要</dt><dd>- 回复风格突然变化，常见原因是子 agent 在工作；子 agent 独立且可能使用自己的默认模型。 - 确认当前真实模型应使用 /status，不要靠自然语言问 agent “你是什么模型”。 - /status 只能看当前会话，不能看到刚才某个子 agent 用了什么模型。 - 已规划改进方向 - 未来计划将 /model 改为直接、持久修改“当前这个 agent”的默认模型，不再只改公共默认。 - 子 agent 使用独立默认模型的问题不在本次改进范围内。 ## 群规则写入（oc_8a7339d738dfbe70306fcd643041c1f3） - 用户要求：监听该群全部消息，但只在明显能提供帮助时回答。 - 已写入固定触发场景 1：当群消息表达“沙箱挂掉了 / 机器人不工作 / 机器人不响应 / 实例挂了 / 没反应 / 不回消息”等故障语义时，再介入回复。 - 该场景固定话术（要求尽量原样使用，不自由改写）：`可以尝试在控制台https://openclaw.chj.cloud/dashboard 实例列的自动修复按钮。可以优先尝试脚本修复，如果脚本修复失败了，使用AI修复。据统计通常可以解决99.99%的问题。` - 非上述触发场景时，保持安静。</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-c7f8e014dbf89c90.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-        <dt>Triage</dt><dd>safe_personal_experience / auto_released</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>Redacted content describes agent behavior, model/status usage, and a project/team automation rule without exposing unredacted personal identifiers, secrets, credentials, or private message content.</dd>
-        <dt>建议脱敏</dt><dd>Keep the Feishu/group identifier redacted., Consider redacting or generalizing internal service URLs if publishing outside the project context.</dd>
-
-      </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-c7f8e014dbf89c90">
-        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
-        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
-        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
-        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
-      </div>
-    </li>
-<li id="exception_daily-experience-caad32421e9bf573" class="review-card">
-      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-5535ee36f</code></dd>
-        <dt>代理</dt><dd>openclaw</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/7d903ce59380e64c1fa8e0c3f29210272282aa4bc42e6b55307c09af1f2e51dc</code></dd>
-        <dt>摘要</dt><dd>- Trigger scenario 3: if a user posts a screenshot or asks &quot;这个是怎么回事&quot; and the content/context indicates Feishu `access not configured` / pairing code. - When scenario 3 is triggered, answer using this guidance: - 先说明这是访问授权/配对未完成，不是普通业务报错。 - 如果对方是刚申请/刚接入的新用户：优先建议去控制台点一次重启，通常即可恢复。 - 说明这是已知问题，后续新版本会修复。 - 如果重启后仍不行，再让实例管理员执行 `openclaw pairing approve feishu &lt;code&gt;`。 - Trigger scenario 4: if users ask whether `lixiang-*` / `kivy-*` models can process confidential, L2, or sensitive company data, do NOT assert L2 is allowed by default. Emphasize that they should prioritize contacting the company confidentiality/security bot（公司保密机器人）or official data-security channel for the authoritative answer. Mention that model prefix alone is insufficient proof of authorization; use official policy, data classif</dd>
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-caad32421e9bf573.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
         <dt>置信度</dt><dd>0.78</dd>
-        <dt>理由</dt><dd>The summary appears to contain team-internal operational guidance, platform-specific commands, internal model prefixes, and security/compliance escalation instructions. It does not expose obvious raw secrets, but it should not be auto-treated as safe personal experience without further redaction.</dd>
-        <dt>建议脱敏</dt><dd>Redact or generalize internal model prefixes such as specific named prefixes., Redact or generalize platform-specific administrative commands and placeholders for pairing approval., Redact or generalize references to internal security/confidentiality bots or official company channels., Redact source identifiers, hashes, channel names, and team-scope metadata if included in any released text., Generalize product-specific troubleshooting details to non-identifying operational guidance.</dd>
+        <dt>理由</dt><dd>The Feishu identifier is redacted and most content is project/agent operational experience, but an internal dashboard URL and team-specific group-response rule remain exposed and may reveal private operational details.</dd>
+
+        <dt>建议脱敏</dt><dd>Redact or generalize the dashboard URL/domain., Keep the Feishu group/channel identifier redacted., Generalize team-specific fixed reply wording if it reveals internal support procedures or claims.</dd>
 
       </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-caad32421e9bf573">
+      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-c7f8e014dbf89c90">
         <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
         <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
         <button type="button" data-privacy-decision="team_review_only">保持人工</button>
@@ -2049,14 +2067,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6d26893d8543d3c19d5418337825924ef91012347381c7ad28429e59fc1b0b99</code></dd>
         <dt>摘要</dt><dd># 2026-02-13 ## Troubleshooting - **Stuck Bot**: User reported bot was unresponsive to `/new` / `/reset`. - **Diagnosis**: Gateway process likely hung or crashed due to bad config (invalid model URL). - **Fix**: `openclaw gateway restart` (and check logs/config if it fails again). ## Configuration - **MCP (Model Context Protocol)**: User asked about installing Claude&#39;s MCP tool system. - **Context**: OpenClaw supports MCP via the **Claude Code CLI backend**. - **Config**: To enable MCP in the CLI backend, set `OPENCLAW_LIVE_CLI_BACKEND_DISABLE_MCP_CONFIG=0`. - **Reference**: `docs/gateway/cli-backends.md` and `docs/help/testing.md`.</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-cb9a6cc24cd1f6dc.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / auto_released</dd>
         <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>The summary describes routine project troubleshooting and configuration guidance without exposing user identities, secrets, raw logs, URLs, tokens, or private content. It is team-scope, so review-only policy still applies.</dd>
-        <dt>建议脱敏</dt><dd>Remove or generalize internal source references and hashes if included in any released text., Avoid including raw logs, config values, model URLs, or channel/user identifiers.</dd>
+        <dt>理由</dt><dd>The summary describes general troubleshooting and configuration steps without exposing user identity, secrets, raw logs, private URLs, or sensitive channel content. Team scope still implies review-only handling under the stated policy.</dd>
+
+        <dt>建议脱敏</dt><dd>Omit internal source_ref and source_hash from any external publication., Avoid publishing any future raw logs, concrete model URLs, tokens, or user identifiers if added.</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-cb9a6cc24cd1f6dc">
@@ -2074,14 +2094,16 @@ Do not use it when:
         <dt>范围</dt><dd>team</dd>
         <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/578c93fed49000856bedd6f4509320f98bfd5689fa2a77d8b6e288ff14dc4d94</code></dd>
         <dt>摘要</dt><dd>- 初步结论：当前不是“Feishu 完全收不到消息”，而是至少存在群聊未满足 @ 触发条件的问题；若用户感知为“机器人不回复”，还需继续区分是否有会话卡住/模型无产出。 - ironclaw templates 记录到的环境背景： - 受保护配置（如 `openclaw.json`、channel config）修改前要先说明、确认、备份； - 不要擅自 `openclaw update` 或替用户重启/停止 Gateway； - Feishu/Lark 诊断时应优先结合 `pm2 list`、gateway 健康、近期 Feishu dispatch 日志综合判断，不应仅凭单点 CLI 探针下结论。</dd>
+
         <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-cf5dab7be3851c0b.json</code></dd>
         <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
+        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json</code></dd>
 
         <dt>Triage</dt><dd>safe_personal_experience / auto_released</dd>
         <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>The redacted summary contains general troubleshooting conclusions and operational cautions for a bot integration, with no visible secrets, personal data, credentials, raw logs, or sensitive customer content. It appears to be project/agent experience rather than real private material.</dd>
-        <dt>建议脱敏</dt><dd>Remove or generalize internal source references, hashes, and exception IDs before broader release., Generalize specific internal project or agent names if publishing outside the team context., Keep protected configuration file names generic if they could reveal internal structure.</dd>
+        <dt>理由</dt><dd>The redacted summary contains general project troubleshooting guidance and operational cautions without raw logs, credentials, personal identifiers, or private message content. Team scope still implies review-only under policy.</dd>
+
+        <dt>建议脱敏</dt><dd>Remove or generalize internal source references and hashes before broader release, Avoid exposing exact internal file/config paths beyond generic config names if not necessary, Keep any raw Feishu dispatch logs, channel identifiers, or user mentions excluded</dd>
 
       </dl>
       <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-cf5dab7be3851c0b">
@@ -2091,46 +2113,6 @@ Do not use it when:
         <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
       </div>
     </li>
-<li id="exception_daily-experience-d53d6d7901e4eb74" class="review-card">
-      <p><strong>Experience privacy verdict human_required: feishu_channel_team_review_first</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>experience_openclaw-answer-bot-sha256-98477e0c8</code></dd>
-        <dt>代理</dt><dd>openclaw</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>Ref</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6136a86e1d1ca4e539c4df57f5098a0abe5ee8314bfeb016d901be527d685a77</code></dd>
-        <dt>摘要</dt><dd>- 机器人搜不到/无法加入群聊：不要转田雨；直接提示用户让飞书后台机器人的版本管理员修改机器人可见范围即可（高明达 2026-06-10 指示）。 - A2A 相关问题：转给/mention 刘刚（ou_78d417ab04a629e296c7c8bdc3ea917c）解答（高明达 2026-06-09 指示）。 - LiClaw 休眠计费口径（田雨 2026-06-01 确认）：休眠期间不是完全不计费，按 0.1 元/天计费；后续用户问「休眠期间是否还计费/云电脑费用」时按此回答。 - 定时任务/龙虾定时器相关问题：提示用户可在控制台 WebUI 操作，路径：控制台 → WebUI → 左侧「定时任务」，可查看/删除等；当机器人口头说取消但实际未取消、人工触发后重复发送时，优先建议去这里处理。 - 云端 LiClaw/OpenClaw 申请的飞书机器人不要混用（高明达 2026-06-09 校正口径）。核心思想：飞书机器人不要与其他程序/工具复用；包括 Claude Code 调用飞书 CLI 配置飞书信息、本地搭建其他 agent 工具等；混用会导致机器人不回复、重复回复等棘手问题。对外表达要先讲核心结论，避免绕。 - For ordinary chat or messages outside the defined trigger scenarios, stay silent.</dd>
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/exception_daily-experience-d53d6d7901e4eb74.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T07:08:13.670Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-        <dt>Triage</dt><dd>needs_redaction / auto_released</dd>
-        <dt>置信度</dt><dd>0.86</dd>
-        <dt>理由</dt><dd>Contains team-channel operational guidance, employee names, support-routing instructions, and internal product/pricing details. No obvious secrets are present, but it is not safe for auto-release without further anonymization and review.</dd>
-        <dt>建议脱敏</dt><dd>Redact employee names and replace with generic roles such as product owner, support engineer, or reviewer., Remove or generalize internal routing instructions that identify specific people to mention or transfer to., Redact internal source references, hashes, channel identifiers, and exception/source IDs if exposed outside the review system., Generalize internal pricing or billing policy details unless confirmed public., Remove team-channel provenance details and keep only the reusable, non-identifying support guidance.</dd>
-
-      </dl>
-      <div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="exception_daily-experience-d53d6d7901e4eb74">
-        <button type="button" data-privacy-decision="auto_released">释放为脱敏经验</button>
-        <button type="button" data-privacy-decision="rejected_low_signal">低信号拒绝</button>
-        <button type="button" data-privacy-decision="team_review_only">保持人工</button>
-        <span class="approval-status" data-privacy-status>需要先启动本地审批服务。</span>
-      </div>
-    </li>
-<li id="wiki-human_required_broken-wikilink-kb-known-fixes-ack-timing-before-long-running-agent-work-md" class="review-card">
-      <p><strong>Broken wikilink target: openclaw-gateway-restart-after-configuration-changes</strong> <span class="status-pill">隐私待确认</span></p>
-      <dl>
-        <dt>来源</dt><dd><code>unknown</code></dd>
-        <dt>代理</dt><dd>unknown</dd>
-        <dt>范围</dt><dd>unknown</dd>
-
-
-        <dt>文件</dt><dd><code>.praxisbase/exceptions/human-required/wiki-human_required_broken-wikilink-kb-known-fixes-ack-timing-before-long-running-agent-work-md.json</code></dd>
-        <dt>创建时间</dt><dd>2026-06-16T05:24:15.849Z</dd>
-        <dt>建议命令</dt><dd><code>praxisbase privacy triage --mode team-git --include-triaged --progress --json</code></dd>
-
-      </dl>
-
-    </li>
   </ol>
 </section>
   <section id="rejected" class="review-section" data-status="rejected">
@@ -2139,115 +2121,34 @@ Do not use it when:
       <h2>已拒绝</h2>
       <p>低信号、重复、隐私或质量不达标的材料，不会进入 wiki。</p>
     </div>
-    <strong>2</strong>
+    <strong>1</strong>
   </div>
   <dl class="queue-summary">
     <dt>Daily 拒绝</dt><dd>0</dd>
     <dt>低信号</dt><dd>0</dd>
-    <dt>质量拒绝</dt><dd>2</dd>
-    <dt>重复分组</dt><dd>3</dd>
+    <dt>质量拒绝</dt><dd>1</dd>
+    <dt>重复分组</dt><dd>0</dd>
     <dt>Curation 拒绝</dt><dd>0</dd>
-    <dt>硬阻断</dt><dd>2</dd>
+    <dt>硬阻断</dt><dd>1</dd>
     <dt>建议命令</dt><dd><code>praxisbase wiki curate --review --json</code></dd>
   </dl>
 </section>
   <section id="promoted-candidates" class="review-section" data-status="promoted">
   <div class="section-heading">
     <div>
-      <h2>已沉淀</h2>
-      <p>1 条</p>
+      <h2>当前队列已入库</h2>
+      <p>当前队列没有已入库候选项。</p>
     </div>
-    <strong>1</strong>
+    <strong>0</strong>
   </div>
   <div class="command-strip"><code>praxisbase gbrain export --mode personal --write --json</code>
 <code>praxisbase agentmemory export --mode personal --write --json</code></div>
-  <ol class="experience-list"><li id="pending-wiki-curated_kb-known-fixes-ack-timing-before-long-running-agent-work-md-sha256" class="review-card">
-    <p><strong>长耗时代理工作前先发送 ACK</strong> <span class="status-pill">已沉淀</span></p>
-    <p>当 OpenClaw 代理即将执行工具调用、网络请求、任务派发或其他长耗时工作时，先发送简短确认 ACK，再开始慢操作，避免用户误以为系统无响应。</p>
 
-    <dl>
-      <dt>目标</dt><dd><code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code></dd>
-      <dt>类型</dt><dd>pitfall</dd>
-      <dt>范围</dt><dd>team</dd>
-      <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
-      <dt>来源数</dt><dd>1</dd>
-      <dt>置信度</dt><dd>0.93</dd>
-      <dt>创建时间</dt><dd>2026-06-16T09:43:47.454Z</dd>
-      <dt>审核原因</dt><dd>canonical_relationship</dd><dt>建议</dt><dd>edit</dd>
-      <dt>风险提示</dt><dd>该页面是操作时序规则，不证明任何具体工具、网络或 dispatch 故障根因。; ACK 只能表示请求已收到或正在处理，不能表示任务已成功完成。; 未包含凭证、令牌、cookie、认证头或私钥。; quality_human_required:team_or_global_scope</dd>
-
-
-      <dt>建议命令</dt><dd><code>praxisbase gbrain export --mode personal --write --json</code></dd>
-    </dl>
-    <details class="advanced-panel">
-      <summary>高级审核信息</summary>
-      <dl>
-        <dt>Suggested links</dt><dd><code>agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes</code> Agents can mislead users if failures are reported as successful outcomes. <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-dispatch-routing-failures</code> OpenClaw dispatch routing failures <small>entity_overlap</small><br><code>openclaw-slack-replay-and-post-deploy-stability-failures</code> OpenClaw Slack replay and post-deploy stability failures <small>entity_overlap</small></dd>
-<dt>Merge candidates</dt><dd>ACK timing before long-running agent work <code>kb/known-fixes/ack-timing-before-long-running-agent-work.md</code> <small>same_title_or_slug, entity_overlap</small></dd>
-<dt>Relationship reasons</dt><dd>entity_overlap, same_title_or_slug</dd>
-
-      </dl>
-    </details>
-    <details>
-      <summary>预览生成的 Markdown</summary>
-      <pre><code># 长耗时代理工作前先发送 ACK
-
-## When to Use
-Use this when Slow tool, network, dispatch, or long-running work can leave users without timely feedback.
-
-## Applicability
-- Scope: team
-- Portability: universal
-- Agents: openclaw
-- Systems: agent-runtime, dispatch, network, tooling
-- Privacy: safe
-
-## Symptoms
-Slow tool, network, dispatch, or long-running work can leave users without timely feedback.
-
-## What To Do
-- Send a short acknowledgement first, then proceed with the slow operation.
-
-## Negative Cases
-- Do not stay silent while beginning slow or externally dispatched work.
-
-## Verify
-- Confirm the acknowledgement is emitted before the long-running step begins.
-
-## Reusable Lessons
-- Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first, then proceed with the slow operation.
-- Do not stay silent while beginning slow or externally dispatched work.
-
-## Span Provenance
-- source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0 lines 1-25 (redacted_summary)
-
-## Agent Use
-Use this page when:
-- Slow tool, network, dispatch, or long-running work can leave users without timely feedback.
-
-Apply it by:
-- Send a short acknowledgement first, then proceed with the slow operation.
-
-Verify by:
-- Confirm the acknowledgement is emitted before the long-running step begins.
-
-Do not use it when:
-- The current evidence does not match the symptoms, scope, or provenance on this page.
-
-## Provenance
-- openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319 (sha256:04bc580e2ee15aa1cfd0285e3ea9be53ce6e1f097939d16e88820a634f324a0d)
-
-## Related Wiki Pages
-- [[agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes|Agents can mislead users if failures are reported as successful outcomes.]] - entity_overlap
-- [[openclaw-dispatch-routing-failures|OpenClaw dispatch routing failures]] - entity_overlap
-</code></pre>
-    </details>
-  </li></ol>
 </section>
 </main>
   <script>window.__PRAXISBASE_LANGUAGE__="zh-CN";</script>
   <script>window.__WIKI_BASE__="";</script>
-  <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[{"id":"ack-timing-before-long-running-agent-work","slug":"ack-timing-before-long-running-agent-work","title":"ACK timing before long-running agent work","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:3164c59926591e51e2b026dec1f81c38f68926a504b50825557ebc1721b119e9","stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md"]},{"id":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","slug":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","title":"Actions on the wrong target machine or host can cause unsafe operational changes.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96","stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"]},{"id":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","slug":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","title":"Agents can mislead users if failures are reported as successful outcomes.","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195","stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"]},{"id":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","slug":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","title":"Case-sensitive database comparisons can miss logically equivalent values.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678","stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"]},{"id":"changes-can-introduce-regressions-when-not-tested-after-modification","slug":"changes-can-introduce-regressions-when-not-tested-after-modification","title":"Changes can introduce regressions when not tested after modification","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6","stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"]},{"id":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","slug":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","title":"Missing replay data compromises the ability to debug or verify past execution behaviors","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8","stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"]},{"id":"openclaw-dispatch-routing-failures","slug":"openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"known_fix","scope":"team","maturity":"verified","source_ids":["sha256:b6657ec798ebefe7645b79f6e63a468fadbc2a903d066d2adaceae312a18cb96","stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md"]},{"id":"openclaw-slack-replay-and-post-deploy-stability-failures","slug":"openclaw-slack-replay-and-post-deploy-stability-failures","title":"OpenClaw Slack replay and post-deploy stability failures","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d","stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"]},{"id":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","slug":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","title":"Post-deploy stability smoke test run 'openclaw' resulted in an overall failure","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa","stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"]},{"id":"skill-openclaw-openclaw-dispatch-routing-failures","slug":"skill-openclaw-openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"skill","scope":"personal","maturity":"draft","source_ids":["sha256:f542be934e8bf474df3cbcf1f6fad52e421f7d8625c27f2dff8e790be0e50336","skill:skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"]},{"id":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","slug":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","title":"Stale caches can hide current behavior or serve outdated assets","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d","stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"]}],"links":[{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","type":"related","weight":1,"confidence":0.8},{"from":"changes-can-introduce-regressions-when-not-tested-after-modification","to":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"skill-openclaw-openclaw-dispatch-routing-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8}],"backlinks":{"openclaw-dispatch-routing-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","skill-openclaw-openclaw-dispatch-routing-failures"],"openclaw-slack-replay-and-post-deploy-stability-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-dispatch-routing-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"changes-can-introduce-regressions-when-not-tested-after-modification":["actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","case-sensitive-database-comparisons-can-miss-logically-equivalent-values","stale-caches-can-hide-current-behavior-or-serve-outdated-assets"],"stale-caches-can-hide-current-behavior-or-serve-outdated-assets":["case-sensitive-database-comparisons-can-miss-logically-equivalent-values"],"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes":["changes-can-introduce-regressions-when-not-tested-after-modification"],"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution":["openclaw-dispatch-routing-failures","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"case-sensitive-database-comparisons-can-miss-logically-equivalent-values":["stale-caches-can-hide-current-behavior-or-serve-outdated-assets"]},"broken_links":[],"orphans":[],"duplicates":[]};</script>
+  <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[],"links":[],"backlinks":{},"broken_links":[],"orphans":[],"duplicates":[]};</script>
   <script src="site.js"></script>
 </body>
 </html>

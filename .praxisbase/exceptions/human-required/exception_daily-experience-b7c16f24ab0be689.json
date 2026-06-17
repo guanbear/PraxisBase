@@ -23,24 +23,20 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.78,
-      "rationale": "The summary is mostly generic agent usage guidance, but it includes team-channel operational instructions, internal source identifiers, and future product/change-plan details that should not be auto-released as safe personal experience.",
+      "confidence": 0.72,
+      "rationale": "The summary contains mostly generic agent usage guidance, but also includes team/channel-specific handling instructions and internal product improvement plans that may not be appropriate for auto-release without further sanitization.",
       "suggested_redactions": [
-        "Remove or generalize Feishu team/group-specific handling instructions.",
-        "Remove internal source references, hashes, exception IDs, and agent storage paths.",
-        "Generalize future product roadmap or planned improvement details.",
-        "Keep only generic guidance about session-scoped model changes and checking status."
+        "Remove or generalize team/group-specific instruction about when not to answer Feishu document access errors.",
+        "Remove or generalize trigger-response guidance tied to a specific Feishu scenario.",
+        "Generalize future product improvement plans so they do not disclose internal roadmap details.",
+        "Remove internal identifiers such as source references, hashes, channel, scope, and agent names if included in released material."
       ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
-      "decision": "auto_released",
-      "release_summary": "Model changes made with a session command should be treated as temporary unless verified otherwise. A success-style message may not mean the default was persistently changed, so use the status command as the verification signal. New conversations, restarts, or delegated worker sessions may revert to their own configured defaults, which can explain sudden style or behavior changes.",
-      "reusable_lesson": "Verify the active model with the status command rather than relying on confirmation text or asking the assistant directly.",
-      "residual_risk": "Behavior may change if model-selection persistence is updated in the future.",
-      "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "decision": "team_review_only",
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

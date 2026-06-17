@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PraxisBase 质量问题</title>
+  <title>PraxisBase 质量检查</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,10 +14,10 @@
       <div id="searchResults" class="search-results" hidden></div>
     </div>
     <nav class="topnav" aria-label="知识库视图" data-i18n-aria-label="nav.aria">
-      <a href="index.html" data-i18n="nav.index">索引</a>
-      <a href="review.html" data-i18n="nav.review">审核</a>
-      <a href="graph.html" data-i18n="nav.graph">图谱</a>
-      <a href="issues.html" data-i18n="nav.issues">问题</a>
+      <a href="index.html" data-i18n="nav.index">总览</a>
+      <a href="review.html" data-i18n="nav.review">审批</a>
+      <a href="graph.html" data-i18n="nav.graph">关系</a>
+      <a href="issues.html" data-i18n="nav.issues">质检</a>
       <div class="language-switch" aria-label="切换语言" data-i18n-aria-label="language.switch">
         <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -37,27 +37,53 @@
   <main class="issues-shell">
   <section class="hero">
     <div>
-      <p class="eyebrow" data-i18n="issues.eyebrow">Wiki 质量</p>
-      <h1 data-i18n="issues.title">质量问题</h1>
-      <p class="lede" data-i18n="issues.lede">Agent 依赖这些知识前应先处理的发现。</p>
+      <p class="eyebrow" data-i18n="issues.eyebrow">知识质检</p>
+      <h1 data-i18n="issues.title">质量检查</h1>
+      <p class="lede" data-i18n="issues.lede">展示会影响沉淀、引用或 Agent 使用可靠性的阻断项。</p>
     </div>
   </section>
-  <section class="issues-panel">
+  <section class="action-grid" aria-label="质量概览">
+    <a class="action-card" href="#quality-findings" data-tone="ok">
+    <span>质检发现</span>
+    <strong>0</strong>
+    <p>当前构建发现的问题。</p>
+  </a>
+    <a class="action-card" href="graph.html" data-tone="ok">
+    <span>断链</span>
+    <strong>0</strong>
+    <p>来自关系图的无效链接。</p>
+  </a>
+    <a class="action-card" href="graph.html" data-tone="ok">
+    <span>重复</span>
+    <strong>0</strong>
+    <p>需要合并或消重的页面。</p>
+  </a>
+    <a class="action-card" href="review.html#human-required" data-tone="danger">
+    <span>隐私阻断</span>
+    <strong>19</strong>
+    <p>Daily 中仍需人工判断的项。</p>
+  </a>
+  </section>
+  <section class="status-strip">
+    <strong>怎么用</strong>
+    <span>这里展示会影响入库或 Agent 使用可靠性的阻断项。没有发现时，代表当前静态知识站点没有阻塞性质量问题。</span>
+  </section>
+  <section class="issues-panel" id="quality-findings">
     <ol class="issue-list">
-      <li data-i18n="issues.noIssues">未发现质量问题。</li>
+      <li data-i18n="issues.noIssues">当前没有阻塞性质量问题。</li>
     </ol>
   </section>
   <section class="issues-panel">
   <h2 data-i18n="issues.dailyPrivacy">Daily 隐私发现</h2>
   <dl>
     <dt>已拒绝</dt><dd>0</dd>
-    <dt>需要人工</dt><dd>14</dd>
+    <dt>需要人工</dt><dd>19</dd>
   </dl>
 </section>
 </main>
   <script>window.__PRAXISBASE_LANGUAGE__="zh-CN";</script>
   <script>window.__WIKI_BASE__="";</script>
-  <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[{"id":"ack-timing-before-long-running-agent-work","slug":"ack-timing-before-long-running-agent-work","title":"ACK timing before long-running agent work","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:3164c59926591e51e2b026dec1f81c38f68926a504b50825557ebc1721b119e9","stable_kb:kb/known-fixes/ack-timing-before-long-running-agent-work.md"]},{"id":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","slug":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","title":"Actions on the wrong target machine or host can cause unsafe operational changes.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:38fd87412025e75df578f542147d2e31a4aababf98453ba9027724b4bffb0d96","stable_kb:kb/procedures/actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes.md"]},{"id":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","slug":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","title":"Agents can mislead users if failures are reported as successful outcomes.","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:fa313fccc2616cce39642c9136b983357884d48696c9714d97e465ae00210195","stable_kb:kb/known-fixes/agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes.md"]},{"id":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","slug":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","title":"Case-sensitive database comparisons can miss logically equivalent values.","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:c453e1208c75ed62e97e1facf152514e0f515087dd14a965802104d45d32d678","stable_kb:kb/procedures/case-sensitive-database-comparisons-can-miss-logically-equivalent-values.md"]},{"id":"changes-can-introduce-regressions-when-not-tested-after-modification","slug":"changes-can-introduce-regressions-when-not-tested-after-modification","title":"Changes can introduce regressions when not tested after modification","kind":"pitfall","scope":"personal","maturity":"draft","source_ids":["sha256:c7c986701d4f570ffc984c58e9bc84b15f69dafa5d1936905cb3da1debbfddd6","stable_kb:kb/pitfalls/changes-can-introduce-regressions-when-not-tested-after-modification.md"]},{"id":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","slug":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","title":"Missing replay data compromises the ability to debug or verify past execution behaviors","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:2421dd04467c95e483f3883bd77c4dcaa78aece87378798247f55b91a977c6a8","stable_kb:kb/known-fixes/missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution.md"]},{"id":"openclaw-dispatch-routing-failures","slug":"openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"known_fix","scope":"team","maturity":"verified","source_ids":["sha256:b6657ec798ebefe7645b79f6e63a468fadbc2a903d066d2adaceae312a18cb96","stable_kb:kb/known-fixes/openclaw-dispatch-routing-failures.md"]},{"id":"openclaw-slack-replay-and-post-deploy-stability-failures","slug":"openclaw-slack-replay-and-post-deploy-stability-failures","title":"OpenClaw Slack replay and post-deploy stability failures","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:708004f9049805f5d36eb3e2e993262eb8a375f31c04b3f0f0bdf2cc529cce2d","stable_kb:kb/known-fixes/openclaw-slack-replay-and-post-deploy-stability-failures.md"]},{"id":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","slug":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","title":"Post-deploy stability smoke test run 'openclaw' resulted in an overall failure","kind":"known_fix","scope":"personal","maturity":"draft","source_ids":["sha256:3287e2048e49c687635e92f2b2d580843bd138487c0c6e03b7027ad688e069fa","stable_kb:kb/known-fixes/post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure.md"]},{"id":"skill-openclaw-openclaw-dispatch-routing-failures","slug":"skill-openclaw-openclaw-dispatch-routing-failures","title":"OpenClaw dispatch routing failures","kind":"skill","scope":"personal","maturity":"draft","source_ids":["sha256:f542be934e8bf474df3cbcf1f6fad52e421f7d8625c27f2dff8e790be0e50336","skill:skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"]},{"id":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","slug":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","title":"Stale caches can hide current behavior or serve outdated assets","kind":"procedure","scope":"personal","maturity":"draft","source_ids":["sha256:bff2977ff37b757343bb3e92a6c922f6e62542f0ca9538e13040971ed1da166d","stable_kb:kb/procedures/stale-caches-can-hide-current-behavior-or-serve-outdated-assets.md"]}],"links":[{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"ack-timing-before-long-running-agent-work","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8},{"from":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","to":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","type":"related","weight":1,"confidence":0.8},{"from":"changes-can-introduce-regressions-when-not-tested-after-modification","to":"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-dispatch-routing-failures","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"openclaw-slack-replay-and-post-deploy-stability-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","to":"openclaw-slack-replay-and-post-deploy-stability-failures","type":"related","weight":1,"confidence":0.8},{"from":"skill-openclaw-openclaw-dispatch-routing-failures","to":"openclaw-dispatch-routing-failures","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"case-sensitive-database-comparisons-can-miss-logically-equivalent-values","type":"related","weight":1,"confidence":0.8},{"from":"stale-caches-can-hide-current-behavior-or-serve-outdated-assets","to":"changes-can-introduce-regressions-when-not-tested-after-modification","type":"related","weight":1,"confidence":0.8}],"backlinks":{"openclaw-dispatch-routing-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure","skill-openclaw-openclaw-dispatch-routing-failures"],"openclaw-slack-replay-and-post-deploy-stability-failures":["ack-timing-before-long-running-agent-work","agents-can-mislead-users-if-failures-are-reported-as-successful-outcomes","openclaw-dispatch-routing-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"changes-can-introduce-regressions-when-not-tested-after-modification":["actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes","case-sensitive-database-comparisons-can-miss-logically-equivalent-values","stale-caches-can-hide-current-behavior-or-serve-outdated-assets"],"stale-caches-can-hide-current-behavior-or-serve-outdated-assets":["case-sensitive-database-comparisons-can-miss-logically-equivalent-values"],"actions-on-the-wrong-target-machine-or-host-can-cause-unsafe-operational-changes":["changes-can-introduce-regressions-when-not-tested-after-modification"],"missing-replay-data-compromises-the-ability-to-debug-or-verify-past-execution":["openclaw-dispatch-routing-failures","openclaw-slack-replay-and-post-deploy-stability-failures","post-deploy-stability-smoke-test-run-openclaw-resulted-in-an-overall-failure"],"case-sensitive-database-comparisons-can-miss-logically-equivalent-values":["stale-caches-can-hide-current-behavior-or-serve-outdated-assets"]},"broken_links":[],"orphans":[],"duplicates":[]};</script>
+  <script>window.__WIKI_GRAPH__={"protocol_version":"0.1","nodes":[],"links":[],"backlinks":{},"broken_links":[],"orphans":[],"duplicates":[]};</script>
   <script src="site.js"></script>
 </body>
 </html>

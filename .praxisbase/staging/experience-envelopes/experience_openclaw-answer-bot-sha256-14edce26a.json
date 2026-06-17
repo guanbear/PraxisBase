@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/578c93fed49000856bedd6f4509320f98bfd5689fa2a77d8b6e288ff14dc4d94",
   "source_hash": "sha256:14edce26a3b73d65c8cc06f5cc55b519cc6bd48f77beccc14fdd0bd07db2bd9e",
   "scope_hint": "team",
-  "redacted_summary": "Initial diagnosis indicated the integration was not universally failing to receive messages; at least one observed case was consistent with a group-chat trigger condition not being met. If users report that the bot is not replying, triage should separately verify whether the issue is trigger eligibility, a stuck conversation, or lack of model output. Operational checks should combine process status, gateway health, and recent dispatch activity rather than relying on a single command-line probe.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "Investigation indicated the issue was not a complete messaging outage; at least one group conversation likely did not meet the required mention-based trigger condition. If users still perceive the bot as nonresponsive, continue separating trigger/routing issues from stalled sessions or missing model output. For chat-platform diagnostics, validate process status, gateway health, and recent dispatch activity together rather than relying on a single command-line probe.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

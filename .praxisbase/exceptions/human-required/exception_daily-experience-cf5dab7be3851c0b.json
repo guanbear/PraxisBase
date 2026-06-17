@@ -24,22 +24,22 @@
     "triage": {
       "classification": "safe_personal_experience",
       "confidence": 0.86,
-      "rationale": "The redacted summary contains general troubleshooting conclusions and operational cautions for a bot integration, with no visible secrets, personal data, credentials, raw logs, or sensitive customer content. It appears to be project/agent experience rather than real private material.",
+      "rationale": "The redacted summary contains general project troubleshooting guidance and operational cautions without raw logs, credentials, personal identifiers, or private message content. Team scope still implies review-only under policy.",
       "suggested_redactions": [
-        "Remove or generalize internal source references, hashes, and exception IDs before broader release.",
-        "Generalize specific internal project or agent names if publishing outside the team context.",
-        "Keep protected configuration file names generic if they could reveal internal structure."
+        "Remove or generalize internal source references and hashes before broader release",
+        "Avoid exposing exact internal file/config paths beyond generic config names if not necessary",
+        "Keep any raw Feishu dispatch logs, channel identifiers, or user mentions excluded"
       ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "Initial diagnosis indicated the integration was not universally failing to receive messages; at least one observed case was consistent with a group-chat trigger condition not being met. If users report that the bot is not replying, triage should separately verify whether the issue is trigger eligibility, a stuck conversation, or lack of model output. Operational checks should combine process status, gateway health, and recent dispatch activity rather than relying on a single command-line probe.",
-      "reusable_lesson": "Before changing protected bot or channel configuration, explain the change, confirm approval, back up the current state, and avoid unsolicited updates or restarts.",
-      "residual_risk": "Further validation may be needed to distinguish trigger-condition issues from runtime or model-output failures.",
+      "release_summary": "Investigation indicated the issue was not a complete messaging outage; at least one group conversation likely did not meet the required mention-based trigger condition. If users still perceive the bot as nonresponsive, continue separating trigger/routing issues from stalled sessions or missing model output. For chat-platform diagnostics, validate process status, gateway health, and recent dispatch activity together rather than relying on a single command-line probe.",
+      "reusable_lesson": "Before changing protected bot or channel configuration, explain the plan, obtain confirmation, create a backup, and avoid unsupervised updates or restarts.",
+      "residual_risk": "Further checks may be needed to distinguish trigger failures from runtime or model-output failures.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

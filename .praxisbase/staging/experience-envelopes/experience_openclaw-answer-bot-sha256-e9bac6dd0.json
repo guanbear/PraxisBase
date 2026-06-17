@@ -1,0 +1,24 @@
+{
+  "id": "experience_openclaw-answer-bot-sha256-e9bac6dd0",
+  "protocol_version": "0.1",
+  "type": "experience_envelope",
+  "source_id": "source_openclaw-answer-bot",
+  "agent": "openclaw",
+  "channel": "feishu",
+  "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/b62c9fa15b3e0a157401ea147eb48780e09a4ee53a0eac41a75fef148e5aa3db",
+  "source_hash": "sha256:e9bac6dd0a2e114383858ac78fdda1f44c11486830bc69b33c30ec1dbfa1cb00",
+  "scope_hint": "team",
+  "redacted_summary": "A bot response issue was observed where the web interface continued to work but chat-platform private and group messages did not receive replies. The reusable fix was to update the chat-platform integration plugin from the administration interface and restart the service instance. A user-side verification confirmed that replies resumed after the update and restart.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
+  "privacy": {
+    "mode": "team-git",
+    "verdict": "allow",
+    "reasons": [
+      "privacy_triage_auto_released",
+      "feishu_channel_team_review_first"
+    ]
+  },
+  "warnings": [
+    "privacy_triage_auto_released"
+  ]
+}

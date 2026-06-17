@@ -5,6 +5,7 @@ import { escapeHtml, escapeJsonForHtml } from "../build/html.js";
 import { protocolPaths } from "../protocol/paths.js";
 import { readJson, readText, safePath, writeJson, writeText } from "../store/file-store.js";
 import { readProjectLanguageConfig, readProjectReviewUiConfig, type ProjectKnowledgeConfig, type ProjectLanguage, type ProjectReviewUiConfig } from "../config/project.js";
+import { listExperienceSources } from "../experience/source-config.js";
 import { collectWikiSources } from "./collect.js";
 import { inferWikiConfidence, inferWikiLifecycle, makeWikiSlug, type WikiSource } from "./model.js";
 import { runWikiLint } from "./lint.js";
@@ -812,6 +813,48 @@ function renderDailyOverviewSection(report: DailyReportSummary, language: Projec
 </section>`;
 }
 
+function renderDataSourceSection(report: DailyReportSummary | null, language: ProjectLanguage = "en"): string {
+  if (!report || report.sources.length === 0) return "";
+  const useZh = zh(language);
+  const dateLabel = report.created_at.slice(0, 19).replace("T", " ");
+  const renderSource = (source: DailySourceSummary) => {
+    const meta = [source.agent, source.channel, source.source_type, source.parser].filter(Boolean).join(" · ");
+    const codeRows: Array<{ label: string; value: string }> = [
+      source.repo ? { label: useZh ? "仓库" : "Repo", value: source.repo } : undefined,
+      source.ref ? { label: useZh ? "分支" : "Ref", value: source.ref } : undefined,
+      source.path ? { label: useZh ? "路径" : "Path", value: source.path } : undefined,
+    ].filter((row): row is { label: string; value: string } => Boolean(row));
+    return `<article class="source-card">
+      <div class="source-card-head">
+        <div>
+          <strong>${escapeHtml(source.name)}</strong>
+          <span>${escapeHtml(meta || (useZh ? "未配置来源类型" : "source type not configured"))}</span>
+        </div>
+        <span class="status-pill">${escapeHtml(source.status)}</span>
+      </div>
+      <div class="source-stats">
+        <span>${escapeHtml(useZh ? `扫描 ${source.scanned}` : `scanned ${source.scanned}`)}</span>
+        <span>${escapeHtml(useZh ? `获取 ${source.fetched}` : `fetched ${source.fetched}`)}</span>
+        <span>${escapeHtml(useZh ? `入信封 ${source.enveloped}` : `enveloped ${source.enveloped}`)}</span>
+        <span>${escapeHtml(useZh ? `隐私 ${source.human_required}` : `privacy ${source.human_required}`)}</span>
+      </div>
+      ${codeRows.length > 0 ? `<dl class="source-code-list">${codeRows.map((row) => `<dt>${escapeHtml(row.label)}</dt><dd><code>${escapeHtml(row.value)}</code></dd>`).join("")}</dl>` : ""}
+      ${source.warnings.length > 0 ? `<p class="source-warning">${escapeHtml(source.warnings.join("; "))}</p>` : ""}
+    </article>`;
+  };
+  return `<section class="data-sources panel" id="data-sources">
+  <div class="section-heading compact-heading">
+    <div>
+      <h2>${escapeHtml(useZh ? "当前数据源" : "Current Data Source")}</h2>
+      <p>${escapeHtml(useZh ? `最新处理报告：${dateLabel} · ${report.authority_mode}。这里只展示本次页面正在采用的来源。` : `Latest report: ${dateLabel} · ${report.authority_mode}. These are the sources used by this page.`)}</p>
+    </div>
+  </div>
+  <div class="source-grid">
+    ${report.sources.map(renderSource).join("\n")}
+  </div>
+</section>`;
+}
+
 function renderRelationshipDetails(item: PendingWikiProposalCandidate): string {
   const rows: string[] = [];
   if (item.required_links && item.required_links.length > 0) {
@@ -1434,9 +1477,11 @@ function renderDashboard(
   const stablePages = [...pages]
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
     .map((page) => ({ page, kb: knowledgeBaseFromPage(page) }));
+  const knowledgePageCount = pages.filter((page) => page.page_kind !== "skill").length;
+  const skillPageCount = pages.filter((page) => page.page_kind === "skill").length;
+  const stableTopicCount = new Set(pages.map((page) => makeWikiSlug(page.title))).size;
   const pendingReview = reviewQueue.candidates.filter((item) => item.status === "pending").length;
   const generatedProposals = dailyReport?.proposal_candidates ?? pendingCandidates.length;
-  const alreadyStableQueue = reviewQueue.candidates.filter((item) => item.status === "promoted").length;
   const coverage = dailyReport?.experience_coverage;
   const sourceItems = coverage?.total_items ?? dailyReport?.source_count ?? 0;
   const currentSourcePrivacy = coverage?.privacy_blocked ?? dailyReport?.privacy_required ?? dailyReport?.human_required ?? 0;
@@ -1447,62 +1492,39 @@ function renderDashboard(
   const rejected = (dailyReport?.rejected ?? 0) + (curationReport?.input_rejected ?? 0) + (curationReport?.compiler_hard_blocks ?? 0);
   const knowledgeBases = buildKnowledgeBaseOverview(pages, dailyReport, knowledgeConfig);
   const activeKnowledgeLabels = knowledgeBases.map((item) => item.label).join(" / ");
+  const sourceNameSummary = dailyReport?.sources.length
+    ? dailyReport.sources.map((source) => source.name).join(" / ")
+    : useZh ? "已配置来源" : "configured sources";
   const processSteps: ProcessStep[] = [
     {
       label: useZh ? "来源采集" : "Collect",
       value: String(sourceItems),
-      note: useZh ? "原始记忆/输入单元" : "raw memory/input items",
-      href: "review.html#experience-coverage",
+      note: useZh ? `来自 ${sourceNameSummary}；这是原始条目，不是经验数量` : `from ${sourceNameSummary}; raw items, not lessons`,
+      href: "#data-sources",
     },
     {
       label: useZh ? "隐私筛选" : "Privacy",
       value: String(currentSourcePrivacy),
-      note: useZh ? `本次阻断；队列存量 ${privacyReview}` : `blocked this run; queue ${privacyReview}`,
+      note: useZh ? `本次阻断 ${currentSourcePrivacy}；审批队列 ${privacyReview}` : `${currentSourcePrivacy} blocked this run; queue ${privacyReview}`,
       href: "review.html#human-required",
     },
     {
       label: useZh ? "经验提炼" : "Extract",
       value: String(lessonCount),
-      note: useZh ? `${curationBacklog} 个来源待二次提炼` : `${curationBacklog} sources need curation`,
+      note: useZh ? `${lessonCount} 个经验片段；${curationBacklog} 个来源待二次提炼` : `${lessonCount} lessons; ${curationBacklog} sources need curation`,
       href: "review.html#experience-coverage",
     },
     {
       label: useZh ? "提案审批" : "Review",
       value: String(pendingReview),
-      note: useZh ? `本次生成 ${generatedProposals}，已匹配入库 ${alreadyStableQueue}` : `${generatedProposals} generated, ${alreadyStableQueue} already stable`,
+      note: useZh ? `当前可审批 ${pendingReview}；本次生成 ${generatedProposals}` : `${pendingReview} actionable; ${generatedProposals} generated`,
       href: "review.html#pending-candidates",
     },
     {
       label: useZh ? "稳定知识" : "Stable",
       value: String(pages.length),
-      note: useZh ? "全库可检索总量" : "total retrievable pages",
+      note: useZh ? `稳定页面：知识页 ${knowledgePageCount} + 技能 ${skillPageCount}；主题 ${stableTopicCount}` : `stable pages: ${knowledgePageCount} KB + ${skillPageCount} skills; ${stableTopicCount} topics`,
       href: "#knowledge-pages",
-    },
-  ];
-  const countNotes: CountNote[] = [
-    {
-      label: useZh ? "34 类数字" : "Source count",
-      value: String(sourceItems),
-      text: useZh ? "这是原始来源条目数量，不是经验数量；一个来源可以拆出多个经验，也可能只留下证据。" : "Raw source items, not lesson count; one item can produce multiple lessons or only evidence.",
-      href: "review.html#experience-coverage",
-    },
-    {
-      label: useZh ? "0 类数字" : "Action queue",
-      value: String(pendingReview),
-      text: useZh ? "这是当前马上能点批准/拒绝的提案数。本次生成 1 个提案，但它已命中已有稳定页，所以待审批为 0。" : "Actionable proposals now. One proposal was generated this run, but it already matches a stable page, so pending is 0.",
-      href: "review.html#pending-candidates",
-    },
-    {
-      label: useZh ? "11 类数字" : "Stable total",
-      value: String(pages.length),
-      text: useZh ? "这是 kb/ 与 skills/ 中可被 Agent 检索的稳定知识总量，和当前审批队列不是同一个口径。" : "Total stable kb/ and skills/ pages available to agents; this is separate from the review queue.",
-      href: "#knowledge-pages",
-    },
-    {
-      label: useZh ? "19 / 14 类数字" : "Privacy queue",
-      value: String(privacyReview),
-      text: useZh ? `本次 daily 判定需要隐私确认的是 ${privacyReview}；其中 OpenClaw 覆盖明细里的隐私阻断是 ${currentSourcePrivacy}。` : `The latest daily run requires ${privacyReview} privacy decisions; current OpenClaw coverage details show ${currentSourcePrivacy} privacy blockers.`,
-      href: "review.html#human-required",
     },
   ];
   const dashboardConclusion = pendingReview > 0
@@ -1539,15 +1561,15 @@ function renderDashboard(
   <section class="action-grid" aria-label="${escapeHtml(useZh ? "下一步操作" : "Next actions")}">
     ${renderActionCard({ href: "review.html#pending-candidates", label: useZh ? "可审批提案" : "Actionable proposals", value: String(pendingReview), description: useZh ? "当前能直接批准或拒绝的知识改动。" : "Knowledge changes ready to approve or reject.", tone: pendingReview > 0 ? "warn" : "ok" })}
     ${renderActionCard({ href: "review.html#human-required", label: useZh ? "隐私审批队列" : "Privacy queue", value: String(privacyReview), description: useZh ? `含历史待确认；本次阻断 ${currentSourcePrivacy}。` : `Includes backlog; ${currentSourcePrivacy} blocked this run.`, tone: privacyReview > 0 ? "danger" : "ok" })}
-    ${renderActionCard({ href: "#knowledge-pages", label: useZh ? "稳定知识总量" : "Stable total", value: String(pages.length), description: useZh ? "kb/ 与 skills/ 中 Agent 可检索的全部页面。" : "All retrievable kb/ and skills/ pages.", tone: "ok" })}
+    ${renderActionCard({ href: "#knowledge-pages", label: useZh ? "稳定页面" : "Stable pages", value: String(pages.length), description: useZh ? `知识页 ${knowledgePageCount} + 技能 ${skillPageCount}；同一主题会合并说明。` : `${knowledgePageCount} KB pages + ${skillPageCount} skills; related artifacts are explained below.`, tone: "ok" })}
     ${renderActionCard({ href: "issues.html", label: useZh ? "质量阻断" : "Quality blockers", value: String(qualityFindings), description: useZh ? "断链、重复、过期和编译阻断统一在这里看。" : "Broken links, duplicates, stale pages, and compiler blockers.", tone: qualityFindings > 0 || rejected > 0 ? "info" : "ok" })}
   </section>
   <section class="status-strip">
     <strong>${useZh ? "当前结论" : "Current state"}</strong>
     <span>${escapeHtml(dashboardConclusion)}</span>
   </section>
+  ${renderDataSourceSection(dailyReport, language)}
   ${renderProcessMap({ title: useZh ? "从来源到入库的处理链路" : "From Source to Stable Knowledge", subtitle: useZh ? "这些数字按阶段展示，不是简单相加。点击阶段可以跳到明细或审批入口。" : "Counts are stage-specific rather than additive. Click a stage to inspect details or act.", steps: processSteps })}
-  ${renderCountNotes({ title: useZh ? "数字口径说明" : "Why Counts Differ", subtitle: useZh ? "页面把常见混淆的几套数字放在一起解释，后续每个知识库都沿用同一套口径。" : "The page explains the commonly confused count scopes. Every knowledge base uses the same counting model.", notes: countNotes })}
   ${renderKnowledgeBaseOverview(knowledgeBases, language)}
   ${renderTerminologyPanel(language)}
   ${dailyReport ? renderDailyOverviewSection(dailyReport, language) : ""}
@@ -1563,7 +1585,7 @@ function renderDashboard(
   <section class="overview-grid">
     <div id="knowledge-pages" class="panel">
       <h2 data-i18n="dashboard.knowledgePages">${escapeHtml(useZh ? "稳定知识" : "Stable Knowledge")}</h2>
-      <p class="section-subtitle">${escapeHtml(useZh ? `共 ${pages.length} 条稳定知识，下面展示全部。审批通过并 promote 后会出现在这里。` : `${pages.length} stable page(s), all shown below. Approved and promoted items appear here.`)}</p>
+      <p class="section-subtitle">${escapeHtml(useZh ? `共 ${pages.length} 个稳定页面：${knowledgePageCount} 个知识页 + ${skillPageCount} 个技能页，约 ${stableTopicCount} 个主题。审批通过并 promote 后会出现在这里。` : `${pages.length} stable page(s): ${knowledgePageCount} KB pages + ${skillPageCount} skills, about ${stableTopicCount} topics. Approved and promoted items appear here.`)}</p>
       <ol class="link-list">
         ${stablePages.map(({ page, kb }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span></li>`).join("\n")}
       </ol>
@@ -1840,6 +1862,7 @@ async function exists(root: string, path: string): Promise<boolean> {
 interface DailyReportSummary {
   created_at: string;
   authority_mode: string;
+  sources: DailySourceSummary[];
   source_count: number;
   imported: number;
   rejected: number;
@@ -2029,6 +2052,26 @@ interface DailyReportSummary {
   };
 }
 
+interface DailySourceSummary {
+  name: string;
+  agent?: string;
+  channel?: string;
+  source_type?: string;
+  parser?: string;
+  scope_default?: string;
+  status: string;
+  scanned: number;
+  fetched: number;
+  enveloped: number;
+  imported: number;
+  rejected: number;
+  human_required: number;
+  repo?: string;
+  ref?: string;
+  path?: string;
+  warnings: string[];
+}
+
 interface PrivacyTriageReportSummary {
   created_at: string;
   scanned: number;
@@ -2089,16 +2132,21 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
     created_at: string;
     sources?: Array<{
       name?: string;
+      agent?: string;
+      channel?: string;
       source_type?: string;
       status?: string;
-	      imported?: number;
-	      rejected?: number;
-	      human_required?: number;
-	      warnings?: string[];
-	    }>;
-	    authority_mode?: string;
-	    proposal_candidates?: number;
-	    site_pages?: number;
+      scanned?: number;
+      fetched?: number;
+      enveloped?: number;
+      imported?: number;
+      rejected?: number;
+      human_required?: number;
+      warnings?: string[];
+    }>;
+    authority_mode?: string;
+    proposal_candidates?: number;
+    site_pages?: number;
     ai_distill?: {
       rejected_low_signal?: number;
       rejected_quality?: number;
@@ -2202,6 +2250,29 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
   candidates.sort((a, b) => b.created_at.localeCompare(a.created_at));
   const latest = candidates[0];
   const sources = Array.isArray(latest.sources) ? latest.sources : [];
+  const configuredSources = new Map((await listExperienceSources(root)).map((source) => [source.name, source]));
+  const sourceDetails: DailySourceSummary[] = sources.map((source) => {
+    const config = configuredSources.get(source.name ?? "");
+    return {
+      name: source.name ?? config?.name ?? "unknown",
+      agent: source.agent ?? config?.agent,
+      channel: source.channel ?? config?.channel,
+      source_type: source.source_type ?? config?.source_type,
+      parser: config?.parser,
+      scope_default: config?.scope_default,
+      status: source.status ?? "unknown",
+      scanned: source.scanned ?? 0,
+      fetched: source.fetched ?? 0,
+      enveloped: source.enveloped ?? 0,
+      imported: source.imported ?? 0,
+      rejected: source.rejected ?? 0,
+      human_required: source.human_required ?? 0,
+      repo: config?.repo,
+      ref: config?.ref,
+      path: config?.path,
+      warnings: Array.isArray(source.warnings) ? source.warnings : [],
+    };
+  });
   const contextEconomy = latest.context_economy;
   const contextJuice = latest.context_juice;
   const gbrain = latest.brain_backends?.gbrain;
@@ -2215,6 +2286,7 @@ async function collectLatestDailyReport(root: string): Promise<DailyReportSummar
   return {
     created_at: latest.created_at,
     authority_mode: latest.authority_mode ?? "unknown",
+    sources: sourceDetails,
     source_count: sources.length,
     imported: sources.reduce((sum, s) => sum + (s.imported ?? 0), 0),
     rejected: sources.reduce((sum, s) => sum + (s.rejected ?? 0), 0),
@@ -2721,6 +2793,7 @@ async function collectHumanRequiredRecords(root: string): Promise<HumanRequiredR
       const privacyReviewable = /^Experience privacy verdict human_required\b/i.test(reason)
         || stringValue(privacy.verdict) === "human_required"
         || stringValue(details.privacy_verdict) === "human_required";
+      if (!privacyReviewable) continue;
       const suggestedRedactions = Array.isArray(triage.suggested_redactions)
         ? triage.suggested_redactions.map(stringValue).filter((item): item is string => Boolean(item))
         : [];

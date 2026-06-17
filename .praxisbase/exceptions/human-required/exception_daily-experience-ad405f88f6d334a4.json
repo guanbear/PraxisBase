@@ -25,25 +25,26 @@
     "triage": {
       "classification": "needs_redaction",
       "confidence": 0.82,
-      "rationale": "The summary still contains internal repository/location details, workspace paths, product/document context, and operational cron/status information from a team channel. These are project/team-specific and not safe for auto-release without further minimization.",
+      "rationale": "The summary is mostly agent/project activity, but it still exposes internal repository/domain details, workspace paths, team-channel context, product/document topic, and operational cron/status information.",
       "suggested_redactions": [
-        "Redact or generalize internal Git hosting domain, repository, branch, and package path",
-        "Redact or generalize local workspace and agent installation paths",
-        "Redact specific internal product/document request context",
-        "Redact operational cron task name, schedule, notification timestamps, and status flags",
-        "Remove source identifiers, hashes, and internal source references if present in released text"
+        "Redact internal GitLab domain, repository, branch, and package paths",
+        "Redact local workspace and agent installation paths",
+        "Redact product or document topic names from team chat requests",
+        "Redact Feishu/team-channel identifiers and any remaining user or host references",
+        "Redact operational cron job names, exact timestamps, and internal status flags",
+        "Redact source_ref and source_hash values if included in releasable material"
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "A reusable review skill was installed successfully using the supported package-manager workflow after an unsupported plugin-style command failed. Verification signal was a successful install exit status, and the skill became available to the agent runtime. A separate document-generation request did not complete because interactive authorization timed out. A recurring recovery-check task was observed to be idempotent and silent when a prior notification had already been sent.",
-      "reusable_lesson": "When plugin installation commands are unsupported, switch to the documented package-manager install flow and verify success via exit status plus runtime availability.",
-      "residual_risk": "Authorization-dependent workflows may still fail if interactive login is not completed within the allowed window.",
+      "release_summary": "A reusable skill was installed successfully after an unsupported plugin-style command failed and the operator switched to the supported package-install method. The skill installation completed with a successful exit signal and was linked into the agent environment. A separate document-generation request did not complete because the required login authorization timed out. A recurring recovery-check job continued to run silently and correctly suppressed duplicate user-facing notifications after detecting that prior notification had already occurred.",
+      "reusable_lesson": "When a plugin command is unsupported, switch to the documented package-based install path and verify success with both exit status and agent visibility.",
+      "residual_risk": "Authorization-dependent document workflows may still fail if login approval is not completed within the allowed window.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

@@ -23,25 +23,22 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.82,
-      "rationale": "The summary is mostly operational agent experience with user IDs redacted, but it still includes team-scope chat context, an internal repository URL, local workspace paths, and configuration details for a provider setup that could reveal private project infrastructure.",
+      "confidence": 0.78,
+      "rationale": "The summary is mostly operational agent experience, but it includes team-channel context plus internal repository/domain details, local workspace paths, and configuration references that could expose private project infrastructure if released.",
       "suggested_redactions": [
-        "Redact or generalize the internal GitLab repository URL.",
-        "Redact or generalize the local workspace installation path.",
-        "Remove or generalize provider configuration details such as proxy/base URL and API key requirements.",
-        "Generalize team chat/channel context to avoid identifying the workspace or participants."
+        "Redact or generalize the internal GitLab repository URL and domain.",
+        "Redact or generalize local workspace/agent installation paths.",
+        "Keep Feishu user/channel identifiers redacted.",
+        "Generalize provider configuration details and ensure no API keys, proxy URLs, or credentials are included.",
+        "Avoid listing internal skill inventory details if they reveal non-public tooling."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "auto_released",
-      "release_summary": "A team-scope support interaction clarified that access to private network services is not available by default unless the automation runtime has appropriate network reachability. The team reviewed available automation capabilities and confirmed that text-to-speech output is supported, while voice input depends on channel configuration. A voice-processing skill was installed successfully from an internal marketplace, with follow-up configuration still needed for the external multimodal provider and channel tooling.",
-      "reusable_lesson": "When adding voice-input support, verify both channel-side audio ingestion and provider credentials/configuration before declaring the feature ready.",
-      "residual_risk": "Feature installation was verified, but end-to-end voice recognition remains dependent on pending provider and channel configuration.",
-      "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "decision": "team_review_only",
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

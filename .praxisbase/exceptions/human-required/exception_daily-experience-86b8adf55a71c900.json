@@ -23,19 +23,22 @@
     },
     "triage": {
       "classification": "safe_personal_experience",
-      "confidence": 0.87,
-      "rationale": "The redacted summary contains general operational guidance about agent/model behavior and status checks, with no apparent personal data, secrets, customer content, credentials, or raw private values. Team scope still implies review-only per policy, but the content itself appears safe.",
-      "suggested_redactions": [],
+      "confidence": 0.88,
+      "rationale": "The redacted summary contains general operational notes about agent model-switching behavior and planned improvements, without user secrets, credentials, personal data, or sensitive business content. Team-channel origin still implies review-only release policy.",
+      "suggested_redactions": [
+        "Remove or generalize source identifiers, hashes, and internal URI references before sharing beyond review context.",
+        "Avoid naming specific team channels or workspace-specific agent identifiers if externally released."
+      ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "Documented model-switching behavior varies depending on whether an agent has its own configured default model. For agents without a dedicated default, model changes may persist and affect similar agents; for agents with a dedicated default, model changes may only apply to the current session despite success messaging. Verification should rely on the session status command rather than natural-language self-reporting, and sub-agents may use independent defaults.",
-      "reusable_lesson": "Always verify the active model with the status command after switching models, especially when using named agents or sub-agents.",
-      "residual_risk": "Persistence behavior may change after future product updates.",
+      "release_summary": "Model-switching behavior depends on whether the active agent has its own configured default model. For agents without a separate default, a model switch may persist and affect other similarly configured agents; for agents with their own default, the switch is typically session-scoped even if the interface suggests otherwise. The reliable verification signal is the status command for the current session, not asking the agent to identify its model in natural language.",
+      "reusable_lesson": "After changing models, verify the active session with the status command and expect separately configured agents or sub-agents to retain their own defaults.",
+      "residual_risk": "Behavior may change after future product updates.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

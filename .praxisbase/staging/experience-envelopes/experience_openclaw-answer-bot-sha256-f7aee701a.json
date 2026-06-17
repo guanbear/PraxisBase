@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9",
   "source_hash": "sha256:f7aee701a75deb2a9721417788bf1a1df3ceccc4640b41811c21e47d32c4a3c8",
   "scope_hint": "team",
-  "redacted_summary": "Several operational fixes were consolidated for the bot platform: updating the messaging integration from the product console and restarting the instance can resolve plugin-related failures. For new or newly authorized users seeing an access-not-configured pairing prompt, first have the user restart the instance from the console; if the issue persists, an instance administrator should complete the pairing approval flow. If an instance is stopped or the bot stops replying despite normal billing and no intentional shutdown, check for exhausted temporary storage or disk space, clean up safely, and restart. A separate cron configuration pattern involving the main session target and system-event payloads is known to fail and should be avoided or tracked for a product fix.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "Updated the relevant integration plugin and restarted the instance, which restored service for affected users. For pairing failures that show access is not configured, first have newly onboarded users restart the instance from the console; if the issue remains, an instance administrator should approve the pairing request. For instances that stop responding while billing and intentional stop states are ruled out, check for exhausted temporary or disk storage, clean up space, and restart. A separate scheduler issue was identified where jobs targeting the main session with system-event payloads can fail with a client error.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

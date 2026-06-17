@@ -1,0 +1,19 @@
+{
+  "protocol_version": "0.1",
+  "generated_at": "2026-06-17T06:04:46.248Z",
+  "profile": "all",
+  "bundles": [
+    {
+      "id": "openclaw-sandbox",
+      "path": "repair-bundles/openclaw-sandbox.json",
+      "checksum": "sha256:3003648c8707065dd870f025eb911c888a3a188ebd5ff7ba7e91bf79724a02d1",
+      "compatible_cli_version": "0.1.x"
+    },
+    {
+      "id": "k8s-incident",
+      "path": "repair-bundles/k8s-incident/manifest.json",
+      "checksum": "sha256:6dc697ac6cc6161b209962adad1d6de42eea6e11bd2f25eabfdedcc31969c589",
+      "compatible_cli_version": "0.1.x"
+    }
+  ]
+}

@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/484cde15e8baa9ab50030ad9353c818170a940a08bfeb16a30292e512ef2dad3",
   "source_hash": "sha256:273a471871af48b894fc7534050963ae52ae2a5fc1d66c09110c1614e04472bb",
   "scope_hint": "team",
-  "redacted_summary": "Documented standardized support guidance for answering questions about model pricing, capabilities, and model-switching behavior. The update clarifies when model selection persists versus when an agent-specific default may override a user-selected model, and it provides a consistent response for known context errors after switching models.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "Sanitized guidance was added for handling user questions about model pricing, capabilities, model switching, and unexpected model persistence behavior. The reusable response should direct pricing or capability queries to the standard model-list command and explain that model selection may depend on whether an agent has its own configured default. For model-service or context errors after switching models, support should advise users to switch models again and describe the issue generically as a known compatibility problem between model contexts.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

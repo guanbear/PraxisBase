@@ -4,20 +4,34 @@
   const languageSelect = document.getElementById("languageSelect");
   const languageButtons = Array.from(document.querySelectorAll("[data-language-option]"));
   const base = window.__WIKI_BASE__ || "";
+  let reviewApiBase = "http://127.0.0.1:4174";
+  const reviewConfigPromise = fetch(base + "review-config.json")
+    .then((res) => res.ok ? res.json() : {})
+    .then((config) => {
+      if (typeof config.review_api_base === "string" && config.review_api_base.trim()) {
+        reviewApiBase = config.review_api_base.trim().replace(//+$/, "");
+      }
+      return config;
+    })
+    .catch(() => ({}));
+  const reviewEndpoint = async (path) => {
+    await reviewConfigPromise;
+    return reviewApiBase + path;
+  };
   const labels = {
     en: {
       "brand": "PraxisBase Wiki",
       "nav.aria": "Wiki views",
-      "nav.index": "Index",
-      "nav.review": "Review",
-      "nav.graph": "Graph",
-      "nav.issues": "Issues",
+      "nav.index": "Overview",
+      "nav.review": "Approvals",
+      "nav.graph": "Relationships",
+      "nav.issues": "Quality",
       "language.switch": "Switch language",
       "filters.knowledgeType": "Knowledge type filters",
       "filters.all": "All",
-      "dashboard.eyebrow": "Agent-ready knowledge base",
-      "dashboard.title": "Knowledge Health",
-      "dashboard.lede": "Reviewed fixes, skills, provenance, and graph context for repair workflows.",
+      "dashboard.eyebrow": "Team experience knowledge hub",
+      "dashboard.title": "Team Experience Base",
+      "dashboard.lede": "Track collection, privacy, review, and stable knowledge across multiple knowledge bases.",
       "dashboard.metric.sources": "Sources",
       "dashboard.metric.pages": "Pages",
       "dashboard.metric.brokenLinks": "Broken links",
@@ -26,17 +40,17 @@
       "dashboard.metric.stale": "Stale",
       "dashboard.metric.quality": "Quality findings",
       "dashboard.metric.bundle": "Bundle status",
-      "dashboard.knowledgePages": "Knowledge Pages",
+      "dashboard.knowledgePages": "Stable Knowledge",
       "dashboard.topSignatures": "Top Signatures",
       "dashboard.noSignatures": "No signatures indexed",
       "pending.title": "Pending Experience Candidates",
-      "graph.eyebrow": "Knowledge graph",
-      "graph.title": "Graph",
+      "graph.eyebrow": "Knowledge relationships",
+      "graph.title": "Relationships",
       "graph.lede": "Backlinks, source overlap, and related repair knowledge for agent context.",
       "graph.nodes": "Nodes",
       "graph.links": "Links",
-      "issues.eyebrow": "Wiki quality",
-      "issues.title": "Quality Issues",
+      "issues.eyebrow": "Knowledge quality",
+      "issues.title": "Quality Checks",
       "issues.lede": "Findings that should be reviewed before agents rely on this knowledge.",
       "issues.noIssues": "No quality issues found.",
       "issues.dailyPrivacy": "Daily Privacy Findings"
@@ -44,16 +58,16 @@
     "zh-CN": {
       "brand": "PraxisBase 知识库",
       "nav.aria": "知识库视图",
-      "nav.index": "索引",
-      "nav.review": "审核",
-      "nav.graph": "图谱",
-      "nav.issues": "问题",
+      "nav.index": "总览",
+      "nav.review": "审批",
+      "nav.graph": "关系",
+      "nav.issues": "质检",
       "language.switch": "切换语言",
       "filters.knowledgeType": "知识类型筛选",
       "filters.all": "全部",
-      "dashboard.eyebrow": "面向 Agent 的知识库",
-      "dashboard.title": "知识库健康",
-      "dashboard.lede": "已审核的修复、技能、溯源和图谱上下文，服务机器人修复工作流。",
+      "dashboard.eyebrow": "团队经验知识中枢",
+      "dashboard.title": "团队经验知识库",
+      "dashboard.lede": "统一查看多个知识库的采集、隐私、审批和沉淀状态。",
       "dashboard.metric.sources": "来源",
       "dashboard.metric.pages": "页面",
       "dashboard.metric.brokenLinks": "断链",
@@ -62,19 +76,19 @@
       "dashboard.metric.stale": "过期",
       "dashboard.metric.quality": "质量问题",
       "dashboard.metric.bundle": "包状态",
-      "dashboard.knowledgePages": "知识页",
+      "dashboard.knowledgePages": "稳定知识",
       "dashboard.topSignatures": "高频特征",
       "dashboard.noSignatures": "暂无特征索引",
       "pending.title": "待审核经验候选",
-      "graph.eyebrow": "知识图谱",
-      "graph.title": "图谱",
+      "graph.eyebrow": "知识关系",
+      "graph.title": "关系视图",
       "graph.lede": "面向 Agent 上下文的反向链接、来源重叠和关联修复知识。",
       "graph.nodes": "节点",
       "graph.links": "关系",
-      "issues.eyebrow": "Wiki 质量",
-      "issues.title": "质量问题",
-      "issues.lede": "Agent 依赖这些知识前应先处理的发现。",
-      "issues.noIssues": "未发现质量问题。",
+      "issues.eyebrow": "知识质检",
+      "issues.title": "质量检查",
+      "issues.lede": "展示会影响沉淀、引用或 Agent 使用可靠性的阻断项。",
+      "issues.noIssues": "当前没有阻塞性质量问题。",
       "issues.dailyPrivacy": "Daily 隐私发现"
     }
   };
@@ -143,6 +157,17 @@
       });
     });
   });
+  document.querySelectorAll("[data-kb-filter-link]").forEach((link) => {
+    link.addEventListener("click", () => {
+      const kb = link.getAttribute("data-kb-filter-link") || "all";
+      document.querySelectorAll("[data-kb-filter-link]").forEach((node) => {
+        node.classList.toggle("is-active", node.getAttribute("data-kb-filter-link") === kb);
+      });
+      document.querySelectorAll("[data-page-kb]").forEach((item) => {
+        item.hidden = kb !== "all" && item.getAttribute("data-page-kb") !== kb;
+      });
+    });
+  });
   let activeCoverageStatus = "all";
   let activeCoverageKb = "all";
   const applyCoverageFilters = () => {
@@ -190,7 +215,7 @@
         buttons.forEach((item) => { item.disabled = true; });
         if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
         try {
-          const response = await fetch("http://127.0.0.1:4174/review", {
+          const response = await fetch(await reviewEndpoint("/review"), {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ proposal_id: proposalId, decision }),
@@ -216,7 +241,7 @@
         buttons.forEach((item) => { item.disabled = true; });
         if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
         try {
-          const response = await fetch("http://127.0.0.1:4174/privacy-review", {
+          const response = await fetch(await reviewEndpoint("/privacy-review"), {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ exception_id: exceptionId, decision }),

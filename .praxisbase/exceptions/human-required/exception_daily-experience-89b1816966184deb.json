@@ -24,21 +24,21 @@
     },
     "triage": {
       "classification": "real_private_material",
-      "confidence": 0.94,
-      "rationale": "The summary contains team-channel material, internal exam content, document links requiring authorization, and an identifiable user reference, so it cannot be treated as safe personal/project experience.",
+      "confidence": 0.93,
+      "rationale": "The summary contains team-scope Feishu context, internal exam content, private wiki document links, authorization workflow details, and an identifiable user reference, so it is not safe personal/project agent experience for auto-release.",
       "suggested_redactions": [
-        "Remove or generalize internal Feishu document URLs",
-        "Remove or generalize identifiable user names",
-        "Remove specific exam questions, answers, and option text",
-        "Remove internal process identifiers if not necessary",
-        "Generalize authorization and permission details"
+        "Remove or generalize Feishu wiki URLs and document identifiers.",
+        "Redact the named user/account reference.",
+        "Redact internal exam questions, answers, scoring, and policy-specific content.",
+        "Generalize authorization/token permission details and process identifiers.",
+        "Mark as team-scope review-only rather than personal auto-release."
       ],
       "hard_block_reasons": [
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

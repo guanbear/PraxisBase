@@ -22,26 +22,21 @@
       ]
     },
     "triage": {
-      "classification": "needs_redaction",
-      "confidence": 0.78,
-      "rationale": "The summary is from a team Feishu group chat and includes project/task context, user activity, and internal implementation/configuration details, though direct identifiers and secrets appear redacted.",
+      "classification": "safe_personal_experience",
+      "confidence": 0.86,
+      "rationale": "The summary is already redacted and describes general project/agent work plus non-sensitive group activity without exposing raw user identifiers, secrets, or private content.",
       "suggested_redactions": [
-        "Remove or generalize team chat/channel references and group activity headings.",
-        "Keep Feishu/user identifiers redacted.",
-        "Generalize internal project names, source locations, and architecture details if not intended for release.",
-        "Omit configuration-related references such as provider setup, proxy base URL, API key, and gateway restart details unless fully generic."
+        "Keep Feishu user and channel identifiers redacted.",
+        "Redact any actual Gemini proxy base URL or API key if later provided.",
+        "Redact internal source references, hashes, or database chunk paths before external release if not needed."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "auto_released",
-      "release_summary": "A proposed voice transcription capability for chat audio was reviewed, using a multimodal model to process compressed audio messages. The implementation is not yet complete because the required model provider, media-audio tooling, and service restart steps still need to be configured. A separate architecture review compared two coding-agent designs at a high level and produced a reusable minimal-agent example, but the response was truncated before completion.",
-      "reusable_lesson": "Before marking a multimodal audio feature ready, verify provider configuration, media tool enablement, and a clean service restart in a non-production environment.",
-      "residual_risk": "Configuration remains incomplete and the architecture review may need rerun due to truncation.",
-      "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "decision": "team_review_only",
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

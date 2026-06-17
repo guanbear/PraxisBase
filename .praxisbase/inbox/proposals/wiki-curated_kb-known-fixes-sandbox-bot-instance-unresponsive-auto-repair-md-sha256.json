@@ -1,0 +1,97 @@
+{
+  "id": "wiki-curated_kb-known-fixes-sandbox-bot-instance-unresponsive-auto-repair-md-sha256",
+  "protocol_version": "0.1",
+  "type": "wiki_curated_proposal",
+  "target_path": "kb/known-fixes/sandbox-bot-instance-unresponsive-auto-repair.md",
+  "action": "create",
+  "page_kind": "known_fix",
+  "scope": "team",
+  "title": "沙箱、Bot 或实例无响应时优先使用控制台自动修复",
+  "summary": "当用户反馈 sandbox、bot 或实例宕机、卡住、不可访问或无响应时，先引导用户在控制台使用实例自动修复功能；优先尝试脚本修复，再尝试 AI 修复。若用户已确认两种修复都失败，应升级给对应 on-call 或服务负责人，不要重复相同修复话术。该流程不适用于计费、配额或付款后休眠类问题。",
+  "body_markdown": "# 沙箱、Bot 或实例无响应时优先使用控制台自动修复\n\n## When to Use\n\n在用户报告以下情况时使用本页：\n\n- sandbox、bot、instance 无响应、宕机、卡住或无法访问。\n- 用户描述实例“down”“not responding”“unresponsive”“打不开”“机器人不工作”等运行态异常。\n- 尚未确认用户已经完成控制台内的两种自动修复方式。\n\n## Context\n\n此类问题的首选处理路径是让用户使用控制台的实例自动修复功能，而不是直接升级或反复要求用户重启。自动修复应按顺序尝试：\n\n1. 先尝试 script-based repair。\n2. 再尝试 AI-based repair。\n3. 若两者都失败，再升级给对应 on-call 或服务负责人。\n\n## Procedure\n\n1. 确认问题类型是实例运行态异常：sandbox、bot 或 instance 无响应、宕机或不可用。\n2. 引导用户进入控制台，找到该实例的 auto-repair / instance auto-repair 功能。\n3. 要求用户先执行 script-based repair。\n4. 若 script-based repair 未恢复，再要求用户执行 AI-based repair。\n5. 如果用户明确表示 script-based repair 和 AI-based repair 都已经尝试且失败：\n   - 不要继续重复“请尝试自动修复”的指导。\n   - 收集必要上下文后升级给对应 on-call 或服务 owner。\n\n## Verify\n\n让用户确认以下结果：\n\n- script-based repair 是否已执行。\n- AI-based repair 是否已执行。\n- 执行后 sandbox、bot 或 instance 是否恢复响应。\n- 若未恢复，确认用户已完成两种修复方式后再升级。\n\n可接受的验证结论：\n\n- 已恢复：关闭该运行态故障处理流程。\n- 未恢复且只尝试了一种修复：继续引导尝试另一种修复。\n- 未恢复且两种修复都失败：升级到对应 on-call 或服务负责人。\n\n## Escalation Boundary\n\n立即升级而不是重复修复指导的条件：\n\n- 用户已明确确认 script-based repair 失败。\n- 用户已明确确认 AI-based repair 失败。\n- 问题仍然表现为 sandbox、bot 或 instance 无响应或不可用。\n\n升级时应说明：用户已尝试控制台实例自动修复中的 script-based repair 和 AI-based repair，均未解决。\n\n## Reusable Lessons\n\n- 对 sandbox、bot 或 instance 无响应类问题，优先使用控制台 instance auto-repair。\n- 自动修复顺序应为：先 script-based repair，后 AI-based repair。\n- 用户已确认两种修复都失败时，应升级给 on-call 或服务 owner，不要重复同一修复建议。\n- 不要把该流程误用于计费、配额或付款后休眠问题。\n\n## Agent Use\nUse this page when:\n- For user reports that a sandbox, bot, or instance is down or unresponsive, first direct them to use the console’s instance auto-repair feature. Recommend trying script-based repair before AI-based repair, and avoid applying this flow to billing, quota, or post-payment sleep issues. If the user already confirms both repair methods failed, escalate to the appropriate on-call or service owner rather than repeating the same repair guidance.\n\nApply it by:\n- Match the current symptom to this page, then apply the documented procedure or fix.\n\nVerify by:\n- Confirm the original symptom no longer reproduces and record the verification result.\n\nDo not use it when:\n- The current evidence does not match the symptoms, scope, or provenance on this page.\n\n## Provenance\n- openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3 (sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0)\n",
+  "source_refs": [
+    "openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3"
+  ],
+  "source_hashes": [
+    "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0"
+  ],
+  "source_count": 1,
+  "evidence_ids": [
+    "external_ref:auto-released:exception_daily-experience-5cb54c626295b4d9"
+  ],
+  "confidence": 0.63,
+  "maturity": "draft",
+  "provenance": [
+    {
+      "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3",
+      "source_hash": "sha256:19c2eeefae289d8d97246f723cdf04f637a16e633b4f7933a28223fb86797ac0",
+      "excerpt": "For user reports that a sandbox, bot, or instance is down or unresponsive, first direct them to use the console’s instance auto-repair feature. Recommend trying script-based repair before AI-based repair, and avoid applying this flow to billing, quota, or post-payment sleep issues. If the user already confirms both repair methods failed, escalate to the appropriate on-call or service owner rather than repeating the same repair guidance."
+    }
+  ],
+  "review_hint": {
+    "why_review": "new_canonical_topic",
+    "suggested_decision": "edit",
+    "risk_notes": [
+      "证据来源仅 1 条，未提供具体控制台路径或按钮名称；页面避免编造 UI 细节。",
+      "未包含命令级验证方法；验证依赖用户确认实例是否恢复响应。",
+      "需避免将该流程套用于计费、配额或付款后休眠问题。",
+      "quality_human_required:generic_applicability",
+      "quality_human_required:non_specific_action",
+      "quality_human_required:low_confidence",
+      "quality_human_required:team_or_global_scope"
+    ]
+  },
+  "guards": [
+    {
+      "id": "path",
+      "ok": true,
+      "message": "allowed stable knowledge path"
+    },
+    {
+      "id": "title",
+      "ok": true,
+      "message": "readable title"
+    },
+    {
+      "id": "privacy",
+      "ok": true,
+      "message": "no private material detected"
+    },
+    {
+      "id": "provenance",
+      "ok": true,
+      "message": "source provenance present"
+    },
+    {
+      "id": "body",
+      "ok": true,
+      "message": "wiki-shaped body"
+    },
+    {
+      "id": "experience_signal",
+      "ok": true,
+      "message": "durable experience signal present"
+    },
+    {
+      "id": "actionability",
+      "ok": true,
+      "message": "agent actionability present"
+    },
+    {
+      "id": "verification_or_lesson",
+      "ok": true,
+      "message": "verification or reusable lesson present"
+    },
+    {
+      "id": "not_reference_only",
+      "ok": true,
+      "message": "not reference-only evidence"
+    }
+  ],
+  "lifecycle": "active",
+  "last_confirmed_at": "2026-06-17T05:48:44.098Z",
+  "supersedes": [],
+  "superseded_by": null,
+  "relationship_types": [],
+  "created_at": "2026-06-17T05:48:44.098Z"
+}

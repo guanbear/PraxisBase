@@ -25,21 +25,21 @@
     "triage": {
       "classification": "needs_redaction",
       "confidence": 0.86,
-      "rationale": "The summary still contains team-scope project details, an internal project/space name, tenant-specific project URL/key, and operational integration guidance that may identify private material even though the token and user/channel ID are redacted.",
+      "rationale": "The summary includes team-channel project context with internal project name, project key, and a specific Feishu project URL/path; the token and user ID are already redacted, but remaining identifiers could expose private project material.",
       "suggested_redactions": [
-        "Redact the internal project/space name.",
-        "Redact or generalize the project URL, tenant/path components, and project_key.",
-        "Redact tenant-specific source references and hashes if they can link back to private records.",
-        "Keep Plugin Token and Feishu identifiers redacted.",
-        "Generalize operational recommendations tied to the specific team project or cron task."
+        "Redact the internal project/space name",
+        "Redact the project_key value",
+        "Redact the Feishu project URL or tenant/path segment",
+        "Keep Plugin Token and Feishu user/channel IDs redacted",
+        "Generalize team/channel-specific operational details if releasing outside review"
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "team_review_only",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T05:22:58.969Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }

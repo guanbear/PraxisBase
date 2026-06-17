@@ -240,6 +240,14 @@
         "wiki-proposal_kb-procedures-capture-openclaw-sha256-f7aee701a75deb2a9721417788bf1a1df3ceccc464"
       ],
       "page_ids": []
+    },
+    "capture:capture_openclaw-sha256-e9bac6dd0a2e114383858ac78fdda1f44c11486830bc69b33c30ec1dbfa1cb00": {
+      "source_hash": "sha256:e9bac6dd0a2e114383858ac78fdda1f44c11486830bc69b33c30ec1dbfa1cb00",
+      "last_compiled_at": "2026-06-17T01:26:04.280Z",
+      "candidate_ids": [
+        "wiki-proposal_kb-procedures-capture-openclaw-sha256-e9bac6dd0a2e114383858ac78fdda1f44c11486830"
+      ],
+      "page_ids": []
     }
   }
 }

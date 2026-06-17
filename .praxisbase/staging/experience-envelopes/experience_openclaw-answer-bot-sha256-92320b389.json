@@ -8,8 +8,8 @@
   "source_ref": "openclaw://answer-bot/pm.sqlite/chunks/2a5d25f88e3247b1869800eacafb3244037010e464723e3fd77bb16901d6b8ab",
   "source_hash": "sha256:92320b3890301078db779c62b37c753a6f89dadd23a5cae04b9df6ca70023a8f",
   "scope_hint": "team",
-  "redacted_summary": "A scheduled-job failure was traced to a framework issue where jobs targeting the primary session with a system-event payload could not resolve the intended session and returned client errors. The reliable workaround was to recreate the jobs using isolated-session delivery with an agent-turn style payload and explicit delivery configuration. Verification signal: the failing jobs were removed and recreated in the working mode.",
-  "fetched_at": "2026-06-16T05:22:58.969Z",
+  "redacted_summary": "A recurring job failure was traced to a framework issue where jobs targeting the main session with a system-event payload could not resolve the expected session key, resulting in rejected job creation or execution. The working mitigation was to recreate affected jobs using an isolated session target with an agent-turn payload and explicit delivery configuration. Verification signal: recreated jobs were accepted under the isolated-session configuration instead of failing with the prior session-key validation error.",
+  "fetched_at": "2026-06-17T05:48:44.098Z",
   "privacy": {
     "mode": "team-git",
     "verdict": "allow",

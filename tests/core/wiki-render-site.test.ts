@@ -313,6 +313,7 @@ Body.
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-daily-"));
     await mkdir(join(root, "kb/notes"), { recursive: true });
     await mkdir(join(root, ".praxisbase/reports/daily"), { recursive: true });
+    await mkdir(join(root, ".praxisbase/sources"), { recursive: true });
     await mkdir(join(root, ".praxisbase/raw-vault/refs"), { recursive: true });
     await writeFile(join(root, "kb/notes/a.md"), `---
 id: a
@@ -324,6 +325,22 @@ maturity: draft
 
 Body.
 `);
+    await writeFile(join(root, ".praxisbase/sources/source_openclaw-bot.json"), JSON.stringify({
+      id: "source_openclaw-bot",
+      protocol_version: "0.1",
+      type: "experience_source_config",
+      name: "openclaw-bot",
+      agent: "openclaw",
+      source_type: "git",
+      channel: "feishu",
+      parser: "openclaw-export",
+      scope_default: "team",
+      repo: "https://gitlab.example.com/sre/praxisbase.git",
+      ref: "openclaw-ingest/answer-bot",
+      path: ".praxisbase/sources/openclaw-answer-bot/pm-memory.jsonl",
+      created_at: "2026-05-21T00:00:00.000Z",
+      updated_at: "2026-05-21T00:00:00.000Z",
+    }), "utf8");
     await writeFile(
       join(root, ".praxisbase/reports/daily/daily_2026_05_21.json"),
       JSON.stringify({
@@ -402,6 +419,12 @@ Body.
     await buildWikiSite(root);
     const index = await readFile(join(root, "dist/index.html"), "utf8");
     assert.ok(index.includes("Latest Daily Experience"));
+    assert.ok(index.includes("Current Data Source"));
+    assert.ok(index.includes("openclaw-bot"));
+    assert.ok(index.includes("https://gitlab.example.com/sre/praxisbase.git"));
+    assert.ok(index.includes("openclaw-ingest/answer-bot"));
+    assert.ok(index.includes(".praxisbase/sources/openclaw-answer-bot/pm-memory.jsonl"));
+    assert.equal(index.includes("Why Counts Differ"), false);
     assert.ok(index.includes("2026-05-21"));
     assert.ok(index.includes("team-git"));
     assert.ok(index.includes("Sources"));
@@ -874,6 +897,43 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("0.91"));
     assert.ok(review.includes("The item describes project workflow without credentials."));
     assert.ok(review.includes("Refresh OpenClaw auth before retrying memory sync."));
+  });
+
+  it("keeps non-privacy human-required records out of the privacy queue", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-privacy-only-"));
+    await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/exceptions/human-required/privacy.json"), JSON.stringify({
+      id: "privacy",
+      protocol_version: "0.1",
+      type: "exception_record",
+      category: "human_required",
+      source_id: "experience_openclaw-answer-bot-sha256-safe",
+      reason: "Experience privacy verdict human_required: private_material_detected",
+      details: {
+        agent: "openclaw",
+        source_ref: "openclaw://answer-bot/pm.sqlite/chunks/safe",
+        source_hash: "sha256:safe",
+        redacted_summary: "OpenClaw answer bot item needs privacy review.",
+      },
+      created_at: "2026-06-17T00:00:00.000Z",
+    }, null, 2), "utf8");
+    await writeFile(join(root, ".praxisbase/exceptions/human-required/wiki-quality.json"), JSON.stringify({
+      id: "wiki-quality",
+      protocol_version: "0.1",
+      type: "exception_record",
+      category: "human_required",
+      source_id: "stable_kb:kb/known-fixes/old-openclaw-page.md",
+      reason: "Wiki candidate body shrink exceeds safe threshold",
+      details: { target: "old-openclaw-page" },
+      created_at: "2026-06-17T00:01:00.000Z",
+    }, null, 2), "utf8");
+
+    await buildWikiSite(root);
+
+    const review = await readFile(join(root, "dist/review.html"), "utf8");
+    assert.ok(review.includes("OpenClaw answer bot item needs privacy review."));
+    assert.equal(review.includes("Wiki candidate body shrink exceeds safe threshold"), false);
+    assert.equal(review.includes("stable_kb:kb/known-fixes/old-openclaw-page.md"), false);
   });
 
   it("shows a sanitized review preview while hiding raw private human-required details", async () => {

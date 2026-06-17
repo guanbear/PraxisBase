@@ -22,24 +22,25 @@
       ]
     },
     "triage": {
-      "classification": "safe_personal_experience",
-      "confidence": 0.86,
-      "rationale": "Redacted content describes agent behavior, model/status usage, and a project/team automation rule without exposing unredacted personal identifiers, secrets, credentials, or private message content.",
+      "classification": "needs_redaction",
+      "confidence": 0.78,
+      "rationale": "The Feishu identifier is redacted and most content is project/agent operational experience, but an internal dashboard URL and team-specific group-response rule remain exposed and may reveal private operational details.",
       "suggested_redactions": [
-        "Keep the Feishu/group identifier redacted.",
-        "Consider redacting or generalizing internal service URLs if publishing outside the project context."
+        "Redact or generalize the dashboard URL/domain.",
+        "Keep the Feishu group/channel identifier redacted.",
+        "Generalize team-specific fixed reply wording if it reveals internal support procedures or claims."
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
       "decision": "auto_released",
-      "release_summary": "Clarified that response-style changes may occur when a sub-agent is handling work, because sub-agents can have independent default model settings. The reliable way to verify the active model for the current session is to use the status command rather than asking the agent in natural language. A team-channel automation rule was added to stay silent by default and only respond to clear service-failure reports with a standard repair suggestion.",
-      "reusable_lesson": "Use explicit status tooling to verify runtime state, and constrain team-channel bots to fixed trigger conditions plus approved response text.",
-      "residual_risk": "Sub-agent model usage remains independently configured and may not be visible from the current session status.",
+      "release_summary": "Documented that unexpected reply-style changes can occur when a delegated sub-agent is handling work, since sub-agents may have independent defaults. The reliable verification signal for the active session is the status command, while natural-language self-reporting by the agent should not be treated as authoritative. A planned improvement is to make model-selection changes apply directly and persistently to the current agent rather than only to shared defaults.",
+      "reusable_lesson": "Use an explicit status/diagnostic command to verify the active model or runtime state; do not rely on the agent’s conversational self-description.",
+      "residual_risk": "Sub-agent defaults may still differ from the parent agent until that behavior is addressed separately.",
       "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-16T07:08:13.670Z"
 }

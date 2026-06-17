@@ -23,26 +23,23 @@
     },
     "triage": {
       "classification": "needs_redaction",
-      "confidence": 0.86,
-      "rationale": "Contains team-channel operational guidance, employee names, support-routing instructions, and internal product/pricing details. No obvious secrets are present, but it is not safe for auto-release without further anonymization and review.",
+      "confidence": 0.82,
+      "rationale": "The summary contains team-channel operational guidance, identifiable employee names, dates, internal product/process details, and a redacted platform identifier. It is not high-confidence safe personal experience as-is.",
       "suggested_redactions": [
-        "Redact employee names and replace with generic roles such as product owner, support engineer, or reviewer.",
-        "Remove or generalize internal routing instructions that identify specific people to mention or transfer to.",
-        "Redact internal source references, hashes, channel identifiers, and exception/source IDs if exposed outside the review system.",
-        "Generalize internal pricing or billing policy details unless confirmed public.",
-        "Remove team-channel provenance details and keep only the reusable, non-identifying support guidance."
+        "Redact or generalize all employee names and attributions",
+        "Remove or generalize specific dates tied to named individuals",
+        "Keep platform/user identifiers redacted",
+        "Generalize internal channel/source references",
+        "Review whether internal pricing and support-routing guidance is approved for release",
+        "Rewrite as generic troubleshooting guidance without team-specific provenance"
       ],
       "hard_block_reasons": [
         "feishu_private_identifier_detected",
         "remote_source_requires_review"
       ],
-      "decision": "auto_released",
-      "release_summary": "Support guidance was sanitized to remove personal routing details, internal identifiers, and team-channel provenance. Verified reusable guidance includes: direct users to adjust bot visibility in the bot administration console when a bot cannot be found or added; avoid reusing the same chat bot across unrelated tools or agents because it can cause missing or duplicate replies; use the product console’s scheduled-task management area to review or cancel recurring tasks. For ordinary messages outside defined trigger scenarios, the bot should remain silent.",
-      "reusable_lesson": "When documenting support playbooks, keep role-based escalation and user-action guidance while removing names, internal IDs, exact routes, and non-public policy details.",
-      "residual_risk": "Internal billing and escalation details were generalized and should be confirmed against public-facing policy before reuse.",
-      "auto_review_policy": "team-ai-sanitized-v1",
-      "triaged_at": "2026-06-16T05:10:27.996Z"
+      "decision": "team_review_only",
+      "triaged_at": "2026-06-17T01:11:17.189Z"
     }
   },
-  "created_at": "2026-06-16T04:04:23.647Z"
+  "created_at": "2026-06-17T05:48:44.098Z"
 }
