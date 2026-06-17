@@ -4,7 +4,7 @@ import { initializeWorkspace } from "./commands/init.js";
 import { repairContextCommand } from "./commands/repair-context.js";
 import { submitEpisode, syncOutbox } from "./commands/episode.js";
 import { submitProposal } from "./commands/propose.js";
-import { reviewAuto, reviewPolicyInit, reviewAutoWithPolicy, reviewServe } from "./commands/review.js";
+import { revokeStableKnowledge, reviewAuto, reviewPolicyInit, reviewAutoWithPolicy, reviewServe } from "./commands/review.js";
 import { promoteAuto } from "./commands/promote.js";
 import { buildCommand } from "./commands/build.js";
 import { checkCommand } from "./commands/check.js";
@@ -148,6 +148,24 @@ program.command("review").option("--auto").action(async () => {
         reviewCmd.error("--port must be a positive integer", { exitCode: 1 });
       }
       await reviewServe(process.cwd(), { port, host: options.host });
+    });
+
+  reviewCmd
+    .command("revoke")
+    .requiredOption("--path <path>", "stable kb/ or skill path to revoke")
+    .option("--reason <reason>", "short revocation reason")
+    .option("--json")
+    .action(async (options: { path: string; reason?: string; json?: boolean }) => {
+      const result = await revokeStableKnowledge(process.cwd(), {
+        path: options.path,
+        reason: options.reason,
+        reviewerId: "praxisbase-cli",
+      });
+      if (options.json) {
+        console.log(JSON.stringify({ ok: true, result }, null, 2));
+      } else {
+        console.log(`Revoked stable knowledge: ${result.path}`);
+      }
     });
 }
 

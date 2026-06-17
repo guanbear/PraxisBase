@@ -71,6 +71,10 @@
       "types": "./src/promote/promote.ts",
       "default": "./dist/promote/promote.js"
     },
+    "./promote/revoke.js": {
+      "types": "./src/promote/revoke.ts",
+      "default": "./dist/promote/revoke.js"
+    },
     "./build/build.js": {
       "types": "./src/build/build.ts",
       "default": "./dist/build/build.js"

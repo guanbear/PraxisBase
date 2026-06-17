@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { ProposalSchema, ReviewSchema, PROTOCOL_VERSION, wikiCandidateToKnowledgeProposal } from "@praxisbase/core";
 import type { ExceptionRecord, Proposal, RunRecord } from "@praxisbase/core";
 import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
+import { isStableKnowledgeRevoked } from "@praxisbase/core/promote/revoke.js";
 import { shouldAutoMergeReview } from "@praxisbase/core/review/risk.js";
 import { writeJson } from "@praxisbase/core/store/file-store.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
@@ -47,6 +48,10 @@ export async function promoteAuto(root: string): Promise<void> {
     const proposal = proposals.get(review.proposal_id);
     if (proposal) {
       try {
+        if (await isStableKnowledgeRevoked(root, proposal.patch.path)) {
+          skipped++;
+          continue;
+        }
         await promoteApprovedProposal(root, { proposal, review });
         promoted++;
       } catch (err) {

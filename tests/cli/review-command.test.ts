@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { syncReviewWriteback, writeManualPrivacyReview } from "@praxisbase/cli/commands/review.js";
+import { revokeStableKnowledge, syncReviewWriteback, writeManualPrivacyReview } from "@praxisbase/cli/commands/review.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -53,5 +53,48 @@ describe("review CLI helpers", () => {
     assert.equal(await git(root, ["log", "-1", "--pretty=%s"]), "Record PraxisBase review decision");
     const exception = JSON.parse(await readFile(join(dir, "exception.json"), "utf8"));
     assert.equal(exception.details.triage.reviewer_id, "praxisbase-gitlab-review-ui");
+  });
+
+  it("archives stable knowledge for revoke without deleting provenance", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-review-revoke-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/revokable.md"), [
+      "---",
+      "id: revokable",
+      "type: known_fix",
+      "knowledge_type: known_fix",
+      "scope: team",
+      "status: published",
+      "maturity: verified",
+      "sources:",
+      "  - uri: openclaw://answer-bot/redacted",
+      "    hash: sha256:revokable",
+      "confidence: 0.91",
+      "---",
+      "# Revokable Experience",
+      "",
+      "## When to Use",
+      "Use this when a stable experience needs a rollback path.",
+    ].join("\n"), "utf8");
+
+    const result = await revokeStableKnowledge(root, {
+      path: "kb/known-fixes/revokable.md",
+      reviewerId: "praxisbase-test",
+      reason: "bad advice",
+      now: "2026-06-17T08:00:00.000Z",
+    });
+
+    assert.equal(result.path, "kb/known-fixes/revokable.md");
+    assert.equal(result.status, "archived");
+    const page = await readFile(join(root, "kb/known-fixes/revokable.md"), "utf8");
+    assert.match(page, /status: archived/);
+    assert.match(page, /maturity: archived/);
+    assert.match(page, /revoked_by: praxisbase-test/);
+    assert.match(page, /revocation_reason: bad advice/);
+    assert.match(page, /openclaw:\/\/answer-bot\/redacted/);
+    assert.match(page, /sha256:revokable/);
+    const record = JSON.parse(await readFile(join(root, result.revocation_path), "utf8"));
+    assert.equal(record.path, "kb/known-fixes/revokable.md");
+    assert.equal(record.reviewer_id, "praxisbase-test");
   });
 });

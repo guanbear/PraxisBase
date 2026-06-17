@@ -14,12 +14,13 @@ import type { Proposal, ReviewPolicy, CuratedWikiProposal, AutoReviewDecision, E
 import { reviewProposal } from "@praxisbase/core/review/reviewer.js";
 import { writeJson } from "@praxisbase/core/store/file-store.js";
 import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
+import { revokeStableKnowledge } from "@praxisbase/core/promote/revoke.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { promoteAuto } from "./promote.js";
 
 const execFileAsync = promisify(execFile);
 
-export { writeManualPrivacyReview };
+export { revokeStableKnowledge, writeManualPrivacyReview };
 
 export async function reviewAuto(root: string): Promise<void> {
   const startedAt = new Date().toISOString();
@@ -236,6 +237,18 @@ export async function reviewServe(root: string, options: { port: number; host?: 
           decision,
           releaseSummary: typeof body.release_summary === "string" ? body.release_summary : undefined,
           note: typeof body.note === "string" ? body.note : undefined,
+          reviewerId: "praxisbase-local-review-ui",
+        });
+        const site = await buildWikiSite(root);
+        return send(200, { ok: true, ...result, outputs: site.outputs });
+      }
+      if (req.method === "POST" && req.url === "/revoke") {
+        const body = await readJsonBody(req);
+        const path = typeof body.path === "string" ? body.path : undefined;
+        if (!path) return send(400, { ok: false, error: "path is required" });
+        const result = await revokeStableKnowledge(root, {
+          path,
+          reason: typeof body.reason === "string" ? body.reason : "manual_ui_revoke",
           reviewerId: "praxisbase-local-review-ui",
         });
         const site = await buildWikiSite(root);

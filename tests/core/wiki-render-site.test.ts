@@ -105,6 +105,57 @@ Refresh login. <script>alert("x")</script>
     assert.ok(siteJs.includes("reviewApiBase"));
   });
 
+  it("shows revoke controls for active stable pages and hides archived pages from the site", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-revoke-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/revokable.md"), `---
+id: revokable
+type: known_fix
+knowledge_type: known_fix
+scope: team
+status: published
+maturity: verified
+sources:
+  - uri: openclaw://answer-bot/redacted
+    hash: sha256:revokable
+confidence: 0.91
+---
+# Revokable Experience
+
+## When to Use
+Use this when a stable experience needs a rollback path.
+`);
+
+    await buildWikiSite(root);
+    const activeIndex = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.ok(activeIndex.includes("Revokable Experience"));
+    assert.ok(activeIndex.includes("data-revoke-path=\"kb/known-fixes/revokable.md\""));
+
+    await writeFile(join(root, "kb/known-fixes/revokable.md"), `---
+id: revokable
+type: known_fix
+knowledge_type: known_fix
+scope: team
+status: archived
+maturity: archived
+revoked_at: "2026-06-17T08:00:00.000Z"
+sources:
+  - uri: openclaw://answer-bot/redacted
+    hash: sha256:revokable
+confidence: 0.91
+---
+# Revokable Experience
+
+## When to Use
+Use this when a stable experience needs a rollback path.
+`);
+
+    await buildWikiSite(root);
+    const archivedIndex = await readFile(join(root, "dist/index.html"), "utf8");
+    assert.equal(archivedIndex.includes("Revokable Experience"), false);
+    await assert.rejects(stat(join(root, "dist/pages/revokable.html")));
+  });
+
   it("renders wiki links in page markdown as clickable links to resolved pages", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-links-"));
     await mkdir(join(root, "kb/notes"), { recursive: true });

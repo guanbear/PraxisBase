@@ -2,7 +2,7 @@
   "protocol_version": "0.1",
   "id": "openclaw-sandbox",
   "scenario": "openclaw",
-  "generated_at": "2026-06-17T06:53:51.876Z",
+  "generated_at": "2026-06-17T07:25:08.940Z",
   "known_fixes": [],
   "skills": [
     "skills/openclaw/baseline-diagnostics/SKILL.md",

@@ -5,9 +5,10 @@ import { shouldAutoMergeReview } from "../review/risk.js";
 import { appearsToBeRawLog } from "../protocol/redact.js";
 import { promotionTimeGuard } from "../wiki/promotion-quality.js";
 import { findApprovedSkillPromotionAudit } from "../synthesis/skill-audit.js";
+import { isStableKnowledgeRevoked } from "./revoke.js";
 
 export interface PromotionError extends Error {
-  code: "unsafe_path" | "raw_log_content" | "review_not_approved" | "quality_gate_failure" | "skill_promotion_audit_required";
+  code: "unsafe_path" | "raw_log_content" | "review_not_approved" | "quality_gate_failure" | "skill_promotion_audit_required" | "revoked_path";
 }
 
 function hasHeading(content: string, heading: string): boolean {
@@ -135,6 +136,12 @@ export async function promoteApprovedProposal(
   }
 
   const patchPath = input.proposal.patch.path;
+
+  if (await isStableKnowledgeRevoked(root, patchPath)) {
+    const err = new Error(`Stable knowledge path has been revoked and will not be promoted again: ${patchPath}`) as PromotionError;
+    err.code = "revoked_path";
+    throw err;
+  }
 
   try {
     safePath(root, patchPath);

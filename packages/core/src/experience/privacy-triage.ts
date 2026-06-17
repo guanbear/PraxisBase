@@ -158,7 +158,7 @@ function buildPrompt(exception: ExceptionRecord): { system: string; user: string
         rationale: "short reason without raw private values",
         suggested_redactions: "array of strings",
       },
-      release_policy: "Personal mode can auto-release only safe_personal_experience with high confidence and deterministic checks passing. Team mode is review-only.",
+      release_policy: "Personal mode can auto-release only safe_personal_experience with high confidence and deterministic checks passing. Team mode may auto-release a sanitized summary only when AI redaction succeeds and deterministic leak checks pass; raw private material must never be copied into the release summary.",
       exception: {
         id: exception.id,
         reason: redactForTriage(exception.reason),
@@ -353,6 +353,7 @@ function isLowSignalTeamTriage(input: {
 function teamAutoReviewThreshold(ai: TriageAiDecision): number | undefined {
   if (ai.classification === "safe_personal_experience") return 0.82;
   if (ai.classification === "needs_redaction") return 0.78;
+  if (ai.classification === "real_private_material") return 0.85;
   return undefined;
 }
 
@@ -368,7 +369,7 @@ function teamAutoReviewEligible(input: {
   const threshold = teamAutoReviewThreshold(input.ai);
   if (threshold === undefined || input.ai.confidence < threshold) return false;
   const allowedHardBlocks = new Set(["remote_source_requires_review", "feishu_private_identifier_detected"]);
-  if (input.ai.classification === "needs_redaction" || input.ai.classification === "safe_personal_experience") {
+  if (["needs_redaction", "safe_personal_experience", "real_private_material"].includes(input.ai.classification)) {
     allowedHardBlocks.add("private_material_detected");
   }
   const blockingReasons = input.hardBlockReasons.filter((reason) => !allowedHardBlocks.has(reason));
@@ -767,6 +768,9 @@ async function triageException(input: {
     })
       ? await generateTeamReleaseSummary({ exception, ai, aiClient: input.aiClient, warnings: input.warnings })
       : undefined;
+    const teamAutoReviewPolicy = teamReleaseSummary
+      ? ai.classification === "real_private_material" ? "team-ai-redacted-sensitive-v1" : "team-ai-sanitized-v1"
+      : undefined;
     let teamLowSignal = input.warnings.includes(`privacy_triage_team_auto_review_low_signal:${exception.id}`);
     if (!teamLowSignal && isLowSignalTeamTriage({ exception, ai })) {
       input.warnings.push(`privacy_triage_team_auto_review_low_signal:${exception.id}`);
@@ -817,7 +821,7 @@ async function triageException(input: {
               release_summary: teamReleaseSummary.release_summary,
               reusable_lesson: teamReleaseSummary.reusable_lesson,
               residual_risk: teamReleaseSummary.residual_risk,
-              auto_review_policy: "team-ai-sanitized-v1",
+              auto_review_policy: teamAutoReviewPolicy,
             } : {}),
             triaged_at: input.now,
           },

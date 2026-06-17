@@ -100,6 +100,7 @@ export * from "./wiki/catalog.js";
 export * from "./wiki/semantic-review.js";
 export * from "./wiki/semantic-review-policy.js";
 export * from "./kb/maintenance.js";
+export * from "./promote/revoke.js";
 export * from "./review/policy.js";
 export * from "./agent-access/manifest.js";
 export * from "./agent-access/skill.js";

@@ -23,6 +23,7 @@ interface SourceMetadata {
   kind?: string;
   knowledge_base?: string;
   scope?: string;
+  status?: string;
   maturity?: string;
   confidence?: number;
   reference_count?: number;
@@ -74,6 +75,7 @@ async function sourceMetadata(root: string, source: WikiSource): Promise<SourceM
       kind: stringValue(data.knowledge_type) ?? stringValue(data.type),
       knowledge_base: stringValue(data.knowledge_base) ?? stringValue(data.knowledge_source),
       scope: stringValue(data.scope),
+      status: stringValue(data.status),
       maturity: stringValue(data.maturity),
       confidence: numberValue(data.confidence),
       reference_count: numberValue(data.reference_count),
@@ -116,6 +118,7 @@ export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
 
   for (const source of sources) {
     const metadata = await sourceMetadata(root, source);
+    if (metadata.status === "archived" || metadata.maturity === "archived") continue;
     const title = source.title;
     const identity = pageIdentity(source, metadata, title);
     const body = source.body ?? source.summary;
@@ -1598,7 +1601,7 @@ function renderDashboard(
       <h2 data-i18n="dashboard.knowledgePages">${escapeHtml(useZh ? "稳定知识" : "Stable Knowledge")}</h2>
       <p class="section-subtitle">${escapeHtml(useZh ? `共 ${pages.length} 个稳定页面：${knowledgePageCount} 个知识页 + ${skillPageCount} 个技能页，约 ${stableTopicCount} 个主题。审批通过并 promote 后会出现在这里。` : `${pages.length} stable page(s): ${knowledgePageCount} KB pages + ${skillPageCount} skills, about ${stableTopicCount} topics. Approved and promoted items appear here.`)}</p>
       <ol class="link-list">
-        ${stablePages.map(({ page, kb }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span></li>`).join("\n")}
+        ${stablePages.map(({ page, kb }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span>${page.path.startsWith("kb/") || page.path.endsWith("/SKILL.md") ? `<div class="approval-actions revoke-actions" data-revoke-actions data-revoke-path="${escapeHtml(page.path)}"><button type="button" data-revoke-decision="archive">${useZh ? "撤回" : "Revoke"}</button><span class="approval-status" data-revoke-status>${useZh ? "撤回后会从稳定知识和检索中移除。" : "Revoking removes this from stable knowledge and retrieval."}</span></div>` : ""}</li>`).join("\n")}
       </ol>
     </div>
     <div class="panel">

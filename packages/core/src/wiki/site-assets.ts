@@ -249,7 +249,7 @@ export const SITE_JS = `(() => {
     return dictionary[key] || dictionary.disconnected;
   };
   const syncReviewServiceHealth = async () => {
-    const statuses = Array.from(document.querySelectorAll("[data-review-status], [data-privacy-status]"));
+    const statuses = Array.from(document.querySelectorAll("[data-review-status], [data-privacy-status], [data-revoke-status]"));
     if (statuses.length === 0) return;
     let ok = false;
     try {
@@ -509,6 +509,33 @@ export const SITE_JS = `(() => {
         } catch (error) {
           buttons.forEach((item) => { item.disabled = false; });
           if (status) { status.textContent = "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+        }
+      });
+    });
+  });
+  document.querySelectorAll("[data-revoke-actions]").forEach((container) => {
+    const path = container.getAttribute("data-revoke-path");
+    const status = container.querySelector("[data-revoke-status]");
+    container.querySelectorAll("[data-revoke-decision]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        if (!path) return;
+        const buttons = Array.from(container.querySelectorAll("button"));
+        buttons.forEach((item) => { item.disabled = true; });
+        if (status) { status.textContent = "撤回中..."; status.setAttribute("data-state", "pending"); }
+        try {
+          const response = await fetch(await reviewEndpoint("/revoke"), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ path }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.ok === false) throw new Error(payload.error || response.statusText);
+          if (status) { status.textContent = "已撤回，刷新后会从稳定知识中消失"; status.setAttribute("data-state", "ok"); }
+          const row = container.closest("li");
+          if (row) row.hidden = true;
+        } catch (error) {
+          buttons.forEach((item) => { item.disabled = false; });
+          if (status) { status.textContent = "审批服务未启动或撤回失败"; status.setAttribute("data-state", "error"); }
         }
       });
     });

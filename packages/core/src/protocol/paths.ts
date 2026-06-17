@@ -38,6 +38,7 @@ export const protocolPaths = {
   reportsHarvest: ".praxisbase/reports/harvest",
   reportsDaily: ".praxisbase/reports/daily",
   reportsPrivacyTriage: ".praxisbase/reports/privacy-triage",
+  revocations: ".praxisbase/revocations",
   aiConfig: ".praxisbase/ai/config.json",
   reportsAiDistill: ".praxisbase/reports/ai-distill",
   reportsContextEconomy: ".praxisbase/reports/context-economy",
