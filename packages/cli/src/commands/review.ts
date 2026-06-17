@@ -1,7 +1,9 @@
+import { execFile } from "node:child_process";
 import { mkdir, readdir, readFile, unlink } from "node:fs/promises";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { promisify } from "node:util";
 import {
   ProposalSchema, PROTOCOL_VERSION, wikiCandidateToKnowledgeProposal,
   CuratedWikiProposalSchema, curatedWikiProposalToKnowledgeProposal, ReviewSchema, buildWikiSite,
@@ -14,6 +16,10 @@ import { writeJson } from "@praxisbase/core/store/file-store.js";
 import { promoteApprovedProposal } from "@praxisbase/core/promote/promote.js";
 import { protocolPaths } from "@praxisbase/core/protocol/paths.js";
 import { promoteAuto } from "./promote.js";
+
+const execFileAsync = promisify(execFile);
+
+export { writeManualPrivacyReview };
 
 export async function reviewAuto(root: string): Promise<void> {
   const startedAt = new Date().toISOString();
@@ -110,6 +116,62 @@ export async function writeManualReview(root: string, input: {
   const reviewPath = `${protocolPaths.inboxReviews}/${review.id}.json`;
   await writeJson(root, reviewPath, review);
   return { review_path: reviewPath, decision: review.decision };
+}
+
+export interface ReviewWritebackOptions {
+  mode?: "none" | "git";
+  push?: boolean;
+  message?: string;
+  remote?: string;
+  branch?: string;
+}
+
+export interface ReviewWritebackResult {
+  committed: boolean;
+  pushed: boolean;
+  changed: string[];
+  commit?: string;
+}
+
+async function git(root: string, args: string[]): Promise<string> {
+  const { stdout } = await execFileAsync("git", args, { cwd: root });
+  return stdout.trim();
+}
+
+async function gitRaw(root: string, args: string[]): Promise<string> {
+  const { stdout } = await execFileAsync("git", args, { cwd: root });
+  return stdout;
+}
+
+export async function syncReviewWriteback(root: string, options: ReviewWritebackOptions = {}): Promise<ReviewWritebackResult> {
+  if ((options.mode ?? "none") !== "git") {
+    return { committed: false, pushed: false, changed: [] };
+  }
+  const changedRaw = (await gitRaw(root, ["status", "--porcelain", ".praxisbase/inbox/reviews", ".praxisbase/exceptions"]))
+    .split("\n")
+    .filter((line) => line.trim());
+  const changed = changedRaw.map((line) => line.trim());
+  if (changed.length === 0) {
+    return { committed: false, pushed: false, changed: [] };
+  }
+
+  const changedPaths = changedRaw.map((line) => line.replace(/^[ MADRCU?!]{1,2}\s+/, "").trim()).filter(Boolean);
+  await git(root, ["add", "--", ...changedPaths]);
+  await git(root, ["commit", "-m", options.message ?? "Record PraxisBase review decision"]);
+  const commit = await git(root, ["rev-parse", "HEAD"]);
+
+  let pushed = false;
+  if (options.push) {
+    const remote = options.remote ?? "origin";
+    if (options.branch) {
+      await git(root, ["push", remote, `HEAD:${options.branch}`]);
+    } else {
+      await git(root, ["push", remote, "HEAD"]);
+    }
+    pushed = true;
+  }
+
+  return { committed: true, pushed, changed, commit };
 }
 
 function readJsonBody(req: import("node:http").IncomingMessage): Promise<Record<string, unknown>> {

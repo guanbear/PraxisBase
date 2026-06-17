@@ -44,12 +44,13 @@ Refresh login. <script>alert("x")</script>
     assert.ok(result.outputs.includes("dist/llms-full.txt"));
     assert.ok(result.outputs.includes("dist/graph.jsonld"));
     assert.ok(result.outputs.includes("dist/graph-slices/overview.json"));
+    assert.ok(result.outputs.includes("dist/review-config.json"));
     assert.ok(result.outputs.includes("dist/ai-readme.md"));
     assert.ok(result.outputs.some((output) => output.startsWith(".praxisbase/reports/wiki-quality/")));
     assert.equal(result.health.quality_findings, 0);
 
     const index = await readFile(join(root, "dist/index.html"), "utf8");
-    assert.ok(index.includes("Knowledge Health"));
+    assert.ok(index.includes("OpenClaw Experience Base"));
     assert.ok(index.includes("searchInput"));
     assert.ok(index.includes("data-kind-filter"));
     assert.ok(index.includes("href=\"style.css\""));
@@ -73,10 +74,33 @@ Refresh login. <script>alert("x")</script>
     assert.ok(graphPage.includes("window.__WIKI_GRAPH__"));
 
     const issuesPage = await readFile(join(root, "dist/issues.html"), "utf8");
-    assert.ok(issuesPage.includes("Quality Issues"));
+    assert.ok(issuesPage.includes("Quality Checks"));
 
     await assert.doesNotReject(stat(join(root, "dist/style.css")));
     await assert.doesNotReject(stat(join(root, "dist/site.js")));
+    const reviewConfig = JSON.parse(await readFile(join(root, "dist/review-config.json"), "utf8"));
+    assert.equal(reviewConfig.review_api_base, "http://127.0.0.1:4174");
+    assert.equal(reviewConfig.writeback, "local");
+  });
+
+  it("renders review UI with a configurable approval API endpoint", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-review-api-config-"));
+    await mkdir(join(root, ".praxisbase"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/config.yaml"), [
+      'protocol_version: "0.1"',
+      "review_api_base: https://praxisbase-review.internal.example",
+      "review_writeback: gitlab",
+      "",
+    ].join("\n"), "utf8");
+
+    await buildWikiSite(root);
+
+    const config = JSON.parse(await readFile(join(root, "dist/review-config.json"), "utf8"));
+    assert.equal(config.review_api_base, "https://praxisbase-review.internal.example");
+    assert.equal(config.writeback, "gitlab");
+    const siteJs = await readFile(join(root, "dist/site.js"), "utf8");
+    assert.ok(siteJs.includes("review-config.json"));
+    assert.ok(siteJs.includes("reviewApiBase"));
   });
 
   it("renders wiki links in page markdown as clickable links to resolved pages", async () => {
@@ -404,7 +428,7 @@ Body.
     assert.ok(index.includes("href=\"review.html#pending-candidates\""));
     assert.ok(index.includes("href=\"#knowledge-pages\""));
     assert.ok(index.includes("id=\"knowledge-pages\""));
-    assert.ok(index.includes("Knowledge Pages"));
+    assert.ok(index.includes("Stable Knowledge"));
     assert.equal(index.includes("Latest Experience Summaries"), false);
     assert.equal(index.includes("openclaw-memory://openclaw://memory/auth#chunk-1"), false);
     const issues = await readFile(join(root, "dist/issues.html"), "utf8");
@@ -720,7 +744,7 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.equal(searchIndex.documents[0].href, "review.html#pending-wiki-proposal_auth");
 
     const review = await readFile(join(root, "dist/review.html"), "utf8");
-    assert.ok(review.includes("Review Queue"));
+    assert.ok(review.includes("Experience Approval"));
     assert.ok(review.includes("id=\"pending-candidates\""));
     assert.ok(review.includes("Review Required"));
     assert.ok(review.includes("Privacy Required"));
@@ -781,8 +805,8 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
 
     await buildWikiSite(root);
     const index = await readFile(join(root, "dist/index.html"), "utf8");
-    assert.ok(index.includes("知识库健康"));
-    assert.ok(index.includes("知识页"));
+    assert.ok(index.includes("OpenClaw 经验知识库"));
+    assert.ok(index.includes("稳定知识"));
     assert.ok(index.includes('data-i18n="dashboard.title"'));
     assert.ok(index.includes('href="index.html"'));
     const review = await readFile(join(root, "dist/review.html"), "utf8");
@@ -792,18 +816,18 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes('data-language-option="zh-CN"'));
     assert.ok(review.includes("经验覆盖"));
     assert.ok(review.includes("原始项"));
-    assert.ok(review.includes("标记需修改"));
+    assert.ok(review.includes("操作命令"));
     assert.equal(review.includes("人工跟进"), false);
     assert.ok(review.includes("experience_openclaw-a"));
     assert.ok(review.includes("中文经验候选"));
     assert.ok(review.includes("低信号已拒绝"));
     assert.equal(review.includes("raw transcript"), false);
     const graph = await readFile(join(root, "dist/graph.html"), "utf8");
-    assert.ok(graph.includes("知识图谱"));
+    assert.ok(graph.includes("知识关系"));
     assert.ok(graph.includes("节点"));
     const issues = await readFile(join(root, "dist/issues.html"), "utf8");
-    assert.ok(issues.includes("质量问题"));
-    assert.ok(issues.includes("未发现质量问题。"));
+    assert.ok(issues.includes("质量检查"));
+    assert.ok(issues.includes("当前没有阻塞性质量问题。"));
   });
 
   it("shows privacy triage metadata for human-required records", async () => {
@@ -958,7 +982,7 @@ Body.
     const result = await buildWikiSite(root);
     assert.ok(result.outputs.includes("dist/index.html"));
     const index = await readFile(join(root, "dist/index.html"), "utf8");
-    assert.ok(index.includes("Knowledge Health"));
+    assert.ok(index.includes("OpenClaw Experience Base"));
     assert.equal(index.includes("Latest Daily Experience"), false);
     await assert.rejects(stat(join(root, "dist/experience.html")));
   });
@@ -1199,7 +1223,7 @@ Body.
     const review = await readFile(join(root, "dist/review.html"), "utf8");
     // The current privacy metric should show 0. Historical curation input counts are reported
     // separately and should not inflate the actionable daily privacy queue.
-    const currentPrivacyMatch = review.match(/href="#human-required"[^>]*><span>Current privacy<\/span><strong>(\d+)<\/strong>/);
+    const currentPrivacyMatch = review.match(/Current privacy[\s\S]*?<strong>(\d+)<\/strong>/);
     assert.ok(currentPrivacyMatch, "Current privacy metric link should exist");
     assert.equal(currentPrivacyMatch[1], "0", "Current privacy count should be 0 since no exception records exist");
 
@@ -1570,7 +1594,7 @@ Body.
     assert.match(review, /Current privacy[\s\S]*?<strong>28<\/strong>/);
     assert.ok(review.includes("Privacy backlog"));
     assert.match(review, /Privacy backlog[\s\S]*?<strong>55<\/strong>/);
-    assert.ok(review.includes("Latest daily blocked 28 item(s); historical backlog has 55 record(s)."));
+    assert.ok(review.includes("Current run has 28 item(s); historical backlog has 55."));
     assert.ok(review.includes("Showing the latest 50 privacy records."));
     assert.ok(review.includes("Skipped already triaged"));
     assert.ok(review.includes("praxisbase privacy triage --mode personal --auto-release --progress --json"));

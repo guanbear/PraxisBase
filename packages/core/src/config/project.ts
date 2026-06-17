@@ -9,6 +9,11 @@ export interface ProjectLanguageConfig {
   knowledge: ProjectKnowledgeConfig;
 }
 
+export interface ProjectReviewUiConfig {
+  reviewApiBase: string;
+  writeback: "local" | "gitlab" | string;
+}
+
 export type KnowledgeProfile = "default" | "openclaw" | "container-repair" | "k8s" | string;
 
 export interface ProjectKnowledgeConfig {
@@ -119,5 +124,26 @@ export async function readProjectLanguageConfig(
       curationIncludeAutoReleased: envIncludeAutoReleased ?? fileCurationIncludeAutoReleased ?? true,
       filterRules: fileFilterRules,
     },
+  };
+}
+
+export async function readProjectReviewUiConfig(
+  root: string,
+  env: Record<string, string | undefined> = process.env,
+): Promise<ProjectReviewUiConfig> {
+  let fileReviewApiBase: string | undefined;
+  let fileWriteback: string | undefined;
+
+  try {
+    const config = await readText(root, protocolPaths.config);
+    fileReviewApiBase = yamlScalar(config, "review_api_base");
+    fileWriteback = yamlScalar(config, "review_writeback");
+  } catch {
+    // Missing project config is valid for tests and lightweight consumers.
+  }
+
+  return {
+    reviewApiBase: env.PRAXISBASE_REVIEW_API_BASE?.trim() || fileReviewApiBase || "http://127.0.0.1:4174",
+    writeback: env.PRAXISBASE_REVIEW_WRITEBACK?.trim() || fileWriteback || "local",
   };
 }

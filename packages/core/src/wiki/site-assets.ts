@@ -12,12 +12,14 @@ export const SITE_OUTPUTS = [
   "dist/ai-readme.md",
   "dist/sitemap.xml",
   "dist/robots.txt",
+  "dist/review-config.json",
   "dist/style.css",
   "dist/site.js",
 ];
 
 export const SITE_CSS = `:root {
   color-scheme: light;
+  --bg: #fbfcf8;
   --ink: #17211b;
   --muted: #5f6d66;
   --line: #d8e0da;
@@ -27,10 +29,10 @@ export const SITE_CSS = `:root {
   --warn: #9a5a00;
 }
 * { box-sizing: border-box; }
-body { margin: 0; color: var(--ink); background: #fbfcf8; font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+body { margin: 0; color: var(--ink); background: var(--bg); font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.topbar { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: 180px minmax(220px, 560px) auto; gap: 1rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--line); background: rgba(251, 252, 248, .96); }
+.topbar { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: 190px minmax(220px, 560px) auto; gap: 1rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--line); background: rgba(251, 252, 248, .96); backdrop-filter: blur(10px); }
 .brand { color: var(--ink); font-weight: 750; }
 .topnav { display: flex; justify-content: flex-end; gap: .75rem; flex-wrap: wrap; align-items: center; }
 .topnav a { color: var(--muted); font-size: .9rem; }
@@ -45,16 +47,38 @@ a:hover { text-decoration: underline; }
 .search-results { position: absolute; top: 42px; left: 0; right: 0; border: 1px solid var(--line); border-radius: 6px; background: white; box-shadow: 0 12px 28px rgba(23, 33, 27, .12); overflow: hidden; }
 .search-results a { display: block; padding: .7rem .8rem; border-bottom: 1px solid var(--line); }
 .dashboard, .graph-shell, .issues-shell, .review-shell { max-width: 1180px; margin: 0 auto; padding: 2rem 1rem 4rem; }
-.hero { min-height: 220px; display: flex; align-items: end; padding: 2rem 0; border-bottom: 1px solid var(--line); }
+.hero { min-height: 190px; display: flex; align-items: end; padding: 1.6rem 0 1.8rem; border-bottom: 1px solid var(--line); }
 .eyebrow { margin: 0 0 .5rem; color: var(--accent-2); font-weight: 700; text-transform: uppercase; font-size: .78rem; }
-h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-spacing: 0; }
+h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-spacing: 0; }
 .lede { max-width: 62ch; color: var(--muted); font-size: 1.05rem; }
-.metrics { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: .75rem; margin: 1.25rem 0; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: .75rem; margin: 1rem 0; }
 .metrics article, .metric-link { border: 1px solid var(--line); border-radius: 8px; padding: .85rem; background: white; }
 .metric-link { display: block; color: var(--ink); }
 .metric-link:hover { text-decoration: none; border-color: var(--accent); }
 .metrics span { display: block; color: var(--muted); font-size: .78rem; }
 .metrics strong { display: block; margin-top: .3rem; font-size: 1.45rem; }
+.muted { color: var(--muted); }
+.section-subtitle { margin: -.3rem 0 1rem; color: var(--muted); max-width: 76ch; }
+.action-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .85rem; margin: 1.25rem 0; }
+.action-card { display: flex; flex-direction: column; min-height: 142px; border: 1px solid var(--line); border-radius: 8px; background: white; padding: 1rem; color: var(--ink); box-shadow: 0 10px 28px rgba(23, 33, 27, .04); }
+.action-card:hover { text-decoration: none; border-color: var(--accent); box-shadow: 0 14px 30px rgba(23, 33, 27, .08); }
+.action-card span { color: var(--muted); font-size: .8rem; font-weight: 700; }
+.action-card strong { display: block; margin: .25rem 0 .35rem; font-size: 1.8rem; line-height: 1; }
+.action-card p { margin: 0; color: var(--muted); }
+.action-card[data-tone="warn"] { border-top: 4px solid var(--warn); }
+.action-card[data-tone="danger"] { border-top: 4px solid #9a2f2f; }
+.action-card[data-tone="ok"] { border-top: 4px solid var(--accent); }
+.action-card[data-tone="info"] { border-top: 4px solid #5a6da8; }
+.status-strip { display: flex; gap: .55rem; flex-wrap: wrap; align-items: center; margin: 1rem 0; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--muted); }
+.status-strip strong { color: var(--ink); }
+.flow-guide { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0; }
+.flow-guide article { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .85rem; }
+.flow-guide strong { display: block; font-size: 1rem; }
+.flow-guide span { display: inline-flex; align-items: center; justify-content: center; width: 1.55rem; height: 1.55rem; border-radius: 999px; margin-bottom: .55rem; background: #e8f2ed; color: var(--accent); font-weight: 800; }
+.flow-guide p { margin: .25rem 0 0; color: var(--muted); }
+.overview-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 1.25rem; align-items: start; margin-top: 1.25rem; }
+.panel { border-top: 3px solid var(--accent); padding-top: .85rem; }
+.panel h2 { margin: 0 0 .35rem; }
 .filters { display: flex; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
 .filters button { border: 1px solid var(--line); border-radius: 6px; background: white; padding: .45rem .7rem; color: var(--ink); cursor: pointer; }
 .dashboard-grid, .graph-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
@@ -119,6 +143,7 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .advanced-panel { margin: 1rem 0; }
 .advanced-panel > summary { cursor: pointer; color: var(--accent); font-weight: 700; padding: .55rem 0; }
 .dashboard-advanced, .review-advanced { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: .35rem 0; }
+.review-card { scroll-margin-top: 86px; }
 .approval-actions { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; margin: .7rem 0; }
 .approval-actions button { border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); padding: .42rem .65rem; cursor: pointer; font: inherit; }
 .approval-actions button:first-child { background: var(--accent); border-color: var(--accent); color: white; }
@@ -143,7 +168,7 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 5.2rem); line-height: .96; letter-
 .meta-rail dl { display: grid; grid-template-columns: 90px 1fr; gap: .35rem .6rem; margin: 0; }
 .meta-rail dt { color: var(--muted); }
 @media (max-width: 900px) {
-  .topbar, .metrics, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid { grid-template-columns: 1fr; }
+  .topbar, .metrics, .action-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid { grid-template-columns: 1fr; }
   .coverage-flow article::after { display: none; }
   .topnav { justify-content: flex-start; }
   .side-nav, .meta-rail { position: static; max-height: none; }
@@ -155,20 +180,34 @@ export const SITE_JS = `(() => {
   const languageSelect = document.getElementById("languageSelect");
   const languageButtons = Array.from(document.querySelectorAll("[data-language-option]"));
   const base = window.__WIKI_BASE__ || "";
+  let reviewApiBase = "http://127.0.0.1:4174";
+  const reviewConfigPromise = fetch(base + "review-config.json")
+    .then((res) => res.ok ? res.json() : {})
+    .then((config) => {
+      if (typeof config.review_api_base === "string" && config.review_api_base.trim()) {
+        reviewApiBase = config.review_api_base.trim().replace(/\/+$/, "");
+      }
+      return config;
+    })
+    .catch(() => ({}));
+  const reviewEndpoint = async (path) => {
+    await reviewConfigPromise;
+    return reviewApiBase + path;
+  };
   const labels = {
     en: {
       "brand": "PraxisBase Wiki",
       "nav.aria": "Wiki views",
-      "nav.index": "Index",
-      "nav.review": "Review",
-      "nav.graph": "Graph",
-      "nav.issues": "Issues",
+      "nav.index": "Overview",
+      "nav.review": "Approvals",
+      "nav.graph": "Relationships",
+      "nav.issues": "Quality",
       "language.switch": "Switch language",
       "filters.knowledgeType": "Knowledge type filters",
       "filters.all": "All",
-      "dashboard.eyebrow": "Agent-ready knowledge base",
-      "dashboard.title": "Knowledge Health",
-      "dashboard.lede": "Reviewed fixes, skills, provenance, and graph context for repair workflows.",
+      "dashboard.eyebrow": "Team repair knowledge hub",
+      "dashboard.title": "OpenClaw Experience Base",
+      "dashboard.lede": "Turns robot repair memory into reviewable, reusable, provenance-backed knowledge.",
       "dashboard.metric.sources": "Sources",
       "dashboard.metric.pages": "Pages",
       "dashboard.metric.brokenLinks": "Broken links",
@@ -177,17 +216,17 @@ export const SITE_JS = `(() => {
       "dashboard.metric.stale": "Stale",
       "dashboard.metric.quality": "Quality findings",
       "dashboard.metric.bundle": "Bundle status",
-      "dashboard.knowledgePages": "Knowledge Pages",
+      "dashboard.knowledgePages": "Stable Knowledge",
       "dashboard.topSignatures": "Top Signatures",
       "dashboard.noSignatures": "No signatures indexed",
       "pending.title": "Pending Experience Candidates",
-      "graph.eyebrow": "Knowledge graph",
-      "graph.title": "Graph",
+      "graph.eyebrow": "Knowledge relationships",
+      "graph.title": "Relationships",
       "graph.lede": "Backlinks, source overlap, and related repair knowledge for agent context.",
       "graph.nodes": "Nodes",
       "graph.links": "Links",
-      "issues.eyebrow": "Wiki quality",
-      "issues.title": "Quality Issues",
+      "issues.eyebrow": "Knowledge quality",
+      "issues.title": "Quality Checks",
       "issues.lede": "Findings that should be reviewed before agents rely on this knowledge.",
       "issues.noIssues": "No quality issues found.",
       "issues.dailyPrivacy": "Daily Privacy Findings"
@@ -195,16 +234,16 @@ export const SITE_JS = `(() => {
     "zh-CN": {
       "brand": "PraxisBase 知识库",
       "nav.aria": "知识库视图",
-      "nav.index": "索引",
-      "nav.review": "审核",
-      "nav.graph": "图谱",
-      "nav.issues": "问题",
+      "nav.index": "总览",
+      "nav.review": "审批",
+      "nav.graph": "关系",
+      "nav.issues": "质检",
       "language.switch": "切换语言",
       "filters.knowledgeType": "知识类型筛选",
       "filters.all": "全部",
-      "dashboard.eyebrow": "面向 Agent 的知识库",
-      "dashboard.title": "知识库健康",
-      "dashboard.lede": "已审核的修复、技能、溯源和图谱上下文，服务机器人修复工作流。",
+      "dashboard.eyebrow": "团队修复知识中枢",
+      "dashboard.title": "OpenClaw 经验知识库",
+      "dashboard.lede": "把机器人修复记忆转成可审批、可沉淀、可复用的运维经验。",
       "dashboard.metric.sources": "来源",
       "dashboard.metric.pages": "页面",
       "dashboard.metric.brokenLinks": "断链",
@@ -213,19 +252,19 @@ export const SITE_JS = `(() => {
       "dashboard.metric.stale": "过期",
       "dashboard.metric.quality": "质量问题",
       "dashboard.metric.bundle": "包状态",
-      "dashboard.knowledgePages": "知识页",
+      "dashboard.knowledgePages": "稳定知识",
       "dashboard.topSignatures": "高频特征",
       "dashboard.noSignatures": "暂无特征索引",
       "pending.title": "待审核经验候选",
-      "graph.eyebrow": "知识图谱",
-      "graph.title": "图谱",
+      "graph.eyebrow": "知识关系",
+      "graph.title": "关系视图",
       "graph.lede": "面向 Agent 上下文的反向链接、来源重叠和关联修复知识。",
       "graph.nodes": "节点",
       "graph.links": "关系",
-      "issues.eyebrow": "Wiki 质量",
-      "issues.title": "质量问题",
-      "issues.lede": "Agent 依赖这些知识前应先处理的发现。",
-      "issues.noIssues": "未发现质量问题。",
+      "issues.eyebrow": "知识质检",
+      "issues.title": "质量检查",
+      "issues.lede": "展示会影响沉淀、引用或 Agent 使用可靠性的阻断项。",
+      "issues.noIssues": "当前没有阻塞性质量问题。",
       "issues.dailyPrivacy": "Daily 隐私发现"
     }
   };
@@ -341,7 +380,7 @@ export const SITE_JS = `(() => {
         buttons.forEach((item) => { item.disabled = true; });
         if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
         try {
-          const response = await fetch("http://127.0.0.1:4174/review", {
+          const response = await fetch(await reviewEndpoint("/review"), {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ proposal_id: proposalId, decision }),
@@ -367,7 +406,7 @@ export const SITE_JS = `(() => {
         buttons.forEach((item) => { item.disabled = true; });
         if (status) { status.textContent = "提交中..."; status.setAttribute("data-state", "pending"); }
         try {
-          const response = await fetch("http://127.0.0.1:4174/privacy-review", {
+          const response = await fetch(await reviewEndpoint("/privacy-review"), {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ exception_id: exceptionId, decision }),
