@@ -127,14 +127,14 @@ describe("OpenClaw repair context", () => {
     assert.equal(context.problem_signature, "openclaw:dispatch-routing-failure");
   });
 
-  it("loads the repository OpenClaw dispatch page by frontmatter signature", async () => {
+  it("returns unknown when no stable frontmatter declares the dispatch signature", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-repair-empty-"));
     const context = await buildOpenClawRepairContext({
-      root: process.cwd(),
+      root,
       logs: "OpenClaw delegation failed: stickyResult is not defined. Runner missing, dispatch route mismatch, and spawn proof missing.",
     });
 
-    assert.equal(context.problem_signature, "openclaw:dispatch-routing-failure");
-    assert.ok(context.known_fixes.includes("kb/known-fixes/openclaw-dispatch-routing-failures.md"));
-    assert.equal(context.skills.includes("skills/openclaw/openclaw-dispatch-routing-failures/SKILL.md"), false);
+    assert.equal(context.problem_signature, "openclaw:unknown");
+    assert.deepEqual(context.known_fixes, []);
   });
 });

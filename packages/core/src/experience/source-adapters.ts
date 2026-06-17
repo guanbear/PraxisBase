@@ -93,6 +93,12 @@ interface RawExperienceItem {
   [key: string]: unknown;
 }
 
+interface ResolvedRawExperienceEntry {
+  item: RawExperienceItem;
+  rawText: string;
+  filePath?: string;
+}
+
 interface OpenClawSqliteChunkRow {
   id?: unknown;
   path?: unknown;
@@ -102,6 +108,25 @@ interface OpenClawSqliteChunkRow {
   hash?: unknown;
   text?: unknown;
   updated_at?: unknown;
+}
+
+interface OpenClawMemoryMetadata {
+  path?: string;
+  source?: string;
+  start_line?: number;
+  end_line?: number;
+}
+
+interface MarkdownLine {
+  index: number;
+  text: string;
+}
+
+interface AtomicMarkdownBlock {
+  text: string;
+  startLine: number;
+  endLine: number;
+  headingPath: string[];
 }
 
 function isOpenClawDreamingRef(value: string): boolean {
@@ -412,6 +437,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function positiveIntegerValue(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+function openClawMemoryMetadata(item: RawExperienceItem): OpenClawMemoryMetadata {
+  const metadata = isRecord(item.metadata) ? item.metadata : {};
+  return {
+    path: stringValue(metadata.path ?? item.path),
+    source: stringValue(metadata.source ?? item.source),
+    start_line: positiveIntegerValue(metadata.start_line ?? item.start_line),
+    end_line: positiveIntegerValue(metadata.end_line ?? item.end_line),
+  };
+}
+
 function trimmedString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
@@ -516,6 +559,287 @@ function sourceRefForItem(source: ExperienceSourceConfig, item: RawExperienceIte
   return `log://openclaw/${itemId}`;
 }
 
+function openClawItemText(item: RawExperienceItem, rawText: string): string {
+  return [
+    item.text,
+    item.raw_log,
+    item.redacted_summary,
+    item.summary,
+  ].find((value): value is string => typeof value === "string" && value.trim().length > 0)?.trim() ?? rawText.trim();
+}
+
+function isMarkdownMemoryPath(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.replace(/\\/g, "/").toLowerCase();
+  return normalized === "memory.md"
+    || normalized.endsWith("/memory.md")
+    || /^memory\/\d{4}-\d{2}-\d{2}\.md$/.test(normalized)
+    || normalized.endsWith("/memory/memory.md")
+    || /(^|\/)memory\/\d{4}-\d{2}-\d{2}\.md$/.test(normalized);
+}
+
+function shouldAtomizeOpenClawMemoryItem(source: ExperienceSourceConfig, item: RawExperienceItem, rawText: string): boolean {
+  if (source.agent !== "openclaw") return false;
+  if (source.parser !== "openclaw-export" && source.parser !== "openclaw-log") return false;
+  const metadata = openClawMemoryMetadata(item);
+  const sourceRef = typeof item.source_ref === "string" ? item.source_ref : "";
+  const hasMemoryRef = isMarkdownMemoryPath(metadata.path) || /memory\.md|memory\/\d{4}-\d{2}-\d{2}\.md|pm\.sqlite\/chunks/i.test(sourceRef);
+  if (!hasMemoryRef) return false;
+  const text = openClawItemText(item, rawText);
+  return /^#{1,6}\s+\S+/m.test(text) || /^\s*[-*]\s+\S+/m.test(text);
+}
+
+function headingForLine(line: string): { level: number; title: string } | undefined {
+  const match = line.match(/^(#{1,6})\s+(.+)$/);
+  if (!match) return undefined;
+  return { level: match[1].length, title: match[2].trim() };
+}
+
+function topLevelBullet(line: string): boolean {
+  return /^\s{0,2}[-*]\s+\S+/.test(line);
+}
+
+function trimMarkdownLines(lines: MarkdownLine[]): MarkdownLine[] {
+  let start = 0;
+  let end = lines.length - 1;
+  while (start <= end && !lines[start].text.trim()) start++;
+  while (end >= start && !lines[end].text.trim()) end--;
+  return start <= end ? lines.slice(start, end + 1) : [];
+}
+
+function textFromMarkdownLines(lines: MarkdownLine[]): string {
+  return trimMarkdownLines(lines).map((line) => line.text).join("\n").trim();
+}
+
+function isBroadMemoryHeading(level: number, title: string, bodyLines: MarkdownLine[]): boolean {
+  const topBullets = bodyLines.filter((line) => topLevelBullet(line.text)).length;
+  return (level <= 2 && topBullets > 1)
+    || /(?:fixed|rule|policy|scenario|behavior|notes|memory|troubleshooting|常见问题|固定口径|问答|规则|策略|口径|群聊|skill\s*相关)/i.test(title);
+}
+
+function scenarioNumber(line: string): string | undefined {
+  return line.match(/\bscenario\s*(\d+)\b/i)?.[1];
+}
+
+function mentionsScenario(line: string, scenario: string): boolean {
+  return new RegExp(`\\bscenario\\s*${scenario}\\b`, "i").test(line);
+}
+
+function bulletStartsNewGroup(current: MarkdownLine[], nextLine: string): boolean {
+  const currentScenario = current.map((line) => scenarioNumber(line.text)).find(Boolean);
+  if (!currentScenario) return true;
+  const nextScenario = scenarioNumber(nextLine);
+  if (nextScenario && nextScenario !== currentScenario) return true;
+  if (mentionsScenario(nextLine, currentScenario)) return false;
+  if (/^\s{0,2}[-*]\s+(?:also\b|when\b|if\b)/i.test(nextLine)) return false;
+  return true;
+}
+
+function splitBroadMarkdownSection(bodyLines: MarkdownLine[], headingPath: string[], baseLine: number): AtomicMarkdownBlock[] {
+  const blocks: AtomicMarkdownBlock[] = [];
+  let current: MarkdownLine[] = [];
+
+  const flush = () => {
+    const trimmed = trimMarkdownLines(current);
+    current = [];
+    if (trimmed.length === 0) return;
+    const text = textFromMarkdownLines(trimmed);
+    if (!hasAtomicExperienceSignal(text)) return;
+    blocks.push({
+      text,
+      startLine: baseLine + trimmed[0].index,
+      endLine: baseLine + trimmed[trimmed.length - 1].index,
+      headingPath,
+    });
+  };
+
+  for (const line of bodyLines) {
+    if (topLevelBullet(line.text)) {
+      if (current.length > 0 && bulletStartsNewGroup(current, line.text)) flush();
+      current.push(line);
+      continue;
+    }
+    if (current.length === 0 && !line.text.trim()) continue;
+    current.push(line);
+  }
+  flush();
+
+  return blocks;
+}
+
+function hasAtomicExperienceSignal(text: string): boolean {
+  return /\b(?:openclaw|feishu|webui|gateway|cron|sessiontarget|payload\.kind|pairing|access not configured|crabwalk|models?|status|skills?|kimi|tui|bot|plugin|requiremention|connection refused|workaround|root cause|fix|fixed|restart|retry|verify|failed|failure|stuck|mention|replyto)\b|(?:机器人|不回复|无响应|修复|解决|处理|排查|现象|根因|重启|检查|验证|失败|报错|口径|回答|转给|优先|不要|统一|已知问题|涉密|脱敏|授权|配对|磁盘|内存|空间|定时任务)/i.test(text);
+}
+
+function splitOpenClawMarkdownMemory(text: string, baseLine: number): AtomicMarkdownBlock[] {
+  const lines = text.split(/\r?\n/).map((line, index) => ({ index, text: line }));
+  const headings = lines
+    .map((line) => ({ line, heading: headingForLine(line.text) }))
+    .filter((entry): entry is { line: MarkdownLine; heading: { level: number; title: string } } => Boolean(entry.heading));
+
+  const blocks: AtomicMarkdownBlock[] = [];
+  if (headings.length === 0) {
+    return splitBroadMarkdownSection(lines, [], baseLine);
+  }
+
+  const firstHeadingIndex = headings[0].line.index;
+  if (firstHeadingIndex > 0) {
+    blocks.push(...splitBroadMarkdownSection(lines.slice(0, firstHeadingIndex), [], baseLine));
+  }
+
+  for (let i = 0; i < headings.length; i++) {
+    const { line, heading } = headings[i];
+    const nextHeadingIndex = headings[i + 1]?.line.index ?? lines.length;
+    const sectionLines = lines.slice(line.index, nextHeadingIndex);
+    const bodyLines = lines.slice(line.index + 1, nextHeadingIndex);
+    const bodyText = textFromMarkdownLines(bodyLines);
+    if (!bodyText) continue;
+    const headingPath = [heading.title];
+    if (isBroadMemoryHeading(heading.level, heading.title, bodyLines)) {
+      blocks.push(...splitBroadMarkdownSection(bodyLines, headingPath, baseLine));
+      continue;
+    }
+    const text = textFromMarkdownLines(sectionLines);
+    if (!hasAtomicExperienceSignal(text)) continue;
+    const trimmed = trimMarkdownLines(sectionLines);
+    if (trimmed.length === 0) continue;
+    blocks.push({
+      text,
+      startLine: baseLine + trimmed[0].index,
+      endLine: baseLine + trimmed[trimmed.length - 1].index,
+      headingPath,
+    });
+  }
+
+  const deduped = new Map<string, AtomicMarkdownBlock>();
+  for (const block of blocks) {
+    const key = `${block.startLine}:${block.endLine}:${block.text}`;
+    if (!deduped.has(key)) deduped.set(key, block);
+  }
+  return Array.from(deduped.values()).sort((a, b) => a.startLine - b.startLine || a.endLine - b.endLine);
+}
+
+function sourceRefWithLineRange(sourceRef: string, startLine: number, endLine: number): string {
+  const lineRange = `L${startLine}-L${endLine}`;
+  return /#L\d+-L\d+$/i.test(sourceRef) ? sourceRef.replace(/#L\d+-L\d+$/i, `#${lineRange}`) : `${sourceRef}#${lineRange}`;
+}
+
+function atomicOpenClawMemoryEntries(
+  source: ExperienceSourceConfig,
+  entry: ResolvedRawExperienceEntry,
+  index: number,
+): ResolvedRawExperienceEntry[] {
+  if (!shouldAtomizeOpenClawMemoryItem(source, entry.item, entry.rawText)) return [entry];
+  const text = openClawItemText(entry.item, entry.rawText);
+  const metadata = openClawMemoryMetadata(entry.item);
+  const baseLine = metadata.start_line ?? 1;
+  const blocks = splitOpenClawMarkdownMemory(text, baseLine);
+  if (blocks.length === 0) return [entry];
+
+  const parentRef = sourceRefForItem(source, entry.item, index, entry.filePath);
+  const parentId = entry.item.remote_id ?? entry.item.id ?? `item-${index}`;
+  return blocks.map((block, blockIndex) => {
+    const sourceRef = sourceRefWithLineRange(parentRef, block.startLine, block.endLine);
+    const signature = detectOpenClawProblemSignature(block.text);
+    const item: RawExperienceItem = {
+      ...entry.item,
+      id: `${parentId}:L${block.startLine}-L${block.endLine}:${blockIndex}`,
+      remote_id: `${parentId}:L${block.startLine}-L${block.endLine}:${blockIndex}`,
+      source_ref: sourceRef,
+      summary: summarizeText(block.text, "openclaw memory item"),
+      redacted_summary: undefined,
+      text: block.text,
+      raw_log: block.text,
+      problem_signature: signature === "openclaw:unknown" ? undefined : signature,
+      signature: signature === "openclaw:unknown" ? undefined : signature,
+      metadata: {
+        ...(isRecord(entry.item.metadata) ? entry.item.metadata : {}),
+        atomic: true,
+        parent_id: parentId,
+        parent_source_ref: parentRef,
+        path: metadata.path,
+        source: metadata.source,
+        start_line: block.startLine,
+        end_line: block.endLine,
+        heading_path: block.headingPath,
+      },
+    };
+    return {
+      item,
+      rawText: JSON.stringify(item),
+      filePath: entry.filePath,
+    };
+  });
+}
+
+function normalizedAtomicText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function atomicLineMetadata(entry: ResolvedRawExperienceEntry): { path: string; start: number; end: number; text: string } | undefined {
+  const metadata = isRecord(entry.item.metadata) ? entry.item.metadata : {};
+  if (metadata.atomic !== true) return undefined;
+  const path = stringValue(metadata.path);
+  const start = positiveIntegerValue(metadata.start_line);
+  const end = positiveIntegerValue(metadata.end_line);
+  const text = openClawItemText(entry.item, entry.rawText);
+  if (!path || !start || !end || end < start || !text) return undefined;
+  return { path, start, end, text };
+}
+
+function atomicContains(a: { path: string; start: number; end: number; text: string }, b: { path: string; start: number; end: number; text: string }): boolean {
+  if (a.path !== b.path) return false;
+  if (a.start > b.start || a.end < b.end) return false;
+  if (a.start === b.start && a.end === b.end && a.text.length < b.text.length) return false;
+  const aText = normalizedAtomicText(a.text);
+  const bText = normalizedAtomicText(b.text);
+  return aText.includes(bText) || (a.end - a.start > b.end - b.start && a.text.length >= b.text.length);
+}
+
+function dedupeOpenClawAtomicEntries(entries: ResolvedRawExperienceEntry[]): ResolvedRawExperienceEntry[] {
+  const passthrough: ResolvedRawExperienceEntry[] = [];
+  const atomic: Array<{ entry: ResolvedRawExperienceEntry; meta: { path: string; start: number; end: number; text: string } }> = [];
+  for (const entry of entries) {
+    const meta = atomicLineMetadata(entry);
+    if (!meta) {
+      passthrough.push(entry);
+      continue;
+    }
+    atomic.push({ entry, meta });
+  }
+  atomic.sort((a, b) =>
+    a.meta.path.localeCompare(b.meta.path)
+    || a.meta.start - b.meta.start
+    || (b.meta.end - b.meta.start) - (a.meta.end - a.meta.start)
+    || b.meta.text.length - a.meta.text.length
+  );
+
+  const kept: typeof atomic = [];
+  const exactSeen = new Set<string>();
+  for (const candidate of atomic) {
+    const exactKey = `${candidate.meta.path}:${candidate.meta.start}:${candidate.meta.end}:${normalizedAtomicText(candidate.meta.text)}`;
+    if (exactSeen.has(exactKey)) continue;
+    if (kept.some((existing) => atomicContains(existing.meta, candidate.meta))) continue;
+    exactSeen.add(exactKey);
+    kept.push(candidate);
+  }
+
+  return [...passthrough, ...kept.map((item) => item.entry)];
+}
+
+function expandOpenClawAtomicMemoryEntries(
+  source: ExperienceSourceConfig,
+  entries: ResolvedRawExperienceEntry[],
+): ResolvedRawExperienceEntry[] {
+  if (source.agent !== "openclaw") return entries;
+  return dedupeOpenClawAtomicEntries(entries.flatMap((entry, index) => atomicOpenClawMemoryEntries(source, entry, index)));
+}
+
 function itemText(item: RawExperienceItem, rawText: string): string {
   return [
     item.redacted_summary,
@@ -597,7 +921,7 @@ function makeEnvelope(
   });
 }
 
-async function itemsFromFile(path: string, maxBytes: number, warnings: string[]): Promise<Array<{ item: RawExperienceItem; rawText: string; filePath: string }>> {
+async function itemsFromFile(path: string, maxBytes: number, warnings: string[]): Promise<Array<ResolvedRawExperienceEntry & { filePath: string }>> {
   let s;
   try {
     s = await stat(path);
@@ -624,7 +948,7 @@ async function itemsFromFile(path: string, maxBytes: number, warnings: string[])
   return [{ item: { text: rawText }, rawText, filePath: path }];
 }
 
-async function itemsFromOpenClawSqlite(path: string, warnings: string[]): Promise<Array<{ item: RawExperienceItem; rawText: string; filePath: string }>> {
+async function itemsFromOpenClawSqlite(path: string, warnings: string[]): Promise<Array<ResolvedRawExperienceEntry & { filePath: string }>> {
   const query = [
     "SELECT id, path, source, start_line, end_line, hash, text, updated_at",
     "FROM chunks",
@@ -654,6 +978,12 @@ async function itemsFromOpenClawSqlite(path: string, warnings: string[]): Promis
           problem_signature: signature === "openclaw:unknown" ? undefined : signature,
           signature: signature === "openclaw:unknown" ? undefined : signature,
           created_at: typeof row.updated_at === "number" ? new Date(row.updated_at * 1000).toISOString() : undefined,
+          metadata: {
+            path: chunkPath,
+            source: typeof row.source === "string" ? row.source : "memory",
+            start_line: typeof row.start_line === "number" ? row.start_line : undefined,
+            end_line: typeof row.end_line === "number" ? row.end_line : undefined,
+          },
         };
         return { item, rawText: JSON.stringify({ ...row, text: item.summary }), filePath: path };
       });
@@ -663,7 +993,7 @@ async function itemsFromOpenClawSqlite(path: string, warnings: string[]): Promis
   }
 }
 
-async function itemsFromPath(sourcePath: string, maxBytes: number, warnings: string[], root?: string): Promise<Array<{ item: RawExperienceItem; rawText: string; filePath: string }>> {
+async function itemsFromPath(sourcePath: string, maxBytes: number, warnings: string[], root?: string): Promise<Array<ResolvedRawExperienceEntry & { filePath: string }>> {
   const expanded = expandSourcePath(sourcePath, root);
   let s;
   try {
@@ -684,7 +1014,7 @@ async function itemsFromPath(sourcePath: string, maxBytes: number, warnings: str
 async function fetchJsonItems(
   source: ExperienceSourceConfig,
   options: ResolveExperienceSourceOptions,
-): Promise<{ items: Array<{ item: RawExperienceItem; rawText: string }>; warnings: string[] }> {
+): Promise<{ items: ResolvedRawExperienceEntry[]; warnings: string[] }> {
   const warnings: string[] = [];
   const url = source.url;
   if (!url) {
@@ -707,7 +1037,7 @@ async function fetchJsonItems(
 async function fetchOpenClawApiItems(
   source: ExperienceSourceConfig,
   options: ResolveExperienceSourceOptions,
-): Promise<{ items: Array<{ item: RawExperienceItem; rawText: string }>; warnings: string[] }> {
+): Promise<{ items: ResolvedRawExperienceEntry[]; warnings: string[] }> {
   const warnings: string[] = [];
   if (!source.remote) {
     warnings.push("openclaw-api source requires remote");
@@ -751,7 +1081,7 @@ function rawItemFromGBrainHit(hit: GBrainQueryHit): RawExperienceItem {
 async function fetchGBrainItems(
   source: ExperienceSourceConfig,
   options: ResolveExperienceSourceOptions,
-): Promise<{ items: Array<{ item: RawExperienceItem; rawText: string }>; warnings: string[] }> {
+): Promise<{ items: ResolvedRawExperienceEntry[]; warnings: string[] }> {
   const query = source.remote ?? source.path;
   if (!query) {
     return { items: [], warnings: ["gbrain source requires remote query or path query"] };
@@ -780,7 +1110,7 @@ async function resolveSourceItems(
   root: string,
   source: ExperienceSourceConfig,
   options: ResolveExperienceSourceOptions,
-): Promise<{ items: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }>; warnings: string[]; preRejected?: number }> {
+): Promise<{ items: ResolvedRawExperienceEntry[]; warnings: string[]; preRejected?: number }> {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   if (source.source_type === "local" || source.source_type === "file") {
     if (!source.path) return { items: [], warnings: [`${source.source_type} source requires path`] };
@@ -852,12 +1182,12 @@ export async function resolveExperienceSource(
   if (source.source_type === "gbrain") {
     warnings.push("gbrain_source_imported_as_evidence: sidecar pages only become PB evidence after explicit source configuration.");
   }
-  let resolvedItems: Array<{ item: RawExperienceItem; rawText: string; filePath?: string }> = [];
+  let resolvedItems: ResolvedRawExperienceEntry[] = [];
   let preRejected = 0;
 
   try {
     const resolved = await resolveSourceItems(root, source, options);
-    resolvedItems = resolved.items;
+    resolvedItems = expandOpenClawAtomicMemoryEntries(source, resolved.items);
     preRejected = resolved.preRejected ?? 0;
     warnings.push(...resolved.warnings);
   } catch (error) {

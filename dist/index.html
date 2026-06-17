@@ -39,7 +39,7 @@
     <div>
       <p class="eyebrow" data-i18n="dashboard.eyebrow">团队经验知识中枢</p>
       <h1 data-i18n="dashboard.title">团队经验知识库</h1>
-      <p class="lede">统一查看 K8s / OpenClaw 的采集、隐私、审批和沉淀状态。</p>
+      <p class="lede">统一查看 K8s 经验知识库 / OpenClaw 经验知识库 的采集、隐私、审批和沉淀状态。</p>
     </div>
   </section>
   <section class="action-grid" aria-label="下一步操作">
@@ -127,18 +127,44 @@
 </section>
   <section class="kb-overview panel" id="knowledge-bases">
   <h2>知识库分布</h2>
-  <p class="section-subtitle">每个知识库独立统计来源、隐私阻断、待提炼和稳定知识页。K8s 等新知识库可以先配置为空，再逐步接入来源。</p>
+  <p class="section-subtitle">每个知识库独立统计来源、隐私阻断、待提炼和稳定知识页，并展示当前筛选模式。</p>
   <div class="kb-card-grid">
     <a class="kb-overview-card" href="#knowledge-pages" data-kb-filter-link="k8s">
-      <span>K8s</span>
+      <span>K8s 经验知识库</span>
       <strong>0</strong>
       <small>稳定页 · 来源 0 · 待提炼 0 · 隐私 0</small>
+      <em>k8s · allowlist</em>
+      <ul><li>保留 K8s 修复经验</li><li>保留验证或升级边界</li><li>拒绝纯问候</li></ul>
     </a>
 <a class="kb-overview-card" href="#knowledge-pages" data-kb-filter-link="openclaw">
-      <span>OpenClaw</span>
+      <span>OpenClaw 经验知识库</span>
       <strong>0</strong>
       <small>稳定页 · 来源 34 · 待提炼 10 · 隐私 14</small>
+      <em>openclaw · allowlist</em>
+      <ul><li>保留 OpenClaw 修复动作</li><li>保留 OpenClaw 问答口径</li><li>保留验证或升级边界</li><li>拒绝纯问候</li></ul>
     </a>
+  </div>
+</section>
+  <section class="kb-rules panel" id="knowledge-rules">
+  <h2>知识库筛选规则</h2>
+  <p class="section-subtitle">配置来自 .praxisbase/config.yaml；allowlist 表示只有命中保留规则的内容进入提炼。</p>
+  <div class="rule-grid">
+    <article class="rule-card">
+      <div class="rule-card-head"><strong>K8s 经验知识库</strong><span>k8s</span></div>
+      <dl>
+        <dt>画像</dt><dd>k8s</dd>
+        <dt>模式</dt><dd>allowlist</dd>
+        <dt>规则</dt><dd><ul><li><code>keep_k8s_repair</code><span>保留 K8s 修复经验</span></li><li><code>keep_verification_or_escalation</code><span>保留验证或升级边界</span></li><li><code>reject_greeting_only</code><span>拒绝纯问候</span></li></ul></dd>
+      </dl>
+    </article>
+<article class="rule-card">
+      <div class="rule-card-head"><strong>OpenClaw 经验知识库</strong><span>openclaw</span></div>
+      <dl>
+        <dt>画像</dt><dd>openclaw</dd>
+        <dt>模式</dt><dd>allowlist</dd>
+        <dt>规则</dt><dd><ul><li><code>keep_openclaw_repair</code><span>保留 OpenClaw 修复动作</span></li><li><code>keep_openclaw_qa_policy</code><span>保留 OpenClaw 问答口径</span></li><li><code>keep_verification_or_escalation</code><span>保留验证或升级边界</span></li><li><code>reject_greeting_only</code><span>拒绝纯问候</span></li></ul></dd>
+      </dl>
+    </article>
   </div>
 </section>
   <details class="terminology-panel">

@@ -24,9 +24,24 @@ export interface ProjectKnowledgeConfig {
   filterRules: string[];
 }
 
+export type KnowledgeFilterMode = "balanced" | "allowlist";
+
 export interface ProjectKnowledgeBaseConfig {
   id: string;
   label?: string;
+  profile?: KnowledgeProfile;
+  promptInstruction?: string;
+  filterMode: KnowledgeFilterMode;
+  filterRules: string[];
+}
+
+interface RawKnowledgeBaseConfig {
+  id: string;
+  label?: string;
+  profile?: string;
+  promptInstruction?: string;
+  filterMode?: string;
+  filterRules?: string[];
 }
 
 function normalizeLanguage(value: unknown): ProjectLanguage | undefined {
@@ -55,6 +70,79 @@ function yamlList(text: string, key: string): string[] {
     .filter(Boolean);
 }
 
+function leadingSpaces(value: string): number {
+  return value.match(/^\s*/)?.[0].length ?? 0;
+}
+
+function parseYamlListItemObject(item: string): [string, string] | undefined {
+  const scalar = item.match(/^([A-Za-z0-9_-]+):\s*(.*?)\s*$/);
+  if (!scalar) return undefined;
+  return [scalar[1], scalar[2].replace(/^['\"]|['\"]$/g, "").trim()];
+}
+
+function yamlKnowledgeBases(text: string): RawKnowledgeBaseConfig[] {
+  const lines = text.split(/\r?\n/);
+  const keyIndex = lines.findIndex((line) => /^\s*knowledge_bases\s*:\s*$/.test(line));
+  if (keyIndex < 0) return [];
+  const baseIndent = leadingSpaces(lines[keyIndex]);
+  const result: RawKnowledgeBaseConfig[] = [];
+  let current: RawKnowledgeBaseConfig | undefined;
+  let listKey: "filterRules" | undefined;
+
+  for (const rawLine of lines.slice(keyIndex + 1)) {
+    const withoutComment = rawLine.replace(/\s+#.*$/, "");
+    if (!withoutComment.trim()) continue;
+    const indent = leadingSpaces(withoutComment);
+    if (indent <= baseIndent) break;
+    const trimmed = withoutComment.trim();
+
+    if (trimmed.startsWith("- ")) {
+      const item = trimmed.slice(2).trim();
+      const objectEntry = parseYamlListItemObject(item);
+      if (current && listKey && !objectEntry) {
+        current[listKey] = [...(current[listKey] ?? []), item.replace(/^['\"]|['\"]$/g, "").trim()].filter(Boolean);
+        continue;
+      }
+      if (objectEntry) {
+        current = { id: "" };
+        result.push(current);
+        const [key, value] = objectEntry;
+        if (key === "id") current.id = value;
+        else if (key === "label") current.label = value;
+        else if (key === "profile") current.profile = value;
+        else if (key === "prompt" || key === "promptInstruction" || key === "prompt_instruction") current.promptInstruction = value;
+        else if (key === "filter_mode" || key === "filterMode") current.filterMode = value;
+        else if (key === "filter_rules" || key === "filterRules") current.filterRules = value ? [value] : [];
+        listKey = undefined;
+      } else {
+        const id = item.replace(/^['\"]|['\"]$/g, "").trim();
+        current = id ? { id } : undefined;
+        if (current) result.push(current);
+        listKey = undefined;
+      }
+      continue;
+    }
+
+    if (!current) continue;
+    const scalar = parseYamlListItemObject(trimmed);
+    if (!scalar) continue;
+    const [key, value] = scalar;
+    if (key === "id") current.id = value;
+    else if (key === "label") current.label = value;
+    else if (key === "profile") current.profile = value;
+    else if (key === "prompt" || key === "promptInstruction" || key === "prompt_instruction") current.promptInstruction = value;
+    else if (key === "filter_mode" || key === "filterMode") current.filterMode = value;
+    else if (key === "filter_rules" || key === "filterRules") {
+      current.filterRules = [];
+      listKey = "filterRules";
+    } else {
+      listKey = undefined;
+    }
+  }
+
+  return result.filter((item) => item.id.trim().length > 0);
+}
+
 function splitList(value: string | undefined): string[] {
   if (!value) return [];
   return value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -62,6 +150,13 @@ function splitList(value: string | undefined): string[] {
 
 function normalizeKnowledgeBaseId(value: string): string {
   return value.trim().toLowerCase().replace(/_/g, "-");
+}
+
+function normalizeFilterMode(value: string | undefined, profile: string): KnowledgeFilterMode {
+  const normalized = value?.trim().toLowerCase().replace("_", "-");
+  if (normalized === "allowlist" || normalized === "strict") return "allowlist";
+  if (normalized === "balanced" || normalized === "default") return "balanced";
+  return profile === "openclaw" || profile === "k8s" || profile === "container-repair" ? "allowlist" : "balanced";
 }
 
 function knowledgeBaseLabel(id: string): string {
@@ -74,17 +169,35 @@ function knowledgeBaseLabel(id: string): string {
   return id.split("-").map((part) => part ? part[0]!.toUpperCase() + part.slice(1) : part).join(" ");
 }
 
-function normalizeKnowledgeBases(values: string[], fallbackProfile: string): ProjectKnowledgeBaseConfig[] {
-  const ids = values.length > 0 ? values : [fallbackProfile];
+function normalizeKnowledgeBases(
+  values: string[],
+  fallbackProfile: string,
+  fallbackRules: string[] = [],
+  rawConfigs: RawKnowledgeBaseConfig[] = [],
+): ProjectKnowledgeBaseConfig[] {
+  const configs: RawKnowledgeBaseConfig[] = rawConfigs.length > 0
+    ? rawConfigs
+    : (values.length > 0 ? values : [fallbackProfile]).map((id) => ({ id }));
   const seen = new Set<string>();
   const bases: ProjectKnowledgeBaseConfig[] = [];
-  for (const value of ids) {
-    const id = normalizeKnowledgeBaseId(value);
+  for (const value of configs) {
+    const id = normalizeKnowledgeBaseId(value.id);
     if (!id || seen.has(id)) continue;
     seen.add(id);
-    bases.push({ id, label: knowledgeBaseLabel(id) });
+    const profile = normalizeKnowledgeBaseId(value.profile ?? (id || fallbackProfile));
+    const rules = value.filterRules?.length ? value.filterRules : fallbackRules;
+    bases.push({
+      id,
+      label: value.label || knowledgeBaseLabel(id),
+      profile,
+      promptInstruction: value.promptInstruction,
+      filterMode: normalizeFilterMode(value.filterMode, profile),
+      filterRules: rules,
+    });
   }
-  return bases.length > 0 ? bases : [{ id: "default", label: knowledgeBaseLabel("default") }];
+  return bases.length > 0
+    ? bases
+    : [{ id: "default", label: knowledgeBaseLabel("default"), profile: "default", filterMode: "balanced", filterRules: fallbackRules }];
 }
 
 function normalizeBoolean(value: unknown): boolean | undefined {
@@ -133,6 +246,7 @@ export async function readProjectLanguageConfig(
   let fileContentLanguage: ProjectLanguage | undefined;
   let fileKnowledgeProfile: string | undefined;
   let fileKnowledgeBases: string[] = [];
+  let fileKnowledgeBaseConfigs: RawKnowledgeBaseConfig[] = [];
   let fileKnowledgePrompt: string | undefined;
   let fileCurationIncludeAutoReleased: boolean | undefined;
   let fileFilterRules: string[] = [];
@@ -144,6 +258,7 @@ export async function readProjectLanguageConfig(
     fileContentLanguage = normalizeLanguage(yamlScalar(config, "content_language"));
     fileKnowledgeProfile = yamlScalar(config, "knowledge_profile") ?? yamlScalar(config, "knowledge_source");
     fileKnowledgeBases = yamlList(config, "knowledge_bases");
+    fileKnowledgeBaseConfigs = yamlKnowledgeBases(config);
     fileKnowledgePrompt = yamlScalar(config, "knowledge_prompt") ?? yamlScalar(config, "profile_prompt");
     fileCurationIncludeAutoReleased = normalizeBoolean(yamlScalar(config, "curation_include_auto_released"));
     fileFilterRules = yamlList(config, "knowledge_filter_rules");
@@ -162,7 +277,12 @@ export async function readProjectLanguageConfig(
     contentLanguage: envContentLanguage ?? fileContentLanguage ?? base,
     knowledge: {
       profile,
-      bases: normalizeKnowledgeBases(envKnowledgeBases.length > 0 ? envKnowledgeBases : fileKnowledgeBases, profile),
+      bases: normalizeKnowledgeBases(
+        envKnowledgeBases.length > 0 ? envKnowledgeBases : fileKnowledgeBases,
+        profile,
+        fileFilterRules,
+        envKnowledgeBases.length > 0 ? [] : fileKnowledgeBaseConfigs,
+      ),
       promptInstruction: envPrompt || fileKnowledgePrompt,
       curationIncludeAutoReleased: envIncludeAutoReleased ?? fileCurationIncludeAutoReleased ?? true,
       filterRules: fileFilterRules,

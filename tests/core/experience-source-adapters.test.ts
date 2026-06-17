@@ -258,6 +258,75 @@ describe("experience source adapters", () => {
     assert.match(slackEnvelope?.redacted_summary ?? "", /Slack delivery recovered/);
   });
 
+  it("splits OpenClaw exported markdown memory chunks into atomic experience envelopes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-openclaw-atomic-"));
+    const exportPath = join(root, "pm-memory.jsonl");
+    await writeFile(exportPath, `${JSON.stringify({
+      id: "chunk-memory-1",
+      source_ref: "openclaw://answer-bot/pm.sqlite/chunks/chunk-memory-1",
+      metadata: {
+        agent_id: "answer-bot",
+        path: "MEMORY.md",
+        source: "memory",
+        start_line: 20,
+        end_line: 43,
+      },
+      text: [
+        "### Monitor logs 打开失败 (2026-03-05)",
+        "- **现象**：`upstream connect error / Connection refused`",
+        "- **根因**：crabwalk 进程异常退出",
+        "- **解决**：检查并重启 crabwalk 进程",
+        "",
+        "### 飞书机器人不回复，WebUI正常 (2026-04-16)",
+        "- **现象**：WebUI 后台能正常对话，但飞书私聊/群聊机器人不回复",
+        "- **解决**：去 openclaw.chj.cloud → Skills 页面 → 更新飞书插件，然后重启实例",
+        "- **来源**：已验证修复成功",
+        "",
+        "## 用户问答固定口径",
+        "- If users ask how to query model pricing/cost and capabilities,统一简短回答：`/models`。",
+        "- Trigger scenario 2: if a user asks why `/model` switched back, use the fixed guidance.",
+        "- When scenario 2 is triggered, answer that `/model` can be temporary when the agent has its own default model.",
+      ].join("\n"),
+    })}\n`, "utf8");
+    const source = await addExperienceSource(root, {
+      name: "openclaw-answer-bot",
+      agent: "openclaw",
+      sourceType: "file",
+      channel: "feishu",
+      parser: "openclaw-export",
+      scopeDefault: "team",
+      path: exportPath,
+      now: "2026-05-21T00:00:00.000Z",
+    });
+
+    const result = await resolveExperienceSource(root, source, {
+      authorityMode: "personal-local",
+      limit: 20,
+      now: "2026-05-21T01:00:00.000Z",
+    });
+
+    assert.equal(result.status, "completed");
+    assert.equal(result.fetched, 4);
+    assert.equal(result.envelopes.length, 4);
+    assert.ok(result.envelopes.some((envelope) =>
+      envelope.redacted_summary.includes("crabwalk") &&
+      envelope.source_ref.endsWith("#L20-L23")
+    ));
+    assert.ok(result.envelopes.some((envelope) =>
+      envelope.redacted_summary.includes("更新飞书插件") &&
+      envelope.source_ref.endsWith("#L25-L28")
+    ));
+    assert.ok(result.envelopes.some((envelope) =>
+      envelope.redacted_summary.includes("/models") &&
+      envelope.source_ref.endsWith("#L31-L31")
+    ));
+    assert.ok(result.envelopes.some((envelope) =>
+      envelope.redacted_summary.includes("/model") &&
+      envelope.source_ref.endsWith("#L32-L33")
+    ));
+    assert.equal(new Set(result.envelopes.map((envelope) => envelope.source_hash)).size, 4);
+  });
+
   it("checks out configured git refs before reading source files", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-adapter-git-ref-"));
     const repo = join(root, "source-repo");

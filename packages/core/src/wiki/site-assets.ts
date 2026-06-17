@@ -13,6 +13,7 @@ export const SITE_OUTPUTS = [
   "dist/sitemap.xml",
   "dist/robots.txt",
   "dist/review-config.json",
+  "dist/knowledge-config.json",
   "dist/style.css",
   "dist/site.js",
 ];
@@ -100,7 +101,20 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .kb-overview-card span { display: block; color: var(--muted); font-weight: 700; }
 .kb-overview-card strong { display: block; margin: .25rem 0; font-size: 1.55rem; line-height: 1; }
 .kb-overview-card small { color: var(--muted); }
+.kb-overview-card em { display: inline-flex; margin: .65rem 0 .35rem; border: 1px solid var(--line); border-radius: 999px; padding: .12rem .45rem; color: var(--accent); font-style: normal; font-size: .78rem; font-weight: 700; }
+.kb-overview-card ul { margin: .25rem 0 0; padding-left: 1rem; color: var(--muted); font-size: .82rem; }
 .kb-overview-card.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20, 108, 92, .12); }
+.kb-rules { margin: 1rem 0 1.25rem; }
+.rule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+.rule-card { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .95rem; }
+.rule-card-head { display: flex; justify-content: space-between; gap: .8rem; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: .55rem; margin-bottom: .7rem; }
+.rule-card-head span { color: var(--muted); font-size: .82rem; }
+.rule-card dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: .45rem .7rem; margin: 0; }
+.rule-card dt { color: var(--muted); }
+.rule-card dd { margin: 0; }
+.rule-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.rule-card li { display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap; }
+.rule-card code { border: 1px solid var(--line); border-radius: 999px; padding: .08rem .4rem; background: var(--panel); color: var(--ink); }
 .data-sources { margin: 1.15rem 0; }
 .source-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
 .source-card { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .95rem; box-shadow: 0 8px 22px rgba(23, 33, 27, .035); }
@@ -210,7 +224,7 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .meta-rail dl { display: grid; grid-template-columns: 90px 1fr; gap: .35rem .6rem; margin: 0; }
 .meta-rail dt { color: var(--muted); }
 @media (max-width: 900px) {
-  .topbar, .metrics, .action-grid, .kb-card-grid, .source-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid, .process-grid, .count-note-grid, .terminology-panel dl { grid-template-columns: 1fr; }
+  .topbar, .metrics, .action-grid, .kb-card-grid, .rule-grid, .source-grid, .flow-guide, .overview-grid, .dashboard-grid, .graph-grid, .page-shell, .coverage-flow, .coverage-status-grid, .process-grid, .count-note-grid, .terminology-panel dl { grid-template-columns: 1fr; }
   .coverage-flow article::after, .process-step::after { display: none; }
   .topnav { justify-content: flex-start; }
   .side-nav, .meta-rail { position: static; max-height: none; }

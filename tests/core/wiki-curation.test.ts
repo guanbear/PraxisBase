@@ -421,7 +421,7 @@ describe("wiki evidence curation", () => {
     await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
   });
 
-  it("quality gate blocks process-status titles before review writes them", async () => {
+  it("quality gate routes process-status titles to human quality review", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-process-title-block-"));
     await writeCapture(
       root,
@@ -431,10 +431,13 @@ describe("wiki evidence curation", () => {
 
     const report = await curateWiki(root, { mode: "review", degraded: true, now: "2026-05-24T00:00:00.000Z" });
 
-    assert.equal(report.compiler_counts?.hard_blocks, 1);
-    assert.equal(report.output_counts.curated_proposals, 0);
-    assert.equal(report.output_counts.written_proposals, 0);
-    await assert.rejects(() => stat(join(root, ".praxisbase/inbox/proposals")), { code: "ENOENT" });
+    assert.equal(report.compiler_counts?.hard_blocks, 0);
+    assert.equal(report.compiler_counts?.human_required_quality, 1);
+    assert.equal(report.output_counts.curated_proposals, 1);
+    assert.equal(report.output_counts.written_proposals, 1);
+    const files = await readdir(join(root, ".praxisbase/inbox/proposals"));
+    const proposal = JSON.parse(await readFile(join(root, ".praxisbase/inbox/proposals", files[0]), "utf8"));
+    assert.ok(proposal.review_hint.risk_notes.includes("quality_human_required:non_reusable_topic"));
   });
 
   it("curate review writes curated proposals without stable knowledge", async () => {
@@ -525,6 +528,35 @@ describe("wiki evidence curation", () => {
     assert.equal(report.input_counts.evidence_items, 0);
     assert.equal(report.input_counts.filtered_noise, 1);
     assert.equal(report.output_counts.curated_proposals, 0);
+  });
+
+  it("applies project knowledge-base allowlist rules before curation", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-kb-filter-rules-"));
+    await mkdir(join(root, ".praxisbase"), { recursive: true });
+    await writeFile(join(root, ".praxisbase/config.yaml"), [
+      'protocol_version: "0.1"',
+      "language: zh-CN",
+      "knowledge_profile: openclaw",
+      "knowledge_bases:",
+      "  - id: openclaw",
+      "    label: OpenClaw 经验知识库",
+      "    profile: openclaw",
+      "    filter_mode: allowlist",
+      "    filter_rules:",
+      "      - keep_openclaw_repair",
+      "      - keep_openclaw_qa_policy",
+      "      - keep_verification_or_escalation",
+      "      - reject_greeting_only",
+    ].join("\n"), "utf8");
+    await writeCapture(root, "repair", "OpenClaw 飞书机器人不回复。处理：更新 Feishu plugin 并重启 gateway。验证：WebUI 和飞书都恢复。", "team");
+    await writeCapture(root, "greeting", "你好", "team");
+    await writeCapture(root, "unrelated", "Codex session changed a local dashboard label without reusable repair action.", "team");
+
+    const pool = await buildWikiEvidencePoolFromRoot(root);
+
+    assert.equal(pool.items.length, 1);
+    assert.match(pool.items[0].summary, /OpenClaw/);
+    assert.equal(pool.filtered_noise, 2);
   });
 
   it("uses limit as a synthesis budget instead of processing every page plan", async () => {

@@ -202,7 +202,7 @@ async function collectCaptureSources(root: string): Promise<WikiSource[]> {
       kind: "capture",
       source_ref: artifactRefs[0],
       source_hash: artifactHashes.length === 1 ? artifactHashes[0] : computeWikiSourceHash(artifactHashes.join(",")),
-      title: record.id,
+      title: titleFromSummary(summaries.join(" "), record.id),
       summary: summaries.join(" "),
       scope: record.scope_hint,
       created_at: record.created_at,

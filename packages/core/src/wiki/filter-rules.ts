@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { readText } from "../store/file-store.js";
+import type { ProjectKnowledgeBaseConfig, ProjectKnowledgeConfig } from "../config/project.js";
 import type { WikiSource } from "./model.js";
 
 export const WIKI_FILTER_RULES_PATH = ".praxisbase/filter-rules.yaml";
@@ -16,6 +17,7 @@ const FilterWhenSchema = z.object({
   signal_any: z.array(z.string()).default([]),
   source_ref_contains: z.string().optional(),
   path_contains: z.string().optional(),
+  knowledge_base: z.string().optional(),
 });
 
 const FilterRuleSchema = z.object({
@@ -32,6 +34,10 @@ export type WikiFilterRule = z.infer<typeof FilterRuleSchema>;
 export type WikiFilterDecision =
   | { action: "none" }
   | { action: "exclude" | "human_required" | "include"; rule_id: string };
+
+export type KnowledgeBaseFilterDecision =
+  | { action: "none"; knowledge_base: string; filter_mode: "balanced" | "allowlist"; matched_rule?: string; reason?: string }
+  | { action: "exclude" | "human_required" | "include"; rule_id: string; knowledge_base: string; filter_mode: "balanced" | "allowlist"; reason: string };
 
 function unquote(value: string): string {
   const trimmed = value.trim();
@@ -145,6 +151,30 @@ function sourceAgent(source: WikiSource): string | undefined {
   return undefined;
 }
 
+function normalizedBaseId(value: string | undefined): string | undefined {
+  const normalized = value?.trim().toLowerCase().replace(/_/g, "-");
+  return normalized || undefined;
+}
+
+export function inferWikiSourceKnowledgeBase(source: WikiSource): string {
+  const explicit = normalizedBaseId((source as WikiSource & { knowledge_base?: string; knowledge_source?: string }).knowledge_base)
+    ?? normalizedBaseId((source as WikiSource & { knowledge_base?: string; knowledge_source?: string }).knowledge_source);
+  if (explicit) return explicit;
+  const text = [
+    source.source_ref,
+    source.path,
+    source.title,
+    source.summary,
+    source.body,
+  ].filter(Boolean).join("\n").toLowerCase();
+  if (/\bk8s\b|kubernetes|oomkilled|crashloop|pod\b|kubectl/.test(text)) return "k8s";
+  if (/openclaw|octoclaw|answer-bot|gateway|pairing|crabwalk|requiremention|sessiontarget/.test(text)) return "openclaw";
+  if (/container|docker|imagepullbackoff|runtime/.test(text)) return "container-repair";
+  if (/feishu|lark/.test(text)) return "feishu";
+  if (/codex/.test(text)) return "codex";
+  return "default";
+}
+
 export function inferExperienceSignals(source: WikiSource): string[] {
   const text = textForSource(source).toLowerCase();
   const signals = new Set<string>();
@@ -171,6 +201,7 @@ function matchesRule(source: WikiSource, rule: WikiFilterRule): boolean {
   const sourceRef = (source.source_ref ?? "").toLowerCase();
   const path = (source.path ?? "").toLowerCase();
   if (when.agent && sourceAgent(source) !== when.agent) return false;
+  if (when.knowledge_base && inferWikiSourceKnowledgeBase(source) !== normalizedBaseId(when.knowledge_base)) return false;
   if (when.kind && source.kind !== when.kind) return false;
   if (when.json_type && sourceJsonType(source) !== when.json_type) return false;
   if (when.contains_structural_key && !text.includes(`"${when.contains_structural_key.toLowerCase()}"`)) return false;
@@ -190,4 +221,96 @@ export function decideWikiFilter(source: WikiSource, rules: WikiFilterRule[]): W
     if (matchesRule(source, rule)) return { action: rule.action, rule_id: rule.id };
   }
   return { action: "none" };
+}
+
+function textForKnowledgeRule(source: WikiSource): string {
+  return [source.title, source.summary, source.body].filter(Boolean).join("\n").toLowerCase();
+}
+
+function isGreetingOnlySource(source: WikiSource): boolean {
+  const text = textForKnowledgeRule(source)
+    .replace(/[`*_#>\-\s，。,.!！?？:：;；~～]/g, "")
+    .trim();
+  if (!text) return true;
+  if (text.length > 28) return false;
+  return /^(hi|hello|hey|ok|okay|thanks|thankyou|你好|您好|在吗|收到|好的|好|谢谢|辛苦了|早|早上好|晚上好|测试)$/.test(text);
+}
+
+function hasOpenClawRepairSignal(text: string): boolean {
+  return /\b(openclaw|gateway|feishu|webui|cron|sessiontarget|payload\.kind|pairing|crabwalk|plugin|requiremention|access not configured|connection refused|models?|status|tui|kimi)\b/i.test(text)
+    && /\b(fix|fixed|repair|recover|restart|retry|verify|check|update|enable|approve|workaround|failed|failure|stuck|timeout|root cause)\b|修复|解决|处理|排查|重启|检查|验证|失败|报错|根因|现象|授权|配对|更新|启用|已知问题|磁盘|内存|空间|不回复|无响应/i.test(text);
+}
+
+function hasOpenClawQaPolicySignal(text: string): boolean {
+  return /\b(openclaw|feishu|model|models|skills?|tui|kimi|claude code|l2|data|security)\b/i.test(text)
+    && /固定口径|统一答|统一回答|怎么回答|优先让|不要|转给|mention|保密|涉密|数据安全|问答|回答|policy|rule|guidance|escalat/i.test(text);
+}
+
+function hasVerificationOrEscalationSignal(text: string): boolean {
+  return /\b(verify|verification|check|smoke|health|ready|readiness|passed|escalate|mention|owner|handoff)\b|验证|检查|健康|通过|升级|转给|负责人|人工|确认|复现|影响范围/i.test(text);
+}
+
+function hasK8sRepairSignal(text: string): boolean {
+  return /\b(k8s|kubernetes|pod|container|kubectl|deployment|oomkilled|crashloop|imagepullbackoff|node)\b/i.test(text)
+    && /\b(fix|repair|restart|rollback|scale|describe|logs|events|verify|check|failed|failure)\b|修复|排查|重启|回滚|扩缩容|检查|验证|失败|报错/i.test(text);
+}
+
+function hasContainerRepairSignal(text: string): boolean {
+  return /\b(container|docker|image|runtime|cgroup|oom|disk|volume)\b/i.test(text)
+    && /\b(fix|repair|restart|pull|rollback|verify|check|failed|failure)\b|修复|排查|重启|拉取|回滚|检查|验证|失败|报错/i.test(text);
+}
+
+function namedKnowledgeRuleMatches(rule: string, source: WikiSource, base: ProjectKnowledgeBaseConfig): boolean {
+  const normalized = rule.trim().toLowerCase().replace(/_/g, "-");
+  const text = textForKnowledgeRule(source);
+  if (normalized === "reject-greeting-only") return isGreetingOnlySource(source);
+  if (normalized === "keep-openclaw-repair" || normalized === "keep-repair-actions") return hasOpenClawRepairSignal(text);
+  if (normalized === "keep-openclaw-qa-policy") return hasOpenClawQaPolicySignal(text);
+  if (normalized === "keep-verification-or-escalation") return hasVerificationOrEscalationSignal(text)
+    && (base.id !== "openclaw" || /openclaw|feishu|gateway|bot|机器人|模型|授权|配对/i.test(text));
+  if (normalized === "keep-k8s-repair") return hasK8sRepairSignal(text);
+  if (normalized === "keep-container-repair") return hasContainerRepairSignal(text);
+  return false;
+}
+
+function isRejectRule(rule: string): boolean {
+  return rule.trim().toLowerCase().replace(/_/g, "-").startsWith("reject-");
+}
+
+function isKeepRule(rule: string): boolean {
+  return rule.trim().toLowerCase().replace(/_/g, "-").startsWith("keep-");
+}
+
+export function decideKnowledgeBaseFilter(source: WikiSource, config?: ProjectKnowledgeConfig): KnowledgeBaseFilterDecision {
+  const knowledgeBase = inferWikiSourceKnowledgeBase(source);
+  const base = config?.bases.find((item) => item.id === knowledgeBase)
+    ?? config?.bases.find((item) => item.id === "default")
+    ?? config?.bases[0];
+  const filterMode = base?.filterMode ?? "balanced";
+  const rules = base?.filterRules ?? config?.filterRules ?? [];
+
+  for (const rule of rules.filter(isRejectRule)) {
+    if (namedKnowledgeRuleMatches(rule, source, base ?? { id: knowledgeBase, filterMode, filterRules: [] })) {
+      return { action: "exclude", rule_id: rule, knowledge_base: knowledgeBase, filter_mode: filterMode, reason: `matched ${rule}` };
+    }
+  }
+
+  const keepRules = rules.filter(isKeepRule);
+  for (const rule of keepRules) {
+    if (namedKnowledgeRuleMatches(rule, source, base ?? { id: knowledgeBase, filterMode, filterRules: [] })) {
+      return { action: "include", rule_id: rule, knowledge_base: knowledgeBase, filter_mode: filterMode, reason: `matched ${rule}` };
+    }
+  }
+
+  if (filterMode === "allowlist" && keepRules.length > 0) {
+    return {
+      action: "exclude",
+      rule_id: `${knowledgeBase}:allowlist-default`,
+      knowledge_base: knowledgeBase,
+      filter_mode: filterMode,
+      reason: "no keep rule matched",
+    };
+  }
+
+  return { action: "none", knowledge_base: knowledgeBase, filter_mode: filterMode };
 }

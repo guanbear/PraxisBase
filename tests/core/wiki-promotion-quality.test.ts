@@ -163,19 +163,19 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
     assert.equal(result.passed, false);
   });
 
-  it("hard-blocks bodies missing agent-use guidance", () => {
+  it("requires review for bodies missing agent-use guidance", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
     }));
-    assert.ok(result.hard_blocks.includes("missing_agent_use"));
+    assert.ok(result.human_required.includes("missing_agent_use"));
     assert.equal(result.passed, false);
   });
 
-  it("hard-blocks thin agent-use placeholders", () => {
+  it("requires review for thin agent-use placeholders", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       body_markdown: "# Test fix\n\n## Problem\nSomething broke.\n\n## Fix\nApply the fix.\n\n## Verification\nTests pass.\n\n## Reusable Lessons\nUse the verified fix when the same signature appears.\n\n## Agent Use\nUse this page.\n\n## Provenance\n- codex:session:1 (sha256:a)\n- codex:session:2 (sha256:b)",
     }));
-    assert.ok(result.hard_blocks.includes("missing_agent_use"));
+    assert.ok(result.human_required.includes("missing_agent_use"));
     assert.equal(result.passed, false);
   });
 
@@ -204,7 +204,7 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
     assert.equal(result.hard_blocks.includes("duplicate_source_hash"), false);
   });
 
-  it("hard-blocks process-status titles that are not reusable wiki topics", () => {
+  it("requires review for process-status titles that are not reusable wiki topics", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       title: "Successfully fixed and re-approved in a subsequent commit (c52742b)",
       target_path: "kb/known-fixes/successfully-fixed-and-re-approved-in-a-subsequent-commit-c52742b.md",
@@ -231,13 +231,13 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
       ].join("\n"),
     }));
 
-    assert.ok(result.hard_blocks.includes("non_reusable_topic"));
-    assert.ok(result.hard_blocks.includes("generic_applicability"));
-    assert.ok(result.hard_blocks.includes("non_specific_action"));
+    assert.ok(result.human_required.includes("non_reusable_topic"));
+    assert.ok(result.human_required.includes("generic_applicability"));
+    assert.ok(result.human_required.includes("non_specific_action"));
     assert.equal(result.passed, false);
   });
 
-  it("hard-blocks generic applicability and action text even with a readable title", () => {
+  it("requires review for generic applicability and action text even with a readable title", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       title: "OpenClaw gateway restart after configuration changes",
       target_path: "kb/procedures/openclaw-gateway-restart-after-configuration-changes.md",
@@ -265,9 +265,9 @@ describe("assessWikiPromotionQuality - hard blocks", () => {
       ].join("\n"),
     }));
 
-    assert.equal(result.hard_blocks.includes("non_reusable_topic"), false);
-    assert.ok(result.hard_blocks.includes("generic_applicability"));
-    assert.ok(result.hard_blocks.includes("non_specific_action"));
+    assert.equal(result.human_required.includes("non_reusable_topic"), false);
+    assert.ok(result.human_required.includes("generic_applicability"));
+    assert.ok(result.human_required.includes("non_specific_action"));
     assert.equal(result.passed, false);
   });
 });
@@ -527,7 +527,7 @@ describe("assessWikiPromotionQuality - human required", () => {
     assert.ok(result.human_required.includes("one_off_run_report"));
   });
 
-  it("hard-blocks one-off passed stability smoke run titles", () => {
+  it("requires review for one-off passed stability smoke run titles", () => {
     const result = assessWikiPromotionQuality(goodProposal({
       title: "The test run passed, specifically noting a successful post-deploy recovery restart",
       target_path: "kb/known-fixes/the-test-run-passed-specifically-noting-a-successful-post-deploy-recovery-restart.md",
@@ -562,7 +562,7 @@ describe("assessWikiPromotionQuality - human required", () => {
       provenance: [{ source_ref: "log://openclaw/2026-05-22-10-03-52-stability-report.", source_hash: "sha256:a" }],
     }));
 
-    assert.ok(result.hard_blocks.includes("non_reusable_topic"));
+    assert.ok(result.human_required.includes("non_reusable_topic"));
     assert.ok(result.human_required.includes("one_off_run_report"));
     assert.equal(result.passed, false);
   });

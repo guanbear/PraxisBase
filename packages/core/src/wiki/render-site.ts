@@ -656,6 +656,9 @@ function knowledgeBaseFromPage(page: WikiSitePage): string {
 interface KnowledgeBaseOverviewItem {
   id: string;
   label: string;
+  profile: string;
+  filterMode: string;
+  filterRules: string[];
   stablePages: number;
   sourceItems: number;
   pendingCuration: number;
@@ -670,7 +673,8 @@ function buildKnowledgeBaseOverview(
   const ids = new Set(config.bases.map((base) => normalizeKnowledgeBaseId(base.id)));
   if (ids.size === 0) ids.add(normalizeKnowledgeBaseId(config.profile));
 
-  const counts = new Map<string, Omit<KnowledgeBaseOverviewItem, "id" | "label">>();
+  const baseConfig = new Map(config.bases.map((base) => [normalizeKnowledgeBaseId(base.id), base]));
+  const counts = new Map<string, Omit<KnowledgeBaseOverviewItem, "id" | "label" | "profile" | "filterMode" | "filterRules">>();
   const ensure = (id: string) => {
     const normalized = normalizeKnowledgeBaseId(id);
     ids.add(normalized);
@@ -692,21 +696,65 @@ function buildKnowledgeBaseOverview(
 
   return Array.from(ids).sort((left, right) => left.localeCompare(right)).map((id) => {
     const item = counts.get(id) ?? { stablePages: 0, sourceItems: 0, pendingCuration: 0, privacyBlocked: 0 };
-    return { id, label: knowledgeBaseLabel(id, config), ...item };
+    const base = baseConfig.get(id);
+    return {
+      id,
+      label: knowledgeBaseLabel(id, config),
+      profile: base?.profile ?? id,
+      filterMode: base?.filterMode ?? "balanced",
+      filterRules: base?.filterRules ?? config.filterRules,
+      ...item,
+    };
   });
+}
+
+function ruleLabel(rule: string, language: ProjectLanguage): string {
+  const useZh = zh(language);
+  const normalized = rule.replace(/_/g, "-");
+  const labels: Record<string, [string, string]> = {
+    "keep-openclaw-repair": ["Keep OpenClaw repair actions", "保留 OpenClaw 修复动作"],
+    "keep-openclaw-qa-policy": ["Keep OpenClaw Q&A policy", "保留 OpenClaw 问答口径"],
+    "keep-repair-actions": ["Keep repair actions", "保留修复动作"],
+    "keep-verification-or-escalation": ["Keep verification or escalation", "保留验证或升级边界"],
+    "keep-k8s-repair": ["Keep K8s repair", "保留 K8s 修复经验"],
+    "keep-container-repair": ["Keep container repair", "保留容器修复经验"],
+    "reject-greeting-only": ["Reject greeting-only", "拒绝纯问候"],
+  };
+  const label = labels[normalized];
+  return label ? label[useZh ? 1 : 0] : rule;
 }
 
 function renderKnowledgeBaseOverview(items: KnowledgeBaseOverviewItem[], language: ProjectLanguage): string {
   const useZh = zh(language);
   return `<section class="kb-overview panel" id="knowledge-bases">
   <h2>${useZh ? "知识库分布" : "Knowledge Bases"}</h2>
-  <p class="section-subtitle">${useZh ? "每个知识库独立统计来源、隐私阻断、待提炼和稳定知识页。K8s 等新知识库可以先配置为空，再逐步接入来源。" : "Each knowledge base tracks sources, privacy blockers, curation work, and stable pages separately. New bases can start empty before sources are connected."}</p>
+  <p class="section-subtitle">${useZh ? "每个知识库独立统计来源、隐私阻断、待提炼和稳定知识页，并展示当前筛选模式。" : "Each knowledge base tracks sources, privacy blockers, curation work, stable pages, and its active filter mode."}</p>
   <div class="kb-card-grid">
     ${items.map((item) => `<a class="kb-overview-card" href="#knowledge-pages" data-kb-filter-link="${escapeHtml(item.id)}">
       <span>${escapeHtml(item.label)}</span>
       <strong>${escapeHtml(String(item.stablePages))}</strong>
       <small>${escapeHtml(useZh ? `稳定页 · 来源 ${item.sourceItems} · 待提炼 ${item.pendingCuration} · 隐私 ${item.privacyBlocked}` : `stable pages · sources ${item.sourceItems} · curation ${item.pendingCuration} · privacy ${item.privacyBlocked}`)}</small>
+      <em>${escapeHtml(`${item.profile} · ${item.filterMode}`)}</em>
+      <ul>${item.filterRules.slice(0, 4).map((rule) => `<li>${escapeHtml(ruleLabel(rule, language))}</li>`).join("") || `<li>${escapeHtml(useZh ? "使用默认筛选" : "Default filtering")}</li>`}</ul>
     </a>`).join("\n")}
+  </div>
+</section>`;
+}
+
+function renderKnowledgeBaseRules(items: KnowledgeBaseOverviewItem[], language: ProjectLanguage): string {
+  const useZh = zh(language);
+  return `<section class="kb-rules panel" id="knowledge-rules">
+  <h2>${escapeHtml(useZh ? "知识库筛选规则" : "Knowledge Base Filter Rules")}</h2>
+  <p class="section-subtitle">${escapeHtml(useZh ? "配置来自 .praxisbase/config.yaml；allowlist 表示只有命中保留规则的内容进入提炼。" : "Configured in .praxisbase/config.yaml; allowlist bases only admit items that match keep rules.")}</p>
+  <div class="rule-grid">
+    ${items.map((item) => `<article class="rule-card">
+      <div class="rule-card-head"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.id)}</span></div>
+      <dl>
+        <dt>${escapeHtml(useZh ? "画像" : "Profile")}</dt><dd>${escapeHtml(item.profile)}</dd>
+        <dt>${escapeHtml(useZh ? "模式" : "Mode")}</dt><dd>${escapeHtml(item.filterMode)}</dd>
+        <dt>${escapeHtml(useZh ? "规则" : "Rules")}</dt><dd><ul>${item.filterRules.map((rule) => `<li><code>${escapeHtml(rule)}</code><span>${escapeHtml(ruleLabel(rule, language))}</span></li>`).join("") || `<li><span>${escapeHtml(useZh ? "默认通用经验筛选" : "Default useful-experience filtering")}</span></li>`}</ul></dd>
+      </dl>
+    </article>`).join("\n")}
   </div>
 </section>`;
 }
@@ -1585,6 +1633,7 @@ function renderDashboard(
   ${renderDataSourceSection(dailyReport, language)}
   ${renderProcessMap({ title: useZh ? "从来源到入库的处理链路" : "From Source to Stable Knowledge", subtitle: useZh ? "这些数字按阶段展示，不是简单相加。点击阶段可以跳到明细或审批入口。" : "Counts are stage-specific rather than additive. Click a stage to inspect details or act.", steps: processSteps })}
   ${renderKnowledgeBaseOverview(knowledgeBases, language)}
+  ${renderKnowledgeBaseRules(knowledgeBases, language)}
   ${renderTerminologyPanel(language)}
   ${dailyReport ? renderDailyOverviewSection(dailyReport, language) : ""}
   <details class="advanced-panel dashboard-advanced">
@@ -2967,6 +3016,13 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
     protocol_version: "0.1",
     review_api_base: reviewUiConfig.reviewApiBase,
     writeback: reviewUiConfig.writeback,
+  });
+  await writeJson(root, "dist/knowledge-config.json", {
+    protocol_version: "0.1",
+    profile: languageConfig.knowledge.profile,
+    bases: languageConfig.knowledge.bases,
+    global_filter_rules: languageConfig.knowledge.filterRules,
+    curation_include_auto_released: languageConfig.knowledge.curationIncludeAutoReleased,
   });
   await writeText(root, "dist/style.css", SITE_CSS);
   await writeText(root, "dist/site.js", SITE_JS);

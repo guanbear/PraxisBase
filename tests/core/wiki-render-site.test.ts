@@ -849,8 +849,23 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
       "ui_language: zh-CN",
       "content_language: zh-CN",
       "knowledge_bases:",
-      "  - openclaw",
-      "  - k8s",
+      "  - id: openclaw",
+      "    label: OpenClaw 经验知识库",
+      "    profile: openclaw",
+      "    filter_mode: allowlist",
+      "    filter_rules:",
+      "      - keep_openclaw_repair",
+      "      - keep_openclaw_qa_policy",
+      "      - keep_verification_or_escalation",
+      "      - reject_greeting_only",
+      "  - id: k8s",
+      "    label: K8s 经验知识库",
+      "    profile: k8s",
+      "    filter_mode: allowlist",
+      "    filter_rules:",
+      "      - keep_k8s_repair",
+      "      - keep_verification_or_escalation",
+      "      - reject_greeting_only",
       "",
     ].join("\n"));
     await writeFile(join(root, ".praxisbase/reports/daily/daily_coverage.json"), JSON.stringify({
@@ -887,9 +902,16 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(index.includes("团队经验知识库"));
     assert.ok(index.includes("稳定知识"));
     assert.ok(index.includes("知识库分布"));
-    assert.ok(index.includes("K8s"));
+    assert.ok(index.includes("K8s 经验知识库"));
+    assert.ok(index.includes("知识库筛选规则"));
+    assert.ok(index.includes("保留 OpenClaw 修复动作"));
+    assert.ok(index.includes("allowlist"));
     assert.ok(index.includes('data-i18n="dashboard.title"'));
     assert.ok(index.includes('href="index.html"'));
+    const knowledgeConfig = JSON.parse(await readFile(join(root, "dist/knowledge-config.json"), "utf8"));
+    assert.equal(knowledgeConfig.bases[0].id, "openclaw");
+    assert.equal(knowledgeConfig.bases[0].filterMode, "allowlist");
+    assert.ok(knowledgeConfig.bases[0].filterRules.includes("keep_openclaw_repair"));
     const review = await readFile(join(root, "dist/review.html"), "utf8");
     assert.ok(review.includes('lang="zh-CN"'));
     assert.ok(review.includes('id="languageSelect"'));

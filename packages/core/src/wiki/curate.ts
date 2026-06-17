@@ -6,14 +6,14 @@ import { protocolPaths } from "../protocol/paths.js";
 import { readAiProviderConfig } from "../ai/config.js";
 import { createOpenAiCompatibleJsonClient } from "../ai/client.js";
 import type { AiJsonClient } from "../ai/client.js";
-import { knowledgeProfileInstruction, readProjectLanguageConfig, type ProjectLanguage } from "../config/project.js";
+import { knowledgeProfileInstruction, readProjectLanguageConfig, type ProjectKnowledgeConfig, type ProjectLanguage } from "../config/project.js";
 import { writeJson } from "../store/file-store.js";
 import { collectWikiSources } from "./collect.js";
 import { analyzeWikiSource } from "./analyze.js";
 import { containsPrivateMaterial, isAllowedWikiPatchPath } from "./lint.js";
 import { makeWikiSlug, type WikiSource } from "./model.js";
 import { buildWikiCuratorPrompt, type SynthesisContext, type StructuredLink, type MergeCandidate } from "./curator-prompt.js";
-import { decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
+import { decideKnowledgeBaseFilter, decideWikiFilter, readWikiFilterRules, type WikiFilterRule } from "./filter-rules.js";
 import { assessWikiPromotionQuality } from "./promotion-quality.js";
 import { replaceBodyProvenanceSection } from "./provenance-consistency.js";
 import { hasAgentUseGuidance, renderAgentUseSection, replaceOrInsertAgentUseSection } from "./agent-use.js";
@@ -403,7 +403,11 @@ function curationKindFromAnalysis(kind: string): WikiEvidenceItem["suggested_wik
   return "note";
 }
 
-export function buildWikiEvidencePool(sources: WikiSource[], rules: WikiFilterRule[] = []): WikiEvidencePool {
+export function buildWikiEvidencePool(
+  sources: WikiSource[],
+  rules: WikiFilterRule[] = [],
+  knowledgeConfig?: ProjectKnowledgeConfig,
+): WikiEvidencePool {
   const items: WikiEvidenceItem[] = [];
   let filteredNoise = 0;
   let humanRequired = 0;
@@ -421,6 +425,15 @@ export function buildWikiEvidencePool(sources: WikiSource[], rules: WikiFilterRu
       continue;
     }
     if (filter.action === "human_required") {
+      humanRequired++;
+      continue;
+    }
+    const knowledgeFilter = decideKnowledgeBaseFilter(source, knowledgeConfig);
+    if (knowledgeFilter.action === "exclude") {
+      filteredNoise++;
+      continue;
+    }
+    if (knowledgeFilter.action === "human_required") {
       humanRequired++;
       continue;
     }
@@ -445,7 +458,7 @@ export function buildWikiEvidencePool(sources: WikiSource[], rules: WikiFilterRu
     const verification = inferVerification(text);
     const reusableLessons = inferReusableLessons(text);
     const suggestedWikiKind = curationKindFromAnalysis(analysis.suggested_page_kind);
-    if (filter.action !== "include" && !hasUsefulExperienceSignal({
+    if (filter.action !== "include" && knowledgeFilter.action !== "include" && !hasUsefulExperienceSignal({
       text,
       actions,
       verification,
@@ -547,18 +560,26 @@ async function collectLessonReportEvidence(root: string): Promise<WikiEvidenceIt
 
 function mergeEvidenceItems(items: WikiEvidenceItem[]): WikiEvidenceItem[] {
   const deduped = new Map<string, WikiEvidenceItem>();
+  const distilledSourceKeys = new Set(
+    items
+      .filter((item) => item.kind === "distilled_experience")
+      .map((item) => `${item.source_ref}:${item.source_hash}`),
+  );
   for (const item of items) {
+    const sourceKey = `${item.source_ref}:${item.source_hash}`;
+    if (item.kind !== "distilled_experience" && distilledSourceKeys.has(sourceKey)) continue;
     const lessonSignature = item.signatures.find((signature) => signature.startsWith("lesson:"));
     const key = item.kind === "distilled_experience" && lessonSignature
       ? `lesson:${lessonSignature}:${item.id}`
-      : `${item.source_ref}:${item.source_hash}`;
+      : sourceKey;
     if (!deduped.has(key)) deduped.set(key, item);
   }
   return Array.from(deduped.values()).sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export async function buildWikiEvidencePoolFromRoot(root: string): Promise<WikiEvidencePool> {
-  const sourcePool = buildWikiEvidencePool(await collectWikiSources(root), await readWikiFilterRules(root));
+  const languageConfig = await readProjectLanguageConfig(root);
+  const sourcePool = buildWikiEvidencePool(await collectWikiSources(root), await readWikiFilterRules(root), languageConfig.knowledge);
   const lessonItems = await collectLessonReportEvidence(root);
   if (lessonItems.length > 0) {
     return {
