@@ -755,7 +755,7 @@ function coverageStatusLabel(status: string, language: ProjectLanguage): string 
     low_signal_rejected: "低信号已拒绝",
     lesson_only: "已成 Lesson",
     wiki_evidence: "已有 Wiki 证据",
-    proposal: "已有提案",
+    proposal: "待审核提案",
     stable_kb: "已进稳定知识库",
   };
   return labels[status] ?? status;
@@ -796,7 +796,7 @@ function renderCandidateCard(item: ReviewQueueCandidate, language: ProjectLangua
   const approvalControls = item.status === "pending" ? `<div class="approval-actions" data-review-actions data-proposal-id="${escapeHtml(item.id)}">
       <button type="button" data-review-decision="approve">${useZh ? "批准" : "Approve"}</button>
       <button type="button" data-review-decision="reject">${useZh ? "拒绝" : "Reject"}</button>
-      <button type="button" data-review-decision="needs_human">${useZh ? "人工跟进" : "Needs human"}</button>
+      <button type="button" data-review-decision="needs_human">${useZh ? "标记需修改" : "Mark for edit"}</button>
       <span class="approval-status" data-review-status>${useZh ? "需启动 praxisbase review serve" : "Start praxisbase review serve"}</span>
     </div>` : "";
   return `<li id="${escapeHtml(item.anchor)}" class="review-card">
@@ -867,7 +867,7 @@ function renderHumanRequired(
   const visibleRecords = records.slice(0, 50);
   const isTeamGit = dailyReport?.authority_mode === "team-git";
   const triageCommand = isTeamGit
-    ? "praxisbase privacy triage --mode team-git --include-triaged --progress --json"
+    ? "praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json"
     : "praxisbase privacy triage --mode personal --auto-release --progress --json";
   const followupCommand = isTeamGit
     ? "praxisbase wiki build-site --json"
@@ -1003,7 +1003,7 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
     {
       label: useZh ? "沉淀" : "Stable",
       value: coverage.stable_kb,
-      note: useZh ? `已有提案：${coverage.with_proposals} 个来源` : `${coverage.with_proposals} sources have proposals`,
+      note: useZh ? `涉及提案来源：${coverage.with_proposals}` : `${coverage.with_proposals} sources touched proposals`,
     },
   ];
   const statusOrder = ["stable_kb", "proposal", "wiki_evidence", "lesson_only", "needs_curation", "privacy_blocked", "low_signal_rejected", "raw_only"];
@@ -1042,7 +1042,7 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
       <a class="metric-link" href="#coverage-details" data-coverage-filter="privacy_blocked"><span>隐私待确认</span><strong>${escapeHtml(String(coverage.privacy_blocked))}</strong></a>
       <a class="metric-link" href="#coverage-details" data-coverage-filter="lesson_all"><span>${useZh ? "Lesson 总数" : "Total lessons"}</span><strong>${escapeHtml(String(coverage.total_lessons || coverage.with_lessons))}</strong></a>
       <a class="metric-link" href="#coverage-details" data-coverage-filter="wiki_evidence_all"><span>${useZh ? `Wiki 证据 ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} 个来源` : `Wiki evidence ${coverage.total_wiki_evidence || coverage.with_wiki_evidence} / ${coverage.with_wiki_evidence} sources`}</span><strong>${escapeHtml(String(coverage.total_wiki_evidence || coverage.with_wiki_evidence))}</strong></a>
-      <a class="metric-link" href="#coverage-details" data-coverage-filter="proposal"><span>${useZh ? "提案" : "Proposal"}</span><strong>${escapeHtml(String(coverage.with_proposals))}</strong></a>
+      <a class="metric-link" href="#coverage-details" data-coverage-filter="proposal"><span>${useZh ? "涉及提案来源" : "Sources with proposals"}</span><strong>${escapeHtml(String(coverage.with_proposals))}</strong></a>
       <a class="metric-link" href="#coverage-details" data-coverage-filter="stable_kb"><span>${useZh ? "稳定知识" : "Stable KB"}</span><strong>${escapeHtml(String(coverage.stable_kb))}</strong></a>
     </div>
     <div class="kb-filter-bar">
@@ -1114,7 +1114,7 @@ function renderReviewPage(
   ${renderExperienceCoverage(dailyReport, language)}
   <section class="review-section" data-status="pending">
     <h2>${useZh ? "页面审批" : "Page approval"}</h2>
-    <p>${useZh ? "启动本地审批服务后，可直接在候选卡片上批准、拒绝或标记人工跟进。静态打开页面时仍可使用终端命令。" : "Start the local approval server to approve, reject, or mark candidates for human follow-up from this page. The terminal commands still work for static viewing."}</p>
+    <p>${useZh ? "启动本地审批服务后，可直接在候选卡片上批准、拒绝或标记需修改。静态打开页面时仍可使用终端命令。" : "Start the local approval server to approve, reject, or mark candidates for editing from this page. The terminal commands still work for static viewing."}</p>
     <div class="command-strip">
       <code>praxisbase review serve --port 4174</code>
       <code>praxisbase review --auto</code>

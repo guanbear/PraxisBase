@@ -772,9 +772,9 @@ export function deriveDailyNextActions(report: DailyExperienceReport): DailyNext
         counts,
         agentmemory_export_recommended: false,
         gbrain_export_recommended: false,
-        messages: [`${privacyRequired} team item(s) need privacy review before they can become wiki evidence. AI triage can refresh metadata, but team-git release remains review-first.`],
+        messages: [`${privacyRequired} team item(s) need privacy review before they can become wiki evidence. AI triage can auto-release safely redacted team lessons and keep uncertain items for review.`],
         commands: [
-          "praxisbase privacy triage --mode team-git --include-triaged --json",
+          "praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --json",
           "praxisbase wiki build-site --json",
         ],
       };

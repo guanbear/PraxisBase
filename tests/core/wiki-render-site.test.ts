@@ -511,6 +511,9 @@ Body.
     const review = await readFile(join(root, "dist/review.html"), "utf8");
     assert.ok(review.includes("Wiki 证据 4 / 1 个来源"));
     assert.ok(review.includes("data-coverage-filter=\"proposal\""));
+    assert.ok(review.includes("涉及提案来源"));
+    assert.ok(review.includes("待审核提案"));
+    assert.ok(review.includes("praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --progress --json"));
     assert.ok(review.includes("data-coverage-kb=\"openclaw\""));
     assert.ok(review.includes("data-coverage-kb-filter=\"container-repair\""));
     assert.ok(review.includes("data-privacy-actions"));
@@ -789,6 +792,8 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes('data-language-option="zh-CN"'));
     assert.ok(review.includes("经验覆盖"));
     assert.ok(review.includes("原始项"));
+    assert.ok(review.includes("标记需修改"));
+    assert.equal(review.includes("人工跟进"), false);
     assert.ok(review.includes("experience_openclaw-a"));
     assert.ok(review.includes("中文经验候选"));
     assert.ok(review.includes("低信号已拒绝"));

@@ -367,7 +367,11 @@ function teamAutoReviewEligible(input: {
   if (input.scope === "personal") return false;
   const threshold = teamAutoReviewThreshold(input.ai);
   if (threshold === undefined || input.ai.confidence < threshold) return false;
-  const blockingReasons = input.hardBlockReasons.filter((reason) => reason !== "remote_source_requires_review" && reason !== "feishu_private_identifier_detected");
+  const allowedHardBlocks = new Set(["remote_source_requires_review", "feishu_private_identifier_detected"]);
+  if (input.ai.classification === "needs_redaction" || input.ai.classification === "safe_personal_experience") {
+    allowedHardBlocks.add("private_material_detected");
+  }
+  const blockingReasons = input.hardBlockReasons.filter((reason) => !allowedHardBlocks.has(reason));
   return blockingReasons.length === 0;
 }
 

@@ -230,6 +230,60 @@ describe("privacy triage", () => {
     assert.match(exception.details.triage.release_summary, /verified completion status/i);
   });
 
+  it("auto-reviews team items with private source material when the generated release is safely redacted", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-team-auto-private-source-"));
+    await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });
+    await writeException(root, {
+      id: "team-auto-private-source",
+      scope: "team",
+      channel: "feishu",
+      agent: "openclaw",
+      sourceRef: "openclaw://answer-bot/pm.sqlite/chunks/private-source",
+      summary: "A repair session used token=abc123456789 while debugging a bot delivery failure, then fixed the route and verified the reply.",
+    });
+    const schemas: string[] = [];
+
+    const report = await runPrivacyTriage(root, {
+      authorityMode: "team-git",
+      mode: "write",
+      teamAutoReview: true,
+      now: "2026-05-22T01:00:00.000Z",
+      env: { PRAXISBASE_LLM_API_KEY: "test-key" },
+      aiClient: {
+        async generateJson(input) {
+          schemas.push(input.schemaName);
+          if (input.schemaName === "PrivacyTriageDecision") {
+            assert.doesNotMatch(input.user, /abc123456789/);
+            return {
+              ok: true,
+              json: {
+                classification: "needs_redaction",
+                confidence: 0.88,
+                rationale: "The item has reusable repair sequence after removing concrete private values.",
+                suggested_redactions: ["Remove concrete token and source identifiers."],
+              },
+            };
+          }
+          assert.equal(input.schemaName, "TeamPrivacyReleaseSummary");
+          return {
+            ok: true,
+            json: {
+              release_summary: "When a bot delivery path fails, verify routing and reply delivery after removing private connection details.",
+              reusable_lesson: "Keep the repair sequence and verification signal, not the original private values.",
+              residual_risk: "No concrete identifiers are included in this release.",
+            },
+          };
+        },
+      },
+    });
+
+    assert.deepEqual(schemas, ["PrivacyTriageDecision", "TeamPrivacyReleaseSummary"]);
+    assert.equal(report.summary.auto_released, 1);
+    assert.equal(report.items[0].decision, "auto_released");
+    assert.ok(report.items[0].hard_block_reasons.includes("private_material_detected"));
+    assert.doesNotMatch(report.items[0].release_summary ?? "", /abc123456789/);
+  });
+
   it("keeps team auto-review blocked when the sanitized summary still contains private material", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-privacy-triage-team-auto-block-"));
     await writeAiProviderConfig(root, { provider: "openai-compatible", model: "test-model" });

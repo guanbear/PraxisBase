@@ -217,10 +217,10 @@ describe("runDailyExperience", () => {
 
     assert.equal(nextActions.status, "needs_review");
     assert.deepEqual(nextActions.commands, [
-      "praxisbase privacy triage --mode team-git --include-triaged --json",
+      "praxisbase privacy triage --mode team-git --team-auto-review --include-triaged --json",
       "praxisbase wiki build-site --json",
     ]);
-    assert.ok(nextActions.messages.some((message) => message.includes("review-first")));
+    assert.ok(nextActions.messages.some((message) => message.includes("auto-release safely redacted")));
   });
 
   it("surfaces skill synthesis needs_human before wiki review in next actions", () => {
