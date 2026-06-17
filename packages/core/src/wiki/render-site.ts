@@ -899,6 +899,7 @@ function renderHumanRequired(
   ${visibleRecords.length > 0 ? `<ol class="experience-list">
     ${visibleRecords.map((item) => {
       const detailsReleased = humanRequiredDetailsReleased(item);
+      const reviewPreview = privacyReviewPreview(item);
       const privacyActions = item.privacy_reviewable ? `<div class="approval-actions privacy-actions" data-privacy-actions data-privacy-id="${escapeHtml(item.id)}">
         <button type="button" data-privacy-decision="auto_released">${useZh ? "释放为脱敏经验" : "Release sanitized"}</button>
         <button type="button" data-privacy-decision="rejected_low_signal">${useZh ? "低信号拒绝" : "Reject low signal"}</button>
@@ -913,13 +914,15 @@ function renderHumanRequired(
         <dt>${useZh ? "范围" : "Scope"}</dt><dd>${escapeHtml(item.scope ?? "unknown")}</dd>
         ${detailsReleased ? `<dt>Ref</dt><dd><code>${escapeHtml(item.source_ref ?? "n/a")}</code></dd>` : ""}
         ${detailsReleased && item.redacted_summary ? `<dt>${useZh ? "摘要" : "Summary"}</dt><dd>${escapeHtml(item.redacted_summary)}</dd>` : ""}
+        ${!detailsReleased && reviewPreview ? `<dt>${useZh ? "可审摘要" : "Review preview"}</dt><dd>${escapeHtml(reviewPreview)}</dd>` : ""}
         <dt>${useZh ? "文件" : "File"}</dt><dd><code>${escapeHtml(item.path)}</code></dd>
         <dt>${useZh ? "创建时间" : "Created"}</dt><dd>${escapeHtml(item.created_at)}</dd>
         <dt>${useZh ? "建议命令" : "Recommended"}</dt><dd><code>${escapeHtml(triageCommand)}</code></dd>
         ${item.triage ? `
         <dt>Triage</dt><dd>${escapeHtml(item.triage.classification ?? "unknown")} / ${escapeHtml(item.triage.decision ?? "unknown")}</dd>
         <dt>${useZh ? "置信度" : "Confidence"}</dt><dd>${escapeHtml(item.triage.confidence ?? "n/a")}</dd>
-        ${detailsReleased ? `<dt>${useZh ? "理由" : "Rationale"}</dt><dd>${escapeHtml(item.triage.rationale ?? "n/a")}</dd>` : `<dt>${useZh ? "详情" : "Details"}</dt><dd>${useZh ? "敏感详情会在隐私 triage 释放后展示。" : "Sensitive details hidden until privacy triage releases this record."}</dd>`}
+        ${detailsReleased ? `<dt>${useZh ? "理由" : "Rationale"}</dt><dd>${escapeHtml(item.triage.rationale ?? "n/a")}</dd>` : `<dt>${useZh ? "详情" : "Details"}</dt><dd>${useZh ? "原始敏感详情仍隐藏；请基于上面的可审摘要、分类和置信度审批。" : "Raw sensitive details stay hidden; review using the sanitized preview, classification, and confidence above."}</dd>`}
+        ${!detailsReleased && item.triage.suggested_redactions.length > 0 ? `<dt>${useZh ? "脱敏提示" : "Redaction note"}</dt><dd>${useZh ? `${escapeHtml(String(item.triage.suggested_redactions.length))} 条脱敏建议已隐藏原文。` : `${escapeHtml(String(item.triage.suggested_redactions.length))} suggested redaction(s) hidden from the page.`}</dd>` : ""}
         ${detailsReleased && item.triage.suggested_redactions.length > 0 ? `<dt>${useZh ? "建议脱敏" : "Suggested Redactions"}</dt><dd>${escapeHtml(item.triage.suggested_redactions.join(", "))}</dd>` : ""}
         ` : ""}
       </dl>
@@ -933,6 +936,26 @@ function renderHumanRequired(
 function humanRequiredDetailsReleased(item: HumanRequiredRecord): boolean {
   if (!item.triage) return false;
   return item.triage.decision === "auto_released";
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function redactLiteral(text: string, literal: string | undefined): string {
+  if (!literal || literal.length < 3) return text;
+  return text.replace(new RegExp(escapeRegExp(literal), "gi"), "[REDACTED]");
+}
+
+function privacyReviewPreview(item: HumanRequiredRecord): string | undefined {
+  let preview = item.triage?.release_summary || item.redacted_summary;
+  if (!preview) return undefined;
+  for (const redaction of item.triage?.suggested_redactions ?? []) {
+    preview = redactLiteral(preview, redaction);
+  }
+  preview = redactLiteral(preview, item.source_ref);
+  preview = redactLiteral(preview, item.source_hash);
+  return preview.length > 1200 ? `${preview.slice(0, 1200)}...` : preview;
 }
 
 function renderRejectedSection(dailyReport: DailyReportSummary | null, curationReport: WikiCurationReportSummary | null, language: ProjectLanguage = "en"): string {

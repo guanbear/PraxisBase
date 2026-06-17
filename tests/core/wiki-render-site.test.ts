@@ -847,7 +847,7 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     assert.ok(review.includes("Refresh OpenClaw auth before retrying memory sync."));
   });
 
-  it("hides private human-required details until privacy triage releases them", async () => {
+  it("shows a sanitized review preview while hiding raw private human-required details", async () => {
     const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-privacy-hidden-"));
     await mkdir(join(root, ".praxisbase/exceptions/human-required"), { recursive: true });
     await writeFile(
@@ -883,7 +883,9 @@ When OpenClaw auth expires, refresh the login before retrying agent repair.
     const review = await readFile(join(root, "dist/review.html"), "utf8");
     assert.ok(review.includes("private_material_detected"));
     assert.ok(review.includes("keep_human_required"));
-    assert.ok(review.includes("Sensitive details hidden until privacy triage releases this record."));
+    assert.ok(review.includes("Review preview"));
+    assert.ok(review.includes("Use [REDACTED] with private network address and [REDACTED]."));
+    assert.ok(review.includes("2 suggested redaction(s) hidden from the page."));
     assert.ok(!review.includes("private-host-wrapper"));
     assert.ok(!review.includes("secret key"));
     assert.ok(!review.includes("openclaw-ssh://remote/MEMORY.md:10:10"));
