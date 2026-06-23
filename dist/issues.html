@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PraxisBase 质量检查</title>
   <link rel="stylesheet" href="style.css">
+  <script>(function(){try{var t=localStorage.getItem("praxisbase.theme");var d=t==="light"||t==="dark"?t:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",d);}catch(e){}})();</script>
 </head>
 <body>
   <header class="topbar">
@@ -18,6 +19,17 @@
       <a href="review.html" data-i18n="nav.review">审批</a>
       <a href="graph.html" data-i18n="nav.graph">关系</a>
       <a href="issues.html" data-i18n="nav.issues">质检</a>
+      <div class="theme-switch" aria-label="切换主题">
+        <button type="button" data-theme-option="auto" aria-pressed="true" title="跟随系统">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="light" aria-pressed="false" title="浅色">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="dark" aria-pressed="false" title="深色">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+        </button>
+      </div>
       <div class="language-switch" aria-label="切换语言" data-i18n-aria-label="language.switch">
         <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -60,7 +72,7 @@
   </a>
     <a class="action-card" href="review.html#human-required" data-tone="danger">
     <span>隐私阻断</span>
-    <strong>19</strong>
+    <strong>16</strong>
     <p>Daily 中仍需人工判断的项。</p>
   </a>
   </section>
@@ -69,16 +81,15 @@
     <span>这里展示会影响入库或 Agent 使用可靠性的阻断项。没有发现时，代表当前静态知识站点没有阻塞性质量问题。</span>
   </section>
   <section class="issues-panel" id="quality-findings">
-    <ol class="issue-list">
-      <li data-i18n="issues.noIssues">当前没有阻塞性质量问题。</li>
-    </ol>
+    <h2>质检发现</h2>
+    <div class="empty-state"><span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H4z"></path><path d="M2 20h20M9 16l3 4 3-4"></path></svg></span><strong>当前没有阻塞性质量问题。</strong></div>
   </section>
   <section class="issues-panel">
   <h2 data-i18n="issues.dailyPrivacy">Daily 隐私发现</h2>
-  <dl>
-    <dt>已拒绝</dt><dd>0</dd>
-    <dt>需要人工</dt><dd>19</dd>
-  </dl>
+  <div class="privacy-summary-card">
+    <div class="metric"><span>已拒绝</span><strong>1</strong></div>
+    <div class="metric"><span>需要人工</span><strong>16</strong></div>
+  </div>
 </section>
 </main>
   <script>window.__PRAXISBASE_LANGUAGE__="zh-CN";</script>

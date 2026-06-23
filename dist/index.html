@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PraxisBase 团队经验知识库</title>
   <link rel="stylesheet" href="style.css">
+  <script>(function(){try{var t=localStorage.getItem("praxisbase.theme");var d=t==="light"||t==="dark"?t:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",d);}catch(e){}})();</script>
 </head>
 <body>
   <header class="topbar">
@@ -18,6 +19,17 @@
       <a href="review.html" data-i18n="nav.review">审批</a>
       <a href="graph.html" data-i18n="nav.graph">关系</a>
       <a href="issues.html" data-i18n="nav.issues">质检</a>
+      <div class="theme-switch" aria-label="切换主题">
+        <button type="button" data-theme-option="auto" aria-pressed="true" title="跟随系统">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="light" aria-pressed="false" title="浅色">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="dark" aria-pressed="false" title="深色">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+        </button>
+      </div>
       <div class="language-switch" aria-label="切换语言" data-i18n-aria-label="language.switch">
         <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -45,13 +57,13 @@
   <section class="action-grid" aria-label="下一步操作">
     <a class="action-card" href="review.html#pending-candidates" data-tone="warn">
     <span>可审批提案</span>
-    <strong>4</strong>
+    <strong>29</strong>
     <p>当前能直接批准或拒绝的知识改动。</p>
   </a>
     <a class="action-card" href="review.html#human-required" data-tone="danger">
     <span>隐私审批队列</span>
-    <strong>19</strong>
-    <p>含历史待确认；本次阻断 14。</p>
+    <strong>16</strong>
+    <p>含历史待确认；本次阻断 13。</p>
   </a>
     <a class="action-card" href="#knowledge-pages" data-tone="ok">
     <span>稳定页面</span>
@@ -66,13 +78,13 @@
   </section>
   <section class="status-strip">
     <strong>当前结论</strong>
-    <span>先处理 19 条隐私审批和 4 个可审批提案。稳定知识总量是 0，不是本次新增数。</span>
+    <span>先处理 <strong class="num">16</strong> 条隐私审批和 <strong class="num">29</strong> 个可审批提案。稳定知识总量是 <strong class="num">0</strong>，不是本次新增数。</span>
   </section>
   <section class="data-sources panel" id="data-sources">
   <div class="section-heading compact-heading">
     <div>
       <h2>当前数据源</h2>
-      <p>最新处理报告：2026-06-17 05:48:44 · team-git。这里只展示本次页面正在采用的来源。</p>
+      <p>最新处理报告：2026-06-17 09:21:51 · team-git。这里只展示本次页面正在采用的来源。</p>
     </div>
   </div>
   <div class="source-grid">
@@ -85,13 +97,13 @@
         <span class="status-pill">partial</span>
       </div>
       <div class="source-stats">
-        <span>扫描 34</span>
-        <span>获取 34</span>
-        <span>入信封 34</span>
-        <span>隐私 19</span>
+        <span>扫描 132</span>
+        <span>获取 132</span>
+        <span>入信封 132</span>
+        <span>隐私 16</span>
       </div>
       <dl class="source-code-list"><dt>仓库</dt><dd><code>https://gitlab.chehejia.com/sre/praxisbase.git</code></dd><dt>分支</dt><dd><code>openclaw-ingest/answer-bot</code></dd><dt>路径</dt><dd><code>.praxisbase/sources/openclaw-answer-bot/pm-memory.jsonl</code></dd></dl>
-
+      
     </article>
   </div>
 </section>
@@ -105,20 +117,20 @@
   <div class="process-grid">
     <a class="process-step" href="#data-sources"><span class="process-index">1</span>
       <span class="process-label">来源采集</span>
-      <strong>34</strong>
+      <strong>131</strong>
       <small>来自 openclaw-answer-bot；这是原始条目，不是经验数量</small></a>
 <a class="process-step" href="review.html#human-required"><span class="process-index">2</span>
       <span class="process-label">隐私筛选</span>
-      <strong>14</strong>
-      <small>本次阻断 14；审批队列 19</small></a>
+      <strong>13</strong>
+      <small>本次阻断 13；审批队列 16</small></a>
 <a class="process-step" href="review.html#experience-coverage"><span class="process-index">3</span>
       <span class="process-label">经验提炼</span>
-      <strong>2</strong>
-      <small>2 个经验片段；13 个来源待二次提炼</small></a>
+      <strong>9</strong>
+      <small>9 个经验片段；86 个来源待二次提炼</small></a>
 <a class="process-step" href="review.html#pending-candidates"><span class="process-index">4</span>
       <span class="process-label">提案审批</span>
-      <strong>4</strong>
-      <small>当前可审批 4；本次生成 4</small></a>
+      <strong>29</strong>
+      <small>当前可审批 29；本次生成 30</small></a>
 <a class="process-step" href="#knowledge-pages"><span class="process-index">5</span>
       <span class="process-label">稳定知识</span>
       <strong>0</strong>
@@ -139,7 +151,7 @@
 <a class="kb-overview-card" href="#knowledge-pages" data-kb-filter-link="openclaw">
       <span>OpenClaw 经验知识库</span>
       <strong>0</strong>
-      <small>稳定页 · 来源 34 · 待提炼 10 · 隐私 14</small>
+      <small>稳定页 · 来源 131 · 待提炼 55 · 隐私 13</small>
       <em>openclaw · allowlist</em>
       <ul><li>保留 OpenClaw 修复动作</li><li>保留 OpenClaw 问答口径</li><li>保留验证或升级边界</li><li>拒绝纯问候</li></ul>
     </a>
@@ -178,12 +190,12 @@
 </details>
   <section class="daily-update panel">
   <h2>本次处理结果</h2>
-  <p class="section-subtitle">2026-06-17 · team-git · 覆盖 34 条来源</p>
+  <p class="section-subtitle">2026-06-17 · team-git · 覆盖 131 条来源</p>
   <div class="metrics">
     <article><span>来源</span><strong>1</strong></article>
-<article><span>已导入</span><strong>0</strong></article>
-<a class="metric-link" href="review.html#human-required"><span>隐私待确认</span><strong>19</strong></a>
-<a class="metric-link" href="review.html#pending-candidates"><span>待审核提案</span><strong>4</strong></a>
+<article><span>已导入</span><strong>115</strong></article>
+<a class="metric-link" href="review.html#human-required"><span>隐私待确认</span><strong>16</strong></a>
+<a class="metric-link" href="review.html#pending-candidates"><span>待审核提案</span><strong>30</strong></a>
 <a class="metric-link" href="#knowledge-pages"><span>当前稳定知识页</span><strong>0</strong></a>
   </div>
   <details class="advanced-panel dashboard-advanced">
@@ -193,10 +205,10 @@
   <p class="eyebrow">2026-06-17 &middot; team-git</p>
   <div class="metrics">
     <article><span>来源</span><strong>1</strong></article>
-<article><span>已导入</span><strong>0</strong></article>
-<article><span>已拒绝</span><strong>0</strong></article>
-<a class="metric-link" href="review.html#human-required"><span>需要人工</span><strong>19</strong></a>
-<a class="metric-link" href="review.html#pending-candidates"><span>提案</span><strong>4</strong></a>
+<article><span>已导入</span><strong>115</strong></article>
+<article><span>已拒绝</span><strong>1</strong></article>
+<a class="metric-link" href="review.html#human-required"><span>需要人工</span><strong>16</strong></a>
+<a class="metric-link" href="review.html#pending-candidates"><span>提案</span><strong>30</strong></a>
 <article><span>站点页面</span><strong>0</strong></article>
     <article><span>上下文瘦身</span><strong>开启</strong></article>
     <article><span>已压缩项</span><strong>0</strong></article>
@@ -205,20 +217,23 @@
     <article><span>预算内项目</span><strong>0</strong></article>
     <article><span>预算节省字节</span><strong>0</strong></article>
     <article><span>预摘要</span><strong>0</strong></article>
-
-
-
-
-	    <article><span>M25 Lessons</span><strong>2 已提取</strong></article>
+	    <article><span>语义审核</span><strong>31 已审核</strong></article>
+	    <article><span>语义提升</span><strong>0</strong></article>
+	    <article><span>语义拒绝</span><strong>1</strong></article>
+	    <article><span>语义需人工</span><strong>30</strong></article>
+	    
+	    
+	    
+	    <article><span>M25 Lessons</span><strong>13 已提取</strong></article>
 	    <article><span>个人活跃 Lesson</span><strong>0</strong></article>
-	    <article><span>Wiki 就绪 Lesson</span><strong>0</strong></article>
+	    <article><span>Wiki 就绪 Lesson</span><strong>1</strong></article>
 	    <article><span>技能就绪 Lesson</span><strong>1</strong></article>
 	    <article><span>Lesson 需人工</span><strong>0</strong></article>
 	    <article><span>Lesson 已拒绝</span><strong>0</strong></article>
-	    <article><span>Lesson Wiki 证据</span><strong>1</strong></article>
+	    <article><span>Lesson Wiki 证据</span><strong>2</strong></article>
 	    <article><span>Lesson AI 缓存命中</span><strong>0</strong></article>
 	    <article><span>Lesson AI 缓存未命中</span><strong>1</strong></article>
-
+	    
 	  </div>
   <div class="review-section" id="lesson-candidates">
     <h2>Lesson 候选</h2>
@@ -226,14 +241,19 @@
       <li>
         <strong>Before starting slow work or work involving tools, network calls, or delegation dispatch, send a short acknowledgement first, then proceed with the slow operation.</strong>
         <span>skill_ready / safe / agent-runtime, dispatch, network, tooling</span>
-        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-8107f53d4.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
+        <br><code>source-inventory://openclaw/.praxisbase/staging/experience-envelopes/experience_openclaw-answer-bot-sha256-ae83a0ed6.json#src_openclaw_praxisbase-staging-experience-envelopes-experience-openclaw-answer-bot-sha256_json_0</code>
+      </li>
+<li>
+        <strong>在团队群聊场景，OpenClaw Q&amp;A/维修机器人应仅在被直接 @、被显式调用，或消息清晰表达需要机器人介入时回复；否则保持静默或返回 no-response sentinel。</strong>
+        <span>wiki_ready / safe</span>
+        <br><code>openclaw://answer-bot/pm.sqlite/chunks/db942141c04813da000316c8bb03a726610a386f8c89e5184512d63912fbcbe9#L41-L44#privacy_release_experience_openclaw-answer-bot-sha256-6535eb38b_10 openclaw://answer-bot/pm.sqlite/chunks/0e92ce33a0e6f928264ccf3f028b41f1fa6b60260443a9c650956c393c679e09#L58-L58#privacy_release_experience_openclaw-answer-bot-sha256-6738918bd_13</code>
       </li>
     </ol>
   </div>
-
-
-
-
+  
+  
+  
+  
 </section>
   </details>
 </section>
@@ -249,31 +269,31 @@
 <a class="metric-link" href="issues.html"><span data-i18n="dashboard.metric.quality">质量问题</span><strong>0</strong></a>
 <article><span data-i18n="dashboard.metric.bundle">包状态</span><strong>ready</strong></article>
     </section>
-
+    
     <section class="wiki-compiler-status">
   <h2>Wiki 编译器</h2>
   <p class="eyebrow">2026-06-17 &middot; review &middot; AI production &middot; gpt-5.5</p>
   <div class="metrics">
-    <article><span>观察项</span><strong>8</strong></article>
-    <article><span>主题</span><strong>7</strong></article>
-    <article><span>计划 新建</span><strong>7</strong></article>
+    <article><span>观察项</span><strong>89</strong></article>
+    <article><span>主题</span><strong>82</strong></article>
+    <article><span>计划 新建</span><strong>81</strong></article>
 <article><span>计划 更新</span><strong>0</strong></article>
-<article><span>计划 合并</span><strong>0</strong></article>
+<article><span>计划 合并</span><strong>1</strong></article>
 <article><span>计划 替代</span><strong>0</strong></article>
 <article><span>计划 归档</span><strong>0</strong></article>
-    <article><span>重复 source-hash 分组</span><strong>0</strong></article>
-    <article><span>硬阻断</span><strong>1</strong></article>
-    <article><span>需质量审核</span><strong>4</strong></article>
-    <article><span>已写入提案</span><strong>4</strong></article>
-    <article><span>提案上限</span><strong>30</strong></article>
+    <article><span>重复 source-hash 分组</span><strong>1</strong></article>
+    <article><span>硬阻断</span><strong>4</strong></article>
+    <article><span>需质量审核</span><strong>31</strong></article>
+    <article><span>已写入提案</span><strong>30</strong></article>
+    <article><span>提案上限</span><strong>100</strong></article>
     <article><span>上限原因</span><strong>max_curation_proposals</strong></article>
-
+    
     <article><span>必需链接</span><strong>0</strong></article>
 <article><span>建议链接</span><strong>0</strong></article>
-<article><span>合并计划</span><strong>0</strong></article>
+<article><span>合并计划</span><strong>1</strong></article>
 <article><span>歧义合并</span><strong>0</strong></article>
-<article><span>孤立主题</span><strong>7</strong></article>
-<article><span>孤儿风险</span><strong>7</strong></article>
+<article><span>孤立主题</span><strong>82</strong></article>
+<article><span>孤儿风险</span><strong>82</strong></article>
   </div>
 </section>
     <section class="pending-candidates">
@@ -282,75 +302,211 @@
       <h2><a href="review.html#pending-candidates" data-i18n="pending.title">待审核经验候选</a></h2>
       <p>AI 生成的 wiki 草稿正在等待审核。稳定的 <code>kb/</code> 文件在提升前不会改变。</p>
     </div>
-    <strong>4</strong>
+    <strong>30</strong>
   </div>
   <ol class="experience-list">
-    <li id="pending-wiki-curated_kb-known-fixes-bot-nonresponse-connector-failure-escalation-md-sha256">
-      <p><strong>机器人无响应、连接器失败或修复流程已耗尽时的处理规则</strong></p>
-      <p>当 OpenClaw 机器人看似无响应、chat connector 失败，或自动脚本修复与 AI 修复均已失败时，先按可验证路径排查后台调用、模型与连接器配置；若修复路径已耗尽，应升级给对应平台支持角色，避免重复执行无效修复。</p>
+    <li id="pending-wiki-curated_kb-decisions-incident-response-requires-rca-and-follow-up-md-sha256">
+      <p><strong>事件响应不能止于临时缓解</strong></p>
+      <p>当 OpenClaw 事故或长期故障的即时影响已被控制时，仍必须继续进行根因分析、制定跟进行动并跟踪到关闭；不得因为临时缓解生效就降低根因调查优先级。</p>
       <dl>
-        <dt>目标</dt><dd><code>kb/known-fixes/bot-nonresponse-connector-failure-escalation.md</code></dd>
-        <dt>类型</dt><dd>known_fix</dd>
+        <dt>目标</dt><dd><code>kb/decisions/incident-response-requires-rca-and-follow-up.md</code></dd>
+        <dt>类型</dt><dd>decision</dd>
         <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/233eb223a7224ea763915948cb376589ba2d36d43ba84f99704fb4fb8e3bc319</code></dd>
-        <dt>来源数</dt><dd>1</dd>
-        <dt>置信度</dt><dd>0.68</dd>
-        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据为单一来源，且未提供具体命令、日志样例或平台角色名称；页面保留为通用操作规则。; 未包含凭据、token、cookie、auth header、私钥或原始聊天转录。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
-
-
-
-      </dl>
-    </li>
-<li id="pending-wiki-curated_kb-known-fixes-sandbox-bot-instance-unresponsive-auto-repair-md-sha256">
-      <p><strong>沙箱、Bot 或实例无响应时优先使用控制台自动修复</strong></p>
-      <p>当用户反馈 sandbox、bot 或实例宕机、卡住、不可访问或无响应时，先引导用户在控制台使用实例自动修复功能；优先尝试脚本修复，再尝试 AI 修复。若用户已确认两种修复都失败，应升级给对应 on-call 或服务负责人，不要重复相同修复话术。该流程不适用于计费、配额或付款后休眠类问题。</p>
-      <dl>
-        <dt>目标</dt><dd><code>kb/known-fixes/sandbox-bot-instance-unresponsive-auto-repair.md</code></dd>
-        <dt>类型</dt><dd>known_fix</dd>
-        <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/91722693753b0bb88c792633ce6b32701a4c9f6c2754b0e2b1b6cd81c9d13fc3</code></dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/affc243831d9884b3b1eb30194dd8941838d7bcbedeacd2d1121e0583a01e17a#L9-L13</code></dd>
         <dt>来源数</dt><dd>1</dd>
         <dt>置信度</dt><dd>0.63</dd>
         <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据来源仅 1 条，未提供具体控制台路径或按钮名称；页面避免编造 UI 细节。; 未包含命令级验证方法；验证依赖用户确认实例是否恢复响应。; 需避免将该流程套用于计费、配额或付款后休眠问题。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
-
-
-
+        <dt>风险提示</dt><dd>证据来自单条培训类材料，未提供具体 OpenClaw 事故案例、命令、系统组件或验证输出。; 本页提炼为通用事件响应决策规则，适合作为操作原则，不应替代具体故障的维修步骤或技术诊断手册。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.72; semantic_reason:The page has durable value and captures a reusable incident-response rule: temporary mitigation must not replace RCA, follow-up actions, and long-running issue tracking. The cited PraxisBase provenance directly supports that core lesson. However, the page expands a single training excerpt into a broader team-level operating policy with detailed steps, closure criteria, ownership expectations, and OpenClaw-specific applicability that are only partially evidenced. The deterministic gate also flags generic applicability, non-specific action, low confidence, and team/global scope. It should receive human review and revision before promotion rather than being accepted as-is.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.72 &middot; The page has durable value and captures a reusable incident-response rule: temporary mitigation must not replace RCA, follow-up actions, and long-running issue tracking. The cited PraxisBase provenance directly supports that core lesson. However, the page expands a single training excerpt into a broader team-level operating policy with detailed steps, closure criteria, ownership expectations, and OpenClaw-specific applicability that are only partially evidenced. The deterministic gate also flags generic applicability, non-specific action, low confidence, and team/global scope. It should receive human review and revision before promotion rather than being accepted as-is.</dd>
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-known-fixes-wiki-md-sha256-dd5113c7175c0a586abf26b841ee164facc6b100dfb405a811">
-      <p><strong>无法访问需评审的团队文档时的处理规则</strong></p>
-      <p>当用户要求评审链接文档，但机器人或可用服务账号没有读取权限时，不要尝试绕过鉴权；应告知权限问题，并要求用户粘贴内容或调整文档权限后再继续。</p>
+<li id="pending-wiki-curated_kb-decisions-sandboxed-browser-internal-test-network-prerequisite-md-sha256">
+      <p><strong>沙箱浏览器无法访问内部测试环境时先判定网络前置条件</strong></p>
+      <p>当沙箱浏览器无法打开内部测试环境，而具备内部网络访问权限的环境可以访问时，应优先判定为运行环境缺少内部网络连通性，而不是应用缺陷。</p>
       <dl>
-        <dt>目标</dt><dd><code>kb/known-fixes/wiki.md</code></dd>
+        <dt>目标</dt><dd><code>kb/decisions/sandboxed-browser-internal-test-network-prerequisite.md</code></dd>
+        <dt>类型</dt><dd>decision</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/8e67df0474158324d567a04e84259a42f270e98d526843e017885e03d2717604#L14-L14</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据来源只有一条，适合作为访问环境分流规则，但不应替代具体网络诊断。; 未提供具体 URL、命令或错误码；本文避免写入任何内部地址或敏感访问细节。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.76; semantic_reason:The page captures a reusable and actionable triage decision: if a sandboxed browser cannot reach an internal test environment but an environment with internal network access can, classify it as an environment/access prerequisite before escalating as an application defect. The included provenance directly supports the central claim, and the checklist-style procedure has long-term agent utility. However, the evidence base is a single source excerpt, while the page expands into broader escalation boundaries and team-scope guidance. The deterministic gate also flagged generic applicability, non-specific action, low confidence, and team/global scope. It should receive human review or a tightening revision before promotion.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.76 &middot; The page captures a reusable and actionable triage decision: if a sandboxed browser cannot reach an internal test environment but an environment with internal network access can, classify it as an environment/access prerequisite before escalating as an application defect. The included provenance directly supports the central claim, and the checklist-style procedure has long-term agent utility. However, the evidence base is a single source excerpt, while the page expands into broader escalation boundaries and team-scope guidance. The deterministic gate also flagged generic applicability, non-specific action, low confidence, and team/global scope. It should receive human review or a tightening revision before promotion.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-decisions-thread-aware-replies-in-existing-conversations-md-sha256">
+      <p><strong>在现有对话链中优先使用线程感知回复</strong></p>
+      <p>当用户在已有问题或排障链路中继续追问时，机器人应优先将回答附加到原始会话线程，避免新开孤立回复，以保持上下文、审阅连续性和后续追踪清晰。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/decisions/thread-aware-replies-in-existing-conversations.md</code></dd>
+        <dt>类型</dt><dd>decision</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/0e92ce33a0e6f928264ccf3f028b41f1fa6b60260443a9c650956c393c679e09#L54-L54</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.63</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据来源只有一条，且为团队操作规范更新；没有具体 OpenClaw 硬件故障、命令或维修验证结果。; 该页面适合作为支持机器人回复路由规则，不应被误用为设备维修步骤。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.72; semantic_reason:The page captures a reusable and actionable team decision: follow-up answers in an existing conversation should use thread-aware replies to preserve review continuity. The provided PraxisBase provenance directly supports that central rule, but only as a single short excerpt; several detailed scenarios, verification checks, and OpenClaw-specific framing are extrapolated beyond the cited evidence. Because the scope is team-level and the deterministic gate requires human review for generic applicability, non-specific action, low confidence, and team/global scope, it should not be promoted automatically. It is likely useful after human confirmation and cleanup of the generic Agent Use boilerplate.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.72 &middot; The page captures a reusable and actionable team decision: follow-up answers in an existing conversation should use thread-aware replies to preserve review continuity. The provided PraxisBase provenance directly supports that central rule, but only as a single short excerpt; several detailed scenarios, verification checks, and OpenClaw-specific framing are extrapolated beyond the cited evidence. Because the scope is team-level and the deterministic gate requires human review for generic applicability, non-specific action, low confidence, and team/global scope, it should not be promoted automatically. It is likely useful after human confirmation and cleanup of the generic Agent Use boilerplate.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-decisions-ui-avoid-decorative-edge-lines-md-sha256-eeb814aef8dd8443">
+      <p><strong>界面评审：避免在侧边或底部使用装饰线</strong></p>
+      <p>记录一条可复用的 UI 偏好：在希望界面更简洁、减少装饰感的场景中，避免沿侧边或底部添加纯装饰性线条。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/decisions/ui-avoid-decorative-edge-lines.md</code></dd>
+        <dt>类型</dt><dd>decision</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/b62c9fa15b3e0a157401ea147eb48780e09a4ee53a0eac41a75fef148e5aa3db#L16-L16</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.63</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据仅包含一条 UI 偏好记录，未提供具体产品界面、截图、失败案例或验证结果。; 该决策适合用于视觉简化评审，不应覆盖具有功能性、可访问性或品牌规范要求的边缘线。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.7; semantic_reason:The page captures a reusable UI decision with clear practical guidance: avoid purely decorative side or bottom edge lines unless they serve an explicit function. The cited provenance directly supports the core preference, so the item has long-term agent value for future UI reviews. However, the support is thin: a single source excerpt backs only the general preference, while the page adds broader exceptions, verification checks, and generic best-practice framing that are not explicitly evidenced. The deterministic gate also requires human review due to low confidence, generic applicability, non-specific action, and team scope. This should not be rejected, but it should receive human validation or revision before promotion.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.7 &middot; The page captures a reusable UI decision with clear practical guidance: avoid purely decorative side or bottom edge lines unless they serve an explicit function. The cited provenance directly supports the core preference, so the item has long-term agent value for future UI reviews. However, the support is thin: a single source excerpt backs only the general preference, while the page adds broader exceptions, verification checks, and generic best-practice framing that are not explicitly evidenced. The deterministic gate also requires human review due to low confidence, generic applicability, non-specific action, and team scope. This should not be rejected, but it should receive human validation or revision before promotion.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-known-fixes-added-a-fixed-trigger-scenario-for-failure-like-group-messages">
+      <p><strong>群消息疑似沙箱、机器人或实例宕机时的固定触发规则</strong></p>
+      <p>当群消息明确表达沙箱、机器人或实例可能宕机、无响应或不可用时，机器人应介入；触发依据应是通用故障语义，而不是具体环境名称或细节。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/known-fixes/added-a-fixed-trigger-scenario-for-failure-like-group-messages-indicating-a.md</code></dd>
         <dt>类型</dt><dd>known_fix</dd>
         <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/6db4c838d244d0a49211ad49af533fecbad30100f99c8fd5f484fad76d8da4c5</code></dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/cb0565346fdc853fc4f1db8e3568bf7c8ae2247cb009ed8b59691027b6d71f1a#L24-L24</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据来源只有一条，且未提供具体命令级验证方法；本页适合作为触发/路由规则，不应扩展为具体实例修复流程。; 原始材料未包含实际环境名称或私密凭据；输出避免加入未经证实的环境细节。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:revise; semantic_score:0.72; semantic_reason:The page captures a reusable and actionable rule: intervene on group messages only when generic outage or non-response semantics are present, not merely because sandbox, bot, or instance keywords appear. The single provenance excerpt directly supports the central claim, but support is narrow and does not substantiate all examples and operational guidance. The page also contains generated artifacts in the Agent Use section, including repeated/truncated bullets and an irrelevant generic verification instruction. It should be revised before promotion, but it has clear long-term agent value once cleaned.; semantic_review:revise</dd>
+        
+        
+        <dt>Semantic review</dt><dd>revise &middot; score 0.72 &middot; The page captures a reusable and actionable rule: intervene on group messages only when generic outage or non-response semantics are present, not merely because sandbox, bot, or instance keywords appear. The single provenance excerpt directly supports the central claim, but support is narrow and does not substantiate all examples and operational guidance. The page also contains generated artifacts in the Agent Use section, including repeated/truncated bullets and an irrelevant generic verification instruction. It should be revised before promotion, but it has clear long-term agent value once cleaned.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-known-fixes-bot-service-stopped-lifecycle-events-previous-logs-md-sha256">
+      <p><strong>实例停止状态排查：优先看生命周期事件和上一轮容器日志</strong></p>
+      <p>当 bot 或服务实例进入 stopped 状态时，优先检查最近生命周期事件与 prior/previous container logs，用于区分资源限制、健康检查失败、空闲缩容、节点驱逐等基础设施原因与应用进程崩溃。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/known-fixes/bot-service-stopped-lifecycle-events-previous-logs.md</code></dd>
+        <dt>类型</dt><dd>known_fix</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/e0d8bd780bd4d7d0acc94dd3de06a1b295e0fdc6c94b65046de2633bcc0a8c53#L26-L26</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.63</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据来源较少，仅支持通用排查规则；未提供具体平台命令、产品版本或已验证修复动作。; 页面避免假定唯一根因，定位为 stopped 状态的取证与分流指导。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:revise; semantic_score:0.68; semantic_reason:The page captures a durable and reusable diagnostic lesson: when an instance is stopped, compare lifecycle events with prior container logs before attributing cause. This is actionable enough to help future agents avoid premature conclusions and is supported by the cited provenance excerpt at a high level. However, the candidate over-expands from a single source line into several specific decision branches without additional provenance, is categorized as a known fix despite being a triage playbook, and contains generic boilerplate verification language. It should be revised with stronger PraxisBase-backed evidence, concrete OpenClaw-specific retrieval steps, and more accurate page kind/framing before promotion.; semantic_review:revise</dd>
+        
+        
+        <dt>Semantic review</dt><dd>revise &middot; score 0.68 &middot; The page captures a durable and reusable diagnostic lesson: when an instance is stopped, compare lifecycle events with prior container logs before attributing cause. This is actionable enough to help future agents avoid premature conclusions and is supported by the cited provenance excerpt at a high level. However, the candidate over-expands from a single source line into several specific decision branches without additional provenance, is categorized as a known fix despite being a triage playbook, and contains generic boilerplate verification language. It should be revised with stronger PraxisBase-backed evidence, concrete OpenClaw-specific retrieval steps, and more accurate page kind/framing before promotion.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-known-fixes-chat-bot-group-no-response-trigger-vs-stuck-vs-model-output-md">
+      <p><strong>群聊中机器人无响应：先区分未触发、会话卡住与模型输出失败</strong></p>
+      <p>当用户反馈聊天平台机器人“没收到消息”或“无响应”时，不要直接判定为消息接收链路完全故障。已观察到至少一种情况是群聊触发条件未满足，例如未显式 @ 机器人。后续排查应先区分：触发条件未命中、会话卡住、模型输出失败。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/known-fixes/chat-bot-group-no-response-trigger-vs-stuck-vs-model-output.md</code></dd>
+        <dt>类型</dt><dd>known_fix</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/578c93fed49000856bedd6f4509320f98bfd5689fa2a77d8b6e288ff14dc4d94#L10-L10</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.63</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据仅覆盖一个观察案例，不能证明所有群聊无响应都由未 @ 或触发条件导致。; 缺少具体平台、日志字段、命令和配置项名称；本文只能作为排查顺序和分类规则使用。; 不要在没有验证的情况下把会话卡住或模型输出失败误判为触发条件问题。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.72; semantic_reason:The page has reusable long-term value as a triage heuristic for group-chat bot no-response reports, and its central lesson is supported by the cited PraxisBase source excerpt. However, it expands a single source line into a broader diagnostic procedure with some unsupported implementation-specific checks. Because the deterministic gate flags low confidence, generic applicability, non-specific action, and team/global scope, it should receive human review or revision before promotion rather than being promoted directly.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.72 &middot; The page has reusable long-term value as a triage heuristic for group-chat bot no-response reports, and its central lesson is supported by the cited PraxisBase source excerpt. However, it expands a single source line into a broader diagnostic procedure with some unsupported implementation-specific checks. Because the deterministic gate flags low confidence, generic applicability, non-specific action, and team/global scope, it should receive human review or revision before promotion rather than being promoted directly.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-known-fixes-collaborative-document-auth-session-required-md-sha256">
+      <p><strong>协作文档创建前必须确认已登录会话</strong></p>
+      <p>当用户要求创建协作文档但授权登录未成功时，不要继续创建流程。应先确认存在有效的已认证会话；若等待授权后仍未建立会话，应停止操作并引导用户重新完成登录或转人工处理。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/known-fixes/collaborative-document-auth-session-required.md</code></dd>
+        <dt>类型</dt><dd>known_fix</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/f3544b734e702d241ea5feb3736e4237030617d2d5df62a99d4d4fb594989f76#L13-L13</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.63</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据来源只有一条，未提供具体产品、接口名称或命令，因此本页保留为通用操作规则。; 原始授权细节已被遮蔽；不要记录或复用任何登录凭据、令牌、Cookie 或授权头。; 不应把等待授权完成误判为登录成功，必须以可验证会话状态作为继续条件。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.68; semantic_reason:The page captures a durable and actionable lesson: do not proceed with collaborative document creation until an active authenticated session is confirmed, and waiting for authorization is not equivalent to successful login. This is reusable for future agents and is supported by the provided provenance excerpt at a high level. However, the body expands a single-line source into a detailed operating procedure, verification checklist, and escalation policy that are only partially evidenced. The deterministic gate also flags generic applicability, non-specific action, low confidence, and team/global scope. Human review or revision is needed before promotion, ideally by narrowing the page to the supported lesson or adding additional provenance-bearing evidence.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.68 &middot; The page captures a durable and actionable lesson: do not proceed with collaborative document creation until an active authenticated session is confirmed, and waiting for authorization is not equivalent to successful login. This is reusable for future agents and is supported by the provided provenance excerpt at a high level. However, the body expands a single-line source into a detailed operating procedure, verification checklist, and escalation policy that are only partially evidenced. The deterministic gate also flags generic applicability, non-specific action, low confidence, and team/global scope. Human review or revision is needed before promotion, ideally by narrowing the page to the supported lesson or adding additional provenance-bearing evidence.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-known-fixes-model-selection-command-persists-md-sha256-cb14c58b46f1377d">
+      <p><strong>模型选择命令会跨会话持久生效</strong></p>
+      <p>当观察到模型选择命令在后续对话或重启后仍然生效时，不要按“仅当前会话临时开关”处理；应视为持久配置变更，并在排障、回滚和交接中明确检查当前有效模型。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/known-fixes/model-selection-command-persists.md</code></dd>
+        <dt>类型</dt><dd>known_fix</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/8c351e4b90f57741f7851c6edb2b4c40a799566267c538a9b94fe8e398f04417#L6-L6</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.63</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据来源较少，仅有一条观察；不同部署环境中的模型选择命令持久化机制可能不同。; 未提供具体命令名称、配置路径或状态查看命令，因此本文只给出操作规则与验证边界，不包含精确恢复命令。; 不要把本页扩展为所有系统的通用事实；应结合当前 OpenClaw 部署的实际配置界面或命令进行确认。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.72; semantic_reason:The page captures a reusable operational lesson: a model-selection command may persist beyond a session and should be treated as durable configuration. It is actionable and useful for future troubleshooting, especially for model drift, cost, latency, or behavior changes. However, the evidence is only a single provenance-bearing excerpt and does not identify the exact command, configuration mechanism, or affected product boundary. The proposed team scope is broader than the evidence clearly supports, and the deterministic gate already requires human review for generic applicability, non-specific action, low confidence, and team/global scope. Recommend human review or revision before promotion.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.72 &middot; The page captures a reusable operational lesson: a model-selection command may persist beyond a session and should be treated as durable configuration. It is actionable and useful for future troubleshooting, especially for model drift, cost, latency, or behavior changes. However, the evidence is only a single provenance-bearing excerpt and does not identify the exact command, configuration mechanism, or affected product boundary. The proposed team scope is broader than the evidence clearly supports, and the deterministic gate already requires human review for generic applicability, non-specific action, low confidence, and team/global scope. Recommend human review or revision before promotion.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-known-fixes-model-switch-context-handling-issue-md-sha256-e422c12f43669af6">
+      <p><strong>切换模型后出现意外模型切换或上下文错误</strong></p>
+      <p>当用户在切换不同模型后反馈模型意外变化、模型选择未按预期保持，或出现相关上下文处理错误时，建议让用户再次切换模型，并说明这是已知的跨模型切换上下文处理问题，未来版本计划修复。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/known-fixes/model-switch-context-handling-issue.md</code></dd>
+        <dt>类型</dt><dd>known_fix</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/484cde15e8baa9ab50030ad9353c818170a940a08bfeb16a30292e512ef2dad3#L67-L69</code></dd>
         <dt>来源数</dt><dd>1</dd>
         <dt>置信度</dt><dd>0.53</dd>
         <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据仅来自一次案例，未提供具体文档平台或权限配置命令。; 不得记录或请求用户凭据、认证令牌、Cookie、私钥或其他敏感访问材料。; 本页只覆盖读取权限不足的处理规则，不覆盖文档解析失败或平台故障排查。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
-
-
-
+        <dt>风险提示</dt><dd>证据来源仅一条，未包含具体产品界面路径、命令或可量化验证结果。; 修复时间只能表述为未来版本计划修复，不应承诺具体发布日期。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.72; semantic_reason:The page provides reusable and actionable support guidance for a known model-switching/context-handling issue, and the cited provenance directly supports the main recommendation: ask the user to switch models again and explain that the issue is known and planned for a future fix. However, the support is only partial because it relies on one short source excerpt, the candidate confidence is low, and the deterministic gate requires human review for broad team-scope applicability and non-specificity. It should not be promoted automatically, but it has enough long-term agent value to preserve for human triage or revision rather than reject.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.72 &middot; The page provides reusable and actionable support guidance for a known model-switching/context-handling issue, and the cited provenance directly supports the main recommendation: ask the user to switch models again and explain that the issue is known and planned for a future fix. However, the support is only partial because it relies on one short source excerpt, the candidate confidence is low, and the deterministic gate requires human review for broad team-scope applicability and non-specificity. It should not be promoted automatically, but it has enough long-term agent value to preserve for human triage or revision rather than reject.</dd>
       </dl>
     </li>
-<li id="pending-wiki-curated_kb-pitfalls-avoid-reusing-messaging-bot-identity-md-sha256-0a314c00a6f1bf3b">
-      <p><strong>避免在无关工具间复用同一消息平台 Bot 身份</strong></p>
-      <p>消息平台 Bot 集成时，不要在无关工具或不同代理之间复用同一 Bot 身份或配置。复用可能导致漏回复、重复回复或 Bot 在非触发场景中过度参与。应为不同用途隔离 Bot 身份、触发条件和配置，并验证 Bot 只在被明确调用时响应。</p>
+<li id="pending-wiki-curated_kb-known-fixes-scheduled-jobs-main-session-system-event-validation-failure-md">
+      <p><strong>计划任务指向主会话并使用 system-event 载荷时校验失败</strong></p>
+      <p>当计划任务配置为投递到 main session 且使用 system-event payload 时，可能因框架持久化了字面占位符而非解析后的主会话标识导致校验失败。已验证的规避方式是改为目标隔离会话，并使用 agent-turn 风格载荷，同时显式配置 delivery。</p>
       <dl>
-        <dt>目标</dt><dd><code>kb/pitfalls/avoid-reusing-messaging-bot-identity.md</code></dd>
-        <dt>类型</dt><dd>pitfall</dd>
+        <dt>目标</dt><dd><code>kb/known-fixes/scheduled-jobs-main-session-system-event-validation-failure.md</code></dd>
+        <dt>类型</dt><dd>known_fix</dd>
         <dt>范围</dt><dd>team</dd>
-        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/61942ecbfdd359d57f876243bf63b30b3033cca5b2f66a65cf6ce557281c9fa0</code></dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/0e92ce33a0e6f928264ccf3f028b41f1fa6b60260443a9c650956c393c679e09#L46-L50</code></dd>
+        <dt>来源数</dt><dd>1</dd>
+        <dt>置信度</dt><dd>0.78</dd>
+        <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
+        <dt>风险提示</dt><dd>证据来源数量为 1，缺少具体错误文本、配置字段名和命令级验证结果；页面应作为已验证规避方案使用，而非完整根因修复说明。; 未包含原始配置样例，避免误复制可能含有环境标识的私有配置。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.76; semantic_reason:The page captures a reusable known failure mode and workaround for scheduled jobs targeting the main session with system-event payloads, and it is supported by a provenance-bearing PraxisBase source excerpt with hash. It is not a run report or raw copy, and the guidance is likely useful to future agents. However, evidence support is only partial because it relies on one excerpt, and the deterministic gate requires human review due to low confidence, team/global scope, generic applicability, and somewhat non-specific action details. It should not be promoted automatically, but it is a reasonable candidate for human validation or revision with more concrete configuration details and additional provenance if available.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.76 &middot; The page captures a reusable known failure mode and workaround for scheduled jobs targeting the main session with system-event payloads, and it is supported by a provenance-bearing PraxisBase source excerpt with hash. It is not a run report or raw copy, and the guidance is likely useful to future agents. However, evidence support is only partial because it relies on one excerpt, and the deterministic gate requires human review due to low confidence, team/global scope, generic applicability, and somewhat non-specific action details. It should not be promoted automatically, but it is a reasonable candidate for human validation or revision with more concrete configuration details and additional provenance if available.</dd>
+      </dl>
+    </li>
+<li id="pending-wiki-curated_kb-known-fixes-team-chat-slash-command-registration-workaround-md-sha256">
+      <p><strong>团队聊天中 slash 命令不可用时改用直聊或提及输入</strong></p>
+      <p>当团队聊天环境中的 slash 命令无法触发机器人时，优先判断是否为平台管理控制台的命令注册问题，而不是直接归因于 bot 运行时故障。可验证的临时处理方式是改用机器人直聊，或在群聊中 @ 提及机器人并使用自然语言输入。</p>
+      <dl>
+        <dt>目标</dt><dd><code>kb/known-fixes/team-chat-slash-command-registration-workaround.md</code></dd>
+        <dt>类型</dt><dd>known_fix</dd>
+        <dt>范围</dt><dd>team</dd>
+        <dt>来源</dt><dd><code>openclaw://answer-bot/pm.sqlite/chunks/e0d8bd780bd4d7d0acc94dd3de06a1b295e0fdc6c94b65046de2633bcc0a8c53#L28-L28</code></dd>
         <dt>来源数</dt><dd>1</dd>
         <dt>置信度</dt><dd>0.63</dd>
         <dt>审核原因</dt><dd>new_canonical_topic</dd><dt>建议</dt><dd>edit</dd>
-        <dt>风险提示</dt><dd>证据只有一条，且未包含具体平台名称、配置项名称或命令级验证方法；页面保留为通用操作规则。; 未包含凭据、令牌、cookie、认证头或私钥。; 不应将本页当作特定消息平台的完整配置手册；实际拆分 Bot 身份和事件订阅时仍需参考对应平台文档。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope</dd>
-
-
-
+        <dt>风险提示</dt><dd>证据来源只有一条，且未提供具体平台名称、命令名称或管理控制台检查步骤；因此本文只保留通用操作规则和绕行方案。; 未包含原始聊天内容、凭据、令牌、cookie、认证头或私钥。; quality_human_required:generic_applicability; quality_human_required:non_specific_action; quality_human_required:low_confidence; quality_human_required:team_or_global_scope; semantic_review:needs_human; semantic_score:0.7; semantic_reason:The page captures a plausible, reusable known fix: do not assume bot runtime failure when slash commands fail, and use direct chat or mention-based natural language as a workaround while checking command registration. It is coherent and actionable, with provenance that supports the core claim. However, support is thin, confidence is low, and the deterministic gate requires human review because the guidance is somewhat generic and team-scoped. It should not be promoted automatically without human confirmation or stronger PraxisBase provenance.; semantic_review:needs_human</dd>
+        
+        
+        <dt>Semantic review</dt><dd>needs_human &middot; score 0.7 &middot; The page captures a plausible, reusable known fix: do not assume bot runtime failure when slash commands fail, and use direct chat or mention-based natural language as a workaround while checking command registration. It is coherent and actionable, with provenance that supports the core claim. However, support is thin, confidence is low, and the deterministic gate requires human review because the guidance is somewhat generic and team-scoped. It should not be promoted automatically without human confirmation or stronger PraxisBase provenance.</dd>
       </dl>
     </li>
   </ol>
@@ -363,22 +519,21 @@
   </details>
   <section class="overview-grid">
     <div id="knowledge-pages" class="panel">
-      <h2 data-i18n="dashboard.knowledgePages">稳定知识</h2>
+      <div class="panel-head">
+        <h2 data-i18n="dashboard.knowledgePages">稳定知识</h2>
+        <div class="filters" aria-label="知识类型筛选" data-i18n-aria-label="filters.knowledgeType">
+          <button type="button" data-kind-filter="all" data-i18n="filters.all">全部</button>
+          <span class="filter-count" data-filter-count="kind"></span>
+        </div>
+      </div>
       <p class="section-subtitle">共 0 个稳定页面：0 个知识页 + 0 个技能页，约 0 个主题。审批通过并 promote 后会出现在这里。</p>
-      <ol class="link-list">
-
-      </ol>
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H4z"></path><path d="M2 20h20M9 16l3 4 3-4"></path></svg></span><strong>还没有稳定知识页。审批通过并提升入库后会出现在这里。</strong><a href="review.html">去审批处理</a></div>
     </div>
     <div class="panel">
       <h2 data-i18n="dashboard.topSignatures">高频特征</h2>
       <p class="section-subtitle">用于检索和匹配相似故障的关键词。</p>
-      <ol class="link-list">
-        <li data-i18n="dashboard.noSignatures">暂无特征索引</li>
-      </ol>
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H4z"></path><path d="M2 20h20M9 16l3 4 3-4"></path></svg></span><strong>暂无特征索引</strong></div>
     </div>
-  </section>
-  <section class="filters" aria-label="知识类型筛选" data-i18n-aria-label="filters.knowledgeType">
-    <button type="button" data-kind-filter="all" data-i18n="filters.all">全部</button>
   </section>
 </main>
   <script>window.__PRAXISBASE_LANGUAGE__="zh-CN";</script>

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PraxisBase 知识关系</title>
   <link rel="stylesheet" href="style.css">
+  <script>(function(){try{var t=localStorage.getItem("praxisbase.theme");var d=t==="light"||t==="dark"?t:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",d);}catch(e){}})();</script>
 </head>
 <body>
   <header class="topbar">
@@ -18,6 +19,17 @@
       <a href="review.html" data-i18n="nav.review">审批</a>
       <a href="graph.html" data-i18n="nav.graph">关系</a>
       <a href="issues.html" data-i18n="nav.issues">质检</a>
+      <div class="theme-switch" aria-label="切换主题">
+        <button type="button" data-theme-option="auto" aria-pressed="true" title="跟随系统">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="light" aria-pressed="false" title="浅色">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="dark" aria-pressed="false" title="深色">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+        </button>
+      </div>
       <div class="language-switch" aria-label="切换语言" data-i18n-aria-label="language.switch">
         <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -68,21 +80,21 @@
     <strong>怎么用</strong>
     <span>这里用于看知识之间的引用、重复和上下文邻居；审批请回到“审批”页，质量阻断请看“质检”页。</span>
   </section>
-  <section class="filters" aria-label="知识类型筛选" data-i18n-aria-label="filters.knowledgeType">
-    <button type="button" data-kind-filter="all" data-i18n="filters.all">全部</button>
-  </section>
+  
   <section class="graph-grid">
     <div class="graph-panel" id="nodes">
-      <h2 data-i18n="graph.nodes">节点</h2>
-      <ol class="link-list">
-
-      </ol>
+      <div class="panel-head">
+        <h2 data-i18n="graph.nodes">节点</h2>
+        <div class="filters" aria-label="知识类型筛选" data-i18n-aria-label="filters.knowledgeType">
+          <button type="button" data-kind-filter="all" data-i18n="filters.all">全部</button>
+          <span class="filter-count" data-filter-count="kind"></span>
+        </div>
+      </div>
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H4z"></path><path d="M2 20h20M9 16l3 4 3-4"></path></svg></span><strong>还没有知识节点。审批通过并提升后会出现在这里。</strong><a href="review.html">去审批处理</a></div>
     </div>
     <div class="graph-panel" id="links">
       <h2 data-i18n="graph.links">关系</h2>
-      <ol class="link-list">
-
-      </ol>
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H4z"></path><path d="M2 20h20M9 16l3 4 3-4"></path></svg></span><strong>当前没有显式引用关系。</strong></div>
     </div>
   </section>
 </main>

@@ -316,6 +316,7 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(input.title)}</title>
   <link rel="stylesheet" href="${escapeHtml(prefix)}style.css">
+  <script>(function(){try{var t=localStorage.getItem("praxisbase.theme");var d=t==="light"||t==="dark"?t:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",d);}catch(e){}})();</script>
 </head>
 <body>
   <header class="topbar">
@@ -329,6 +330,17 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
       <a href="${escapeHtml(prefix)}review.html" data-i18n="nav.review">${escapeHtml(zh ? "审批" : "Approvals")}</a>
       <a href="${escapeHtml(prefix)}graph.html" data-i18n="nav.graph">${escapeHtml(zh ? "关系" : "Relationships")}</a>
       <a href="${escapeHtml(prefix)}issues.html" data-i18n="nav.issues">${escapeHtml(zh ? "质检" : "Quality")}</a>
+      <div class="theme-switch" aria-label="${escapeHtml(zh ? "切换主题" : "Theme")}">
+        <button type="button" data-theme-option="auto" aria-pressed="true" title="${escapeHtml(zh ? "跟随系统" : "System")}">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="light" aria-pressed="false" title="${escapeHtml(zh ? "浅色" : "Light")}">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+        </button>
+        <button type="button" data-theme-option="dark" aria-pressed="false" title="${escapeHtml(zh ? "深色" : "Dark")}">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+        </button>
+      </div>
       <div class="language-switch" aria-label="${escapeHtml(zh ? "切换语言" : "Switch language")}" data-i18n-aria-label="language.switch">
         <svg class="language-switch-icon" aria-hidden="true" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -600,6 +612,11 @@ function renderExperienceSummaries(summaries: ExperienceSummary[]): string {
     </li>`).join("\n")}
   </ol>
 </section>`;
+}
+
+function renderEmptyState(input: { message: string; cta?: { href: string; label: string } }): string {
+  const cta = input.cta ? `<a href="${escapeHtml(input.cta.href)}">${escapeHtml(input.cta.label)}</a>` : "";
+  return `<div class="empty-state"><span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H4z"></path><path d="M2 20h20M9 16l3 4 3-4"></path></svg></span><strong>${escapeHtml(input.message)}</strong>${cta}</div>`;
 }
 
 function renderMetricCard(card: { label: string; value: string; href?: string; i18nKey?: string }): string {
@@ -1424,7 +1441,7 @@ function renderExperienceCoverage(dailyReport: DailyReportSummary | null, langua
     </div>
     <div class="coverage-status-grid">${statusCards}</div>
     <details class="advanced-panel" id="coverage-details">
-      <summary>${useZh ? "展开来源明细" : "Show source details"}</summary>
+      <summary>${useZh ? "展开来源明细" : "Show source details"} <span class="filter-count" data-filter-count="coverage" style="margin-left:.4rem"></span></summary>
     <div class="table-scroll">
       <table class="coverage-table">
         <thead><tr><th>${useZh ? "来源" : "source"}</th><th>${useZh ? "知识库" : "KB"}</th><th>${useZh ? "隐私" : "privacy"}</th><th>${useZh ? "经验片段" : "lessons"}</th><th>${useZh ? "证据" : "evidence"}</th><th>${useZh ? "提案" : "proposals"}</th><th>${useZh ? "状态" : "status"}</th><th>${useZh ? "原因" : "reason"}</th><th>${useZh ? "标题" : "titles"}</th></tr></thead>
@@ -1515,11 +1532,19 @@ function renderReviewPage(
     ${renderActionCard({ href: "#approved-candidates", label: useZh ? "已批准待提升" : "Approved waiting", value: String(counts.approved), description: useZh ? "下一步运行提升入库写入稳定知识。" : "Run promote to write stable pages.", tone: counts.approved > 0 ? "info" : "ok" })}
     ${renderActionCard({ href: "#promoted-candidates", label: useZh ? "当前队列已入库" : "Queue already stable", value: String(counts.promoted), description: useZh ? "候选目标已存在于 kb/ 或 skills/，不等于稳定知识总数。" : "Candidate targets already exist in kb/ or skills/; this is not the total stable count.", tone: "ok" })}
   </section>
+  <nav class="review-tabs" aria-label="${escapeHtml(useZh ? "审批锚点" : "Approval sections")}">
+    <a data-review-tab="pending-candidates" href="#pending-candidates">${useZh ? "待审核" : "Pending"} <span class="tab-badge">${counts.pending}</span></a>
+    <a data-review-tab="human-required" href="#human-required">${useZh ? "隐私" : "Privacy"} <span class="tab-badge">${counts.current_privacy}</span></a>
+    <a data-review-tab="approved-candidates" href="#approved-candidates">${useZh ? "已批准" : "Approved"} <span class="tab-badge">${counts.approved}</span></a>
+    <a data-review-tab="rejected" href="#rejected">${useZh ? "已拒绝" : "Rejected"} <span class="tab-badge">${counts.rejected}</span></a>
+    <a data-review-tab="promoted-candidates" href="#promoted-candidates">${useZh ? "已入库" : "Stable"} <span class="tab-badge">${counts.promoted}</span></a>
+  </nav>
   <section class="status-strip">
     <strong>${useZh ? "审批服务" : "Approval service"}</strong>
-    <span>${escapeHtml(approvalMode)}；API: </span>
-    <code>${escapeHtml(reviewUiConfig.writeback === "gitlab" ? reviewUiConfig.gitlabApiBase ?? "not configured" : reviewUiConfig.reviewApiBase)}</code>
-    ${reviewUiConfig.writeback === "gitlab" ? `<code>${escapeHtml(reviewUiConfig.gitlabProjectId ?? "project missing")}</code><code>${escapeHtml(reviewUiConfig.gitlabBranch ?? "branch missing")}</code>` : `<code>praxisbase review serve --port 4174</code>`}
+    <span>${escapeHtml(approvalMode)}</span>
+    ${reviewUiConfig.writeback === "gitlab"
+      ? `<span>${useZh ? "API" : "API"}：<code>${escapeHtml(reviewUiConfig.gitlabApiBase ?? "not configured")}</code></span><span>${useZh ? "项目" : "Project"}：<code>${escapeHtml(reviewUiConfig.gitlabProjectId ?? "project missing")}</code></span><span>${useZh ? "分支" : "Branch"}：<code>${escapeHtml(reviewUiConfig.gitlabBranch ?? "branch missing")}</code></span>`
+      : `<span><code>praxisbase review serve --port 4174</code></span>`}
   </section>
   ${renderGitlabWritebackPanel(reviewUiConfig, language)}
   ${renderCountNotes({ title: useZh ? "审批页数字怎么读" : "How to Read This Page", subtitle: useZh ? "这里的数字按“当前可操作队列”统计，所以会和首页全库总量不同。" : "These numbers describe the current action queue, so they differ from overview library totals.", notes: reviewNotes })}
@@ -1624,13 +1649,14 @@ function renderDashboard(
       href: "#knowledge-pages",
     },
   ];
+  const num = (n: number) => `<strong class="num">${n}</strong>`;
   const dashboardConclusion = pendingReview > 0
     ? useZh
-      ? `先处理 ${privacyReview} 条隐私审批和 ${pendingReview} 个可审批提案。稳定知识总量是 ${pages.length}，不是本次新增数。`
-      : `Handle ${privacyReview} privacy decisions and ${pendingReview} actionable proposals. Stable total is ${pages.length}, not new pages this run.`
+      ? `先处理 ${num(privacyReview)} 条隐私审批和 ${num(pendingReview)} 个可审批提案。稳定知识总量是 ${num(pages.length)}，不是本次新增数。`
+      : `Handle ${num(privacyReview)} privacy decisions and ${num(pendingReview)} actionable proposals. Stable total is ${num(pages.length)}, not new pages this run.`
     : useZh
-      ? `先处理 ${privacyReview} 条隐私审批；当前没有可审批提案。稳定知识总量是 ${pages.length}，不是本次新增数。`
-      : `Handle ${privacyReview} privacy decisions first; no actionable proposal is waiting now. Stable total is ${pages.length}, not new pages this run.`;
+      ? `先处理 ${num(privacyReview)} 条隐私审批；当前没有可审批提案。稳定知识总量是 ${num(pages.length)}，不是本次新增数。`
+      : `Handle ${num(privacyReview)} privacy decisions first; no actionable proposal is waiting now. Stable total is ${num(pages.length)}, not new pages this run.`;
   const cards = [
     { label: useZh ? "来源" : "Sources", value: String(new Set(pages.flatMap((page) => page.source_ids)).size), href: "#knowledge-pages", i18nKey: "dashboard.metric.sources" },
     { label: useZh ? "页面" : "Pages", value: String(pages.length), href: "#knowledge-pages", i18nKey: "dashboard.metric.pages" },
@@ -1663,7 +1689,7 @@ function renderDashboard(
   </section>
   <section class="status-strip">
     <strong>${useZh ? "当前结论" : "Current state"}</strong>
-    <span>${escapeHtml(dashboardConclusion)}</span>
+    <span>${dashboardConclusion}</span>
   </section>
   ${renderDataSourceSection(dailyReport, language)}
   ${renderProcessMap({ title: useZh ? "从来源到入库的处理链路" : "From Source to Stable Knowledge", subtitle: useZh ? "这些数字按阶段展示，不是简单相加。点击阶段可以跳到明细或审批入口。" : "Counts are stage-specific rather than additive. Click a stage to inspect details or act.", steps: processSteps })}
@@ -1682,22 +1708,25 @@ function renderDashboard(
   </details>
   <section class="overview-grid">
     <div id="knowledge-pages" class="panel">
-      <h2 data-i18n="dashboard.knowledgePages">${escapeHtml(useZh ? "稳定知识" : "Stable Knowledge")}</h2>
+      <div class="panel-head">
+        <h2 data-i18n="dashboard.knowledgePages">${escapeHtml(useZh ? "稳定知识" : "Stable Knowledge")}</h2>
+        <div class="filters" aria-label="${escapeHtml(useZh ? "知识类型筛选" : "Knowledge type filters")}" data-i18n-aria-label="filters.knowledgeType">
+          ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}"${kind === "all" ? " data-i18n=\"filters.all\"" : ""}>${escapeHtml(kind === "all" ? useZh ? "全部" : "All" : kind)}</button>`).join("\n")}
+          <span class="filter-count" data-filter-count="kind"></span>
+        </div>
+      </div>
       <p class="section-subtitle">${escapeHtml(useZh ? `共 ${pages.length} 个稳定页面：${knowledgePageCount} 个知识页 + ${skillPageCount} 个技能页，约 ${stableTopicCount} 个主题。审批通过并 promote 后会出现在这里。` : `${pages.length} stable page(s): ${knowledgePageCount} KB pages + ${skillPageCount} skills, about ${stableTopicCount} topics. Approved and promoted items appear here.`)}</p>
-      <ol class="link-list">
+      ${stablePages.length > 0 ? `<ol class="link-list">
         ${stablePages.map(({ page, kb }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span>${page.path.startsWith("kb/") || page.path.endsWith("/SKILL.md") ? `<div class="approval-actions revoke-actions" data-revoke-actions data-revoke-path="${escapeHtml(page.path)}"><button type="button" data-revoke-decision="archive">${useZh ? "撤回" : "Revoke"}</button><span class="approval-status" data-revoke-status>${useZh ? "撤回后会从稳定知识和检索中移除。" : "Revoking removes this from stable knowledge and retrieval."}</span></div>` : ""}</li>`).join("\n")}
-      </ol>
+      </ol>` : renderEmptyState({ message: useZh ? "还没有稳定知识页。审批通过并提升入库后会出现在这里。" : "No stable knowledge yet. Approved and promoted items appear here.", cta: pendingReview > 0 || privacyReview > 0 ? { href: "review.html", label: useZh ? "去审批处理" : "Go to approvals" } : undefined })}
     </div>
     <div class="panel">
       <h2 data-i18n="dashboard.topSignatures">${escapeHtml(useZh ? "高频特征" : "Top Signatures")}</h2>
       <p class="section-subtitle">${escapeHtml(useZh ? "用于检索和匹配相似故障的关键词。" : "Signals used to retrieve and match similar incidents.")}</p>
-      <ol class="link-list">
-        ${signatures.length > 0 ? signatures.map((signature) => `<li><code>${escapeHtml(signature)}</code></li>`).join("\n") : `<li data-i18n="dashboard.noSignatures">${escapeHtml(useZh ? "暂无特征索引" : "No signatures indexed")}</li>`}
-      </ol>
+      ${signatures.length > 0 ? `<ol class="link-list">
+        ${signatures.map((signature) => `<li><code>${escapeHtml(signature)}</code></li>`).join("\n")}
+      </ol>` : renderEmptyState({ message: useZh ? "暂无特征索引" : "No signatures indexed" })}
     </div>
-  </section>
-  <section class="filters" aria-label="${escapeHtml(useZh ? "知识类型筛选" : "Knowledge type filters")}" data-i18n-aria-label="filters.knowledgeType">
-    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}"${kind === "all" ? " data-i18n=\"filters.all\"" : ""}>${escapeHtml(kind === "all" ? useZh ? "全部" : "All" : kind)}</button>`).join("\n")}
   </section>
 </main>`,
   });
@@ -1775,21 +1804,28 @@ function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph, language: Proj
     <strong>${useZh ? "怎么用" : "How to use"}</strong>
     <span>${escapeHtml(useZh ? "这里用于看知识之间的引用、重复和上下文邻居；审批请回到“审批”页，质量阻断请看“质检”页。" : "Use this page for references, duplicates, and retrieval neighbors; approvals live on the approval page and blockers on quality.")}</span>
   </section>
-  <section class="filters" aria-label="${escapeHtml(useZh ? "知识类型筛选" : "Knowledge type filters")}" data-i18n-aria-label="filters.knowledgeType">
-    ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}"${kind === "all" ? " data-i18n=\"filters.all\"" : ""}>${escapeHtml(kind === "all" ? useZh ? "全部" : "All" : kind)}</button>`).join("\n")}
-  </section>
+  ${pages.length > 0 ? `<section class="graph-canvas-wrap panel">
+    <div class="graph-legend"><span><i style="background:var(--accent)"></i>${useZh ? "节点" : "Node"}</span><span><i style="background:var(--line)"></i>${useZh ? "引用关系" : "Link"}</span></div>
+    <svg class="graph-canvas" data-graph-canvas aria-label="${escapeHtml(useZh ? "知识关系图" : "Knowledge relationship graph")}" role="img"></svg>
+  </section>` : ""}
   <section class="graph-grid">
     <div class="graph-panel" id="nodes">
-      <h2 data-i18n="graph.nodes">${escapeHtml(useZh ? "节点" : "Nodes")}</h2>
-      <ol class="link-list">
+      <div class="panel-head">
+        <h2 data-i18n="graph.nodes">${escapeHtml(useZh ? "节点" : "Nodes")}</h2>
+        <div class="filters" aria-label="${escapeHtml(useZh ? "知识类型筛选" : "Knowledge type filters")}" data-i18n-aria-label="filters.knowledgeType">
+          ${kindFilters(pages).map((kind) => `<button type="button" data-kind-filter="${escapeHtml(kind)}"${kind === "all" ? " data-i18n=\"filters.all\"" : ""}>${escapeHtml(kind === "all" ? useZh ? "全部" : "All" : kind)}</button>`).join("\n")}
+          <span class="filter-count" data-filter-count="kind"></span>
+        </div>
+      </div>
+      ${pages.length > 0 ? `<ol class="link-list">
         ${pages.map((page) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(page.page_kind ?? "note")}</span></li>`).join("\n")}
-      </ol>
+      </ol>` : renderEmptyState({ message: useZh ? "还没有知识节点。审批通过并提升后会出现在这里。" : "No knowledge nodes yet. Approved and promoted items appear here.", cta: { href: "review.html", label: useZh ? "去审批处理" : "Go to approvals" } })}
     </div>
     <div class="graph-panel" id="links">
       <h2 data-i18n="graph.links">${escapeHtml(useZh ? "关系" : "Links")}</h2>
-      <ol class="link-list">
+      ${graph.links.length > 0 ? `<ol class="link-list">
         ${graph.links.slice(0, 80).map((link) => `<li><code>${escapeHtml(link.from)} -> ${escapeHtml(link.to)}</code><span>${escapeHtml(link.type)}</span></li>`).join("\n")}
-      </ol>
+      </ol>` : renderEmptyState({ message: useZh ? "当前没有显式引用关系。" : "No explicit links between knowledge pages." })}
     </div>
   </section>
 </main>`,
@@ -1828,9 +1864,10 @@ function renderIssuesPage(
     <span>${escapeHtml(useZh ? "这里展示会影响入库或 Agent 使用可靠性的阻断项。没有发现时，代表当前静态知识站点没有阻塞性质量问题。" : "This page lists blockers that affect promotion or reliable agent use. No findings means the static knowledge site has no blocking quality issue.")}</span>
   </section>
   <section class="issues-panel" id="quality-findings">
-    <ol class="issue-list">
-      ${qualityFindings.length > 0 ? qualityFindings.map((finding) => `<li><strong>${escapeHtml(finding.rule)}</strong> <small>${escapeHtml(finding.severity)}</small><br>${escapeHtml(finding.message)}<br><small>${escapeHtml(finding.path)}</small></li>`).join("\n") : `<li data-i18n="issues.noIssues">${escapeHtml(useZh ? "当前没有阻塞性质量问题。" : "No blocking quality issues found.")}</li>`}
-    </ol>
+    <h2>${escapeHtml(useZh ? "质检发现" : "Findings")}</h2>
+    ${qualityFindings.length > 0 ? `<ol class="issue-list">
+      ${qualityFindings.map((finding) => `<li><strong>${escapeHtml(finding.rule)}</strong> <small>${escapeHtml(finding.severity)}</small><br>${escapeHtml(finding.message)}<br><small>${escapeHtml(finding.path)}</small></li>`).join("\n")}
+    </ol>` : renderEmptyState({ message: useZh ? "当前没有阻塞性质量问题。" : "No blocking quality issues found." })}
   </section>
   ${dailyReport ? renderDailyPrivacyFindings(dailyReport, language) : ""}
 </main>`,
@@ -1844,10 +1881,10 @@ function renderDailyPrivacyFindings(report: DailyReportSummary, language: Projec
   const useZh = zh(language);
   return `<section class="issues-panel">
   <h2 data-i18n="issues.dailyPrivacy">${escapeHtml(useZh ? "Daily 隐私发现" : "Daily Privacy Findings")}</h2>
-  <dl>
-    <dt>${useZh ? "已拒绝" : "Rejected"}</dt><dd>${escapeHtml(String(report.rejected))}</dd>
-    <dt>${useZh ? "需要人工" : "Human required"}</dt><dd>${escapeHtml(String(report.human_required))}</dd>
-  </dl>
+  <div class="privacy-summary-card">
+    <div class="metric"><span>${useZh ? "已拒绝" : "Rejected"}</span><strong>${escapeHtml(String(report.rejected))}</strong></div>
+    <div class="metric"><span>${useZh ? "需要人工" : "Human required"}</span><strong>${escapeHtml(String(report.human_required))}</strong></div>
+  </div>
 </section>`;
 }
 
