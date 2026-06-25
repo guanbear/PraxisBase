@@ -1200,9 +1200,9 @@ function renderHumanRequired(
   <div class="section-heading">
     <div>
       <h2><span id="privacy-required"></span>${useZh ? "隐私待确认" : "Privacy Required"}</h2>
-      <p>${useZh ? `本次待确认 ${escapeHtml(String(latestPrivacyRequired))} 条，历史积压 ${escapeHtml(String(records.length))} 条。每条只展示脱敏后的可审摘要。` : `Current run has ${escapeHtml(String(latestPrivacyRequired))} item(s); historical backlog has ${escapeHtml(String(records.length))}. Cards show sanitized review previews only.`}</p>
+      <p>${useZh ? `当前可操作 ${escapeHtml(String(actionableRecords.length))} 条；本次报告 ${escapeHtml(String(latestPrivacyRequired))} 条，历史积压 ${escapeHtml(String(records.length))} 条。仅展示脱敏后的可审摘要。` : `${escapeHtml(String(actionableRecords.length))} actionable now; current run has ${escapeHtml(String(latestPrivacyRequired))}, backlog has ${escapeHtml(String(records.length))}. Cards show sanitized review previews only.`}</p>
     </div>
-    <strong>${escapeHtml(String(latestPrivacyRequired))}</strong>
+    <strong>${escapeHtml(String(actionableRecords.length))}</strong>
   </div>
   <div class="metrics">
     <article><span>${useZh ? "本次隐私" : "Current privacy"}</span><strong>${escapeHtml(String(latestPrivacyRequired))}</strong></article>
@@ -1467,11 +1467,13 @@ function renderReviewPage(
   const currentPrivacyRequired = dailyReport?.experience_coverage?.privacy_blocked
     ?? dailyReport?.privacy_required
     ?? queue.human_required.length;
+  const actionablePrivacy = queue.human_required.filter(isActionablePrivacyRecord).length;
   const counts = {
     pending: queue.candidates.filter((item) => item.status === "pending").length,
     approved: queue.candidates.filter((item) => item.status === "approved").length,
     promoted: queue.candidates.filter((item) => item.status === "promoted").length,
     current_privacy: currentPrivacyRequired,
+    actionable_privacy: actionablePrivacy,
     backlog_privacy: queue.human_required.length,
     candidate_human: candidateHuman,
     rejected: (dailyReport?.rejected ?? 0) + (curationReport?.input_rejected ?? 0) + (curationReport?.compiler_hard_blocks ?? 0),
@@ -1479,7 +1481,6 @@ function renderReviewPage(
   const approvalMode = reviewUiConfig.writeback === "gitlab"
     ? useZh ? "GitLab 页面回写已配置" : "GitLab Pages writeback configured"
     : useZh ? "当前仅本地审批，尚未接入 GitLab 页面回写" : "Local approval only; GitLab page writeback is not connected yet";
-  const coveragePrivacy = dailyReport?.experience_coverage?.privacy_blocked ?? currentPrivacyRequired;
   const reviewNotes: CountNote[] = [
     {
       label: useZh ? "待审核提案" : "Pending proposals",
@@ -1489,8 +1490,8 @@ function renderReviewPage(
     },
     {
       label: useZh ? "隐私待确认" : "Privacy review",
-      value: String(counts.current_privacy),
-      text: useZh ? `这是当前真正需要确认的隐私项；低信号已拒绝项会单独归到拒绝结果。批准会释放脱敏摘要，拒绝会保留阻断。` : `This is the current privacy queue; low-signal rejected items are counted separately as rejected outcomes. Approving releases sanitized summaries; rejecting keeps the block.`,
+      value: String(counts.actionable_privacy),
+      text: useZh ? `当前可操作 ${counts.actionable_privacy} 条；全库历史积压 ${counts.backlog_privacy} 条。批准会释放脱敏摘要，拒绝会保留阻断。` : `${counts.actionable_privacy} actionable now; ${counts.backlog_privacy} in backlog. Approving releases sanitized summaries; rejecting keeps the block.`,
       href: "#human-required",
     },
     {
@@ -1528,13 +1529,13 @@ function renderReviewPage(
   </section>
   <section class="action-grid" aria-label="${escapeHtml(useZh ? "待处理事项" : "Review actions")}">
     ${renderActionCard({ href: "#pending-candidates", label: useZh ? "待审核提案" : "Pending proposals", value: String(counts.pending), description: useZh ? "批准后可提升入库为稳定知识。" : "Approve before promotion into stable knowledge.", tone: counts.pending > 0 ? "warn" : "ok" })}
-    ${renderActionCard({ href: "#human-required", label: useZh ? "隐私待确认" : "Current privacy", value: String(counts.current_privacy), description: useZh ? "查看可审摘要，释放脱敏经验或拒绝。" : "Inspect sanitized previews, release or reject.", tone: counts.current_privacy > 0 ? "danger" : "ok" })}
+    ${renderActionCard({ href: "#human-required", label: useZh ? "隐私待确认" : "Current privacy", value: String(counts.actionable_privacy), description: useZh ? `当前可操作 ${counts.actionable_privacy} 条；全库 ${counts.backlog_privacy} 条。查看可审摘要，释放或拒绝。` : `${counts.actionable_privacy} actionable now; ${counts.backlog_privacy} in backlog. Inspect sanitized previews, release or reject.`, tone: counts.actionable_privacy > 0 ? "danger" : "ok" })}
     ${renderActionCard({ href: "#approved-candidates", label: useZh ? "已批准待提升" : "Approved waiting", value: String(counts.approved), description: useZh ? "下一步运行提升入库写入稳定知识。" : "Run promote to write stable pages.", tone: counts.approved > 0 ? "info" : "ok" })}
     ${renderActionCard({ href: "#promoted-candidates", label: useZh ? "当前队列已入库" : "Queue already stable", value: String(counts.promoted), description: useZh ? "候选目标已存在于 kb/ 或 skills/，不等于稳定知识总数。" : "Candidate targets already exist in kb/ or skills/; this is not the total stable count.", tone: "ok" })}
   </section>
   <nav class="review-tabs" aria-label="${escapeHtml(useZh ? "审批锚点" : "Approval sections")}">
     <a data-review-tab="pending-candidates" href="#pending-candidates">${useZh ? "待审核" : "Pending"} <span class="tab-badge">${counts.pending}</span></a>
-    <a data-review-tab="human-required" href="#human-required">${useZh ? "隐私" : "Privacy"} <span class="tab-badge">${counts.current_privacy}</span></a>
+    <a data-review-tab="human-required" href="#human-required">${useZh ? "隐私" : "Privacy"} <span class="tab-badge">${counts.actionable_privacy}</span></a>
     <a data-review-tab="approved-candidates" href="#approved-candidates">${useZh ? "已批准" : "Approved"} <span class="tab-badge">${counts.approved}</span></a>
     <a data-review-tab="rejected" href="#rejected">${useZh ? "已拒绝" : "Rejected"} <span class="tab-badge">${counts.rejected}</span></a>
     <a data-review-tab="promoted-candidates" href="#promoted-candidates">${useZh ? "已入库" : "Stable"} <span class="tab-badge">${counts.promoted}</span></a>
