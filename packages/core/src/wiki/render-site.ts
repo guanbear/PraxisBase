@@ -332,7 +332,9 @@ function renderLayout(input: { title: string; body: string; graph?: WikiGraph; p
       <a href="${escapeHtml(prefix)}issues.html" data-i18n="nav.issues">${escapeHtml(zh ? "质检" : "Quality")}</a>
       <div class="theme-switch" aria-label="${escapeHtml(zh ? "切换主题" : "Theme")}">
         <button type="button" data-theme-option="auto" aria-pressed="true" title="${escapeHtml(zh ? "跟随系统" : "System")}">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+          <svg class="auto-auto" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+          <svg class="auto-light" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>
+          <svg class="auto-dark" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
         </button>
         <button type="button" data-theme-option="light" aria-pressed="false" title="${escapeHtml(zh ? "浅色" : "Light")}">
           <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path></svg>

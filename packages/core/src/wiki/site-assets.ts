@@ -88,8 +88,18 @@ button, [data-kind-filter], .kb-chip, .approval-actions button { transition: tra
 .language-switch button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 .language-select-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
 .theme-switch { display: inline-flex; align-items: center; gap: .15rem; height: 32px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--card); padding: 2px; box-shadow: var(--shadow-sm); }
-.theme-switch button { min-width: 34px; height: 26px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--muted); font: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .2rem; }
+.theme-switch button { min-width: 34px; height: 26px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--muted); font: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .2rem; position: relative; }
 .theme-switch button[aria-pressed="true"] { background: var(--accent); color: white; box-shadow: 0 3px 10px rgba(20, 108, 92, .18); }
+/* "当前生效主题"按钮:描边高亮,区别于"用户选中"的实心高亮 */
+.theme-switch button[data-effective="true"] { box-shadow: 0 0 0 2px var(--accent), 0 3px 10px rgba(20, 108, 92, .14); }
+.theme-switch button[data-effective="true"][aria-pressed="true"] { box-shadow: 0 0 0 2px rgba(255,255,255,.4), 0 3px 10px rgba(20, 108, 92, .18); }
+/* auto 按钮:图标随系统解析出的主题切换 */
+.theme-switch button[data-theme-option="auto"] .auto-light,
+.theme-switch button[data-theme-option="auto"] .auto-dark { display: none; }
+.theme-switch button[data-theme-option="auto"][data-resolved="light"] .auto-light { display: inline; }
+.theme-switch button[data-theme-option="auto"][data-resolved="dark"] .auto-dark { display: inline; }
+.theme-switch button[data-theme-option="auto"]:not([data-resolved]) .auto-auto { display: inline; }
+.theme-switch button[data-theme-option="auto"][data-resolved] .auto-auto { display: none; }
 .theme-switch svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .search { position: relative; }
 .search input { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0 2.1rem 0 .75rem; background: var(--card); color: var(--ink); transition: border-color .16s ease, box-shadow .16s ease; }
@@ -1007,10 +1017,17 @@ export const SITE_JS = `(() => {
   const themeKey = "praxisbase.theme";
   const applyTheme = (theme) => {
     const explicit = theme === "light" || theme === "dark" ? theme : null;
-    document.documentElement.setAttribute("data-theme", explicit || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    const resolved = explicit || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const selected = explicit || "auto";
+    document.documentElement.setAttribute("data-theme", resolved);
     document.documentElement.removeAttribute("data-theme-pending");
     document.querySelectorAll("[data-theme-option]").forEach((btn) => {
-      btn.setAttribute("aria-pressed", btn.getAttribute("data-theme-option") === (explicit || "auto") ? "true" : "false");
+      const opt = btn.getAttribute("data-theme-option");
+      btn.setAttribute("aria-pressed", opt === selected ? "true" : "false");
+      // 标记"当前生效主题":auto 永远不是 effective(它只是选择,不是生效主题本身)
+      btn.setAttribute("data-effective", opt === resolved && opt !== "auto" ? "true" : "false");
+      // auto 按钮显示当前解析出的主题图标
+      if (opt === "auto") btn.setAttribute("data-resolved", resolved);
     });
   };
   applyTheme(localStorage.getItem(themeKey) || "auto");
