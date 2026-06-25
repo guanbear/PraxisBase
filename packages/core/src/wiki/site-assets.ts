@@ -210,6 +210,10 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .dashboard-grid > div, .graph-panel, .issues-panel { border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: var(--radius); background: var(--card); padding: 1.1rem; box-shadow: var(--shadow-sm); }
 .link-list, .issue-list { list-style: none; margin: 0; padding: 0; }
 .link-list li, .issue-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 0; border-bottom: 1px solid var(--line-2); }
+.link-list li:has(.approval-actions) { flex-wrap: wrap; align-items: center; }
+.link-list li:has(.approval-actions) > a { flex: 1 1 auto; min-width: 0; }
+.link-list li:has(.approval-actions) > span:not(.approval-status) { flex: 0 0 auto; }
+.link-list li:has(.approval-actions) > .approval-actions { flex-basis: 100%; margin: .35rem 0 .15rem; justify-content: flex-end; }
 .issue-list li { display: block; }
 .link-list span, .link-list code, .issue-list small { color: var(--muted); }
 .link-list a { color: var(--ink); font-weight: 600; }
