@@ -93,9 +93,6 @@ button, [data-kind-filter], .kb-chip, .approval-actions button { transition: tra
 /* "当前生效主题"按钮:描边高亮,区别于"用户选中"的实心高亮 */
 .theme-switch button[data-effective="true"] { box-shadow: 0 0 0 2px var(--accent), 0 3px 10px rgba(20, 108, 92, .14); }
 .theme-switch button[data-effective="true"][aria-pressed="true"] { box-shadow: 0 0 0 2px rgba(255,255,255,.4), 0 3px 10px rgba(20, 108, 92, .18); }
-/* auto 按钮:右下角永久"A"角标,一眼可辨"自动跟随" */
-.theme-switch button[data-theme-option="auto"]::after { content: "A"; position: absolute; right: 3px; bottom: 1px; font-size: 8px; font-weight: 800; line-height: 1; color: var(--accent); background: var(--card); border-radius: 3px; padding: 0 1px; }
-.theme-switch button[data-theme-option="auto"][aria-pressed="true"]::after { background: rgba(255,255,255,.25); color: #fff; }
 .theme-switch svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .search { position: relative; }
 .search input { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0 2.1rem 0 .75rem; background: var(--card); color: var(--ink); transition: border-color .16s ease, box-shadow .16s ease; }
