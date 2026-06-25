@@ -1827,10 +1827,12 @@ Body.
 
     const review = await readFile(join(root, "dist/review.html"), "utf8");
     assert.ok(review.includes("Current privacy"));
-    assert.match(review, /Current privacy[\s\S]*?<strong>28<\/strong>/);
+    // Current privacy card now reflects actionable queue (all 55 records are keep_human_required),
+    // not the daily-report stat (28). This matches the cards actually rendered on the page.
+    assert.match(review, /Current privacy[\s\S]*?<strong>55<\/strong>/);
     assert.ok(review.includes("Privacy backlog"));
     assert.match(review, /Privacy backlog[\s\S]*?<strong>55<\/strong>/);
-    assert.ok(review.includes("Current run has 28 item(s); historical backlog has 55."));
+    assert.ok(review.includes("actionable now; current run has 28, backlog has 55"));
     assert.ok(review.includes("Showing the latest 50 pending privacy records."));
     assert.ok(review.includes("Skipped already triaged"));
     assert.ok(review.includes("praxisbase privacy triage --mode personal --auto-release --progress --json"));

@@ -431,14 +431,20 @@ export const SITE_JS = `(() => {
     headers: gitlabHeaders(),
     body: JSON.stringify({ branch: gitlabConfig.branch, content, commit_message: message }),
   });
+  const fetchError = (response, path) => {
+    const code = response.status;
+    if (code === 404) { const e = new Error("not_found:" + path); e.notFound = true; return e; }
+    if (code === 401 || code === 403) return new Error("token_forbidden:" + code);
+    return new Error(response.statusText || ("gitlab_file_fetch_failed:" + code));
+  };
   const fetchGitlabFileJson = async (path) => {
     const response = await fetch(gitlabFileUrl(path, true), { headers: { "PRIVATE-TOKEN": gitlabToken() } });
-    if (!response.ok) throw new Error(response.statusText || "gitlab_file_fetch_failed");
+    if (!response.ok) throw fetchError(response, path);
     return response.json();
   };
   const fetchGitlabFileText = async (path) => {
     const response = await fetch(gitlabFileUrl(path, true), { headers: { "PRIVATE-TOKEN": gitlabToken() } });
-    if (!response.ok) throw new Error(response.statusText || "gitlab_file_fetch_failed");
+    if (!response.ok) throw fetchError(response, path);
     return response.text();
   };
   const safeReleaseSummary = (value) => {
@@ -936,8 +942,22 @@ export const SITE_JS = `(() => {
             if (card) card.hidden = true;
           }
         } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          const isNotFound = msg.startsWith("not_found") || (error instanceof Error && error.notFound);
+          if (isNotFound) {
+            if (status) { status.textContent = currentLanguage() !== "en" ? "该条目已被处理或不存在，已从队列移除。刷新页面可看到最新队列。" : "This item was already processed or is missing; removed from the queue. Refresh to see the latest queue."; status.setAttribute("data-state", "ok"); }
+            const card = container.closest(".review-card");
+            if (card) card.hidden = true;
+            return;
+          }
+          const isForbidden = msg.startsWith("token_forbidden");
           buttons.forEach((item) => { item.disabled = false; });
-          if (status) { status.textContent = reviewWriteback === "gitlab" ? "GitLab 提交失败：" + (error instanceof Error ? error.message : String(error)) : "审批服务未启动或请求失败"; status.setAttribute("data-state", "error"); }
+          if (status) {
+            status.textContent = isForbidden
+              ? (currentLanguage() !== "en" ? "Token 权限不足，需要 api + read_repository + write_repository 权限。" : "Token lacks permission (needs api + read_repository + write_repository).")
+              : (reviewWriteback === "gitlab" ? "GitLab 提交失败：" + msg : (currentLanguage() !== "en" ? "审批服务未启动或请求失败" : "Approval service unavailable or request failed"));
+            status.setAttribute("data-state", "error");
+          }
         }
       });
     });
@@ -969,8 +989,16 @@ export const SITE_JS = `(() => {
           const row = container.closest("li");
           if (row) row.hidden = true;
         } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          const isNotFound = msg.startsWith("not_found") || (error instanceof Error && error.notFound);
+          if (isNotFound) {
+            if (status) { status.textContent = currentLanguage() !== "en" ? "该页面已被移除，刷新后从列表消失。" : "This page was already removed; refresh to update the list."; status.setAttribute("data-state", "ok"); }
+            const row = container.closest("li");
+            if (row) row.hidden = true;
+            return;
+          }
           buttons.forEach((item) => { item.disabled = false; });
-          if (status) { status.textContent = reviewWriteback === "gitlab" ? "GitLab 撤回失败：" + (error instanceof Error ? error.message : String(error)) : "审批服务未启动或撤回失败"; status.setAttribute("data-state", "error"); }
+          if (status) { status.textContent = reviewWriteback === "gitlab" ? "GitLab 撤回失败：" + msg : (currentLanguage() !== "en" ? "审批服务未启动或撤回失败" : "Approval service unavailable or revoke failed"); status.setAttribute("data-state", "error"); }
         }
       });
     });
