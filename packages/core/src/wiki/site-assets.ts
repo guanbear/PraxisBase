@@ -160,14 +160,14 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .terminology-panel dt { font-weight: 760; color: var(--ink); }
 .terminology-panel dd { margin: 0; color: var(--muted); }
 .kb-overview { margin: 1rem 0 1.25rem; }
-.kb-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-top: .8rem; }
-.kb-overview-card { display: block; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); color: var(--ink); padding: .85rem; box-shadow: var(--shadow-sm); }
+.kb-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .85rem; margin-top: .9rem; align-items: stretch; }
+.kb-overview-card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); color: var(--ink); padding: 1rem; box-shadow: var(--shadow-sm); }
 .kb-overview-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .kb-overview-card span { display: block; color: var(--muted-2); font-weight: 700; }
-.kb-overview-card strong { display: block; margin: .25rem 0; font-size: 1.6rem; line-height: 1; }
+.kb-overview-card strong { display: block; margin: .3rem 0; font-size: 1.7rem; line-height: 1; }
 .kb-overview-card small { color: var(--muted); }
-.kb-overview-card em { display: inline-flex; margin: .65rem 0 .35rem; border: 1px solid var(--line); border-radius: var(--radius-pill); padding: .12rem .45rem; color: var(--accent); font-style: normal; font-size: .78rem; font-weight: 700; }
-.kb-overview-card ul { margin: .25rem 0 0; padding-left: 1rem; color: var(--muted); font-size: .82rem; }
+.kb-overview-card em { display: inline-flex; align-self: flex-start; margin: .5rem 0 .35rem; border: 1px solid var(--line); border-radius: var(--radius-pill); padding: .14rem .55rem; color: var(--accent); font-style: normal; font-size: .78rem; font-weight: 700; }
+.kb-overview-card ul { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: .82rem; line-height: 1.55; }
 .kb-overview-card.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20, 108, 92, .14); }
 .kb-rules { margin: 1rem 0 1.25rem; }
 .rule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
@@ -331,7 +331,7 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 @media (max-width: 1200px) {
   .process-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .coverage-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .kb-card-grid, .flow-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .flow-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 768px) {
   .topbar { grid-template-columns: 1fr; gap: .55rem; }
