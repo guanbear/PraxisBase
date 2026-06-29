@@ -331,7 +331,9 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .graph-canvas text { font: 12px ui-sans-serif, system-ui, sans-serif; fill: var(--ink); pointer-events: none; }
 .graph-viewport { transform-origin: center; transition: transform .08s ease; }
 .graph-node { cursor: pointer; }
-.graph-node:hover circle { stroke-width: 3.5; }
+.graph-node-label { opacity: 0; transition: opacity .12s ease; pointer-events: none; }
+.graph-node:hover circle { stroke-width: 4; filter: drop-shadow(0 0 4px currentColor); }
+.graph-node:hover .graph-node-label { opacity: 1; }
 .graph-legend { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; padding: .4rem .6rem; color: var(--muted); font-size: .8rem; }
 .graph-legend span { display: inline-flex; align-items: center; gap: .35rem; }
 .graph-legend i { width: 12px; height: 12px; border-radius: var(--radius-pill); display: inline-block; }
@@ -1067,7 +1069,7 @@ export const SITE_JS = `(() => {
     const ns = "http://www.w3.org/2000/svg";
     const svg = graphCanvas;
     const w = svg.clientWidth || 1080;
-    const h = 420;
+    const h = 480;
     svg.setAttribute("viewBox", "0 0 " + w + " " + h);
     const cssVar = (name, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
     const accent = cssVar("--accent", "#146c5c");
@@ -1085,14 +1087,31 @@ export const SITE_JS = `(() => {
     // force-directed layout (<=80 nodes), else static circle
     const useForce = nodes.length <= 80;
     const pos = {};
-    const R = Math.min(w, h) / 2 - 60;
+    const PAD = 70;
+    const innerW = w - PAD * 2, innerH = h - PAD * 2;
+    // initial: grid spread across the whole canvas (not a tight ring)
+    const cols = Math.ceil(Math.sqrt(nodes.length * (innerW / innerH)));
+    const rows = Math.ceil(nodes.length / cols);
+    const cellW = innerW / cols, cellH = innerH / rows;
     nodes.forEach((node, i) => {
-      const a = (i / Math.max(1, nodes.length)) * Math.PI * 2;
-      pos[node.id] = { x: w / 2 + R * Math.cos(a), y: h / 2 + R * Math.sin(a), vx: 0, vy: 0 };
+      const col = i % cols, row = Math.floor(i / cols);
+      pos[node.id] = {
+        x: PAD + cellW * (col + 0.5) + (Math.random() - 0.5) * cellW * 0.3,
+        y: PAD + cellH * (row + 0.5) + (Math.random() - 0.5) * cellH * 0.3,
+        vx: 0, vy: 0
+      };
     });
     if (useForce && nodes.length > 1) {
-      const K_REPEL = 1400, K_SPRING = 0.05, REST = 120, KC = 0.02, DAMP = 0.85;
-      for (let tick = 0; tick < 120; tick++) {
+      // tuned: strong repulsion so labels don't overlap; weak centering; cooling
+      const area = innerW * innerH;
+      const K_REPEL = area * 0.6 / Math.max(1, nodes.length);
+      const K_SPRING = 0.04;
+      const REST = Math.max(90, Math.sqrt(area / nodes.length) * 0.9);
+      const KC = 0.003;
+      const DAMP = 0.82;
+      const TICKS = 220;
+      for (let tick = 0; tick < TICKS; tick++) {
+        const temp = Math.max(0.05, 1 - tick / TICKS); // cooling schedule
         for (let i = 0; i < nodes.length; i++) {
           const a = pos[nodes[i].id];
           for (let j = i + 1; j < nodes.length; j++) {
@@ -1120,9 +1139,9 @@ export const SITE_JS = `(() => {
           const p = pos[node.id];
           p.vx = (p.vx + (w / 2 - p.x) * KC) * DAMP;
           p.vy = (p.vy + (h / 2 - p.y) * KC) * DAMP;
-          p.x += p.vx; p.y += p.vy;
-          p.x = Math.max(40, Math.min(w - 40, p.x));
-          p.y = Math.max(30, Math.min(h - 30, p.y));
+          p.x += p.vx * temp; p.y += p.vy * temp;
+          p.x = Math.max(PAD, Math.min(w - PAD, p.x));
+          p.y = Math.max(PAD * 0.5, Math.min(h - PAD * 0.5, p.y));
         });
       }
     }
@@ -1156,13 +1175,18 @@ export const SITE_JS = `(() => {
       title.textContent = (node.title || node.id || "") + " · " + (node.kind || "note");
       g.appendChild(title);
       const c = document.createElementNS(ns, "circle");
-      c.setAttribute("r", 8); c.setAttribute("fill", kindColor(node.kind)); c.setAttribute("fill-opacity", "0.22");
-      c.setAttribute("stroke", kindColor(node.kind)); c.setAttribute("stroke-width", "2");
+      c.setAttribute("r", 10); c.setAttribute("fill", kindColor(node.kind)); c.setAttribute("fill-opacity", "0.25");
+      c.setAttribute("stroke", kindColor(node.kind)); c.setAttribute("stroke-width", "2.5");
       g.appendChild(c);
+      // larger invisible hit area for easy clicking
+      const hit = document.createElementNS(ns, "circle");
+      hit.setAttribute("r", 22); hit.setAttribute("fill", "transparent");
+      g.appendChild(hit);
       const t = document.createElementNS(ns, "text");
-      t.setAttribute("y", -14); t.setAttribute("text-anchor", "middle");
+      t.setAttribute("class", "graph-node-label");
+      t.setAttribute("y", -18); t.setAttribute("text-anchor", "middle");
       t.setAttribute("fill", inkCol);
-      t.textContent = (node.title || node.id || "").slice(0, 22);
+      t.textContent = (node.title || node.id || "").slice(0, 26);
       g.appendChild(t);
       // click → navigate (only if not dragged)
       let downX = 0, downY = 0, moved = false;
