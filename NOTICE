@@ -1,7 +1,22 @@
 PraxisBase includes implementation ideas adapted from:
 
+Source-level borrowings (MIT, same language, copyright preserved):
+
 - llm-wiki-compiler (MIT License), especially the static wiki lint and health-score
   pattern under `.local-references/llm-wiki-compiler/src/linter` and `src/eval`.
   PraxisBase's M27 provenance audit keeps the same static, no-LLM linting
   discipline while using original TypeScript code for PraxisBase's kb/skill
   provenance model.
+
+Design-level references (ideas reimplemented in TypeScript, no code copied):
+
+- Tencent/WeKnora (MIT License, Go). Its Wiki Mode (v0.5.0) — agents distilling
+  raw input into a self-maintaining, interlinked markdown knowledge base with an
+  interactive knowledge graph — overlaps most with PraxisBase's kb/ stable
+  knowledge and graph page. WeKnora's interactive force-directed graph (node
+  click-through, per-kind coloring), Wiki browser tree navigation, multi-source
+  connector abstraction (Feishu/Notion/RSS incremental sync), and Langfuse-style
+  full-chain trace spans are design references for the graph page evolution and
+  the M30 Feishu source integration. PraxisBase reimplements these behaviors in
+  its own TypeScript and governance model; no Go source is copied.
+

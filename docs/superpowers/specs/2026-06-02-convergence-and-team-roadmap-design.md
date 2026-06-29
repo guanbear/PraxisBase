@@ -285,17 +285,19 @@ k8s_boundary_ga: pass        # 生产只读、无写权限、禁用操作齐全
 | llm-wiki-compiler (llmwiki) | **MIT** | ✅ 可以 | `src/eval/`（health-score/citation 度量）、`src/linter/`（broken link/orphan/contradiction lint）、`src/compiler/` 的 two-phase compile、`src/context/` 的 context-pack/三级检索 | 保留版权头 + 在 NOTICE/README 注明来源 |
 | SkillClaw (高德 AMAP-ML) | **MIT** | ✅ 可以 | `skillclaw/skill_manager.py`、`skill_bundle.py`(skill 演化/合并/去重)、`prm_scorer.py`(PRM 质量打分)、`evolve_server/`(post-task 演化 loop 结构) | 保留版权头 + 注明来源；翻译成 TS 时保留出处注释 |
 | nashsu/llm_wiki (桌面版) | **GPL-3.0** | ❌ **不可拷源码** | 仅可**重新实现思想**：两步式 CoT ingest、级联删除、4 信号图谱打分 | 禁止复制其代码片段；只参考行为，自行用 TS 实现 |
+| Tencent/WeKnora (微信) | **MIT**（Go 实现） | ❌ 不做源码拷贝 | 思想级借鉴：交互式知识图谱（力导向、节点跳转、按 kind 着色）、Wiki 浏览器树形层级导航、多源连接器抽象（飞书/Notion/RSS 增量同步）、Langfuse 式全链路 trace span、内联 citation popover。其 Wiki Mode（v0.5.0 GA）目标与 PraxisBase kb/+graph 页高度重合 | 只参考行为/设计，自行用 TS 实现；不跨语言拷 Go 代码 |
 | Karpathy LLM Wiki / v2 | gist（pattern 文档） | n/a（无可拷代码） | 心智模型 | — |
 | 腾讯 Harness 文章 | 文章（无开源代码） | n/a | 五层/成熟度/衰减/三级索引设计 | 当设计验证 |
 | AgentMemory / GBrain | 外部服务 | n/a（当外部能力调用，不内联） | REST/MCP 接口契约 | 按 adapter 调用，不拷其实现 |
 
 **裁决规则**：
-- **MIT 项目（llmwiki、SkillClaw）**：优先源码级借鉴（移植 TS 时保留出处注释 + 更新本仓库 NOTICE）。这两个是和我们最同形态/同目标的，能省最多工。
+- **MIT 同语言项目（llmwiki、SkillClaw）**：优先源码级借鉴（移植 TS 时保留出处注释 + 更新本仓库 NOTICE）。这两个是和我们最同形态/同目标的，能省最多工。
+- **MIT 跨语言项目（WeKnora，Go）**：license 允许拷贝，但语言不同，实质等同思想级借鉴——**只参考行为/设计，自行用 TS 实现**，不在 NOTICE 做源码级登记。WeKnora 与 PraxisBase 重合度最高的是 Wiki Mode（自动 markdown + 知识图谱），其交互式图谱、Wiki 浏览器树形导航、连接器抽象是后续 graph 页 / M30 飞书源 的最佳设计参考。
 - **GPL 项目（nashsu）**：**只借思想，禁止拷代码**，避免 GPL 传染污染 MIT 仓库。
 - 任何源码级移植必须在 commit message 和文件头注明 `borrowed from <repo> (MIT), see NOTICE`。
 - 新建/更新仓库根 `NOTICE` 文件登记所有 MIT 源码级借鉴。
 
-> 回答"是否已借鉴"：截至当前，这些是**思想级借鉴已落进设计**（context-economy 借了 TokenJuice、skill synthesis 借了 SkillClaw 思路、治理借了腾讯），但**尚未做 MIT 项目的源码级移植**。M28（skill 演化借 SkillClaw）和 M27 收尾（kb 质量度量借 llmwiki eval/lint）是源码级借鉴的最佳切入点。
+> 回答"是否已借鉴"：截至当前，这些是**思想级借鉴已落进设计**（context-economy 借了 TokenJuice、skill synthesis 借了 SkillClaw 思路、治理借了腾讯），但**尚未做 MIT 项目的源码级移植**。M28（skill 演化借 SkillClaw）和 M27 收尾（kb 质量度量借 llmwiki eval/lint）是源码级借鉴的最佳切入点。WeKnora 作为思想级参考，其交互式知识图谱设计已部分影响 graph 页（SVG 力导向布局），后续 Wiki 浏览器树形导航、连接器抽象可作为 graph 页进化和 M30 的设计输入。
 
 
 ---
