@@ -1886,4 +1886,74 @@ Body.
     assert.doesNotMatch(index, /secret private facet evidence/);
     assert.doesNotMatch(index, /raw-vault:\/\/private/);
   });
+
+  it("renders interactive graph legend by kind and groups stable knowledge by kb and kind", async () => {
+    const root = await mkdtemp(join(tmpdir(), "praxisbase-wiki-graph-tree-"));
+    await mkdir(join(root, "kb/known-fixes"), { recursive: true });
+    await mkdir(join(root, "kb/procedures"), { recursive: true });
+    await mkdir(join(root, "kb/notes"), { recursive: true });
+    await writeFile(join(root, "kb/known-fixes/fix-a.md"), `---
+id: fix-a
+type: known_fix
+scope: team
+maturity: draft
+---
+# Fix A
+Body.
+`);
+    await writeFile(join(root, "kb/known-fixes/fix-b.md"), `---
+id: fix-b
+type: known_fix
+scope: team
+maturity: draft
+---
+# Fix B
+Body.
+`);
+    await writeFile(join(root, "kb/procedures/proc-a.md"), `---
+id: proc-a
+type: procedure
+scope: team
+maturity: draft
+---
+# Proc A
+Body.
+`);
+    await writeFile(join(root, "kb/notes/note-a.md"), `---
+id: note-a
+type: note
+scope: team
+maturity: draft
+---
+# Note A
+Body.
+`);
+
+    await buildWikiSite(root);
+
+    const index = await readFile(join(root, "dist/index.html"), "utf8");
+    const graph = await readFile(join(root, "dist/graph.html"), "utf8");
+
+    // graph page: legend has one chip per distinct kind present (known_fix, procedure, note)
+    assert.ok(graph.includes("graph-legend"), "expected graph legend on graph page");
+    assert.match(graph, /graph-legend[\s\S]*?known_fix/, "legend should list known_fix");
+    assert.match(graph, /graph-legend[\s\S]*?procedure/, "legend should list procedure");
+    assert.match(graph, /graph-legend[\s\S]*?note/, "legend should list note");
+    // graph canvas container present (4 nodes > 0)
+    assert.ok(graph.includes("data-graph-canvas"), "graph canvas should render for non-empty graph");
+
+    // dashboard: stable knowledge grouped by kb + kind into kb-tree details
+    assert.ok(index.includes("class=\"kb-tree\""), "dashboard should render kb-tree grouping");
+    assert.ok(index.includes("kb-tree-group"), "kb-tree groups (details) should render");
+    assert.ok(index.includes("tree-count"), "tree-count badges should render");
+    // largest group (known_fix, 2 pages) open by default
+    assert.ok(index.includes("kb-tree-group\" data-kb=\"default\" data-kind=\"known_fix\"") || index.includes("kb-tree-group\" open"), "groups carry data-kb/data-kind");
+
+    // per-item attributes preserved across grouping
+    assert.ok(index.includes("data-page-kind=\"known_fix\""), "data-page-kind preserved on items");
+    assert.ok(index.includes("data-revoke-path=\"kb/known-fixes/fix-a.md\""), "revoke path preserved on grouped items");
+
+    // kind filter still present in panel head
+    assert.ok(index.includes("data-kind-filter=\"all\""), "kind filter preserved");
+  });
 });

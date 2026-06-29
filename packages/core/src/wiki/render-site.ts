@@ -1714,9 +1714,27 @@ function renderDashboard(
         </div>
       </div>
       <p class="section-subtitle">${escapeHtml(useZh ? `共 ${pages.length} 个稳定页面：${knowledgePageCount} 个知识页 + ${skillPageCount} 个技能页，约 ${stableTopicCount} 个主题。审批通过并 promote 后会出现在这里。` : `${pages.length} stable page(s): ${knowledgePageCount} KB pages + ${skillPageCount} skills, about ${stableTopicCount} topics. Approved and promoted items appear here.`)}</p>
-      ${stablePages.length > 0 ? `<ol class="link-list">
-        ${stablePages.map(({ page, kb }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span>${page.path.startsWith("kb/") || page.path.endsWith("/SKILL.md") ? `<div class="approval-actions revoke-actions" data-revoke-actions data-revoke-path="${escapeHtml(page.path)}"><button type="button" data-revoke-decision="archive">${useZh ? "撤回" : "Revoke"}</button><span class="approval-status" data-revoke-status>${useZh ? "撤回后会从稳定知识和检索中移除。" : "Revoking removes this from stable knowledge and retrieval."}</span></div>` : ""}</li>`).join("\n")}
-      </ol>` : renderEmptyState({ message: useZh ? "还没有稳定知识页。审批通过并提升入库后会出现在这里。" : "No stable knowledge yet. Approved and promoted items appear here.", cta: pendingReview > 0 || privacyReview > 0 ? { href: "review.html", label: useZh ? "去审批处理" : "Go to approvals" } : undefined })}
+      ${stablePages.length > 0 ? (() => {
+        const renderStableLi = ({ page, kb }: { page: WikiSitePage; kb: string }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span>${page.path.startsWith("kb/") || page.path.endsWith("/SKILL.md") ? `<div class="approval-actions revoke-actions" data-revoke-actions data-revoke-path="${escapeHtml(page.path)}"><button type="button" data-revoke-decision="archive">${useZh ? "撤回" : "Revoke"}</button><span class="approval-status" data-revoke-status>${useZh ? "撤回后会从稳定知识和检索中移除。" : "Revoking removes this from stable knowledge and retrieval."}</span></div>` : ""}</li>`;
+        const groups = new Map<string, { kb: string; kind: string; label: string; items: { page: WikiSitePage; kb: string }[] }>();
+        stablePages.forEach((entry) => {
+          const label = knowledgeBaseLabel(entry.kb, knowledgeConfig);
+          const kind = entry.page.page_kind ?? "note";
+          const key = `${label}·${kind}`;
+          if (!groups.has(key)) groups.set(key, { kb: entry.kb, kind, label, items: [] });
+          groups.get(key)!.items.push(entry);
+        });
+        const sorted = Array.from(groups.values()).sort((a, b) => a.label.localeCompare(b.label) || a.kind.localeCompare(b.kind));
+        const maxCount = Math.max(...sorted.map((g) => g.items.length));
+        return `<div class="kb-tree">
+          ${sorted.map((g) => `<details${g.items.length === maxCount ? " open" : ""} class="kb-tree-group" data-kb="${escapeHtml(g.kb)}" data-kind="${escapeHtml(g.kind)}">
+            <summary>${escapeHtml(g.label)} · ${escapeHtml(g.kind)} <span class="tree-count">${g.items.length}</span></summary>
+            <ol class="link-list">
+              ${g.items.map(renderStableLi).join("\n")}
+            </ol>
+          </details>`).join("\n")}
+        </div>`;
+      })() : renderEmptyState({ message: useZh ? "还没有稳定知识页。审批通过并提升入库后会出现在这里。" : "No stable knowledge yet. Approved and promoted items appear here.", cta: pendingReview > 0 || privacyReview > 0 ? { href: "review.html", label: useZh ? "去审批处理" : "Go to approvals" } : undefined })}
     </div>
     <div class="panel">
       <h2 data-i18n="dashboard.topSignatures">${escapeHtml(useZh ? "高频特征" : "Top Signatures")}</h2>
@@ -1802,10 +1820,16 @@ function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph, language: Proj
     <strong>${useZh ? "怎么用" : "How to use"}</strong>
     <span>${escapeHtml(useZh ? "这里用于看知识之间的引用、重复和上下文邻居；审批请回到“审批”页，质量阻断请看“质检”页。" : "Use this page for references, duplicates, and retrieval neighbors; approvals live on the approval page and blockers on quality.")}</span>
   </section>
-  ${pages.length > 0 ? `<section class="graph-canvas-wrap panel">
-    <div class="graph-legend"><span><i style="background:var(--accent)"></i>${useZh ? "节点" : "Node"}</span><span><i style="background:var(--line)"></i>${useZh ? "引用关系" : "Link"}</span></div>
+  ${pages.length > 0 ? (() => {
+    const KIND_COLORS: Record<string, string> = { known_fix: "#146c5c", procedure: "#5a6da8", note: "#9a5a00", pitfall: "#8b2f58", decision: "#10795f", memory: "#6b4fa0", other: "#7c8580" };
+    const kindColor = (k: string) => KIND_COLORS[k] ?? KIND_COLORS.other;
+    const distinctKinds = Array.from(new Set(pages.map((p) => p.page_kind ?? "note"))).sort();
+    const legendChips = distinctKinds.map((kind) => `<span><i style="background:${kindColor(kind)}"></i>${escapeHtml(kind)}</span>`).join("");
+    return `<section class="graph-canvas-wrap panel">
+    <div class="graph-legend">${legendChips}<span class="graph-legend-link"><i style="background:var(--line)"></i>${useZh ? "引用关系" : "Link"}</span><span class="graph-legend-hint">${useZh ? "滚轮缩放 · 拖拽节点或背景" : "Scroll to zoom · Drag nodes or background"}</span></div>
     <svg class="graph-canvas" data-graph-canvas aria-label="${escapeHtml(useZh ? "知识关系图" : "Knowledge relationship graph")}" role="img"></svg>
-  </section>` : ""}
+  </section>`;
+  })() : ""}
   <section class="graph-grid">
     <div class="graph-panel" id="nodes">
       <div class="panel-head">

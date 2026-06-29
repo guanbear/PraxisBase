@@ -326,11 +326,25 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .privacy-summary-card .metric span { display: block; color: var(--muted-2); font-size: .8rem; font-weight: 650; }
 .privacy-summary-card .metric strong { display: block; margin-top: .3rem; font-size: 1.5rem; }
 .graph-canvas-wrap { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: .5rem; margin: 1rem 0; box-shadow: var(--shadow-sm); overflow: hidden; }
-.graph-canvas { display: block; width: 100%; height: 420px; }
+.graph-canvas { display: block; width: 100%; height: 420px; cursor: grab; touch-action: none; }
+.graph-canvas:active { cursor: grabbing; }
 .graph-canvas text { font: 12px ui-sans-serif, system-ui, sans-serif; fill: var(--ink); pointer-events: none; }
-.graph-legend { display: flex; gap: 1rem; flex-wrap: wrap; padding: .4rem .6rem; color: var(--muted); font-size: .8rem; }
+.graph-viewport { transform-origin: center; transition: transform .08s ease; }
+.graph-node { cursor: pointer; }
+.graph-node:hover circle { stroke-width: 3.5; }
+.graph-legend { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; padding: .4rem .6rem; color: var(--muted); font-size: .8rem; }
 .graph-legend span { display: inline-flex; align-items: center; gap: .35rem; }
 .graph-legend i { width: 12px; height: 12px; border-radius: var(--radius-pill); display: inline-block; }
+.graph-legend-hint { margin-left: auto; color: var(--muted-2); font-size: .76rem; }
+.kb-tree { display: grid; gap: .5rem; }
+.kb-tree-group { border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: var(--panel); overflow: hidden; }
+.kb-tree-group > summary { cursor: pointer; padding: .6rem .85rem; font-weight: 700; color: var(--ink); list-style: none; display: flex; align-items: center; gap: .5rem; }
+.kb-tree-group > summary::-webkit-details-marker { display: none; }
+.kb-tree-group > summary::before { content: "▸"; color: var(--muted); font-size: .8rem; transition: transform .15s ease; }
+.kb-tree-group[open] > summary::before { transform: rotate(90deg); }
+.kb-tree-group > summary:hover { background: var(--soft); }
+.kb-tree-group .link-list { margin: 0 .85rem .5rem; }
+.tree-count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 .45rem; border-radius: var(--radius-pill); background: var(--soft); color: var(--accent); font-size: .76rem; font-weight: 750; }
 [data-theme="dark"] .approval-actions button:first-child, [data-theme="dark"] .filters button[aria-pressed="true"], [data-theme="dark"] .filters button.is-active, [data-theme="dark"] .review-tabs a.is-active, [data-theme="dark"] .language-switch button[aria-pressed="true"], [data-theme="dark"] .theme-switch button[aria-pressed="true"] { color: #08130f; }
 @media (max-width: 1200px) {
   .process-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -349,6 +363,7 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
   h1 { font-size: clamp(1.7rem, 7vw, 2.6rem); }
   .side-nav, .meta-rail { position: static; max-height: none; }
   .review-tabs { position: static; }
+  .graph-canvas-wrap { display: none; }
 }
 @media (max-width: 480px) {
   .dashboard, .graph-shell, .issues-shell, .review-shell { padding: 1rem .6rem 3rem; }
@@ -817,7 +832,7 @@ export const SITE_JS = `(() => {
   });
   let activeCoverageStatus = "all";
   let activeCoverageKb = "all";
-  const applyCoverageFilters = () => {
+  let applyCoverageFilters = () => {
     document.querySelectorAll("[data-coverage-row]").forEach((row) => {
       const status = row.getAttribute("data-coverage-status") || "raw_only";
       const kb = row.getAttribute("data-coverage-kb") || "default";
@@ -1054,18 +1069,67 @@ export const SITE_JS = `(() => {
     const w = svg.clientWidth || 1080;
     const h = 420;
     svg.setAttribute("viewBox", "0 0 " + w + " " + h);
-    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#146c5c";
-    const line = getComputedStyle(document.documentElement).getPropertyValue("--line").trim() || "#d8e0da";
-    const ink = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#17211b";
-    const soft = getComputedStyle(document.documentElement).getPropertyValue("--soft").trim() || "#e8f2ed";
+    const cssVar = (name, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
+    const accent = cssVar("--accent", "#146c5c");
+    const lineCol = cssVar("--line", "#d8e0da");
+    const soft = cssVar("--soft", "#e8f2ed");
+    const inkCol = cssVar("--ink", "#17211b");
+    const KIND_COLORS = { known_fix: "#146c5c", procedure: "#5a6da8", note: "#9a5a00", pitfall: "#8b2f58", decision: "#10795f", memory: "#6b4fa0", other: "#7c8580" };
+    const kindColor = (k) => KIND_COLORS[k] || KIND_COLORS.other;
+    const nodes = graphData.nodes;
+    const links = Array.isArray(graphData.links) ? graphData.links : [];
+    // viewport group for zoom/pan
+    const viewport = document.createElementNS(ns, "g");
+    viewport.setAttribute("class", "graph-viewport");
+    svg.appendChild(viewport);
+    // force-directed layout (<=80 nodes), else static circle
+    const useForce = nodes.length <= 80;
     const pos = {};
     const R = Math.min(w, h) / 2 - 60;
-    graphData.nodes.forEach((node, i) => {
-      const a = (i / graphData.nodes.length) * Math.PI * 2;
-      pos[node.id] = { x: w / 2 + R * Math.cos(a), y: h / 2 + R * Math.sin(a) };
+    nodes.forEach((node, i) => {
+      const a = (i / Math.max(1, nodes.length)) * Math.PI * 2;
+      pos[node.id] = { x: w / 2 + R * Math.cos(a), y: h / 2 + R * Math.sin(a), vx: 0, vy: 0 };
     });
-    const idToNode = new Map(graphData.nodes.map((n) => [n.id, n]));
-    const links = Array.isArray(graphData.links) ? graphData.links : [];
+    if (useForce && nodes.length > 1) {
+      const K_REPEL = 1400, K_SPRING = 0.05, REST = 120, KC = 0.02, DAMP = 0.85;
+      for (let tick = 0; tick < 120; tick++) {
+        for (let i = 0; i < nodes.length; i++) {
+          const a = pos[nodes[i].id];
+          for (let j = i + 1; j < nodes.length; j++) {
+            const b = pos[nodes[j].id];
+            let dx = b.x - a.x, dy = b.y - a.y;
+            let d2 = dx * dx + dy * dy;
+            if (d2 < 0.01) { dx = (Math.random() - 0.5) * 2; dy = (Math.random() - 0.5) * 2; d2 = dx * dx + dy * dy + 0.01; }
+            const f = K_REPEL / d2;
+            const d = Math.sqrt(d2);
+            const fx = (dx / d) * f, fy = (dy / d) * f;
+            a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+          }
+        }
+        links.forEach((link) => {
+          const a = pos[link.source] || pos[link.from];
+          const b = pos[link.target] || pos[link.to];
+          if (!a || !b) return;
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          const f = K_SPRING * (d - REST);
+          const fx = (dx / d) * f, fy = (dy / d) * f;
+          a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+        });
+        nodes.forEach((node) => {
+          const p = pos[node.id];
+          p.vx = (p.vx + (w / 2 - p.x) * KC) * DAMP;
+          p.vy = (p.vy + (h / 2 - p.y) * KC) * DAMP;
+          p.x += p.vx; p.y += p.vy;
+          p.x = Math.max(40, Math.min(w - 40, p.x));
+          p.y = Math.max(30, Math.min(h - 30, p.y));
+        });
+      }
+    }
+    // draw links
+    const linksLayer = document.createElementNS(ns, "g");
+    linksLayer.setAttribute("class", "graph-links");
+    viewport.appendChild(linksLayer);
     links.forEach((link) => {
       const from = pos[link.source] || pos[link.from];
       const to = pos[link.target] || pos[link.to];
@@ -1073,21 +1137,91 @@ export const SITE_JS = `(() => {
       const l = document.createElementNS(ns, "line");
       l.setAttribute("x1", from.x); l.setAttribute("y1", from.y);
       l.setAttribute("x2", to.x); l.setAttribute("y2", to.y);
-      l.setAttribute("stroke", line); l.setAttribute("stroke-width", "1.5");
-      svg.appendChild(l);
+      l.setAttribute("stroke", lineCol); l.setAttribute("stroke-width", "1.5");
+      linksLayer.appendChild(l);
     });
-    graphData.nodes.forEach((node) => {
+    // draw nodes (interactive)
+    const nodesLayer = document.createElementNS(ns, "g");
+    nodesLayer.setAttribute("class", "graph-nodes");
+    viewport.appendChild(nodesLayer);
+    const baseHref = (window.__WIKI_BASE__ || "");
+    nodes.forEach((node) => {
       const p = pos[node.id];
       if (!p) return;
+      const g = document.createElementNS(ns, "g");
+      g.setAttribute("class", "graph-node");
+      g.setAttribute("data-slug", node.slug || node.id);
+      g.setAttribute("transform", "translate(" + p.x + "," + p.y + ")");
+      const title = document.createElementNS(ns, "title");
+      title.textContent = (node.title || node.id || "") + " · " + (node.kind || "note");
+      g.appendChild(title);
       const c = document.createElementNS(ns, "circle");
-      c.setAttribute("cx", p.x); c.setAttribute("cy", p.y);
-      c.setAttribute("r", 7); c.setAttribute("fill", soft); c.setAttribute("stroke", accent); c.setAttribute("stroke-width", "2");
-      svg.appendChild(c);
+      c.setAttribute("r", 8); c.setAttribute("fill", kindColor(node.kind)); c.setAttribute("fill-opacity", "0.22");
+      c.setAttribute("stroke", kindColor(node.kind)); c.setAttribute("stroke-width", "2");
+      g.appendChild(c);
       const t = document.createElementNS(ns, "text");
-      t.setAttribute("x", p.x); t.setAttribute("y", p.y - 13); t.setAttribute("text-anchor", "middle");
-      t.textContent = (node.title || node.id || "").slice(0, 24);
-      svg.appendChild(t);
+      t.setAttribute("y", -14); t.setAttribute("text-anchor", "middle");
+      t.setAttribute("fill", inkCol);
+      t.textContent = (node.title || node.id || "").slice(0, 22);
+      g.appendChild(t);
+      // click → navigate (only if not dragged)
+      let downX = 0, downY = 0, moved = false;
+      g.addEventListener("pointerdown", (e) => { downX = e.clientX; downY = e.clientY; moved = false; g.setPointerCapture(e.pointerId); });
+      g.addEventListener("pointermove", (e) => {
+        if (e.buttons !== 1) return;
+        if (Math.abs(e.clientX - downX) > 4 || Math.abs(e.clientY - downY) > 4) moved = true;
+        if (!moved) return;
+        const pt = svgPoint(svg, e.clientX, e.clientY);
+        p.x = Math.max(40, Math.min(w - 40, pt.x)); p.y = Math.max(30, Math.min(h - 30, pt.y));
+        g.setAttribute("transform", "translate(" + p.x + "," + p.y + ")");
+        // update incident links
+        links.forEach((link) => {
+          const lid = link.source || link.from, rid = link.target || link.to;
+          if (lid !== node.id && rid !== node.id) return;
+          const lnk = linksLayer.querySelector('[data-link="' + lid + '|' + rid + '"]') || linksLayer.querySelector('line');
+        });
+        redrawLinks();
+      });
+      g.addEventListener("pointerup", () => {
+        if (!moved) {
+          const href = baseHref + "pages/" + (node.slug || node.id) + ".html";
+          window.location.href = href;
+        }
+      });
+      nodesLayer.appendChild(g);
     });
+    function redrawLinks() {
+      Array.from(linksLayer.children).forEach((child, i) => {
+        const link = links[i];
+        if (!link) return;
+        const from = pos[link.source] || pos[link.from];
+        const to = pos[link.target] || pos[link.to];
+        if (!from || !to) return;
+        child.setAttribute("x1", from.x); child.setAttribute("y1", from.y);
+        child.setAttribute("x2", to.x); child.setAttribute("y2", to.y);
+      });
+    }
+    function svgPoint(svgEl, clientX, clientY) {
+      const pt = svgEl.createSVGPoint();
+      pt.x = clientX; pt.y = clientY;
+      return pt.matrixTransform(svgEl.getScreenCTM().inverse());
+    }
+    // zoom (wheel) + pan (drag on background)
+    let scale = 1, panX = 0, panY = 0;
+    const applyTransform = () => { viewport.setAttribute("transform", "translate(" + panX + "," + panY + ") scale(" + scale + ")"); };
+    svg.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 1.1 : 0.9;
+      scale = Math.max(0.5, Math.min(2.5, scale * delta));
+      applyTransform();
+    }, { passive: false });
+    let panning = false, panStart = { x: 0, y: 0 };
+    svg.addEventListener("pointerdown", (e) => {
+      if (e.target === svg || e.target === viewport) { panning = true; panStart = { x: e.clientX - panX, y: e.clientY - panY }; svg.setPointerCapture(e.pointerId); }
+    });
+    svg.addEventListener("pointermove", (e) => { if (panning) { panX = e.clientX - panStart.x; panY = e.clientY - panStart.y; applyTransform(); } });
+    svg.addEventListener("pointerup", () => { panning = false; });
+    // legend: extend with per-kind chips (handled server-side in renderGraphPage)
   }
   window.addEventListener("keydown", (event) => {
     if (input && ((event.key === "/" && document.activeElement !== input) || ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k"))) {
