@@ -331,7 +331,9 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .graph-canvas text { font: 12px ui-sans-serif, system-ui, sans-serif; fill: var(--ink); pointer-events: none; }
 .graph-viewport { transform-origin: center; transition: transform .08s ease; }
 .graph-node { cursor: pointer; }
-.graph-node-label { opacity: 0; transition: opacity .12s ease; pointer-events: none; }
+.graph-node-short { font-size: 11px; pointer-events: none; }
+.graph-node-label { opacity: 0; transition: opacity .12s ease; pointer-events: none; font-size: 12px; }
+.graph-node:hover .graph-node-short { opacity: 0; }
 .graph-node:hover circle { stroke-width: 4; filter: drop-shadow(0 0 4px currentColor); }
 .graph-node:hover .graph-node-label { opacity: 1; }
 .graph-legend { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; padding: .4rem .6rem; color: var(--muted); font-size: .8rem; }
@@ -1182,6 +1184,17 @@ export const SITE_JS = `(() => {
       const hit = document.createElementNS(ns, "circle");
       hit.setAttribute("r", 22); hit.setAttribute("fill", "transparent");
       g.appendChild(hit);
+      // short label (default visible) + full label (hover only)
+      const idx = nodes.indexOf(node);
+      const short = (node.title || node.id || "");
+      const shortLabel = document.createElementNS(ns, "text");
+      shortLabel.setAttribute("class", "graph-node-short");
+      shortLabel.setAttribute("text-anchor", "middle");
+      shortLabel.setAttribute("fill", inkCol);
+      // alternate above/below to reduce collision
+      shortLabel.setAttribute("y", idx % 2 === 0 ? -18 : 24);
+      shortLabel.textContent = short.length > 9 ? short.slice(0, 8) + "…" : short;
+      g.appendChild(shortLabel);
       const t = document.createElementNS(ns, "text");
       t.setAttribute("class", "graph-node-label");
       t.setAttribute("y", -18); t.setAttribute("text-anchor", "middle");
