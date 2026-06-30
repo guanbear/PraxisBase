@@ -20,3 +20,14 @@ Design-level references (ideas reimplemented in TypeScript, no code copied):
   the M30 Feishu source integration. PraxisBase reimplements these behaviors in
   its own TypeScript and governance model; no Go source is copied.
 
+- Open Knowledge Format (OKF) v0.1 (Apache-2.0, from
+  GoogleCloudPlatform/knowledge-catalog). OKF is a vendor-neutral format for
+  representing knowledge as plain markdown files with YAML frontmatter.
+  PraxisBase's kb/ directory already embodies most OKF principles (markdown +
+  frontmatter, required `type`, directory tree, git versioning, markdown links
+  as relationships). Borrowed the `description` frontmatter field (consumed by
+  the site graph tooltip, stable-knowledge list, and search index) and the
+  progressive-disclosure concept. Format-idea reference only; no code copied and
+  PraxisBase does not formally declare OKF compliance (the standard is v0.1
+  Draft).
+

@@ -218,6 +218,7 @@ h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.4rem); line-height: 1; letter-sp
 .link-list span, .link-list code, .issue-list small { color: var(--muted); }
 .link-list a { color: var(--ink); font-weight: 600; }
 .link-list a:hover { color: var(--accent); }
+.link-list .kb-desc { display: block; font-style: normal; font-size: .8rem; color: var(--muted); margin: .15rem 0; line-height: 1.4; max-width: 70ch; }
 .experience-summaries { border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: var(--radius); background: var(--card); margin: 1.5rem 0; padding: 1.1rem; box-shadow: var(--shadow-sm); }
 .experience-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; }
 .experience-list li { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: .9rem; box-shadow: var(--shadow-sm); }
@@ -1174,7 +1175,9 @@ export const SITE_JS = `(() => {
       g.setAttribute("data-slug", node.slug || node.id);
       g.setAttribute("transform", "translate(" + p.x + "," + p.y + ")");
       const title = document.createElementNS(ns, "title");
-      title.textContent = (node.title || node.id || "") + " · " + (node.kind || "note");
+      const descs = window.__WIKI_NODE_DESCRIPTIONS__ || {};
+      const desc = descs[node.slug || node.id];
+      title.textContent = (node.title || node.id || "") + " · " + (node.kind || "note") + (desc ? "\\n" + desc : "");
       g.appendChild(title);
       const c = document.createElementNS(ns, "circle");
       c.setAttribute("r", 10); c.setAttribute("fill", kindColor(node.kind)); c.setAttribute("fill-opacity", "0.25");

@@ -29,6 +29,7 @@ interface SourceMetadata {
   reference_count?: number;
   updated_at?: string;
   superseded_by?: string | null;
+  description?: string;
   signatures: string[];
   provenance_refs: Array<{ uri: string; hash?: string }>;
 }
@@ -81,6 +82,7 @@ async function sourceMetadata(root: string, source: WikiSource): Promise<SourceM
       reference_count: numberValue(data.reference_count),
       updated_at: stringValue(data.updated_at),
       superseded_by: stringValue(data.superseded_by) ?? null,
+      description: stringValue(data.description),
       signatures: stringArrayValue(data.signatures),
       provenance_refs: provenanceRefsValue(data.sources),
     };
@@ -142,6 +144,7 @@ export async function collectWikiPages(root: string): Promise<WikiSitePage[]> {
       path: source.path ?? source.source_ref ?? source.id,
       summary: source.summary,
       body_text: body,
+      description: metadata.description,
       signatures: metadata.signatures,
       provenance_refs: metadata.provenance_refs,
       confidence: inferWikiConfidence({
@@ -1715,7 +1718,7 @@ function renderDashboard(
       </div>
       <p class="section-subtitle">${escapeHtml(useZh ? `共 ${pages.length} 个稳定页面：${knowledgePageCount} 个知识页 + ${skillPageCount} 个技能页，约 ${stableTopicCount} 个主题。审批通过并 promote 后会出现在这里。` : `${pages.length} stable page(s): ${knowledgePageCount} KB pages + ${skillPageCount} skills, about ${stableTopicCount} topics. Approved and promoted items appear here.`)}</p>
       ${stablePages.length > 0 ? (() => {
-        const renderStableLi = ({ page, kb }: { page: WikiSitePage; kb: string }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a><span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span>${page.path.startsWith("kb/") || page.path.endsWith("/SKILL.md") ? `<div class="approval-actions revoke-actions" data-revoke-actions data-revoke-path="${escapeHtml(page.path)}"><button type="button" data-revoke-decision="archive">${useZh ? "撤回" : "Revoke"}</button><span class="approval-status" data-revoke-status>${useZh ? "撤回后会从稳定知识和检索中移除。" : "Revoking removes this from stable knowledge and retrieval."}</span></div>` : ""}</li>`;
+        const renderStableLi = ({ page, kb }: { page: WikiSitePage; kb: string }) => `<li data-page-kind="${escapeHtml(page.page_kind ?? "note")}" data-page-kb="${escapeHtml(kb)}"><a href="${escapeHtml(pageHref(page))}">${escapeHtml(page.title)}</a>${page.description ? `<em class="kb-desc">${escapeHtml(page.description)}</em>` : ""}<span>${escapeHtml(`${knowledgeBaseLabel(kb, knowledgeConfig)} · ${page.page_kind ?? "note"}`)}</span>${page.path.startsWith("kb/") || page.path.endsWith("/SKILL.md") ? `<div class="approval-actions revoke-actions" data-revoke-actions data-revoke-path="${escapeHtml(page.path)}"><button type="button" data-revoke-decision="archive">${useZh ? "撤回" : "Revoke"}</button><span class="approval-status" data-revoke-status>${useZh ? "撤回后会从稳定知识和检索中移除。" : "Revoking removes this from stable knowledge and retrieval."}</span></div>` : ""}</li>`;
         const groups = new Map<string, { kb: string; kind: string; label: string; items: { page: WikiSitePage; kb: string }[] }>();
         stablePages.forEach((entry) => {
           const label = knowledgeBaseLabel(entry.kb, knowledgeConfig);
@@ -1825,9 +1828,12 @@ function renderGraphPage(pages: WikiSitePage[], graph: WikiGraph, language: Proj
     const kindColor = (k: string) => KIND_COLORS[k] ?? KIND_COLORS.other;
     const distinctKinds = Array.from(new Set(pages.map((p) => p.page_kind ?? "note"))).sort();
     const legendChips = distinctKinds.map((kind) => `<span><i style="background:${kindColor(kind)}"></i>${escapeHtml(kind)}</span>`).join("");
+    const descriptions: Record<string, string> = {};
+    pages.forEach((p) => { if (p.description) descriptions[p.slug] = p.description; });
     return `<section class="graph-canvas-wrap panel">
     <div class="graph-legend">${legendChips}<span class="graph-legend-link"><i style="background:var(--line)"></i>${useZh ? "引用关系" : "Link"}</span><span class="graph-legend-hint">${useZh ? "滚轮缩放 · 拖拽节点或背景" : "Scroll to zoom · Drag nodes or background"}</span></div>
     <svg class="graph-canvas" data-graph-canvas aria-label="${escapeHtml(useZh ? "知识关系图" : "Knowledge relationship graph")}" role="img"></svg>
+    <script>window.__WIKI_NODE_DESCRIPTIONS__=${escapeJsonForHtml(descriptions)};</script>
   </section>`;
   })() : ""}
   <section class="graph-grid">
@@ -3083,7 +3089,8 @@ export async function buildWikiSite(root: string): Promise<BuildWikiSiteResult> 
       title: page.title,
       path: page.path,
       kind: page.page_kind,
-      text: `${page.title}\n${page.summary}\n${page.body_text}`,
+      description: page.description,
+      text: `${page.title}\n${page.description ?? ""}\n${page.summary}\n${page.body_text}`,
       })),
       ...pendingCandidates.map((candidate) => ({
         id: candidate.id,

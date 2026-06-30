@@ -286,6 +286,7 @@ k8s_boundary_ga: pass        # 生产只读、无写权限、禁用操作齐全
 | SkillClaw (高德 AMAP-ML) | **MIT** | ✅ 可以 | `skillclaw/skill_manager.py`、`skill_bundle.py`(skill 演化/合并/去重)、`prm_scorer.py`(PRM 质量打分)、`evolve_server/`(post-task 演化 loop 结构) | 保留版权头 + 注明来源；翻译成 TS 时保留出处注释 |
 | nashsu/llm_wiki (桌面版) | **GPL-3.0** | ❌ **不可拷源码** | 仅可**重新实现思想**：两步式 CoT ingest、级联删除、4 信号图谱打分 | 禁止复制其代码片段；只参考行为，自行用 TS 实现 |
 | Tencent/WeKnora (微信) | **MIT**（Go 实现） | ❌ 不做源码拷贝 | 思想级借鉴：交互式知识图谱（力导向、节点跳转、按 kind 着色）、Wiki 浏览器树形层级导航、多源连接器抽象（飞书/Notion/RSS 增量同步）、Langfuse 式全链路 trace span、内联 citation popover。其 Wiki Mode（v0.5.0 GA）目标与 PraxisBase kb/+graph 页高度重合 | 只参考行为/设计，自行用 TS 实现；不跨语言拷 Go 代码 |
+| GoogleCloudPlatform/knowledge-catalog → **OKF (Open Knowledge Format)** | **Apache-2.0**（Python/TS 示例） | ❌ 不做源码拷贝 | 思想级借鉴：OKF v0.1 是厂商中立的"知识=markdown+YAML frontmatter"格式标准。PraxisBase 的 kb/ 已事实遵循其大部分理念（markdown+frontmatter、type 必填、目录树、git 版本控制、markdown 链接=关系）。已借鉴：① `description` frontmatter 字段（站点 graph tooltip / 稳定知识列表 / search-index 消费）② 渐进式披露理念（index.md / llms.txt）。不照搬其 log.md（git 历史已足够） | 只参考格式思想，自行用 TS 实现；不绑定为"OKF 合规"（标准尚 v0.1 Draft） |
 | Karpathy LLM Wiki / v2 | gist（pattern 文档） | n/a（无可拷代码） | 心智模型 | — |
 | 腾讯 Harness 文章 | 文章（无开源代码） | n/a | 五层/成熟度/衰减/三级索引设计 | 当设计验证 |
 | AgentMemory / GBrain | 外部服务 | n/a（当外部能力调用，不内联） | REST/MCP 接口契约 | 按 adapter 调用，不拷其实现 |

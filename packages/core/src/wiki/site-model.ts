@@ -21,6 +21,7 @@ export interface WikiSitePage extends WikiPage {
   source_ids: string[];
   summary: string;
   body_text: string;
+  description?: string;
   signatures: string[];
   provenance_refs?: Array<{ uri: string; hash?: string }>;
   confidence?: number;

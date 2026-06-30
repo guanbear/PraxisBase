@@ -506,6 +506,7 @@ function withKnowledgeFrontmatter(proposal: CuratedWikiProposal, targetId: strin
   );
   if (/^---\n/.test(proposal.body_markdown)) return body;
   const knowledgeType = knowledgeTypeForPageKind(proposal.page_kind);
+  const description = (proposal.summary || "").split(/(?<=[。.!?])\s*/)[0]?.trim().slice(0, 140) || "";
   const frontmatter = [
     "---",
     `id: ${targetId}`,
@@ -517,6 +518,7 @@ function withKnowledgeFrontmatter(proposal: CuratedWikiProposal, targetId: strin
     `risk: ${riskForPageKind(proposal.page_kind)}`,
     "status: draft",
     `maturity: ${curatedMaturity(proposal.maturity)}`,
+    ...(description ? [`description: ${yamlQuote(description)}`] : []),
     "sources:",
     ...proposal.provenance.flatMap((entry) => [
       `  - uri: ${yamlQuote(entry.source_ref)}`,
